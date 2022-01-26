@@ -1,4 +1,4 @@
-# Smart Contract Wallet
+# Vectis - Smart Contract Wallet
 
 [![Cosmowasm 0.20.0](https://img.shields.io/badge/CosmWasm-0.20.0-green)](https://github.com/CosmWasm/wasmd/releases)
 
@@ -10,7 +10,7 @@ SCW also provide functions that allow businesses to satisfy regulatory requireme
 ### Design
 
 SCW is designed to provide the user with confidence whilst interacting with the DApps by providing the most amount of control yet allowing recoverability.
-It also enables companies to drivemass adoption of blockchain-based services by their customers, providing a better user experience, solving the problems of buying gas in advance, increasing the resilience, security and verifiability of their solutions.
+It also enables companies to drive mass adoption of blockchain-based services by their customers, providing a better user experience, solving the problems of buying gas in advance, increasing the resilience, security and verifiability of their solutions.
 
 At the core, the SCW builds on [cw-1 specifications](https://github.com/CosmWasm/cw-plus/blob/main/packages/cw1/README.md) for proxy contracts, with the addition of roles and functionalities listed below.
 

@@ -7,7 +7,7 @@ At the core of the project is the aim to achieve security and transparency, whil
 Below is a summary of the [roles](#roles) and [functionalities](#functionalities) that the contracts expose.
 
 We also provide a [factory](#factory) contract to instantiate the SCW,
-this allows service providers to hep users instantiate SCW and keep track of the wallets they potentially are guardians / relayers of.
+this allows service providers to help users instantiate SCW and keep track of the wallets they potentially are guardians / relayers of.
 
 [cw-1 specifications]: (https://crates.io/crates/cw1)
 
