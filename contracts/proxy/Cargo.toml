@@ -1,0 +1,42 @@
+[package]
+name = "wallet-proxy"
+version = "0.1.0"
+authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>"]
+edition = "2018"
+
+exclude = [
+  # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
+  "contract.wasm",
+  "hash.txt",
+]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+migration = []
+
+[dependencies]
+cosmwasm-std = { version = "1.0.0-beta" }
+cw-storage-plus = "0.10.0"
+cw1 = "0.10.0"
+cw2 = "0.10.0"
+cw3-fixed-multisig = { version = "0.11.1", features = ["library"] }
+cw3 = "0.11.1"
+cw-utils = "0.11.1"
+sc-wallet = { path = "../../packages/factory" }
+schemars = "0.8.3"
+serde = { version = "1.0.127", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.26" }
+sha2 = "0.9"
+hex = { version = "0.4", default-features = false }
+
+[dev-dependencies]
+cosmwasm-schema = { version = "1.0.0-beta" }
+secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}

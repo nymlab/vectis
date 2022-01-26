@@ -1,0 +1,24 @@
+[workspace]
+members = ["packages/*", "contracts/proxy", "contracts/factory"]
+exclude = ["contracts/tests","packages/images"]
+
+# https://doc.rust-lang.org/cargo/reference/profiles.html
+[profile.release.package.wallet-factory]
+codegen-units = 1
+incremental = false
+
+[profile.release.package.wallet-proxy]
+codegen-units = 1
+incremental = false
+
+[profile.release]
+rpath = false
+lto = true
+overflow-checks = true
+opt-level = 3
+debug = false
+debug-assertions = false
+
+
+
+

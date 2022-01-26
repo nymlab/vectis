@@ -1,0 +1,43 @@
+import * as dotenv from "dotenv";
+
+dotenv.config();
+let path;
+switch (process.env.NODE_ENV) {
+  case "test":
+    path = `${__dirname}/../../../.env.test`;
+    break;
+  case "production":
+    path = `${__dirname}/../../../.env.production`;
+    break;
+  default:
+    path = `${__dirname}/../../../.env.dev`;
+}
+dotenv.config({ path: path });
+
+// in hex
+export const rpcEndPoint = process.env.RPC;
+export const chainId = process.env.CHAIN_ID;
+export const adminMnemonic = process.env.ADMIN_MNEMONIC;
+export const adminAddr= process.env.ADMIN_ADDR;
+export const adminPubKey = process.env.ADMIN_PUBKEY;
+export const userMnemonic = process.env.USER_MNEMONIC;
+export const userAddr = process.env.USER_ADDR;
+export const userPubKey = process.env.USER_PUBKEY;
+export const userPrivKey = process.env.USER_PRIV;
+export const guardian1Mnemonic = process.env.GUARDIAN1_MNEMONIC;
+export const guardian1Addr = process.env.GUARDIAN1_ADDR;
+export const guardian1PubKey= process.env.GUARDIAN1_PUBKEY;
+export const guardian2Mnemonic = process.env.GUARDIAN2_MNEMONIC;
+export const guardian2Addr = process.env.GUARDIAN2_ADDR;
+export const guardian2PubKey= process.env.GUARDIAN2_PUBKEY;
+export const relayer1Mnemonic = process.env.RELAYER1_MNEMONIC;
+export const relayer1Addr =     process.env.RELAYER1_ADDR;
+export const relayer1PubKey=    process.env.RELAYER1_PUBKEY;
+export const relayer2Mnemonic = process.env.RELAYER2_MNEMONIC;
+export const relayer2Addr =     process.env.RELAYER2_ADDR;
+export const relayer2PubKey=    process.env.RELAYER2_PUBKEY;
+export const addrPrefix = process.env.ACCT_PREFIX;
+export const fixMultiSigCodePath = process.env.FIXEDMULTISIG_CODE_PATH;
+export const cw20CodePath = process.env.CW20_CODE_PATH;
+export const factoryCodePath = process.env.FACTORY_CODE_PATH;
+export const proxyCodePath = process.env.PROXY_CODE_PATH;

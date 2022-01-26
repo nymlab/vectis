@@ -1,0 +1,28 @@
+{
+  "name": "js-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "description": "Testing application for smart contract wallet",
+  "scripts": {
+    "test": "rm -rf build/ && npx tsc && npx ts-node node_modules/jasmine/bin/jasmine"
+  },
+  "devDependencies": {
+    "@cosmjs/cli": "^0.26.3",
+    "@types/jasmine": "^3.10.1",
+    "@types/node": "^13.13.52",
+    "@types/yargs": "^17.0.4",
+    "jasmine": "^3.10.0",
+    "jasmine-ts-console-reporter": "^3.1.1",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.26.4",
+    "@cosmjs/proto-signing": "^0.26.4",
+    "@cosmjs/stargate": "^0.26.4",
+    "@types/dotenv": "^8.2.0",
+    "dotenv": "^10.0.0",
+    "yargs": "^15.4.1"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QueryMsg",
+  "oneOf": [
+    {
+      "description": "Shows all the proxy wallet address Returns WalletListResponse",
+      "type": "object",
+      "required": [
+        "wallets"
+      ],
+      "properties": {
+        "wallets": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "proxy_code_id"
+      ],
+      "properties": {
+        "proxy_code_id": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
+}
