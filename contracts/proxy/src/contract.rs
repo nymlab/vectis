@@ -122,6 +122,7 @@ where
         return Err(ContractError::Frozen {});
     }
 
+    // Ensure user exists
     ensure_is_user(deps.as_ref(), info.sender.as_ref())?;
 
     let res = Response::new()
@@ -168,6 +169,44 @@ pub fn execute_relay(
         }
     } else {
         Err(ContractError::SignatureVerificationError {})
+    }
+}
+
+/// Add relayer to the relayers set
+pub fn add_relayer(
+    deps: DepsMut,
+    info: MessageInfo,
+    relayer_addr: Addr,
+) -> Result<Response, ContractError> {
+    // Authorize user or multisig
+    authorize_user_or_multisig(deps.as_ref(), &info.sender)?;
+
+    // Save a new relayer
+    let relayer_addr = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
+
+    RELAYERS.save(deps.storage, &relayer_addr, &())?;
+
+    Ok(Response::new().add_attribute("action", format!("Relayer {:?} added", relayer_addr)))
+}
+
+/// Remove relayer from the relayers set
+pub fn remove_relayer(
+    deps: DepsMut,
+    info: MessageInfo,
+    relayer_addr: Addr,
+) -> Result<Response, ContractError> {
+    // Authorize user or multisig
+    authorize_user_or_multisig(deps.as_ref(), &info.sender)?;
+
+    // Remove a relayer if possible
+    let relayer_addr = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
+
+    if RELAYERS.has(deps.storage, &relayer_addr) {
+        RELAYERS.remove(deps.storage, &relayer_addr);
+
+        Ok(Response::new().add_attribute("action", format!("Relayer {:?} removed", relayer_addr)))
+    } else {
+        Err(ContractError::RelayerDoesNotExist {})
     }
 }
 
@@ -234,11 +273,27 @@ pub fn authorize_guardian_or_multisig(
     sender: &CanonicalAddr,
 ) -> Result<(), ContractError> {
     match MULTISIG_ADDRESS.may_load(deps.storage)? {
-        // if multisig is set, ensure it's address equal to the caller address
+        // if multisig adrdess is set, check whether sender is equal to it
         Some(multisig_address) if multisig_address.eq(sender) => Ok(()),
-        Some(_) => Err(ContractError::IsNotMultisig {}),
-        // if multisig is not set, ensure caller address is guardian
+        // otherwise do guardian auth
         _ => ensure_is_guardian(deps, sender),
+    }
+}
+
+/// Is used to authorize user or multisig contract
+pub fn authorize_user_or_multisig(deps: Deps, sender: &Addr) -> Result<(), ContractError> {
+    match MULTISIG_ADDRESS.may_load(deps.storage)? {
+        // if multisig adrdess is set, check whether sender is equal to it
+        Some(multisig_address)
+            if multisig_address.eq(&deps.api.addr_canonicalize(sender.as_ref())?) =>
+        {
+            Ok(())
+        }
+        // otherwise do user auth
+        _ => {
+            ensure_is_user(deps, sender.as_ref())?;
+            Ok(())
+        }
     }
 }
 
