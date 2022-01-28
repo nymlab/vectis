@@ -7,8 +7,6 @@ pub enum ContractError {
     Std(#[from] StdError),
     #[error("EmptyGuardians")]
     EmptyGuardians {},
-    #[error("EmptyRelayers")]
-    EmptyRelayers {},
     #[error("ThresholdShouldBeGreaterThenZero")]
     ThresholdShouldBeGreaterThenZero {},
     #[error("ThresholdShouldBeLessThenGuardiansCount")]
