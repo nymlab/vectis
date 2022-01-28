@@ -73,10 +73,6 @@ fn create_wallet(
         return Err(ContractError::EmptyGuardians {});
     }
 
-    if create_wallet_msg.relayers.is_empty() {
-        return Err(ContractError::EmptyRelayers {});
-    }
-
     // Ensure fixed multisig threshold is valid, if provided
     ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
 
