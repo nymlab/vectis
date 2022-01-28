@@ -30,4 +30,6 @@ pub enum ContractError {
     SameCodeId {},
     #[error("AddressesAreEqual")]
     AddressesAreEqual {},
+    #[error("RelayerDoesNotExist")]
+    RelayerDoesNotExist {},
 }
