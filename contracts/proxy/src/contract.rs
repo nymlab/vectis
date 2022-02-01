@@ -587,7 +587,7 @@ mod tests {
     }
 
     #[test]
-    fn user_can_add_relayer() {
+    fn user_can_remove_relayer() {
         let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
         let user_addr = do_instantiate(deps.as_mut());
 
@@ -597,19 +597,23 @@ mod tests {
         let info = mock_info(user_addr.as_str(), &[]);
         let env = mock_env();
 
-        let new_relayer_address = Addr::unchecked(RELAYER3);
-        let msg = ExecuteMsg::AddRelayer {
-            new_relayer_address: new_relayer_address.clone(),
+        let relayer_address = Addr::unchecked(RELAYER2);
+        let msg = ExecuteMsg::RemoveRelayer {
+            relayer_address: relayer_address.clone(),
         };
 
         let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         assert_eq!(
             response.attributes,
-            [("action", format!("Relayer {:?} added", new_relayer_address))]
+            [("action", format!("Relayer {:?} removed", relayer_address))]
         );
 
-        // Ensure relayer is added successfully
-        wallet_info.relayers.push(new_relayer_address);
+        // Ensure relayer is removed successfully
+        wallet_info.relayers = wallet_info
+            .relayers
+            .into_iter()
+            .filter(|relayer| *relayer == relayer_address)
+            .collect();
         let new_wallet_info = query_info(deps.as_ref()).unwrap();
         assert!(new_wallet_info.relayers == new_wallet_info.relayers);
     }
