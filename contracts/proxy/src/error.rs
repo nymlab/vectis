@@ -32,4 +32,6 @@ pub enum ContractError {
     AddressesAreEqual {},
     #[error("RelayerDoesNotExist")]
     RelayerDoesNotExist {},
+    #[error("RelayerAlreadyExists")]
+    RelayerAlreadyExists {},
 }

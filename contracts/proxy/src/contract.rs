@@ -187,12 +187,15 @@ pub fn execute_add_relayer(
     // Authorize user or multisig
     authorize_user_or_multisig(deps.as_ref(), &info.sender)?;
 
-    // Save a new relayer
+    // Save a new relayer if it does not exist yet
     let relayer_addr_canonical = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
 
-    RELAYERS.save(deps.storage, &relayer_addr_canonical, &())?;
-
-    Ok(Response::new().add_attribute("action", format!("Relayer {:?} added", relayer_addr)))
+    if !RELAYERS.has(deps.storage, &relayer_addr_canonical) {
+        RELAYERS.save(deps.storage, &relayer_addr_canonical, &())?;
+        Ok(Response::new().add_attribute("action", format!("Relayer {:?} added", relayer_addr)))
+    } else {
+        Err(ContractError::RelayerAlreadyExists {})
+    }
 }
 
 /// Remove relayer from the relayers set
