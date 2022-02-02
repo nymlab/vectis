@@ -184,8 +184,8 @@ pub fn execute_add_relayer(
     info: MessageInfo,
     relayer_addr: Addr,
 ) -> Result<Response, ContractError> {
-    // Authorize user or multisig
-    authorize_user_or_multisig(deps.as_ref(), &info.sender)?;
+    // Authorize user or guardians
+    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
 
     // Save a new relayer if it does not exist yet
     let relayer_addr_canonical = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
@@ -204,8 +204,8 @@ pub fn execute_remove_relayer(
     info: MessageInfo,
     relayer_addr: Addr,
 ) -> Result<Response, ContractError> {
-    // Authorize user or multisig
-    authorize_user_or_multisig(deps.as_ref(), &info.sender)?;
+    // Authorize user or guardians
+    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
 
     // Remove a relayer if possible
     let relayer_addr_canonical = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
@@ -282,26 +282,32 @@ pub fn authorize_guardian_or_multisig(
     sender: &CanonicalAddr,
 ) -> Result<(), ContractError> {
     match MULTISIG_ADDRESS.may_load(deps.storage)? {
-        // if multisig adrdess is set, check whether sender is equal to it
+        // if multisig is set, ensure it's address equal to the caller address
         Some(multisig_address) if multisig_address.eq(sender) => Ok(()),
-        // otherwise do guardian auth
+        Some(_) => Err(ContractError::IsNotMultisig {}),
+        // if multisig is not set, ensure caller address is guardian
         _ => ensure_is_guardian(deps, sender),
     }
 }
 
-/// Is used to authorize user or multisig contract
-pub fn authorize_user_or_multisig(deps: Deps, sender: &Addr) -> Result<(), ContractError> {
+/// Is used to authorize user or guardians
+pub fn authorize_user_or_guardians(deps: Deps, sender: &Addr) -> Result<(), ContractError> {
+    let addr_canonical = deps.api.addr_canonicalize(sender.as_ref())?;
     match MULTISIG_ADDRESS.may_load(deps.storage)? {
         // if multisig adrdess is set, check whether sender is equal to it
-        Some(multisig_address)
-            if multisig_address.eq(&deps.api.addr_canonicalize(sender.as_ref())?) =>
-        {
-            Ok(())
-        }
-        // otherwise do user auth
+        Some(multisig_address) if multisig_address.eq(&addr_canonical) => Ok(()),
+        // otherwise do user or guardian auth
         _ => {
-            ensure_is_user(deps, sender.as_ref())?;
-            Ok(())
+            let is_user_result = ensure_is_user(deps, sender.as_ref());
+            // either guardian or multisig.
+            let is_guardian_result = authorize_guardian_or_multisig(deps, &addr_canonical);
+            if is_user_result.is_ok() || is_guardian_result.is_ok() {
+                Ok(())
+            } else {
+                is_user_result?;
+                is_guardian_result?;
+                Ok(())
+            }
         }
     }
 }
@@ -563,6 +569,34 @@ mod tests {
 
     #[test]
     fn user_can_add_relayer() {
+        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let user_addr = do_instantiate(deps.as_mut());
+
+        // initially we have a wallet with 2 relayers
+        let mut wallet_info = query_info(deps.as_ref()).unwrap();
+
+        let info = mock_info(user_addr.as_str(), &[]);
+        let env = mock_env();
+
+        let new_relayer_address = Addr::unchecked(RELAYER3);
+        let msg = ExecuteMsg::AddRelayer {
+            new_relayer_address: new_relayer_address.clone(),
+        };
+
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(
+            response.attributes,
+            [("action", format!("Relayer {:?} added", new_relayer_address))]
+        );
+
+        // Ensure relayer is added successfully
+        wallet_info.relayers.push(new_relayer_address);
+        let new_wallet_info = query_info(deps.as_ref()).unwrap();
+        assert!(new_wallet_info.relayers == new_wallet_info.relayers);
+    }
+
+    #[test]
+    fn add_relayer() {
         let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
         let user_addr = do_instantiate(deps.as_mut());
 
