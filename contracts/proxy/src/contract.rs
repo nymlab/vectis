@@ -105,6 +105,12 @@ pub fn execute(
         ExecuteMsg::RotateUserKey { new_user_address } => {
             execute_rotate_user_key(deps, info, new_user_address)
         }
+        ExecuteMsg::AddRelayer {
+            new_relayer_address,
+        } => execute_add_relayer(deps, info, new_relayer_address),
+        ExecuteMsg::RemoveRelayer { relayer_address } => {
+            execute_remove_relayer(deps, info, relayer_address)
+        }
     }
 }
 
@@ -122,6 +128,7 @@ where
         return Err(ContractError::Frozen {});
     }
 
+    // Ensure user exists
     ensure_is_user(deps.as_ref(), info.sender.as_ref())?;
 
     let res = Response::new()
@@ -168,6 +175,47 @@ pub fn execute_relay(
         }
     } else {
         Err(ContractError::SignatureVerificationError {})
+    }
+}
+
+/// Add relayer to the relayers set
+pub fn execute_add_relayer(
+    deps: DepsMut,
+    info: MessageInfo,
+    relayer_addr: Addr,
+) -> Result<Response, ContractError> {
+    // Authorize user or guardians
+    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
+
+    // Save a new relayer if it does not exist yet
+    let relayer_addr_canonical = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
+
+    if !RELAYERS.has(deps.storage, &relayer_addr_canonical) {
+        RELAYERS.save(deps.storage, &relayer_addr_canonical, &())?;
+        Ok(Response::new().add_attribute("action", format!("Relayer {:?} added", relayer_addr)))
+    } else {
+        Err(ContractError::RelayerAlreadyExists {})
+    }
+}
+
+/// Remove relayer from the relayers set
+pub fn execute_remove_relayer(
+    deps: DepsMut,
+    info: MessageInfo,
+    relayer_addr: Addr,
+) -> Result<Response, ContractError> {
+    // Authorize user or guardians
+    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
+
+    // Remove a relayer if possible
+    let relayer_addr_canonical = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
+
+    if RELAYERS.has(deps.storage, &relayer_addr_canonical) {
+        RELAYERS.remove(deps.storage, &relayer_addr_canonical);
+
+        Ok(Response::new().add_attribute("action", format!("Relayer {:?} removed", relayer_addr)))
+    } else {
+        Err(ContractError::RelayerDoesNotExist {})
     }
 }
 
@@ -239,6 +287,28 @@ pub fn authorize_guardian_or_multisig(
         Some(_) => Err(ContractError::IsNotMultisig {}),
         // if multisig is not set, ensure caller address is guardian
         _ => ensure_is_guardian(deps, sender),
+    }
+}
+
+/// Is used to authorize user or guardians
+pub fn authorize_user_or_guardians(deps: Deps, sender: &Addr) -> Result<(), ContractError> {
+    let addr_canonical = deps.api.addr_canonicalize(sender.as_ref())?;
+    match MULTISIG_ADDRESS.may_load(deps.storage)? {
+        // if multisig adrdess is set, check whether sender is equal to it
+        Some(multisig_address) if multisig_address.eq(&addr_canonical) => Ok(()),
+        // otherwise do user or guardian auth
+        _ => {
+            let is_user_result = ensure_is_user(deps, sender.as_ref());
+            // either guardian or multisig.
+            let is_guardian_result = authorize_guardian_or_multisig(deps, &addr_canonical);
+            if is_user_result.is_ok() || is_guardian_result.is_ok() {
+                Ok(())
+            } else {
+                is_user_result?;
+                is_guardian_result?;
+                Ok(())
+            }
+        }
     }
 }
 
@@ -407,6 +477,7 @@ mod tests {
 
     const RELAYER1: &str = "relayer1";
     const RELAYER2: &str = "relayer2";
+    const RELAYER3: &str = "relayer3";
 
     const INVALID_GUARD: &str = "not_a_guardian";
 
@@ -494,6 +565,94 @@ mod tests {
         let msg = ExecuteMsg::RevertFreezeStatus {};
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::IsNotGuardian {});
+    }
+
+    #[test]
+    fn user_can_add_relayer() {
+        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let user_addr = do_instantiate(deps.as_mut());
+
+        // initially we have a wallet with 2 relayers
+        let mut wallet_info = query_info(deps.as_ref()).unwrap();
+
+        let info = mock_info(user_addr.as_str(), &[]);
+        let env = mock_env();
+
+        let new_relayer_address = Addr::unchecked(RELAYER3);
+        let msg = ExecuteMsg::AddRelayer {
+            new_relayer_address: new_relayer_address.clone(),
+        };
+
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(
+            response.attributes,
+            [("action", format!("Relayer {:?} added", new_relayer_address))]
+        );
+
+        // Ensure relayer is added successfully
+        wallet_info.relayers.push(new_relayer_address);
+        let new_wallet_info = query_info(deps.as_ref()).unwrap();
+        assert!(new_wallet_info.relayers == new_wallet_info.relayers);
+    }
+
+    #[test]
+    fn add_relayer() {
+        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let user_addr = do_instantiate(deps.as_mut());
+
+        // initially we have a wallet with 2 relayers
+        let mut wallet_info = query_info(deps.as_ref()).unwrap();
+
+        let info = mock_info(user_addr.as_str(), &[]);
+        let env = mock_env();
+
+        let new_relayer_address = Addr::unchecked(RELAYER3);
+        let msg = ExecuteMsg::AddRelayer {
+            new_relayer_address: new_relayer_address.clone(),
+        };
+
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(
+            response.attributes,
+            [("action", format!("Relayer {:?} added", new_relayer_address))]
+        );
+
+        // Ensure relayer is added successfully
+        wallet_info.relayers.push(new_relayer_address);
+        let new_wallet_info = query_info(deps.as_ref()).unwrap();
+        assert!(new_wallet_info.relayers == new_wallet_info.relayers);
+    }
+
+    #[test]
+    fn user_can_remove_relayer() {
+        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let user_addr = do_instantiate(deps.as_mut());
+
+        // initially we have a wallet with 2 relayers
+        let mut wallet_info = query_info(deps.as_ref()).unwrap();
+
+        let info = mock_info(user_addr.as_str(), &[]);
+        let env = mock_env();
+
+        let relayer_address = Addr::unchecked(RELAYER2);
+        let msg = ExecuteMsg::RemoveRelayer {
+            relayer_address: relayer_address.clone(),
+        };
+
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(
+            response.attributes,
+            [("action", format!("Relayer {:?} removed", relayer_address))]
+        );
+
+        // Ensure relayer is removed successfully
+        wallet_info.relayers = wallet_info
+            .relayers
+            .into_iter()
+            .filter(|relayer| *relayer == relayer_address)
+            .collect();
+        let new_wallet_info = query_info(deps.as_ref()).unwrap();
+        assert!(new_wallet_info.relayers == new_wallet_info.relayers);
     }
 
     #[test]

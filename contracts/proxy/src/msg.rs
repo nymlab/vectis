@@ -40,6 +40,16 @@ where
     RotateUserKey {
         new_user_address: String,
     },
+    // /// Adding a new relayer
+    // /// Priviledge: User/Multisig
+    AddRelayer {
+        new_relayer_address: Addr,
+    },
+    // /// Removing relayer
+    // /// Priviledge: User/Multisig
+    RemoveRelayer {
+        relayer_address: Addr,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
