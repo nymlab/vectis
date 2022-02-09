@@ -54,7 +54,10 @@ pub fn execute(
         } => migrate_wallet(deps, info, wallet_address, proxy_migration_msg),
         ExecuteMsg::UpdateProxyCodeId { new_code_id } => {
             update_proxy_code_id(deps, info, new_code_id)
-        }
+        },
+        ExecuteMsg::UpdateProxyMultisigCodeId { new_code_id } => {
+            update_proxy_multisig_code_id(deps, info, new_code_id)
+        },
     }
 }
 
@@ -209,7 +212,7 @@ fn update_proxy_code_id(
                 current_code_id = new_code_id;
                 Ok(current_code_id)
             } else {
-                Err(ContractError::SameCodeId {})
+                Err(ContractError::SameProxyCodeId {})
             }
         },
     )?;
@@ -217,6 +220,30 @@ fn update_proxy_code_id(
     Ok(Response::new()
         .add_attribute("config", "Proxy Code Id")
         .add_attribute("proxy_code_id", format!("{}", updated_code_id)))
+}
+
+/// Updates the latest proxy multisig code id for the supported `wallet_proxy`
+fn update_proxy_multisig_code_id(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_code_id: u64,
+) -> Result<Response, ContractError> {
+    ensure_is_admin(deps.as_ref(), info.sender.as_ref())?;
+    let updated_code_id = PROXY_MULTISIG_CODE_ID.update(
+        deps.storage,
+        |mut current_code_id| -> Result<_, ContractError> {
+            if current_code_id != new_code_id {
+                current_code_id = new_code_id;
+                Ok(current_code_id)
+            } else {
+                Err(ContractError::SameProxyMultisigCodeId {})
+            }
+        },
+    )?;
+
+    Ok(Response::new()
+        .add_attribute("config", "Proxy Multisig Code Id")
+        .add_attribute("proxy_multisig_code_id", format!("{}", updated_code_id)))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

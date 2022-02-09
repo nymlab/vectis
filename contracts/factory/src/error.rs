@@ -17,8 +17,10 @@ pub enum ContractError {
     NotFound { addr: Addr },
     #[error("OverFlow")]
     OverFlow {},
-    #[error("SameCodeId")]
-    SameCodeId {},
+    #[error("SameProxyCodeId")]
+    SameProxyCodeId {},
+    #[error("SameProxyMultisigCodeId")]
+    SameProxyMultisigCodeId {},
     #[error("Unauthorized")]
     Unauthorized {},
     #[error("InvalidMigrationMsg: {0}")]
