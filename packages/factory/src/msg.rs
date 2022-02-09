@@ -48,6 +48,9 @@ pub enum WalletFactoryExecuteMsg {
     UpdateProxyCodeId {
         new_code_id: u64,
     },
+    UpdateProxyMultisigCodeId {
+        new_code_id: u64,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
