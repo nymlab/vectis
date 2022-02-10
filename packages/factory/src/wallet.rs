@@ -86,4 +86,5 @@ pub struct ProxyMigrateMsg {
 pub struct MultisigMigrateMsg {
     // New guardians setting
     pub new_guardians: Guardians,
+    pub new_multisig_code_id: u64,
 }

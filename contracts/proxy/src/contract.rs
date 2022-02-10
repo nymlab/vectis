@@ -8,6 +8,7 @@ use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 use sc_wallet::{pub_key_to_address, query_verify_cosmos, RelayTransaction, WalletInfo};
 use schemars::JsonSchema;
+use std::collections::BTreeSet;
 use std::fmt;
 
 use crate::error::ContractError;
@@ -389,6 +390,13 @@ pub fn load_addresses(deps: &Deps, addresses: Map<&[u8], ()>) -> StdResult<Vec<A
         .collect()
 }
 
+/// Load canonical addresses from store
+pub fn load_canonical_addresses(deps: &Deps, addresses: Map<&[u8], ()>) -> BTreeSet<Vec<u8>> {
+    addresses
+        .keys(deps.storage, None, None, Order::Ascending)
+        .collect()
+}
+
 /// Returns wallet info
 pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
     let guardians = load_addresses(&deps, GUARDIANS)?;
@@ -424,7 +432,7 @@ pub fn query_can_execute_relay(deps: Deps, sender: String) -> StdResult<CanExecu
 
 #[cfg(feature = "migration")]
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     match msg {
         MigrateMsg::Proxy(msg) => {
             CODE_ID.update(
@@ -438,10 +446,71 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                     }
                 },
             )?;
+            Ok(Response::default())
         }
-        MigrateMsg::Multisig(_) => (),
-    };
-    Ok(Response::default())
+        MigrateMsg::Multisig(msg) => {
+            let guardians = load_canonical_addresses(&deps.as_ref(), GUARDIANS);
+            let new_guardian_addresses: Result<BTreeSet<Vec<u8>>, _> = msg
+                .new_guardians
+                .addresses
+                .iter()
+                // CanonicalAddr does not support Ord trait ;(
+                .map(|guardian| {
+                    deps.api
+                        .addr_canonicalize(guardian)
+                        .map(|guardian_addr| guardian_addr.as_slice().to_vec())
+                })
+                .collect();
+            let new_guardian_addresses = new_guardian_addresses?;
+
+            // Guardians to remove from storage
+            let guardians_to_remove: Vec<_> = guardians
+                .difference(&new_guardian_addresses)
+                .cloned()
+                .collect();
+
+            for guardian in guardians_to_remove {
+                GUARDIANS.remove(deps.storage, &guardian);
+            }
+
+            // Guardians to insert into storage
+            let guardians_to_insert: Vec<_> = new_guardian_addresses
+                .difference(&guardians)
+                .cloned()
+                .collect();
+
+            for guardian in guardians_to_insert {
+                GUARDIANS.save(deps.storage, &guardian, &())?;
+            }
+
+            // Instantiates a cw3 multisig contract if multisig option is provided for guardians
+            let resp = if let Some(multisig) = msg.new_guardians.guardians_multisig {
+                let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
+                    voters: addresses_to_voters(&msg.new_guardians.addresses),
+                    threshold: Threshold::AbsoluteCount {
+                        weight: multisig.threshold_absolute_count,
+                    },
+                    max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
+                };
+
+                let instantiate_msg = WasmMsg::Instantiate {
+                    admin: Some(env.contract.address.to_string()),
+                    code_id: msg.new_multisig_code_id,
+                    msg: to_binary(&multisig_instantiate_msg)?,
+                    funds: multisig.multisig_initial_funds,
+                    label: "Wallet-Multisig".into(),
+                };
+                let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
+                Response::new().add_submessage(msg)
+            } else {
+                // Unset multisig address
+                MULTISIG_ADDRESS.remove(deps.storage);
+                Response::default()
+            };
+
+            Ok(resp)
+        }
+    }
 }
 
 // Converts addresses to voters with weight of 1
