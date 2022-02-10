@@ -41,9 +41,15 @@ pub enum WalletFactoryExecuteMsg {
     CreateWallet {
         create_wallet_msg: CreateWalletMsg,
     },
+    // migrates wallet
     MigrateWallet {
         wallet_address: WalletAddr,
-        proxy_migration_msg: ProxyMigrationMsg,
+        migration_msg: ProxyMigrationMsg,
+    },
+    // migrates multisig contract for specific wallet
+    MigrateMultisigContract {
+        wallet_address: WalletAddr,
+        migration_msg: ProxyMigrationMsg,
     },
     UpdateProxyCodeId {
         new_code_id: u64,

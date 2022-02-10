@@ -31,11 +31,11 @@
         "migrate_wallet": {
           "type": "object",
           "required": [
-            "proxy_migration_msg",
+            "migration_msg",
             "wallet_address"
           ],
           "properties": {
-            "proxy_migration_msg": {
+            "migration_msg": {
               "$ref": "#/definitions/ProxyMigrationMsg"
             },
             "wallet_address": {

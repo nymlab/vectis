@@ -425,17 +425,22 @@ pub fn query_can_execute_relay(deps: Deps, sender: String) -> StdResult<CanExecu
 #[cfg(feature = "migration")]
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    CODE_ID.update(
-        deps.storage,
-        |mut current_code_id| -> Result<_, ContractError> {
-            if current_code_id != msg.new_code_id {
-                current_code_id = msg.new_code_id;
-                Ok(current_code_id)
-            } else {
-                Err(ContractError::SameCodeId {})
-            }
-        },
-    )?;
+    match msg {
+        MigrateMsg::Proxy(msg) => {
+            CODE_ID.update(
+                deps.storage,
+                |mut current_code_id| -> Result<_, ContractError> {
+                    if current_code_id != msg.new_code_id {
+                        current_code_id = msg.new_code_id;
+                        Ok(current_code_id)
+                    } else {
+                        Err(ContractError::SameCodeId {})
+                    }
+                },
+            )?;
+        }
+        MigrateMsg::Multisig(_) => (),
+    };
     Ok(Response::default())
 }
 
