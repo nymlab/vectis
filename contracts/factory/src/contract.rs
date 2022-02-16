@@ -244,7 +244,7 @@ fn ensure_is_valid_migration_msg(
                 return Err(ContractError::Unauthorized {});
             } else {
                 // Ensure Signer of relayed message is the wallet user
-                if wallet_info.user_addr != pub_key_to_address(&deps, &tx.user_pubkey.0)? {
+                if wallet_info.user_addr != pub_key_to_address(deps, &tx.user_pubkey.0)? {
                     return Err(ContractError::InvalidRelayMigrationTx(
                         RelayTxError::IsNotUser {},
                     ));
@@ -258,7 +258,7 @@ fn ensure_is_valid_migration_msg(
                 };
 
                 // Verify signature
-                if !query_verify_cosmos(&deps, &tx)? {
+                if !query_verify_cosmos(deps, &tx)? {
                     return Err(ContractError::InvalidRelayMigrationTx(
                         RelayTxError::SignatureVerificationError {},
                     ));
