@@ -1,4 +1,4 @@
-use crate::error::{ContractError, MigrationMsgError, RelayMigrationError};
+use crate::error::{ContractError, MigrationMsgError};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{ADMIN, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED, WALLETS};
 #[cfg(not(feature = "library"))]
@@ -11,7 +11,7 @@ use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 pub use sc_wallet::{
     pub_key_to_address, query_verify_cosmos, CreateWalletMsg, Guardians, MigrateMsg,
-    ProxyMigrationMsg, RelayTransaction, WalletAddr, WalletInfo,
+    ProxyMigrationMsg, RelayTransaction, RelayTxError, WalletAddr, WalletInfo,
 };
 use wallet_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
@@ -246,21 +246,21 @@ fn ensure_is_valid_migration_msg(
                 // Ensure Signer of relayed message is the wallet user
                 if wallet_info.user_addr != pub_key_to_address(&deps, &tx.user_pubkey.0)? {
                     return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayMigrationError::MismatchUserAddr,
+                        RelayTxError::IsNotUser {},
                     ));
                 };
 
                 // Ensure none of relayed message is the expected next wallet nonce
                 if wallet_info.nonce != tx.nonce {
                     return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayMigrationError::MismatchNonce,
+                        RelayTxError::NoncesAreNotEqual {},
                     ));
                 };
 
                 // Verify signature
                 if !query_verify_cosmos(&deps, &tx)? {
                     return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayMigrationError::SignatureVerificationError,
+                        RelayTxError::SignatureVerificationError {},
                     ));
                 };
 

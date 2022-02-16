@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::ContractError;
 use cosmwasm_std::CanonicalAddr;
 use cw_storage_plus::{Item, Map};
-use sc_wallet::Nonce;
+use sc_wallet::{Nonce, RelayTxError};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct User {
@@ -28,7 +28,9 @@ impl User {
         if self.nonce.eq(nonce) {
             Ok(())
         } else {
-            Err(ContractError::NoncesAreNotEqual {})
+            Err(ContractError::RelayTxError(
+                RelayTxError::NoncesAreNotEqual {},
+            ))
         }
     }
 

@@ -14,3 +14,4 @@ hex = { version = "0.4", default-features = false }
 bech32 = "0.8.1"
 primitive-types = {version = "0.10.1", default-features = false, features = ["byteorder"]}
 cw2 = "0.10.0"
+thiserror = { version = "1.0.26" }

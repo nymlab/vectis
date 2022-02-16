@@ -1,3 +1,4 @@
+pub use crate::error::RelayTxError;
 pub use crate::msg::{
     CreateWalletMsg, Guardians, MultiSig, ThresholdAbsoluteCount, WalletFactoryExecuteMsg,
 };
@@ -7,7 +8,7 @@ pub use crate::wallet::{
     MigrateMsg, MultisigMigrateMsg, Nonce, ProxyMigrateMsg, ProxyMigrationMsg, RelayTransaction,
     WalletAddr, WalletInfo,
 };
-
+mod error;
 mod msg;
 mod pubkey;
 mod signature;
