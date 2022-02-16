@@ -975,7 +975,10 @@ mod tests {
 
         let response = execute_relay(deps.as_mut(), info, relay_transaction).unwrap_err();
 
-        assert_eq!(response, ContractError::IsNotUser {});
+        assert_eq!(
+            response,
+            ContractError::RelayTxError(RelayTxError::IsNotUser {})
+        );
     }
 
     #[test]
@@ -1017,6 +1020,9 @@ mod tests {
 
         let response = execute_relay(deps.as_mut(), info, relay_transaction).unwrap_err();
 
-        assert_eq!(response, ContractError::NoncesAreNotEqual {});
+        assert_eq!(
+            response,
+            ContractError::RelayTxError(RelayTxError::NoncesAreNotEqual {})
+        );
     }
 }

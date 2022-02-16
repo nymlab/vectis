@@ -34,8 +34,12 @@ pub enum ContractError {
 pub enum MigrationMsgError {
     #[error("InvalidWalletAddr")]
     InvalidWalletAddr,
+    #[error("InvalidMultisigAddr")]
+    InvalidMultisigAddr,
     #[error("MismatchCodeId")]
     MismatchCodeId,
     #[error("InvalidWasmMsg")]
     InvalidWasmMsg,
+    #[error("MultisigFeatureIsNotSet")]
+    MultisigFeatureIsNotSet,
 }

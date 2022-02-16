@@ -46,7 +46,7 @@ pub enum WalletFactoryExecuteMsg {
         wallet_address: WalletAddr,
         migration_msg: ProxyMigrationMsg,
     },
-    // migrates multisig contract for specific wallet
+    // migrates multisig contract of the specific wallet
     MigrateMultisigContract {
         wallet_address: WalletAddr,
         migration_msg: ProxyMigrationMsg,

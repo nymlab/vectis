@@ -340,10 +340,11 @@ fn create_new_proxy_with_multisig_guardians() {
     );
 
     let init_wallet_fund: Coin = coin(100, "ucosm");
+    let init_multisig_fund: Coin = coin(100, "ucosm");
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![],
+        multisig_initial_funds: vec![init_multisig_fund],
     };
 
     let rsp = suite.create_new_proxy(
@@ -574,13 +575,14 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
-    let multisig_address = w.multisig_address;
+    let multisig_address = w.multisig_address.unwrap();
     let sc_proxy_multisig_code_id = suite.sc_proxy_multisig_code_id;
+    let old_multisig_code_id = w.multisig_code_id;
 
-    assert_eq!(old_code_id, suite.sc_proxy_multisig_code_id);
+    assert_eq!(old_multisig_code_id, suite.sc_proxy_multisig_code_id);
 
-    let new_code_id = suite.app.store_code(contract_multisig());
-    let r = suite.update_proxy_multisig_code_id(new_code_id, factory.clone());
+    let new_multisig_code_id = suite.app.store_code(contract_multisig());
+    let r = suite.update_proxy_multisig_code_id(new_multisig_code_id, factory.clone());
     assert!(r.is_ok());
 
     // User migrates their proxy related multisig contract to the new code id
@@ -588,11 +590,11 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         wallet_address: WalletAddr::Addr(wallet_address.clone()),
         migration_msg: ProxyMigrationMsg::DirectMigrationMsg(
             to_binary(&CosmosMsg::<()>::Wasm(WasmMsg::Migrate {
-                contract_addr: wallet_address.to_string(),
-                new_code_id,
+                contract_addr: multisig_address.to_string(),
+                new_code_id: new_multisig_code_id,
                 msg: to_binary(&MigrateMsg::Multisig(MultisigMigrateMsg {
                     new_guardians: None,
-                    new_code_id,
+                    new_multisig_code_id,
                 }))
                 .unwrap(),
             }))
@@ -609,80 +611,56 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
 
     assert!(execute_msg_resp.is_ok());
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    assert_eq!(new_w.code_id, new_code_id);
-    assert_ne!(new_code_id, old_code_id);
-
-    // user can execute message after migration
-    let send_amount: Coin = coin(10, "ucosm");
-    let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
-        to_address: factory.to_string(),
-        amount: vec![send_amount.clone()],
-    });
-
-    let execute_msg_resp = suite.app.execute_contract(
-        user,
-        wallet_address.clone(),
-        &ProxyExecuteMsg::Execute { msgs: vec![msg] },
-        &[],
-    );
-    assert!(execute_msg_resp.is_ok());
-
-    let wallet_fund = suite
-        .query_balance(&wallet_address, "ucosm".into())
-        .unwrap();
-
-    assert_eq!(
-        init_proxy_fund.amount - send_amount.amount,
-        wallet_fund.amount
-    );
+    assert_eq!(new_w.multisig_code_id, new_multisig_code_id);
+    assert_ne!(new_multisig_code_id, old_multisig_code_id);
 }
 
-#[test]
-fn relayer_can_migrate_proxy_multisig_with_user_signature() {
-    let mut suite = Suite::init().unwrap();
-    let factory =
-        suite.instantiate_factory(suite.sc_proxy_id, suite.sc_proxy_multisig_code_id, vec![]);
-    let create_proxy_rsp = suite.create_new_proxy(factory.clone(), vec![], None);
-    assert!(create_proxy_rsp.is_ok());
-    let wallet_address = suite
-        .query_wallet_addresses(&factory)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap();
-    let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    let old_code_id = w.code_id;
-    let relayer = w.relayers.pop().unwrap();
-    assert_eq!(old_code_id, suite.sc_proxy_id);
+// #[test]
+// fn relayer_can_migrate_proxy_multisig_with_user_signature() {
+//     let mut suite = Suite::init().unwrap();
+//     let factory =
+//         suite.instantiate_factory(suite.sc_proxy_id, suite.sc_proxy_multisig_code_id, vec![]);
+//     let create_proxy_rsp = suite.create_new_proxy(factory.clone(), vec![], None);
+//     assert!(create_proxy_rsp.is_ok());
+//     let wallet_address = suite
+//         .query_wallet_addresses(&factory)
+//         .unwrap()
+//         .wallets
+//         .pop()
+//         .unwrap();
+//     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
+//     let old_code_id = w.code_id;
+//     let relayer = w.relayers.pop().unwrap();
+//     assert_eq!(old_code_id, suite.sc_proxy_id);
 
-    let new_code_id = suite.app.store_code(contract_proxy());
-    let r = suite.update_proxy_code_id(new_code_id, factory.clone());
-    assert!(r.is_ok());
+//     let new_code_id = suite.app.store_code(contract_proxy());
+//     let r = suite.update_proxy_code_id(new_code_id, factory.clone());
+//     assert!(r.is_ok());
 
-    let migrate_msg = CosmosMsg::Wasm(WasmMsg::Migrate {
-        contract_addr: wallet_address.to_string(),
-        new_code_id,
-        msg: to_binary(&MigrateMsg::Proxy(ProxyMigrateMsg { new_code_id })).unwrap(),
-    });
+//     let migrate_msg = CosmosMsg::Wasm(WasmMsg::Migrate {
+//         contract_addr: wallet_address.to_string(),
+//         new_code_id,
+//         msg: to_binary(&MigrateMsg::Proxy(ProxyMigrateMsg { new_code_id })).unwrap(),
+//     });
 
-    let relay_transaction = suite.create_relay_transaction(USER_PRIV, migrate_msg, w.nonce);
-    println!("{:?}", relay_transaction.signature);
+//     let relay_transaction = suite.create_relay_transaction(USER_PRIV, migrate_msg, w.nonce);
+//     println!("{:?}", relay_transaction.signature);
 
-    let execute_msg_resp = suite.app.execute_contract(
-        relayer,
-        factory.clone(),
-        &FactoryExecuteMsg::MigrateWallet {
-            wallet_address: WalletAddr::Addr(wallet_address.clone()),
-            migration_msg: ProxyMigrationMsg::RelayTx(relay_transaction),
-        },
-        &[],
-    );
-    assert!(execute_msg_resp.is_ok());
+//     let execute_msg_resp = suite.app.execute_contract(
+//         relayer,
+//         factory.clone(),
+//         &FactoryExecuteMsg::MigrateWallet {
+//             wallet_address: WalletAddr::Addr(wallet_address.clone()),
+//             migration_msg: ProxyMigrationMsg::RelayTx(relay_transaction),
+//         },
+//         &[],
+//     );
+//     assert!(execute_msg_resp.is_ok());
 
-    let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    assert_eq!(new_w.code_id, new_code_id);
-    assert_ne!(new_code_id, old_code_id);
-}
+//     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
+//     assert_eq!(new_w.code_id, new_code_id);
+//     assert_ne!(new_code_id, old_code_id);
+// }
 
 #[test]
 fn user_cannot_migrate_others_wallet() {
@@ -852,7 +830,7 @@ fn relayer_cannot_migrate_others_wallet() {
     );
     assert_eq!(
         execute_msg_resp.unwrap_err().to_string(),
-        String::from("InvalidRelayMigrationTx: MismatchNonce")
+        String::from("InvalidRelayMigrationTx: NoncesAreNotEqual")
     );
 }
 
