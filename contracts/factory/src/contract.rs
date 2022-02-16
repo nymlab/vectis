@@ -199,14 +199,24 @@ fn migrate_multisig_contract(
         // Ensure provided msg is multisig msg
         msg.ensure_is_multisig_msg()?;
 
-        // Ensure migrating the corret wallet at given address
-        if contract_addr != wallet_addr {
-            return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::InvalidWalletAddr,
-            ));
+        // Ensure migrating the correct wallet at given address
+        match wallet_info.multisig_address {
+            Some(multisig_address) if contract_addr != multisig_address => {
+                return Err(ContractError::InvalidMigrationMsg(
+                    MigrationMsgError::InvalidMultisigAddr,
+                ));
+            }
+            None => {
+                return Err(ContractError::InvalidMigrationMsg(
+                    MigrationMsgError::MultisigFeatureIsNotSet,
+                ))
+            }
+            _ => (),
         }
         // Ensure user knows the latest supported proxy multisig code id
-        if new_code_id != PROXY_MULTISIG_CODE_ID.load(deps.storage)? {
+        if new_code_id != PROXY_MULTISIG_CODE_ID.load(deps.storage)?
+            || new_code_id == wallet_info.multisig_code_id
+        {
             return Err(ContractError::InvalidMigrationMsg(
                 MigrationMsgError::MismatchCodeId,
             ));
