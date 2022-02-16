@@ -4,8 +4,8 @@ use crate::state::{ADMIN, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED, 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, CanonicalAddr, ContractResult, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Order, Reply, Response, StdError, StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CanonicalAddr, ContractResult, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -126,51 +126,8 @@ fn migrate_wallet(
     // or relayed by the proxy relayer via `ProxyMigrationMsg::RelayTx`.
     //
     // Different safety checks are applied
-    let tx_msg: CosmosMsg = match migration_msg {
-        ProxyMigrationMsg::RelayTx(tx) => {
-            let can_execute_relay: CanExecuteResponse = deps.querier.query_wasm_smart(
-                wallet_addr.clone(),
-                &ProxyQueryMsg::CanExecuteRelay {
-                    sender: info.sender.to_string(),
-                },
-            )?;
-
-            // Ensure caller is a wallet relayer
-            if !can_execute_relay.can_execute {
-                return Err(ContractError::Unauthorized {});
-            } else {
-                // Ensure Signer of relayed message is the wallet user
-                if wallet_info.user_addr != pub_key_to_address(&deps, &tx.user_pubkey.0)? {
-                    return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayMigrationError::MismatchUserAddr,
-                    ));
-                };
-
-                // Ensure none of relayed message is the expected next wallet nonce
-                if wallet_info.nonce != tx.nonce {
-                    return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayMigrationError::MismatchNonce,
-                    ));
-                };
-
-                // Verify signature
-                if !query_verify_cosmos(&deps, &tx)? {
-                    return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayMigrationError::SignatureVerificationError,
-                    ));
-                };
-
-                cosmwasm_std::from_slice(tx.message.0.as_slice())?
-            }
-        }
-        ProxyMigrationMsg::DirectMigrationMsg(msg) => {
-            // Ensure caller is the wallet user
-            if wallet_info.user_addr != info.sender {
-                return Err(ContractError::Unauthorized {});
-            }
-            cosmwasm_std::from_slice(&msg)?
-        }
-    };
+    let tx_msg: CosmosMsg =
+        ensure_is_valid_migration_msg(&deps, info, &wallet_info, &wallet_addr, migration_msg)?;
 
     // Further checks applied to ensure user has signed the correct relay msg / tx
     if let CosmosMsg::Wasm(WasmMsg::Migrate {
@@ -227,6 +184,52 @@ fn migrate_multisig_contract(
     // or relayed by the proxy relayer via `ProxyMigrationMsg::RelayTx`.
     //
     // Different safety checks are applied
+    let tx_msg: CosmosMsg =
+        ensure_is_valid_migration_msg(&deps, info, &wallet_info, &wallet_addr, migration_msg)?;
+
+    // Further checks applied to ensure user has signed the correct relay msg / tx
+    if let CosmosMsg::Wasm(WasmMsg::Migrate {
+        contract_addr,
+        new_code_id,
+        msg,
+    }) = tx_msg.clone()
+    {
+        let msg: MigrateMsg = cosmwasm_std::from_slice(&msg)?;
+
+        // Ensure provided msg is multisig msg
+        msg.ensure_is_multisig_msg()?;
+
+        // Ensure migrating the corret wallet at given address
+        if contract_addr != wallet_addr {
+            return Err(ContractError::InvalidMigrationMsg(
+                MigrationMsgError::InvalidWalletAddr,
+            ));
+        }
+        // Ensure user knows the latest supported proxy multisig code id
+        if new_code_id != PROXY_MULTISIG_CODE_ID.load(deps.storage)? {
+            return Err(ContractError::InvalidMigrationMsg(
+                MigrationMsgError::MismatchCodeId,
+            ));
+        };
+    } else {
+        return Err(ContractError::InvalidMigrationMsg(
+            MigrationMsgError::InvalidWasmMsg,
+        ));
+    }
+
+    Ok(Response::new()
+        .add_message(tx_msg)
+        .add_attribute("action", "multisig contract migration"))
+}
+
+// Perform security checks to ensure migration message is valid
+fn ensure_is_valid_migration_msg(
+    deps: &DepsMut,
+    info: MessageInfo,
+    wallet_info: &WalletInfo,
+    wallet_addr: &Addr,
+    migration_msg: ProxyMigrationMsg,
+) -> Result<CosmosMsg, ContractError> {
     let tx_msg: CosmosMsg = match migration_msg {
         ProxyMigrationMsg::RelayTx(tx) => {
             let can_execute_relay: CanExecuteResponse = deps.querier.query_wasm_smart(
@@ -272,40 +275,7 @@ fn migrate_multisig_contract(
             cosmwasm_std::from_slice(&msg)?
         }
     };
-
-    // Further checks applied to ensure user has signed the correct relay msg / tx
-    if let CosmosMsg::Wasm(WasmMsg::Migrate {
-        contract_addr,
-        new_code_id,
-        msg,
-    }) = tx_msg.clone()
-    {
-        let msg: MigrateMsg = cosmwasm_std::from_slice(&msg)?;
-
-        // Ensure provided msg is multisig msg
-        msg.ensure_is_multisig_msg()?;
-
-        // Ensure migrating the corret wallet at given address
-        if contract_addr != wallet_addr {
-            return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::InvalidWalletAddr,
-            ));
-        }
-        // Ensure user knows the latest supported proxy multisig code id
-        if new_code_id != PROXY_MULTISIG_CODE_ID.load(deps.storage)? {
-            return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::MismatchCodeId,
-            ));
-        };
-    } else {
-        return Err(ContractError::InvalidMigrationMsg(
-            MigrationMsgError::InvalidWasmMsg,
-        ));
-    }
-
-    Ok(Response::new()
-        .add_message(tx_msg)
-        .add_attribute("action", "multisig contract migration"))
+    Ok(tx_msg)
 }
 
 /// Updates the latest code id for the supported `wallet_proxy`
