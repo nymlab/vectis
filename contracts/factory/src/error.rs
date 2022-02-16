@@ -1,4 +1,5 @@
 use cosmwasm_std::{Addr, StdError};
+use sc_wallet::RelayTxError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -26,7 +27,7 @@ pub enum ContractError {
     #[error("InvalidMigrationMsg: {0}")]
     InvalidMigrationMsg(MigrationMsgError),
     #[error("InvalidRelayMigrationTx: {0}")]
-    InvalidRelayMigrationTx(RelayMigrationError),
+    InvalidRelayMigrationTx(RelayTxError),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -37,14 +38,4 @@ pub enum MigrationMsgError {
     MismatchCodeId,
     #[error("InvalidWasmMsg")]
     InvalidWasmMsg,
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum RelayMigrationError {
-    #[error("MismatchUserAddr")]
-    MismatchUserAddr,
-    #[error("MismatchNonce")]
-    MismatchNonce,
-    #[error("SignatureVerificationError")]
-    SignatureVerificationError,
 }

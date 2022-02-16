@@ -17,6 +17,7 @@ use crate::state::{User, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, 
 use cw3_fixed_multisig::msg::{InstantiateMsg as FixedMultisigInstantiateMsg, Voter};
 use cw_storage_plus::Map;
 use cw_utils::{Duration, Threshold};
+use sc_wallet::RelayTxError;
 
 #[cfg(feature = "migration")]
 use sc_wallet::MigrateMsg;
@@ -175,7 +176,9 @@ pub fn execute_relay(
             Err(ContractError::InvalidMessage {})
         }
     } else {
-        Err(ContractError::SignatureVerificationError {})
+        Err(ContractError::RelayTxError(
+            RelayTxError::SignatureVerificationError {},
+        ))
     }
 }
 
@@ -330,7 +333,7 @@ pub fn ensure_is_user(deps: Deps, sender: &str) -> Result<User, ContractError> {
     if registered_user.addr == s {
         Ok(registered_user)
     } else {
-        Err(ContractError::IsNotUser {})
+        Err(ContractError::RelayTxError(RelayTxError::IsNotUser {}))
     }
 }
 
