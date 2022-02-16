@@ -50,6 +50,7 @@ impl User {
 pub const FROZEN: Item<bool> = Item::new("frozen");
 pub const FACTORY: Item<CanonicalAddr> = Item::new("factory");
 pub const CODE_ID: Item<u64> = Item::new("code_id");
+pub const MULTISIG_CODE_ID: Item<u64> = Item::new("multisig_code_id");
 pub const USER: Item<User> = Item::new("user");
 pub const GUARDIANS: Map<&[u8], ()> = Map::new("guardians");
 pub const RELAYERS: Map<&[u8], ()> = Map::new("relayers");

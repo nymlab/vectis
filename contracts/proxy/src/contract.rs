@@ -13,7 +13,9 @@ use std::fmt;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{User, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, RELAYERS, USER};
+use crate::state::{
+    User, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, MULTISIG_CODE_ID, RELAYERS, USER,
+};
 use cw3_fixed_multisig::msg::{InstantiateMsg as FixedMultisigInstantiateMsg, Voter};
 use cw_storage_plus::Map;
 use cw_utils::{Duration, Threshold};
@@ -47,6 +49,7 @@ pub fn instantiate(
         &deps.api.addr_canonicalize(info.sender.as_ref())?,
     )?;
     CODE_ID.save(deps.storage, &msg.code_id)?;
+    MULTISIG_CODE_ID.save(deps.storage, &msg.multisig_code_id)?;
 
     // get user addr from it's pubkey
     let addr_human = pub_key_to_address(&deps, &msg.create_wallet_msg.user_pubkey.0)?;
@@ -418,6 +421,7 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
         nonce: user.nonce,
         version: cw2::get_contract_version(deps.storage)?,
         code_id: CODE_ID.load(deps.storage)?,
+        multisig_code_id: MULTISIG_CODE_ID.load(deps.storage)?,
         guardians,
         relayers,
         is_frozen: FROZEN.load(deps.storage)?,
@@ -452,62 +456,72 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
             Ok(Response::default())
         }
         MigrateMsg::Multisig(msg) => {
-            let guardians = load_canonical_addresses(&deps.as_ref(), GUARDIANS);
-            let new_guardian_addresses: Result<BTreeSet<Vec<u8>>, _> = msg
-                .new_guardians
-                .addresses
-                .iter()
-                // CanonicalAddr does not support Ord trait ;(
-                .map(|guardian| {
-                    deps.api
-                        .addr_canonicalize(guardian)
-                        .map(|guardian_addr| guardian_addr.as_slice().to_vec())
-                })
-                .collect();
-            let new_guardian_addresses = new_guardian_addresses?;
+            // If guardians set changed
+            let new_guardians = if let Some(new_guardians) = msg.new_guardians {
+                let guardians = load_canonical_addresses(&deps.as_ref(), GUARDIANS);
+                let new_guardian_addresses: Result<BTreeSet<Vec<u8>>, _> = new_guardians
+                    .addresses
+                    .iter()
+                    // CanonicalAddr does not support Ord trait ;(
+                    .map(|guardian| {
+                        deps.api
+                            .addr_canonicalize(guardian)
+                            .map(|guardian_addr| guardian_addr.as_slice().to_vec())
+                    })
+                    .collect();
+                let new_guardian_addresses = new_guardian_addresses?;
 
-            // Guardians to remove from storage
-            let guardians_to_remove: Vec<_> = guardians
-                .difference(&new_guardian_addresses)
-                .cloned()
-                .collect();
+                // Guardians to remove from storage
+                let guardians_to_remove: Vec<_> = guardians
+                    .difference(&new_guardian_addresses)
+                    .cloned()
+                    .collect();
 
-            for guardian in guardians_to_remove {
-                GUARDIANS.remove(deps.storage, &guardian);
-            }
+                for guardian in guardians_to_remove {
+                    GUARDIANS.remove(deps.storage, &guardian);
+                }
 
-            // Guardians to insert into storage
-            let guardians_to_insert: Vec<_> = new_guardian_addresses
-                .difference(&guardians)
-                .cloned()
-                .collect();
+                // Guardians to insert into storage
+                let guardians_to_insert: Vec<_> = new_guardian_addresses
+                    .difference(&guardians)
+                    .cloned()
+                    .collect();
 
-            for guardian in guardians_to_insert {
-                GUARDIANS.save(deps.storage, &guardian, &())?;
-            }
+                for guardian in guardians_to_insert {
+                    GUARDIANS.save(deps.storage, &guardian, &())?;
+                }
 
-            // Instantiates a cw3 multisig contract if multisig option is provided for guardians
-            let resp = if let Some(multisig) = msg.new_guardians.guardians_multisig {
-                let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
-                    voters: addresses_to_voters(&msg.new_guardians.addresses),
-                    threshold: Threshold::AbsoluteCount {
-                        weight: multisig.threshold_absolute_count,
-                    },
-                    max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
-                };
-
-                let instantiate_msg = WasmMsg::Instantiate {
-                    admin: Some(env.contract.address.to_string()),
-                    code_id: msg.new_multisig_code_id,
-                    msg: to_binary(&multisig_instantiate_msg)?,
-                    funds: multisig.multisig_initial_funds,
-                    label: "Wallet-Multisig".into(),
-                };
-                let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
-                Response::new().add_submessage(msg)
+                Some(new_guardians)
             } else {
-                // Unset multisig address
-                MULTISIG_ADDRESS.remove(deps.storage);
+                None
+            };
+
+            let resp = if let Some(new_guardians) = new_guardians {
+                // Instantiates a cw3 multisig contract if multisig option is provided for guardians
+                if let Some(multisig) = new_guardians.guardians_multisig {
+                    let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
+                        voters: addresses_to_voters(&new_guardians.addresses),
+                        threshold: Threshold::AbsoluteCount {
+                            weight: multisig.threshold_absolute_count,
+                        },
+                        max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
+                    };
+
+                    let instantiate_msg = WasmMsg::Instantiate {
+                        admin: Some(env.contract.address.to_string()),
+                        code_id: msg.new_multisig_code_id,
+                        msg: to_binary(&multisig_instantiate_msg)?,
+                        funds: multisig.multisig_initial_funds,
+                        label: "Wallet-Multisig".into(),
+                    };
+                    let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
+                    Response::new().add_submessage(msg)
+                } else {
+                    // Unset multisig address
+                    MULTISIG_ADDRESS.remove(deps.storage);
+                    Response::default()
+                }
+            } else {
                 Response::default()
             };
 
