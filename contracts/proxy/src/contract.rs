@@ -81,7 +81,7 @@ pub fn instantiate(
         };
 
         let instantiate_msg = WasmMsg::Instantiate {
-            admin: Some(env.contract.address.to_string()),
+            admin: Some(addr_human.to_string()),
             code_id: msg.multisig_code_id,
             msg: to_binary(&multisig_instantiate_msg)?,
             funds: multisig.multisig_initial_funds,

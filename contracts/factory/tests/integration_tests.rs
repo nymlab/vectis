@@ -68,6 +68,15 @@ fn contract_multisig() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
+fn updated_multisig_contract() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(
+        fixed_multisig_execute,
+        fixed_multisig_instantiate,
+        fixed_multisig_query,
+    );
+    Box::new(contract)
+}
+
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Suite {
@@ -214,7 +223,7 @@ impl Suite {
             .execute_contract(
                 self.owner.clone(),
                 factory,
-                &FactoryExecuteMsg::UpdateProxyCodeId { new_code_id },
+                &FactoryExecuteMsg::UpdateProxyMultisigCodeId { new_code_id },
                 &[],
             )
             .map_err(|err| anyhow!(err))
@@ -555,15 +564,26 @@ fn relayer_can_migrate_proxy_with_user_signature() {
 #[test]
 fn user_can_migrate_proxy_multisig_with_direct_message() {
     let mut suite = Suite::init().unwrap();
-    let init_wallet_fund: Coin = coin(100, "ucosm");
+    let init_wallet_fund: Coin = coin(300, "ucosm");
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         vec![init_wallet_fund],
     );
-    let init_proxy_fund: Coin = coin(90, "ucosm");
-    let create_proxy_rsp =
-        suite.create_new_proxy(factory.clone(), vec![init_proxy_fund.clone()], None);
+    let init_proxy_fund: Coin = coin(200, "ucosm");
+    let init_multisig_fund: Coin = coin(100, "ucosm");
+
+    let multisig = MultiSig {
+        threshold_absolute_count: MULTISIG_THRESHOLD,
+        multisig_initial_funds: vec![init_multisig_fund],
+    };
+
+    let create_proxy_rsp = suite.create_new_proxy(
+        factory.clone(),
+        vec![init_proxy_fund.clone()],
+        Some(multisig),
+    );
+
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
@@ -581,7 +601,7 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
 
     assert_eq!(old_multisig_code_id, suite.sc_proxy_multisig_code_id);
 
-    let new_multisig_code_id = suite.app.store_code(contract_multisig());
+    let new_multisig_code_id = suite.app.store_code(updated_multisig_contract());
     let r = suite.update_proxy_multisig_code_id(new_multisig_code_id, factory.clone());
     assert!(r.is_ok());
 
@@ -602,12 +622,15 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         ),
     };
 
+    println!("{:?}", user);
     let execute_msg_resp = suite.app.execute_contract(
         user.clone(),
         factory.clone(),
         &migrate_multisig_contract_msg,
         &[],
     );
+
+    println!("{:?}", execute_msg_resp);
 
     assert!(execute_msg_resp.is_ok());
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
