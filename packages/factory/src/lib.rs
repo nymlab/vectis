@@ -1,4 +1,4 @@
-pub use crate::error::RelayTxError;
+pub use crate::error::{MigrationMsgError, RelayTxError};
 pub use crate::msg::{
     CreateWalletMsg, Guardians, MultiSig, ThresholdAbsoluteCount, WalletFactoryExecuteMsg,
 };

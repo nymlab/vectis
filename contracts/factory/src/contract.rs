@@ -1,4 +1,4 @@
-use crate::error::{ContractError, MigrationMsgError};
+use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{ADMIN, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED, WALLETS};
 #[cfg(not(feature = "library"))]
@@ -11,7 +11,7 @@ use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 pub use sc_wallet::{
     pub_key_to_address, query_verify_cosmos, CreateWalletMsg, Guardians, MigrateMsg,
-    ProxyMigrationMsg, RelayTransaction, RelayTxError, WalletAddr, WalletInfo,
+    MigrationMsgError, ProxyMigrationMsg, RelayTransaction, RelayTxError, WalletAddr, WalletInfo,
 };
 use wallet_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
@@ -150,7 +150,7 @@ fn migrate_wallet(
         // Ensure user knows the latest supported proxy code id
         if new_code_id != PROXY_CODE_ID.load(deps.storage)? || new_code_id == wallet_info.code_id {
             return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::MismatchCodeId,
+                MigrationMsgError::MismatchProxyCodeId,
             ));
         };
     } else {
@@ -213,14 +213,18 @@ fn migrate_multisig_contract(
             }
             _ => (),
         }
-        // Ensure user knows the latest supported proxy multisig code id
-        if new_code_id != PROXY_MULTISIG_CODE_ID.load(deps.storage)?
-            || new_code_id == wallet_info.multisig_code_id
-        {
+
+        // Ensure user knows the latest supported proxy code id
+        if new_code_id != PROXY_CODE_ID.load(deps.storage)? {
             return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::MismatchCodeId,
+                MigrationMsgError::MismatchProxyCodeId,
             ));
         };
+
+        msg.ensure_is_correct_multisig_code_id(
+            PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
+            wallet_info.multisig_code_id,
+        )?;
     } else {
         return Err(ContractError::InvalidMigrationMsg(
             MigrationMsgError::InvalidWasmMsg,

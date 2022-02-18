@@ -16,9 +16,11 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
     User, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, MULTISIG_CODE_ID, RELAYERS, USER,
 };
-use cw3_fixed_multisig::msg::{InstantiateMsg as FixedMultisigInstantiateMsg, Voter};
+use cw3_fixed_multisig::msg::{
+    InstantiateMsg as FixedMultisigInstantiateMsg, QueryMsg as FixedMultisigQueryMsg, Voter,
+};
 use cw_storage_plus::Map;
-use cw_utils::{Duration, Threshold};
+use cw_utils::{Duration, Threshold, ThresholdResponse};
 use sc_wallet::RelayTxError;
 
 #[cfg(feature = "migration")]
@@ -38,7 +40,7 @@ const MULTISIG_INSTANTIATE_ID: u64 = u64::MAX;
 #[cfg_attr(not(any(feature = "library", feature = "migration")), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -81,7 +83,7 @@ pub fn instantiate(
         };
 
         let instantiate_msg = WasmMsg::Instantiate {
-            admin: Some(addr_human.to_string()),
+            admin: Some(msg.factory.to_string()),
             code_id: msg.multisig_code_id,
             msg: to_binary(&multisig_instantiate_msg)?,
             funds: multisig.multisig_initial_funds,
@@ -439,25 +441,15 @@ pub fn query_can_execute_relay(deps: Deps, sender: String) -> StdResult<CanExecu
 
 #[cfg(feature = "migration")]
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     match msg {
         MigrateMsg::Proxy(msg) => {
-            CODE_ID.update(
-                deps.storage,
-                |mut current_code_id| -> Result<_, ContractError> {
-                    if current_code_id != msg.new_code_id {
-                        current_code_id = msg.new_code_id;
-                        Ok(current_code_id)
-                    } else {
-                        Err(ContractError::SameCodeId {})
-                    }
-                },
-            )?;
+            CODE_ID.save(deps.storage, &msg.new_code_id)?;
             Ok(Response::default())
         }
         MigrateMsg::Multisig(msg) => {
             // If guardians set changed
-            let new_guardians = if let Some(new_guardians) = msg.new_guardians {
+            let new_guardians = if let Some(new_guardians) = &msg.new_guardians {
                 let guardians = load_canonical_addresses(&deps.as_ref(), GUARDIANS);
                 let new_guardian_addresses: Result<BTreeSet<Vec<u8>>, _> = new_guardians
                     .addresses
@@ -498,7 +490,7 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
 
             let resp = if let Some(new_guardians) = new_guardians {
                 // Instantiates a cw3 multisig contract if multisig option is provided for guardians
-                if let Some(multisig) = new_guardians.guardians_multisig {
+                if let Some(multisig) = &new_guardians.guardians_multisig {
                     let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
                         voters: addresses_to_voters(&new_guardians.addresses),
                         threshold: Threshold::AbsoluteCount {
@@ -508,23 +500,60 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
                     };
 
                     let instantiate_msg = WasmMsg::Instantiate {
-                        admin: Some(env.contract.address.to_string()),
+                        admin: Some(FACTORY.load(deps.storage)?.to_string()),
                         code_id: msg.new_multisig_code_id,
                         msg: to_binary(&multisig_instantiate_msg)?,
-                        funds: multisig.multisig_initial_funds,
+                        funds: multisig.multisig_initial_funds.clone(),
                         label: "Wallet-Multisig".into(),
                     };
                     let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
                     Response::new().add_submessage(msg)
                 } else {
-                    // Unset multisig address
+                    // Unset multisig address if guardians multisig was not provided
                     MULTISIG_ADDRESS.remove(deps.storage);
                     Response::default()
                 }
             } else {
-                Response::default()
+                let guardians_str: Vec<String> = load_addresses(&deps.as_ref(), GUARDIANS)?
+                    .into_iter()
+                    .map(|guardian| guardian.as_str().to_owned())
+                    .collect();
+
+                let threshold_response = deps.querier.query_wasm_smart(
+                    deps.api.addr_humanize(&MULTISIG_ADDRESS.load(deps.storage)?)?,
+                    &FixedMultisigQueryMsg::Threshold {},
+                )?;
+
+                if let ThresholdResponse::AbsoluteCount { total_weight, .. } = threshold_response {
+                    // Upgrade to a new multisig contract
+                    let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
+                        voters: addresses_to_voters(&guardians_str),
+                        threshold: Threshold::AbsoluteCount {
+                            // reuse previous multisig contract state
+                            weight: total_weight,
+                        },
+                        max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
+                    };
+
+                    let instantiate_msg = WasmMsg::Instantiate {
+                        admin: Some(FACTORY.load(deps.storage)?.to_string()),
+                        code_id: msg.new_multisig_code_id,
+                        msg: to_binary(&multisig_instantiate_msg)?,
+                        funds: vec![],
+                        label: "Wallet-Multisig".into(),
+                    };
+                    let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
+                    Response::new().add_submessage(msg)
+                } else {
+                    // Should be set to ThresholdResponse::AbsoluteCount
+                    return Err(ContractError::IncorrectThreshold {})
+                }
             };
 
+            MULTISIG_CODE_ID.save(deps.storage, &msg.new_multisig_code_id)?;
+
+            let code_id = MULTISIG_CODE_ID.load(deps.storage);
+            println!("{:?} is stored", code_id);
             Ok(resp)
         }
     }

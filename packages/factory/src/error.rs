@@ -10,3 +10,24 @@ pub enum RelayTxError {
     #[error("SignatureVerificationError")]
     SignatureVerificationError {},
 }
+
+/// Contract migration related errors
+#[derive(Error, Debug, PartialEq)]
+pub enum MigrationMsgError {
+    #[error("InvalidWalletAddr")]
+    InvalidWalletAddr,
+    #[error("InvalidMultisigAddr")]
+    InvalidMultisigAddr,
+    #[error("MismatchProxyCodeId")]
+    MismatchProxyCodeId,
+    #[error("MismatchMultisigCodeId")]
+    MismatchMultisigCodeId,
+    #[error("InvalidWasmMsg")]
+    InvalidWasmMsg,
+    #[error("MultisigFeatureIsNotSet")]
+    MultisigFeatureIsNotSet,
+    #[error("IsNotAProxyMsg")]
+    IsNotAProxyMsg,
+    #[error("IsNotAMultisigMsg")]
+    IsNotAMultisigMsg,
+}
