@@ -585,8 +585,9 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
+
     let user = w.user_addr;
-    let multisig_address = w.multisig_address.unwrap();
+
     let old_multisig_code_id = w.multisig_code_id;
     let proxy_code_id = w.code_id;
 
@@ -596,18 +597,12 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
     let r = suite.update_proxy_multisig_code_id(new_multisig_code_id, factory.clone());
     assert!(r.is_ok());
 
-    // to_binary(&CosmosMsg::<()>::Wasm(WasmMsg::Migrate {
-    //     contract_addr: wallet_address.to_string(),
-    //     new_code_id,
-    //     msg: to_binary(&MigrateMsg::Proxy(ProxyMigrateMsg { new_code_id })).unwrap(),
-    // }));
-
     // User migrates their proxy related multisig contract to the new code id
     let migrate_multisig_contract_msg = FactoryExecuteMsg::MigrateMultisigContract {
         wallet_address: WalletAddr::Addr(wallet_address.clone()),
         migration_msg: ProxyMigrationMsg::DirectMigrationMsg(
             to_binary(&CosmosMsg::<()>::Wasm(WasmMsg::Migrate {
-                contract_addr: multisig_address.to_string(),
+                contract_addr: wallet_address.to_string(),
                 new_code_id: proxy_code_id,
                 msg: to_binary(&MigrateMsg::Multisig(MultisigMigrateMsg {
                     new_guardians: None,
@@ -628,7 +623,6 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
 
     assert!(execute_msg_resp.is_ok());
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    println!("Are you sure {:?}", new_w.multisig_code_id);
     assert_eq!(new_w.multisig_code_id, new_multisig_code_id);
     assert_ne!(new_multisig_code_id, old_multisig_code_id);
 }

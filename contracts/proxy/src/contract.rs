@@ -514,13 +514,15 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                     Response::default()
                 }
             } else {
+                let multisig_addr = MULTISIG_ADDRESS.load(deps.storage)?;
+
                 let guardians_str: Vec<String> = load_addresses(&deps.as_ref(), GUARDIANS)?
                     .into_iter()
                     .map(|guardian| guardian.as_str().to_owned())
                     .collect();
 
                 let threshold_response = deps.querier.query_wasm_smart(
-                    deps.api.addr_humanize(&MULTISIG_ADDRESS.load(deps.storage)?)?,
+                    deps.api.addr_humanize(&multisig_addr)?,
                     &FixedMultisigQueryMsg::Threshold {},
                 )?;
 
@@ -546,7 +548,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                     Response::new().add_submessage(msg)
                 } else {
                     // Should be set to ThresholdResponse::AbsoluteCount
-                    return Err(ContractError::IncorrectThreshold {})
+                    return Err(ContractError::IncorrectThreshold {});
                 }
             };
 
