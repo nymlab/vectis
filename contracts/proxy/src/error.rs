@@ -29,6 +29,8 @@ pub enum ContractError {
     RelayerDoesNotExist {},
     #[error("RelayerAlreadyExists")]
     RelayerAlreadyExists {},
+    #[error("IncorrectThreshold")]
+    IncorrectThreshold {},
     #[error("RelayTxError")]
     RelayTxError(RelayTxError),
 }

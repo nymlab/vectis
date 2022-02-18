@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, StdError};
-use sc_wallet::RelayTxError;
+use sc_wallet::{MigrationMsgError, RelayTxError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -30,16 +30,8 @@ pub enum ContractError {
     InvalidRelayMigrationTx(RelayTxError),
 }
 
-#[derive(Error, Debug, PartialEq)]
-pub enum MigrationMsgError {
-    #[error("InvalidWalletAddr")]
-    InvalidWalletAddr,
-    #[error("InvalidMultisigAddr")]
-    InvalidMultisigAddr,
-    #[error("MismatchCodeId")]
-    MismatchCodeId,
-    #[error("InvalidWasmMsg")]
-    InvalidWasmMsg,
-    #[error("MultisigFeatureIsNotSet")]
-    MultisigFeatureIsNotSet,
+impl From<MigrationMsgError> for ContractError {
+    fn from(error: MigrationMsgError) -> Self {
+        ContractError::InvalidMigrationMsg(error)
+    }
 }

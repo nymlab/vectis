@@ -68,15 +68,6 @@ fn contract_multisig() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-fn updated_multisig_contract() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(
-        fixed_multisig_execute,
-        fixed_multisig_instantiate,
-        fixed_multisig_query,
-    );
-    Box::new(contract)
-}
-
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Suite {
@@ -564,14 +555,14 @@ fn relayer_can_migrate_proxy_with_user_signature() {
 #[test]
 fn user_can_migrate_proxy_multisig_with_direct_message() {
     let mut suite = Suite::init().unwrap();
-    let init_wallet_fund: Coin = coin(300, "ucosm");
+    let init_wallet_fund: Coin = coin(400, "ucosm");
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         vec![init_wallet_fund],
     );
-    let init_proxy_fund: Coin = coin(200, "ucosm");
-    let init_multisig_fund: Coin = coin(100, "ucosm");
+    let init_proxy_fund: Coin = coin(300, "ucosm");
+    let init_multisig_fund: Coin = coin(50, "ucosm");
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -596,14 +587,20 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
     let multisig_address = w.multisig_address.unwrap();
-    let sc_proxy_multisig_code_id = suite.sc_proxy_multisig_code_id;
     let old_multisig_code_id = w.multisig_code_id;
+    let proxy_code_id = w.code_id;
 
     assert_eq!(old_multisig_code_id, suite.sc_proxy_multisig_code_id);
 
-    let new_multisig_code_id = suite.app.store_code(updated_multisig_contract());
+    let new_multisig_code_id = suite.app.store_code(contract_multisig());
     let r = suite.update_proxy_multisig_code_id(new_multisig_code_id, factory.clone());
     assert!(r.is_ok());
+
+    // to_binary(&CosmosMsg::<()>::Wasm(WasmMsg::Migrate {
+    //     contract_addr: wallet_address.to_string(),
+    //     new_code_id,
+    //     msg: to_binary(&MigrateMsg::Proxy(ProxyMigrateMsg { new_code_id })).unwrap(),
+    // }));
 
     // User migrates their proxy related multisig contract to the new code id
     let migrate_multisig_contract_msg = FactoryExecuteMsg::MigrateMultisigContract {
@@ -611,7 +608,7 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         migration_msg: ProxyMigrationMsg::DirectMigrationMsg(
             to_binary(&CosmosMsg::<()>::Wasm(WasmMsg::Migrate {
                 contract_addr: multisig_address.to_string(),
-                new_code_id: new_multisig_code_id,
+                new_code_id: proxy_code_id,
                 msg: to_binary(&MigrateMsg::Multisig(MultisigMigrateMsg {
                     new_guardians: None,
                     new_multisig_code_id,
@@ -622,7 +619,6 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         ),
     };
 
-    println!("{:?}", user);
     let execute_msg_resp = suite.app.execute_contract(
         user.clone(),
         factory.clone(),
@@ -630,10 +626,9 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         &[],
     );
 
-    println!("{:?}", execute_msg_resp);
-
     assert!(execute_msg_resp.is_ok());
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
+    println!("Are you sure {:?}", new_w.multisig_code_id);
     assert_eq!(new_w.multisig_code_id, new_multisig_code_id);
     assert_ne!(new_multisig_code_id, old_multisig_code_id);
 }
@@ -773,7 +768,7 @@ fn user_cannot_migrate_with_mismatched_code_id() {
 
     assert_eq!(
         execute_msg_resp.unwrap_err().to_string(),
-        String::from("InvalidMigrationMsg: MismatchCodeId")
+        String::from("InvalidMigrationMsg: MismatchProxyCodeId")
     );
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert_eq!(new_w.code_id, code_id);
