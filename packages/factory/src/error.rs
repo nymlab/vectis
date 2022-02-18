@@ -16,8 +16,6 @@ pub enum RelayTxError {
 pub enum MigrationMsgError {
     #[error("InvalidWalletAddr")]
     InvalidWalletAddr,
-    #[error("InvalidMultisigAddr")]
-    InvalidMultisigAddr,
     #[error("MismatchProxyCodeId")]
     MismatchProxyCodeId,
     #[error("MismatchMultisigCodeId")]
