@@ -11,7 +11,7 @@ use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 pub use sc_wallet::{
     pub_key_to_address, query_verify_cosmos, CreateWalletMsg, Guardians, MigrationMsgError,
-    ProxyMigrationTxMsg, RelayTransaction, RelayTxError, WalletAddr, WalletInfo,
+    ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError, WalletAddr, WalletInfo,
 };
 use wallet_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
@@ -52,10 +52,6 @@ pub fn execute(
             wallet_address,
             migration_msg,
         } => migrate_wallet(deps, info, wallet_address, migration_msg),
-        ExecuteMsg::MigrateMultisigContract {
-            wallet_address,
-            migration_msg,
-        } => migrate_multisig_contract(deps, info, wallet_address, migration_msg),
         ExecuteMsg::UpdateProxyCodeId { new_code_id } => {
             update_proxy_code_id(deps, info, new_code_id)
         }
@@ -136,10 +132,15 @@ fn migrate_wallet(
         msg,
     }) = tx_msg.clone()
     {
-        let msg: MigrateMsg = cosmwasm_std::from_slice(&msg)?;
+        let msg: ProxyMigrateMsg = cosmwasm_std::from_slice(&msg)?;
 
-        // Ensure provided msg is proxy msg
-        msg.ensure_is_proxy_msg()?;
+        // Ensure user knows the latest supported proxy code id
+        msg.ensure_is_supported_proxy_code_id(PROXY_CODE_ID.load(deps.storage)?)?;
+        if new_code_id != PROXY_CODE_ID.load(deps.storage)? {
+            return Err(ContractError::InvalidMigrationMsg(
+                MigrationMsgError::MismatchProxyCodeId,
+            ));
+        }
 
         // Ensure migrating the corret wallet at given address
         if contract_addr != wallet_addr {
@@ -147,12 +148,6 @@ fn migrate_wallet(
                 MigrationMsgError::InvalidWalletAddr,
             ));
         }
-        // Ensure user knows the latest supported proxy code id
-        if new_code_id != PROXY_CODE_ID.load(deps.storage)? || new_code_id == wallet_info.code_id {
-            return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::MismatchProxyCodeId,
-            ));
-        };
     } else {
         return Err(ContractError::InvalidMigrationMsg(
             MigrationMsgError::InvalidWasmMsg,
