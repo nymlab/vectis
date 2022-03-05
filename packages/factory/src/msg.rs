@@ -1,4 +1,4 @@
-use crate::wallet::{ProxyMigrationMsg, WalletAddr};
+use crate::wallet::{ProxyMigrationTxMsg, WalletAddr};
 use cosmwasm_std::{Binary, Coin};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -36,20 +36,29 @@ pub struct MultiSig {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub enum WalletFactoryQueryMsg {
+    /// Shows all the proxy wallet address
+    /// Returns WalletListResponse
+    Wallets {},
+    ProxyCodeId {},
+    MultisigCodeId {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum WalletFactoryExecuteMsg {
-    // do something here!
     CreateWallet {
         create_wallet_msg: CreateWalletMsg,
     },
     // migrates wallet
     MigrateWallet {
         wallet_address: WalletAddr,
-        migration_msg: ProxyMigrationMsg,
+        migration_msg: ProxyMigrationTxMsg,
     },
     // migrates multisig contract of the specific wallet
     MigrateMultisigContract {
         wallet_address: WalletAddr,
-        migration_msg: ProxyMigrationMsg,
+        migration_msg: ProxyMigrationTxMsg,
     },
     UpdateProxyCodeId {
         new_code_id: u64,

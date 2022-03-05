@@ -6,25 +6,26 @@ use cosmwasm_std::{
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
-use sc_wallet::{pub_key_to_address, query_verify_cosmos, RelayTransaction, WalletInfo};
+use sc_wallet::{
+    pub_key_to_address, query_verify_cosmos, RelayTransaction, WalletFactoryQueryMsg, WalletInfo,
+};
 use schemars::JsonSchema;
 use std::collections::BTreeSet;
 use std::fmt;
+use std::iter::Iterator;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
     User, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, MULTISIG_CODE_ID, RELAYERS, USER,
 };
-use cw3_fixed_multisig::msg::{
-    InstantiateMsg as FixedMultisigInstantiateMsg, QueryMsg as FixedMultisigQueryMsg, Voter,
-};
+use cw3_fixed_multisig::msg::{InstantiateMsg as FixedMultisigInstantiateMsg, Voter};
 use cw_storage_plus::Map;
-use cw_utils::{Duration, Threshold, ThresholdResponse};
-use sc_wallet::RelayTxError;
+use cw_utils::{Duration, Threshold};
+use sc_wallet::{Guardians, RelayTxError};
 
 #[cfg(feature = "migration")]
-use sc_wallet::MigrateMsg;
+use sc_wallet::ProxyMigrateMsg;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-proxy";
@@ -40,7 +41,7 @@ const MULTISIG_INSTANTIATE_ID: u64 = u64::MAX;
 #[cfg_attr(not(any(feature = "library", feature = "migration")), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -83,7 +84,7 @@ pub fn instantiate(
         };
 
         let instantiate_msg = WasmMsg::Instantiate {
-            admin: Some(msg.factory.to_string()),
+            admin: Some(env.contract.address.to_string()),
             code_id: msg.multisig_code_id,
             msg: to_binary(&multisig_instantiate_msg)?,
             funds: multisig.multisig_initial_funds,
@@ -118,6 +119,10 @@ pub fn execute(
         ExecuteMsg::RemoveRelayer { relayer_address } => {
             execute_remove_relayer(deps, info, relayer_address)
         }
+        ExecuteMsg::UpdateGuardians {
+            guardians,
+            new_multisig_code_id,
+        } => execute_update_guardians(deps, env, info, guardians, new_multisig_code_id),
     }
 }
 
@@ -276,6 +281,71 @@ pub fn execute_rotate_user_key(
     Ok(Response::new().add_attribute("action", "execute_rotate_user_key"))
 }
 
+pub fn execute_update_guardians(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    guardians: Guardians,
+    new_multisig_code_id: Option<u64>,
+) -> Result<Response, ContractError> {
+    // ensure this is either a direct message from the user
+    // or
+    // ensure this is relayed by a relayer from this proxy
+    let is_user = ensure_is_user(deps.as_ref(), info.sender.as_ref());
+    let is_contract = ensure_is_contract_self(&env, &info.sender);
+    if is_user.is_err() && is_contract.is_err() {
+        is_user?;
+        is_contract?;
+    };
+
+    // Replace the entire locally stored guardians list
+    let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS);
+    for guardian in guardians_to_remove {
+        GUARDIANS.remove(deps.storage, &guardian);
+    }
+    for guardian in &guardians.addresses {
+        GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
+    }
+
+    if let Some(multisig_settings) = guardians.guardians_multisig {
+        let instantiation_code_id = if let Some(id) = new_multisig_code_id {
+            id
+        } else {
+            match MULTISIG_CODE_ID.may_load(deps.storage)? {
+                Some(id) => id,
+                None => deps
+                    .querier
+                    .query_wasm_smart(deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?, &{
+                        WalletFactoryQueryMsg::MultisigCodeId {}
+                    })?,
+            }
+        };
+        MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;
+        let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
+            voters: addresses_to_voters(&guardians.addresses),
+            threshold: Threshold::AbsoluteCount {
+                weight: multisig_settings.threshold_absolute_count,
+            },
+            max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
+        };
+
+        let instantiate_msg = WasmMsg::Instantiate {
+            admin: Some(env.contract.address.to_string()),
+            code_id: instantiation_code_id,
+            msg: to_binary(&multisig_instantiate_msg)?,
+            funds: multisig_settings.multisig_initial_funds,
+            label: "Wallet-Multisig".into(),
+        };
+        let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
+
+        Ok(Response::new()
+            .add_submessage(msg)
+            .add_attribute("action", "Updated wallet guardians: Multisig"))
+    } else {
+        Ok(Response::new().add_attribute("action", "Updated wallet guardians: Non-Multisig"))
+    }
+}
+
 /// Ensures sender is guardian
 pub fn ensure_is_guardian(deps: Deps, sender: &CanonicalAddr) -> Result<(), ContractError> {
     if is_guardian(deps, sender)? {
@@ -283,6 +353,14 @@ pub fn ensure_is_guardian(deps: Deps, sender: &CanonicalAddr) -> Result<(), Cont
     } else {
         Err(ContractError::IsNotGuardian {})
     }
+}
+
+/// Ensures sender is relayed from current contract
+pub fn ensure_is_contract_self(env: &Env, sender: &Addr) -> Result<(), ContractError> {
+    if sender != &env.contract.address {
+        return Err(ContractError::IsNotContractSelf {});
+    }
+    Ok(())
 }
 
 /// Is used to authorize guardian or multisig contract
@@ -441,124 +519,9 @@ pub fn query_can_execute_relay(deps: Deps, sender: String) -> StdResult<CanExecu
 
 #[cfg(feature = "migration")]
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    match msg {
-        MigrateMsg::Proxy(msg) => {
-            CODE_ID.save(deps.storage, &msg.new_code_id)?;
-            Ok(Response::default())
-        }
-        MigrateMsg::Multisig(msg) => {
-            // If guardians set changed
-            let new_guardians = if let Some(new_guardians) = &msg.new_guardians {
-                let guardians = load_canonical_addresses(&deps.as_ref(), GUARDIANS);
-                let new_guardian_addresses: Result<BTreeSet<Vec<u8>>, _> = new_guardians
-                    .addresses
-                    .iter()
-                    // CanonicalAddr does not support Ord trait ;(
-                    .map(|guardian| {
-                        deps.api
-                            .addr_canonicalize(guardian)
-                            .map(|guardian_addr| guardian_addr.as_slice().to_vec())
-                    })
-                    .collect();
-                let new_guardian_addresses = new_guardian_addresses?;
-
-                // Guardians to remove from storage
-                let guardians_to_remove: Vec<_> = guardians
-                    .difference(&new_guardian_addresses)
-                    .cloned()
-                    .collect();
-
-                for guardian in guardians_to_remove {
-                    GUARDIANS.remove(deps.storage, &guardian);
-                }
-
-                // Guardians to insert into storage
-                let guardians_to_insert: Vec<_> = new_guardian_addresses
-                    .difference(&guardians)
-                    .cloned()
-                    .collect();
-
-                for guardian in guardians_to_insert {
-                    GUARDIANS.save(deps.storage, &guardian, &())?;
-                }
-
-                Some(new_guardians)
-            } else {
-                None
-            };
-
-            let resp = if let Some(new_guardians) = new_guardians {
-                // Instantiates a cw3 multisig contract if multisig option is provided for guardians
-                if let Some(multisig) = &new_guardians.guardians_multisig {
-                    let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
-                        voters: addresses_to_voters(&new_guardians.addresses),
-                        threshold: Threshold::AbsoluteCount {
-                            weight: multisig.threshold_absolute_count,
-                        },
-                        max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
-                    };
-
-                    let instantiate_msg = WasmMsg::Instantiate {
-                        admin: Some(FACTORY.load(deps.storage)?.to_string()),
-                        code_id: msg.new_multisig_code_id,
-                        msg: to_binary(&multisig_instantiate_msg)?,
-                        funds: multisig.multisig_initial_funds.clone(),
-                        label: "Wallet-Multisig".into(),
-                    };
-                    let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
-                    Response::new().add_submessage(msg)
-                } else {
-                    // Unset multisig address if guardians multisig was not provided
-                    MULTISIG_ADDRESS.remove(deps.storage);
-                    Response::default()
-                }
-            } else {
-                let multisig_addr = MULTISIG_ADDRESS.load(deps.storage)?;
-
-                let guardians_str: Vec<String> = load_addresses(&deps.as_ref(), GUARDIANS)?
-                    .into_iter()
-                    .map(|guardian| guardian.as_str().to_owned())
-                    .collect();
-
-                let threshold_response = deps.querier.query_wasm_smart(
-                    deps.api.addr_humanize(&multisig_addr)?,
-                    &FixedMultisigQueryMsg::Threshold {},
-                )?;
-
-                if let ThresholdResponse::AbsoluteCount { total_weight, .. } = threshold_response {
-                    // Upgrade to a new multisig contract
-                    let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
-                        voters: addresses_to_voters(&guardians_str),
-                        threshold: Threshold::AbsoluteCount {
-                            // reuse previous multisig contract state
-                            weight: total_weight,
-                        },
-                        max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
-                    };
-
-                    let instantiate_msg = WasmMsg::Instantiate {
-                        admin: Some(FACTORY.load(deps.storage)?.to_string()),
-                        code_id: msg.new_multisig_code_id,
-                        msg: to_binary(&multisig_instantiate_msg)?,
-                        funds: vec![],
-                        label: "Wallet-Multisig".into(),
-                    };
-                    let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
-                    Response::new().add_submessage(msg)
-                } else {
-                    // Should be set to ThresholdResponse::AbsoluteCount
-                    return Err(ContractError::IncorrectThreshold {});
-                }
-            };
-
-            MULTISIG_CODE_ID.save(deps.storage, &msg.new_multisig_code_id)?;
-
-            let code_id = MULTISIG_CODE_ID.load(deps.storage);
-            println!("{:?} is stored", code_id);
-            Ok(resp)
-        }
-    }
+pub fn migrate(deps: DepsMut, _env: Env, msg: ProxyMigrateMsg) -> Result<Response, ContractError> {
+    CODE_ID.save(deps.storage, &msg.new_code_id)?;
+    Ok(Response::default())
 }
 
 // Converts addresses to voters with weight of 1
@@ -589,6 +552,7 @@ mod tests {
 
     const GUARD1: &str = "guardian1";
     const GUARD2: &str = "guardian2";
+    const GUARD3: &str = "guardian3";
 
     fn get_guardians() -> Guardians {
         Guardians {
@@ -663,14 +627,14 @@ mod tests {
         let env = mock_env();
         let msg = ExecuteMsg::RevertFreezeStatus {};
         let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-        assert_eq!(response.attributes, [("action", format!("frozen"))]);
+        assert_eq!(response.attributes, [("action", "frozen")]);
 
         let wallet_info = query_info(deps.as_ref()).unwrap();
         assert!(wallet_info.is_frozen);
 
         let msg = ExecuteMsg::RevertFreezeStatus {};
         let response = execute(deps.as_mut(), env, info, msg).unwrap();
-        assert_eq!(response.attributes, [("action", format!("unfrozen"))]);
+        assert_eq!(response.attributes, [("action", "unfrozen")]);
 
         let wallet_info = query_info(deps.as_ref()).unwrap();
         assert!(!wallet_info.is_frozen);
@@ -687,6 +651,40 @@ mod tests {
         let msg = ExecuteMsg::RevertFreezeStatus {};
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::IsNotGuardian {});
+    }
+
+    #[test]
+    fn user_can_update_non_multisig_guardian() {
+        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let user_addr = do_instantiate(deps.as_mut());
+
+        // initially we have a wallet with 2 relayers
+        let wallet_info = query_info(deps.as_ref()).unwrap();
+        assert!(wallet_info.guardians.contains(&Addr::unchecked(GUARD2)));
+        assert!(!wallet_info.guardians.contains(&Addr::unchecked(GUARD3)));
+
+        let info = mock_info(user_addr.as_str(), &[]);
+        let env = mock_env();
+
+        let new_guardians = Guardians {
+            addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
+            guardians_multisig: None,
+        };
+        let msg = ExecuteMsg::UpdateGuardians {
+            guardians: new_guardians,
+            new_multisig_code_id: None,
+        };
+
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(
+            response.attributes,
+            [("action", "Updated wallet guardians: Non-Multisig")]
+        );
+
+        // Ensure relayer is added successfully
+        let new_wallet_info = query_info(deps.as_ref()).unwrap();
+        assert!(!new_wallet_info.guardians.contains(&Addr::unchecked(GUARD2)));
+        assert!(new_wallet_info.guardians.contains(&Addr::unchecked(GUARD3)));
     }
 
     #[test]
@@ -708,13 +706,16 @@ mod tests {
         let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         assert_eq!(
             response.attributes,
-            [("action", format!("Relayer {:?} added", new_relayer_address))]
+            [(
+                "action",
+                format!("Relayer {:?} added", new_relayer_address.clone())
+            )]
         );
 
         // Ensure relayer is added successfully
         wallet_info.relayers.push(new_relayer_address);
         let new_wallet_info = query_info(deps.as_ref()).unwrap();
-        assert!(new_wallet_info.relayers == new_wallet_info.relayers);
+        assert_eq!(wallet_info.relayers, new_wallet_info.relayers)
     }
 
     #[test]
@@ -742,7 +743,7 @@ mod tests {
         // Ensure relayer is added successfully
         wallet_info.relayers.push(new_relayer_address);
         let new_wallet_info = query_info(deps.as_ref()).unwrap();
-        assert!(new_wallet_info.relayers == new_wallet_info.relayers);
+        assert_eq!(wallet_info.relayers, new_wallet_info.relayers);
     }
 
     #[test]
@@ -771,10 +772,10 @@ mod tests {
         wallet_info.relayers = wallet_info
             .relayers
             .into_iter()
-            .filter(|relayer| *relayer == relayer_address)
+            .filter(|relayer| *relayer != relayer_address)
             .collect();
         let new_wallet_info = query_info(deps.as_ref()).unwrap();
-        assert!(new_wallet_info.relayers == new_wallet_info.relayers);
+        assert_eq!(wallet_info.relayers, new_wallet_info.relayers);
     }
 
     #[test]
@@ -795,10 +796,7 @@ mod tests {
             new_user_address: new_address.to_string(),
         };
         let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-        assert_eq!(
-            response.attributes,
-            [("action", format!("execute_rotate_user_key"))]
-        );
+        assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
 
         // Ensure key is rotated successfully
         let wallet_info = query_info(deps.as_ref()).unwrap();

@@ -10,8 +10,8 @@ use cosmwasm_std::{
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 pub use sc_wallet::{
-    pub_key_to_address, query_verify_cosmos, CreateWalletMsg, Guardians, MigrateMsg,
-    MigrationMsgError, ProxyMigrationMsg, RelayTransaction, RelayTxError, WalletAddr, WalletInfo,
+    pub_key_to_address, query_verify_cosmos, CreateWalletMsg, Guardians, MigrationMsgError,
+    ProxyMigrationTxMsg, RelayTransaction, RelayTxError, WalletAddr, WalletInfo,
 };
 use wallet_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
@@ -111,7 +111,7 @@ fn migrate_wallet(
     deps: DepsMut,
     info: MessageInfo,
     address: WalletAddr,
-    migration_msg: ProxyMigrationMsg,
+    migration_msg: ProxyMigrationTxMsg,
 ) -> Result<Response, ContractError> {
     let wallet_addr = match address {
         WalletAddr::Canonical(canonical_address) => deps.api.addr_humanize(&canonical_address)?,
@@ -122,8 +122,8 @@ fn migrate_wallet(
         .querier
         .query_wasm_smart(wallet_addr.clone(), &ProxyQueryMsg::Info {})?;
 
-    // The migration call is either directly called by the user with `ProxyMigrationMsg::DirectMigrationMsg`
-    // or relayed by the proxy relayer via `ProxyMigrationMsg::RelayTx`.
+    // The migration call is either directly called by the user with `ProxyMigrationTxMsg::DirectMigrationMsg`
+    // or relayed by the proxy relayer via `ProxyMigrationTxMsg::RelayTx`.
     //
     // Different safety checks are applied
     let tx_msg: CosmosMsg =
@@ -164,86 +164,16 @@ fn migrate_wallet(
         .add_attribute("action", "wallet migration"))
 }
 
-/// Migrates the instantiated `multisig` contract instance to a new code id
-fn migrate_multisig_contract(
-    deps: DepsMut,
-    info: MessageInfo,
-    address: WalletAddr,
-    migration_msg: ProxyMigrationMsg,
-) -> Result<Response, ContractError> {
-    let wallet_addr = match address {
-        WalletAddr::Canonical(canonical_address) => deps.api.addr_humanize(&canonical_address)?,
-        WalletAddr::Addr(human_address) => human_address,
-    };
-
-    let wallet_info: WalletInfo = deps
-        .querier
-        .query_wasm_smart(wallet_addr.clone(), &ProxyQueryMsg::Info {})?;
-
-    // The migration call is either directly called by the user with `ProxyMigrationMsg::DirectMigrationMsg`
-    // or relayed by the proxy relayer via `ProxyMigrationMsg::RelayTx`.
-    //
-    // Different safety checks are applied
-    let tx_msg: CosmosMsg =
-        ensure_is_valid_migration_msg(&deps, info, &wallet_info, &wallet_addr, migration_msg)?;
-
-    // Further checks applied to ensure user has signed the correct relay msg / tx
-    if let CosmosMsg::Wasm(WasmMsg::Migrate {
-        contract_addr,
-        new_code_id,
-        msg,
-    }) = tx_msg.clone()
-    {
-        let msg: MigrateMsg = cosmwasm_std::from_slice(&msg)?;
-
-        // Ensure provided msg is multisig msg
-        msg.ensure_is_multisig_msg()?;
-
-        // Ensure migrating the correct wallet at given address
-        if wallet_info.multisig_address.is_some() {
-            if contract_addr != wallet_addr {
-                return Err(ContractError::InvalidMigrationMsg(
-                    MigrationMsgError::InvalidWalletAddr,
-                ));
-            }
-        } else {
-            return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::MultisigFeatureIsNotSet,
-            ));
-        }
-
-        // Ensure user knows the latest supported proxy code id
-        if new_code_id != PROXY_CODE_ID.load(deps.storage)? {
-            return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::MismatchProxyCodeId,
-            ));
-        };
-
-        msg.ensure_is_correct_multisig_code_id(
-            PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
-            wallet_info.multisig_code_id,
-        )?;
-    } else {
-        return Err(ContractError::InvalidMigrationMsg(
-            MigrationMsgError::InvalidWasmMsg,
-        ));
-    }
-
-    Ok(Response::new()
-        .add_message(tx_msg)
-        .add_attribute("action", "multisig contract migration"))
-}
-
 // Perform security checks to ensure migration message is valid
 fn ensure_is_valid_migration_msg(
     deps: &DepsMut,
     info: MessageInfo,
     wallet_info: &WalletInfo,
     wallet_addr: &Addr,
-    migration_msg: ProxyMigrationMsg,
+    migration_msg: ProxyMigrationTxMsg,
 ) -> Result<CosmosMsg, ContractError> {
     let tx_msg: CosmosMsg = match migration_msg {
-        ProxyMigrationMsg::RelayTx(tx) => {
+        ProxyMigrationTxMsg::RelayTx(tx) => {
             let can_execute_relay: CanExecuteResponse = deps.querier.query_wasm_smart(
                 wallet_addr.clone(),
                 &ProxyQueryMsg::CanExecuteRelay {
@@ -279,7 +209,7 @@ fn ensure_is_valid_migration_msg(
                 cosmwasm_std::from_slice(tx.message.0.as_slice())?
             }
         }
-        ProxyMigrationMsg::DirectMigrationMsg(msg) => {
+        ProxyMigrationTxMsg::DirectMigrationMsg(msg) => {
             // Ensure caller is the wallet user
             if wallet_info.user_addr != info.sender {
                 return Err(ContractError::Unauthorized {});
@@ -371,6 +301,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Wallets {} => to_binary(&query_wallet_list(deps)?),
         QueryMsg::ProxyCodeId {} => to_binary(&query_proxy_code_id(deps)?),
+        QueryMsg::MultisigCodeId {} => to_binary(&query_multisig_code_id(deps)?),
     }
 }
 
@@ -387,6 +318,14 @@ fn query_wallet_list(deps: Deps) -> StdResult<WalletListResponse> {
 /// Returns the current supported `wallet_proxy` code id
 fn query_proxy_code_id(deps: Deps) -> StdResult<u64> {
     let id = PROXY_CODE_ID.load(deps.storage)?;
+    Ok(id)
+}
+
+/// Returns the current default `multisig` code id for `wallet_proxy`
+/// wallet user can use their own version, however we only support the cw3-fixed-multisig
+/// `instantiateMsg` for the time being
+fn query_multisig_code_id(deps: Deps) -> StdResult<u64> {
+    let id = PROXY_MULTISIG_CODE_ID.load(deps.storage)?;
     Ok(id)
 }
 

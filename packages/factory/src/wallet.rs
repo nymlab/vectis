@@ -1,4 +1,3 @@
-use crate::msg::Guardians;
 use crate::MigrationMsgError;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr};
 use schemars::JsonSchema;
@@ -45,55 +44,9 @@ pub struct RelayTransaction {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub enum ProxyMigrationMsg {
+pub enum ProxyMigrationTxMsg {
     RelayTx(RelayTransaction),
     DirectMigrationMsg(Binary),
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub enum MigrateMsg {
-    Proxy(ProxyMigrateMsg),
-    Multisig(MultisigMigrateMsg),
-}
-
-impl MigrateMsg {
-    /// Ensure provided msg is proxy msg
-    pub fn ensure_is_proxy_msg(&self) -> Result<(), MigrationMsgError> {
-        if let MigrateMsg::Proxy(_) = self {
-            Ok(())
-        } else {
-            Err(MigrationMsgError::IsNotAProxyMsg)
-        }
-    }
-
-    /// Ensure provided msg is multisig msg
-    pub fn ensure_is_multisig_msg(&self) -> Result<(), MigrationMsgError> {
-        if let MigrateMsg::Multisig(_) = self {
-            Ok(())
-        } else {
-            Err(MigrationMsgError::IsNotAMultisigMsg)
-        }
-    }
-
-    /// Ensures code id of multisig contract is equal to current factory multisig code id,
-    /// Ensures new multisig_code id does not equal to current one if no guardians changes required
-    pub fn ensure_is_correct_multisig_code_id(
-        &self,
-        factory_multisig_code_id: u64,
-        proxy_multisig_code_id: u64,
-    ) -> Result<(), MigrationMsgError> {
-        if let MigrateMsg::Multisig(migrate_multisig_contract_msg) = self {
-            if factory_multisig_code_id != migrate_multisig_contract_msg.new_multisig_code_id {
-                return Err(MigrationMsgError::MismatchMultisigCodeId);
-            }
-            if migrate_multisig_contract_msg.new_guardians.is_some()
-                && migrate_multisig_contract_msg.new_multisig_code_id == proxy_multisig_code_id
-            {
-                return Err(MigrationMsgError::MismatchMultisigCodeId);
-            }
-        }
-        Ok(())
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -101,9 +54,15 @@ pub struct ProxyMigrateMsg {
     pub new_code_id: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct MultisigMigrateMsg {
-    // New guardians settings
-    pub new_guardians: Option<Guardians>,
-    pub new_multisig_code_id: u64,
+impl ProxyMigrateMsg {
+    /// Ensures code id of multisig contract is equal to current factory multisig code id,
+    pub fn ensure_is_supported_proxy_code_id(
+        &self,
+        factory_proxy_code_id: u64,
+    ) -> Result<(), MigrationMsgError> {
+        if factory_proxy_code_id != self.new_code_id {
+            return Err(MigrationMsgError::MismatchProxyCodeId);
+        }
+        Ok(())
+    }
 }

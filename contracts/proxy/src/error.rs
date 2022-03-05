@@ -15,6 +15,8 @@ pub enum ContractError {
     IsNotGuardian {},
     #[error("IsNotRelayer")]
     IsNotRelayer {},
+    #[error("IsNotContractSelf: Relayed message should be from target contract")]
+    IsNotContractSelf {},
     #[error("IsNotMultisig")]
     IsNotMultisig {},
     #[error("PubKeyIsNotValid")]
