@@ -301,7 +301,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 /// Returns all the wallets created
-fn query_wallet_list(deps: Deps) -> StdResult<WalletListResponse> {
+pub fn query_wallet_list(deps: Deps) -> StdResult<WalletListResponse> {
     let wallets: Result<Vec<_>, _> = WALLETS
         .keys(deps.storage, None, None, Order::Ascending)
         .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key)))
@@ -311,7 +311,7 @@ fn query_wallet_list(deps: Deps) -> StdResult<WalletListResponse> {
 }
 
 /// Returns the current supported `wallet_proxy` code id
-fn query_proxy_code_id(deps: Deps) -> StdResult<u64> {
+pub fn query_proxy_code_id(deps: Deps) -> StdResult<u64> {
     let id = PROXY_CODE_ID.load(deps.storage)?;
     Ok(id)
 }
@@ -319,7 +319,7 @@ fn query_proxy_code_id(deps: Deps) -> StdResult<u64> {
 /// Returns the current default `multisig` code id for `wallet_proxy`
 /// wallet user can use their own version, however we only support the cw3-fixed-multisig
 /// `instantiateMsg` for the time being
-fn query_multisig_code_id(deps: Deps) -> StdResult<u64> {
+pub fn query_multisig_code_id(deps: Deps) -> StdResult<u64> {
     let id = PROXY_MULTISIG_CODE_ID.load(deps.storage)?;
     Ok(id)
 }
@@ -345,76 +345,5 @@ fn ensure_is_valid_threshold(guardians: &Guardians) -> Result<(), ContractError>
             Err(ContractError::ThresholdShouldBeLessThenGuardiansCount {})
         }
         _ => Ok(()),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::DepsMut;
-
-    use crate::contract::instantiate;
-    use crate::msg::WalletListResponse;
-
-    // this will set up the instantiation for other tests
-    fn do_instantiate(mut deps: DepsMut, proxy_code_id: u64, proxy_multisig_code_id: u64) {
-        // we do not do integrated tests here so code ids are arbitrary
-        let instantiate_msg = InstantiateMsg {
-            proxy_code_id,
-            proxy_multisig_code_id,
-        };
-        let info = mock_info("admin", &[]);
-        let env = mock_env();
-
-        instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
-    }
-
-    #[test]
-    fn initialise_with_no_wallets() {
-        let mut deps = mock_dependencies();
-
-        do_instantiate(deps.as_mut(), 0, 1);
-
-        // no wallets to start
-        let wallets: WalletListResponse = query_wallet_list(deps.as_ref()).unwrap();
-        assert_eq!(wallets.wallets.len(), 0);
-    }
-
-    #[test]
-    fn initialise_with_correct_code_id() {
-        let mut deps = mock_dependencies();
-        let initial_code_id = 1111;
-        let initial_multisig_code_id = 2222;
-        do_instantiate(deps.as_mut(), initial_code_id, initial_multisig_code_id);
-        let proxy_code_id = query_proxy_code_id(deps.as_ref()).unwrap();
-        assert_eq!(proxy_code_id, initial_code_id);
-    }
-
-    #[test]
-    fn admin_upgrade_code_id_works() {
-        let mut deps = mock_dependencies();
-        let initial_code_id = 1111;
-        let new_code_id = 2222;
-        let initial_multisig_code_id = 2222;
-        do_instantiate(deps.as_mut(), initial_code_id, initial_multisig_code_id);
-        let proxy_code_id = query_proxy_code_id(deps.as_ref()).unwrap();
-        assert_eq!(proxy_code_id, initial_code_id);
-
-        let info = mock_info("admin", &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::UpdateProxyCodeId { new_code_id };
-        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-        assert_eq!(
-            response.attributes,
-            [
-                ("config", "Proxy Code Id"),
-                ("proxy_code_id", &new_code_id.to_string())
-            ]
-        );
-
-        let new_proxy_code_id = query_proxy_code_id(deps.as_ref()).unwrap();
-        assert_eq!(new_proxy_code_id, new_code_id);
     }
 }
