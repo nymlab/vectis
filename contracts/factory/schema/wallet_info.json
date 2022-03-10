@@ -6,6 +6,7 @@
     "code_id",
     "guardians",
     "is_frozen",
+    "multisig_code_id",
     "nonce",
     "relayers",
     "user_addr",
@@ -35,6 +36,11 @@
           "type": "null"
         }
       ]
+    },
+    "multisig_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
     },
     "nonce": {
       "type": "integer",
