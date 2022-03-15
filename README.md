@@ -27,6 +27,16 @@ There are 3 roles in a SCW:
 1. [_guardians:_](/contracts/README.md#Guardians) the addresses appointed by the user to protect the user (via key recovery and / or account freezing)
 1. [_relayers_](/contracts/README.md#Relayers) the addresses appointed by the user to allow for user's off-chain transaction signatures be committed on-chain with gas.
 
+### Note on Relayer gas fees
+
+When a message a relayed, the smart contract wallet has to verify the relayed transaction has been signed by the user and that it was not replayed.
+This operation adds some amount of gas to a transaction that was just directly sent by the user to the SCW.
+
+For reference (tested on a local node):
+
+- A user directly sends a bank message to the SCW: 138700
+- A relayer sends a signed bank message for execution: 147285
+
 ## Hack
 
 ### Contracts Code Test
