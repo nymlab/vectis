@@ -58,14 +58,14 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     let instantiate_msg = InstantiateMsg {
         create_wallet_msg,
         multisig_code_id: MULTISIG_CODE_ID,
-        factory: Addr::unchecked("factory"),
         code_id: 0,
+        addr_prefix: "wasm".to_string(),
     };
 
     let info = mock_info("creator", &[]);
     let env = mock_env();
 
-    let address = pub_key_to_address(&deps, &public_key_serialized).unwrap();
+    let address = pub_key_to_address(&deps, "wasm", &public_key_serialized).unwrap();
     instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
     address
 }

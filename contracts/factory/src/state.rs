@@ -13,3 +13,5 @@ pub const PROXY_CODE_ID: Item<u64> = Item::new("proxy_code_id");
 pub const PROXY_MULTISIG_CODE_ID: Item<u64> = Item::new("proxy_multisig_code_id");
 /// All created wallets by CanonicalAddr
 pub const WALLETS: Map<&[u8], ()> = Map::new("wallets");
+/// Chain address prefix
+pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");

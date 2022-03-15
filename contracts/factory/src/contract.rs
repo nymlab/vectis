@@ -1,6 +1,8 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
-use crate::state::{ADMIN, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED, WALLETS};
+use crate::state::{
+    ADDR_PREFIX, ADMIN, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED, WALLETS,
+};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -33,6 +35,7 @@ pub fn instantiate(
     PROXY_CODE_ID.save(deps.storage, &msg.proxy_code_id)?;
     PROXY_MULTISIG_CODE_ID.save(deps.storage, &msg.proxy_multisig_code_id)?;
     TOTAL_CREATED.save(deps.storage, &0)?;
+    ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -68,8 +71,7 @@ fn create_wallet(
     info: MessageInfo,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
-    // Only admin can create a new wallet
-    // This can be an account or a governing contract
+    // Only admin DAO can create a new wallet
     ensure_is_admin(deps.as_ref(), info.sender.as_ref())?;
 
     if create_wallet_msg.guardians.addresses.is_empty() {
@@ -85,10 +87,10 @@ fn create_wallet(
             admin: Some(env.contract.address.to_string()),
             code_id: PROXY_CODE_ID.load(deps.storage)?,
             msg: to_binary(&ProxyInstantiateMsg {
-                factory: env.contract.address,
                 multisig_code_id: PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
                 create_wallet_msg: create_wallet_msg.clone(),
                 code_id: PROXY_CODE_ID.load(deps.storage)?,
+                addr_prefix: ADDR_PREFIX.load(deps.storage)?,
             })?,
             funds: create_wallet_msg.proxy_initial_funds,
             label: "Wallet-Proxy".into(),
@@ -181,7 +183,13 @@ fn ensure_is_valid_migration_msg(
                 return Err(ContractError::Unauthorized {});
             } else {
                 // Ensure Signer of relayed message is the wallet user
-                if wallet_info.user_addr != pub_key_to_address(deps, &tx.user_pubkey.0)? {
+                if wallet_info.user_addr
+                    != pub_key_to_address(
+                        deps,
+                        &ADDR_PREFIX.load(deps.storage)?,
+                        &tx.user_pubkey.0,
+                    )?
+                {
                     return Err(ContractError::InvalidRelayMigrationTx(
                         RelayTxError::IsNotUser {},
                     ));

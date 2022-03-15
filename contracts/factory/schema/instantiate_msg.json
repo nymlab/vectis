@@ -3,10 +3,14 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
+    "addr_prefix",
     "proxy_code_id",
     "proxy_multisig_code_id"
   ],
   "properties": {
+    "addr_prefix": {
+      "type": "string"
+    },
     "proxy_code_id": {
       "type": "integer",
       "format": "uint64",

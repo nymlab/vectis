@@ -20,7 +20,8 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    User, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, MULTISIG_CODE_ID, RELAYERS, USER,
+    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, MULTISIG_CODE_ID,
+    RELAYERS, USER,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{Duration, Threshold};
@@ -55,9 +56,14 @@ pub fn instantiate(
     )?;
     CODE_ID.save(deps.storage, &msg.code_id)?;
     MULTISIG_CODE_ID.save(deps.storage, &msg.multisig_code_id)?;
+    ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
 
     // get user addr from it's pubkey
-    let addr_human = pub_key_to_address(&deps, &msg.create_wallet_msg.user_pubkey.0)?;
+    let addr_human = pub_key_to_address(
+        &deps,
+        &msg.addr_prefix,
+        &msg.create_wallet_msg.user_pubkey.0,
+    )?;
 
     let addr = deps.api.addr_canonicalize(addr_human.as_str())?;
 
@@ -162,7 +168,11 @@ pub fn execute_relay(
     ensure_is_relayer(deps.as_ref(), &relayer_addr)?;
 
     // Get user addr from it's pubkey
-    let addr = pub_key_to_address(&deps, &transaction.user_pubkey.0)?;
+    let addr = pub_key_to_address(
+        &deps,
+        &ADDR_PREFIX.load(deps.storage)?,
+        &transaction.user_pubkey.0,
+    )?;
 
     // Ensure address derived from pub message is the address of existing user
     let user = ensure_is_user(deps.as_ref(), &addr.to_string())?;

@@ -9,10 +9,10 @@ pub struct InstantiateMsg {
     pub create_wallet_msg: CreateWalletMsg,
     /// Fixed Multisig Code Id for guardians
     pub multisig_code_id: u64,
-    /// Factory address
-    pub factory: Addr,
     /// Code Id used to instantiate the contract
     pub code_id: u64,
+    /// Chain address prefix
+    pub addr_prefix: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
