@@ -116,6 +116,7 @@ impl Suite {
                 &InstantiateMsg {
                     proxy_code_id,
                     proxy_multisig_code_id,
+                    addr_prefix: "wasm".to_string(),
                 }, // InstantiateMsg
                 &init_funds,
                 "wallet-factory", // label: human readible name for contract

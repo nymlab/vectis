@@ -7,12 +7,12 @@ use ripemd160::Ripemd160;
 use sha2::Sha256;
 
 /// Converts user pubkey into Addr
-pub fn pub_key_to_address(deps: &DepsMut, pub_key: &[u8]) -> StdResult<Addr> {
+pub fn pub_key_to_address(deps: &DepsMut, prefix: &str, pub_key: &[u8]) -> StdResult<Addr> {
     let compressed_pub_key = to_compressed_pub_key(pub_key)?;
     let mut ripemd160_hasher = Ripemd160::new();
     ripemd160_hasher.update(Sha256::digest(&compressed_pub_key));
     let addr_bytes = ripemd160_hasher.finalize().to_vec();
-    let addr_str = bech32::encode("wasm", addr_bytes.to_base32(), Variant::Bech32).unwrap();
+    let addr_str = bech32::encode(prefix, addr_bytes.to_base32(), Variant::Bech32).unwrap();
     deps.api.addr_validate(&addr_str)
 }
 

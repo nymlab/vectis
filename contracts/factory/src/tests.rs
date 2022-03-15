@@ -6,11 +6,17 @@ use crate::contract::{execute, instantiate, query_proxy_code_id, query_wallet_li
 use crate::msg::{ExecuteMsg, InstantiateMsg, WalletListResponse};
 
 // this will set up the instantiation for other tests
-fn do_instantiate(mut deps: DepsMut, proxy_code_id: u64, proxy_multisig_code_id: u64) {
+fn do_instantiate(
+    mut deps: DepsMut,
+    proxy_code_id: u64,
+    proxy_multisig_code_id: u64,
+    addr_prefix: &str,
+) {
     // we do not do integrated tests here so code ids are arbitrary
     let instantiate_msg = InstantiateMsg {
         proxy_code_id,
         proxy_multisig_code_id,
+        addr_prefix: addr_prefix.to_string(),
     };
     let info = mock_info("admin", &[]);
     let env = mock_env();
@@ -22,7 +28,7 @@ fn do_instantiate(mut deps: DepsMut, proxy_code_id: u64, proxy_multisig_code_id:
 fn initialise_with_no_wallets() {
     let mut deps = mock_dependencies();
 
-    do_instantiate(deps.as_mut(), 0, 1);
+    do_instantiate(deps.as_mut(), 0, 1, "wasm");
 
     // no wallets to start
     let wallets: WalletListResponse = query_wallet_list(deps.as_ref()).unwrap();
@@ -34,7 +40,13 @@ fn initialise_with_correct_code_id() {
     let mut deps = mock_dependencies();
     let initial_code_id = 1111;
     let initial_multisig_code_id = 2222;
-    do_instantiate(deps.as_mut(), initial_code_id, initial_multisig_code_id);
+    let addr_prefix = "wasm";
+    do_instantiate(
+        deps.as_mut(),
+        initial_code_id,
+        initial_multisig_code_id,
+        addr_prefix,
+    );
     let proxy_code_id = query_proxy_code_id(deps.as_ref()).unwrap();
     assert_eq!(proxy_code_id, initial_code_id);
 }
@@ -45,7 +57,12 @@ fn admin_upgrade_proxy_code_id_works() {
     let initial_code_id = 1111;
     let new_code_id = 2222;
     let initial_multisig_code_id = 2222;
-    do_instantiate(deps.as_mut(), initial_code_id, initial_multisig_code_id);
+    do_instantiate(
+        deps.as_mut(),
+        initial_code_id,
+        initial_multisig_code_id,
+        "wasm",
+    );
     let proxy_code_id = query_proxy_code_id(deps.as_ref()).unwrap();
     assert_eq!(proxy_code_id, initial_code_id);
 

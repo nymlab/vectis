@@ -97,6 +97,7 @@ export interface FactoryInstance {
   readonly instantiateMsg: {
     readonly proxy_code_id: number;
     readonly proxy_multisig_code_id: number;
+    readonly addr_prefix: string;
   };
   readonly address: string;
   readonly initialFund: Coin[];

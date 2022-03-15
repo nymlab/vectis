@@ -77,6 +77,7 @@ describe("End to End testing: ", () => {
       {
         proxy_code_id: proxyRes.codeId,
         proxy_multisig_code_id: multisigRes.codeId,
+		addr_prefix: "wasm"
       },
       "wallet factory",
       defaultInstantiateFee,
@@ -88,6 +89,7 @@ describe("End to End testing: ", () => {
       instantiateMsg: {
         proxy_code_id: proxyRes.codeId,
         proxy_multisig_code_id: multisigRes.codeId,
+		addr_prefix: "wasm"
       },
       address: contractAddress,
       initialFund: [initialFund],

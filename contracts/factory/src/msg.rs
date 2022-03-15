@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub proxy_code_id: u64,
     pub proxy_multisig_code_id: u64,
+    pub addr_prefix: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
