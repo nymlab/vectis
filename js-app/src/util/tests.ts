@@ -3,8 +3,9 @@ import {
   DirectSecp256k1Wallet,
   DirectSecp256k1HdWallet,
 } from "@cosmjs/proto-signing";
-import { Secp256k1, sha256 } from "@cosmjs/crypto";
-import { toBase64, toUtf8, toHex, fromHex } from "@cosmjs/encoding";
+import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
+import { makeCosmoshubPath} from "@cosmjs/amino";
+import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { Coin, calculateFee, GasPrice } from "@cosmjs/stargate";
 import * as fs from 'fs';
 import { rpcEndPoint } from "./config";
@@ -61,9 +62,15 @@ export async function createSigningClientFromKey(key: Uint8Array, addrPrefix: st
     );
 }
 
-export async function createRelayTransaction(privkey: Uint8Array, nonce: number, jsonMsg: string): Promise<RelayTransaction>{
-	const keypair = await Secp256k1.makeKeypair(privkey);
-		
+export async function mnemonicToKeyPair(mnemonic: string): Promise<Secp256k1Keypair>{
+	const m = new EnglishMnemonic(mnemonic);
+    const seed = await Bip39.mnemonicToSeed(m);
+	const { privkey } = Slip10.derivePath(Slip10Curve.Secp256k1, seed, makeCosmoshubPath(0));
+	return await Secp256k1.makeKeypair(privkey);
+}
+
+export async function createRelayTransaction(mnemonic: string, nonce: number, jsonMsg: string): Promise<RelayTransaction>{
+	const keypair = await mnemonicToKeyPair(mnemonic);
 	const messageNonceBytes = new Uint8Array([
 		...toUtf8(jsonMsg),
 		...longToByteArray(nonce),
