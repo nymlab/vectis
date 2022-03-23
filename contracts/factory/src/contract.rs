@@ -6,8 +6,8 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CanonicalAddr, ContractResult, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order,
+    Reply, Response, StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -272,29 +272,29 @@ fn update_proxy_multisig_code_id(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, StdError> {
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdError> {
     // NOTE: Error returned in `reply` is equivalent to contract error, all states revert,
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
     let expected_id = TOTAL_CREATED.load(deps.storage)?;
-    if msg.id == expected_id {
-        match msg.result {
-            ContractResult::Ok(response) => {
+    if reply.id == expected_id {
+        match reply.result.into_result() {
+            Ok(response) => {
                 // Note: This is the default instantiate event
                 let addr_str = &response.events[0].attributes[0].value;
-                let proxy_addr: CanonicalAddr = deps.api.addr_canonicalize(addr_str)?;
+                let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(addr_str)?;
 
-                WALLETS.save(deps.storage, &proxy_addr, &())?;
+                WALLETS.save(deps.storage, &wallet_addr, &())?;
 
                 let res = Response::new()
                     .add_attribute("action", "Wallet Proxy Stored")
                     .add_attribute("proxy_address", addr_str);
                 Ok(res)
             }
-            ContractResult::Err(e) => Err(StdError::GenericErr { msg: e }),
+            Err(e) => Err(StdError::GenericErr { msg: e }),
         }
     } else {
-        Err(StdError::NotFound {
-            kind: "Reply Id".into(),
+        Err(StdError::GenericErr {
+            msg: ContractError::InvalidReplyId {}.to_string(),
         })
     }
 }
@@ -312,7 +312,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_wallet_list(deps: Deps) -> StdResult<WalletListResponse> {
     let wallets: Result<Vec<_>, _> = WALLETS
         .keys(deps.storage, None, None, Order::Ascending)
-        .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key)))
+        .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key?)))
         .collect();
 
     Ok(WalletListResponse { wallets: wallets? })

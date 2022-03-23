@@ -145,7 +145,6 @@ fn user_can_update_non_multisig_guardian() {
 }
 
 #[test]
-#[test]
 fn user_can_add_relayer() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     let user_addr = do_instantiate(deps.as_mut());

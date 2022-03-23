@@ -1,7 +1,7 @@
 use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, WasmMsg};
 use cw_multi_test::Executor;
 use sc_wallet::{ProxyMigrateMsg, ProxyMigrationTxMsg, WalletAddr, WalletInfo};
-use wallet_factory::msg::ExecuteMsg as FactoryExecuteMsg;
+use wallet_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
 use wallet_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 
 pub mod common;
@@ -113,7 +113,6 @@ fn relayer_can_migrate_proxy_with_user_signature() {
     });
 
     let relay_transaction = suite.create_relay_transaction(USER_PRIV, migrate_msg, w.nonce);
-    println!("{:?}", relay_transaction.signature);
 
     let execute_msg_resp = suite.app.execute_contract(
         relayer,
@@ -167,14 +166,14 @@ fn user_cannot_migrate_others_wallet() {
 
     let not_user = Addr::unchecked("not_user");
 
-    let execute_msg_resp = suite
+    let execute_msg_err: ContractError = suite
         .app
-        .execute_contract(not_user, factory, &migrate_wallet_msg, &[]);
+        .execute_contract(not_user, factory, &migrate_wallet_msg, &[])
+        .unwrap_err()
+        .downcast()
+        .unwrap();
 
-    assert_eq!(
-        execute_msg_resp.unwrap_err().to_string(),
-        String::from("Unauthorized")
-    );
+    assert_eq!(execute_msg_err.to_string(), String::from("Unauthorized"));
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert_eq!(new_w.code_id, code_id);
 }
@@ -213,13 +212,15 @@ fn user_cannot_migrate_with_mismatched_code_id() {
         ),
     };
 
-    let execute_msg_resp =
-        suite
-            .app
-            .execute_contract(w.user_addr, factory, &migrate_wallet_msg, &[]);
+    let execute_msg_err: ContractError = suite
+        .app
+        .execute_contract(w.user_addr, factory, &migrate_wallet_msg, &[])
+        .unwrap_err()
+        .downcast()
+        .unwrap();
 
     assert_eq!(
-        execute_msg_resp.unwrap_err().to_string(),
+        execute_msg_err.to_string(),
         String::from("InvalidMigrationMsg: MismatchProxyCodeId")
     );
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -253,13 +254,15 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
         ),
     };
 
-    let execute_msg_resp =
-        suite
-            .app
-            .execute_contract(w.user_addr, factory, &migrate_wallet_msg, &[]);
+    let execute_msg_err: ContractError = suite
+        .app
+        .execute_contract(w.user_addr, factory, &migrate_wallet_msg, &[])
+        .unwrap_err()
+        .downcast()
+        .unwrap();
 
     assert_eq!(
-        execute_msg_resp.unwrap_err().to_string(),
+        execute_msg_err.to_string(),
         String::from("InvalidMigrationMsg: InvalidWasmMsg")
     );
 }
@@ -289,17 +292,22 @@ fn relayer_cannot_migrate_others_wallet() {
 
     let relay_transaction = suite.create_relay_transaction(USER_PRIV, migrate_msg, w.nonce + 123);
 
-    let execute_msg_resp = suite.app.execute_contract(
-        relayer,
-        factory.clone(),
-        &FactoryExecuteMsg::MigrateWallet {
-            wallet_address: WalletAddr::Addr(wallet_address.clone()),
-            migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
-        },
-        &[],
-    );
+    let execute_msg_err: ContractError = suite
+        .app
+        .execute_contract(
+            relayer,
+            factory.clone(),
+            &FactoryExecuteMsg::MigrateWallet {
+                wallet_address: WalletAddr::Addr(wallet_address.clone()),
+                migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
+            },
+            &[],
+        )
+        .unwrap_err()
+        .downcast()
+        .unwrap();
     assert_eq!(
-        execute_msg_resp.unwrap_err().to_string(),
+        execute_msg_err.to_string(),
         String::from("InvalidRelayMigrationTx: NoncesAreNotEqual")
     );
 }
@@ -331,17 +339,22 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
     // invalid user_pubkey
     relay_transaction.user_pubkey = Binary([0; 33].to_vec());
 
-    let execute_msg_resp = suite.app.execute_contract(
-        relayer,
-        factory.clone(),
-        &FactoryExecuteMsg::MigrateWallet {
-            wallet_address: WalletAddr::Addr(wallet_address.clone()),
-            migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
-        },
-        &[],
-    );
+    let execute_msg_err: ContractError = suite
+        .app
+        .execute_contract(
+            relayer,
+            factory.clone(),
+            &FactoryExecuteMsg::MigrateWallet {
+                wallet_address: WalletAddr::Addr(wallet_address.clone()),
+                migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
+            },
+            &[],
+        )
+        .unwrap_err()
+        .downcast()
+        .unwrap();
     assert_eq!(
-        execute_msg_resp.unwrap_err().to_string(),
+        execute_msg_err.to_string(),
         String::from("InvalidRelayMigrationTx: MismatchUserAddr")
     );
 }
@@ -381,17 +394,22 @@ fn relayer_cannot_migrate_proxy_with_invalid_signature() {
         .to_vec(),
     );
 
-    let execute_msg_resp = suite.app.execute_contract(
-        relayer,
-        factory.clone(),
-        &FactoryExecuteMsg::MigrateWallet {
-            wallet_address: WalletAddr::Addr(wallet_address.clone()),
-            migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
-        },
-        &[],
-    );
+    let execute_msg_err: ContractError = suite
+        .app
+        .execute_contract(
+            relayer,
+            factory.clone(),
+            &FactoryExecuteMsg::MigrateWallet {
+                wallet_address: WalletAddr::Addr(wallet_address.clone()),
+                migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
+            },
+            &[],
+        )
+        .unwrap_err()
+        .downcast()
+        .unwrap();
     assert_eq!(
-        execute_msg_resp.unwrap_err().to_string(),
+        execute_msg_err.to_string(),
         String::from("InvalidRelayMigrationTx: SignatureVerificationError")
     );
 }

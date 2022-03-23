@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CanonicalAddr, ContractResult, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -312,7 +312,7 @@ pub fn execute_update_guardians(
     };
 
     // Replace the entire locally stored guardians list
-    let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS);
+    let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS)?;
     for guardian in guardians_to_remove {
         GUARDIANS.remove(deps.storage, &guardian);
     }
@@ -361,23 +361,28 @@ pub fn execute_update_guardians(
 
 // Used to handle different multisig actions
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
-    match msg.result {
-        // when new wallet with guardians multisig support instantiated
-        ContractResult::Ok(response) if msg.id == MULTISIG_INSTANTIATE_ID => {
-            // Note: This is the default instantiate event
-            let addr_str = &response.events[0].attributes[0].value;
-            let multisig_addr: CanonicalAddr = deps.api.addr_canonicalize(addr_str)?;
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> StdResult<Response> {
+    if reply.id == MULTISIG_INSTANTIATE_ID {
+        match reply.result.into_result() {
+            // when new wallet with guardians multisig support instantiated
+            Ok(response) => {
+                // Note: This is the default instantiate event
+                let addr_str = &response.events[0].attributes[0].value;
+                let multisig_addr: CanonicalAddr = deps.api.addr_canonicalize(addr_str)?;
 
-            MULTISIG_ADDRESS.save(deps.storage, &multisig_addr)?;
+                MULTISIG_ADDRESS.save(deps.storage, &multisig_addr)?;
 
-            let res = Response::new()
-                .add_attribute("action", "Fixed Multisig Stored")
-                .add_attribute("multisig_address", addr_str);
-            Ok(res)
+                let res = Response::new()
+                    .add_attribute("action", "Fixed Multisig Stored")
+                    .add_attribute("multisig_address", addr_str);
+                Ok(res)
+            }
+            Err(e) => Err(StdError::GenericErr { msg: e }),
         }
-        ContractResult::Err(e) => Err(StdError::GenericErr { msg: e }),
-        _ => Ok(Response::default()),
+    } else {
+        Err(StdError::GenericErr {
+            msg: ContractError::InvalidMessage {}.to_string(),
+        })
     }
 }
 
