@@ -35,4 +35,6 @@ pub enum ContractError {
     IncorrectThreshold {},
     #[error("RelayTxError")]
     RelayTxError(RelayTxError),
+    #[error("InvalidReplyId")]
+    InvalidReplyId {},
 }

@@ -1,5 +1,4 @@
 use cosmwasm_std::{Addr, CanonicalAddr, Deps, Env, Order, StdResult};
-use std::collections::BTreeSet;
 use std::iter::Iterator;
 
 use crate::error::ContractError;
@@ -23,12 +22,12 @@ pub fn addresses_to_voters(addresses: &[String]) -> Vec<Voter> {
 pub fn load_addresses(deps: &Deps, addresses: Map<&[u8], ()>) -> StdResult<Vec<Addr>> {
     addresses
         .keys(deps.storage, None, None, Order::Ascending)
-        .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key)))
+        .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key?)))
         .collect()
 }
 
 /// Load canonical addresses from store
-pub fn load_canonical_addresses(deps: &Deps, addresses: Map<&[u8], ()>) -> BTreeSet<Vec<u8>> {
+pub fn load_canonical_addresses(deps: &Deps, addresses: Map<&[u8], ()>) -> StdResult<Vec<Vec<u8>>> {
     addresses
         .keys(deps.storage, None, None, Order::Ascending)
         .collect()

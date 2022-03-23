@@ -22,10 +22,10 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = { version = "1.0.0-beta" }
-cw-storage-plus = "0.10.0"
-cw1 = "0.10.0"
-cw2 = "0.10.0"
+cosmwasm-std = { version = "1.0.0-beta7" }
+cw-storage-plus = "0.13.0"
+cw1 = "0.13.0"
+cw2 = "0.13.0"
 wallet-proxy = { path = "../proxy", features = ["library"]}
 sc-wallet = {path = "../../packages/factory"}
 schemars = "0.8.3"
@@ -35,10 +35,10 @@ derivative = "2"
 
 [dev-dependencies]
 anyhow = "1"
-cosmwasm-schema = { version = "1.0.0-beta" }
+cosmwasm-schema = { version = "1.0.0-beta7" }
 assert_matches = "1"
-cw-multi-test = "0.10.0"
+cw-multi-test = "0.13.0"
 secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}
-cw3-fixed-multisig = { version = "0.11.1", features = ["library"] }
-cw3 = "0.11.1"
+cw3-fixed-multisig = { version = "0.13.0", features = ["library"] }
+cw3 = "0.13.0"
 wallet-proxy = { path = "../proxy", features = ["migration", "library"]}

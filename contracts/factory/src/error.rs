@@ -28,6 +28,8 @@ pub enum ContractError {
     InvalidMigrationMsg(MigrationMsgError),
     #[error("InvalidRelayMigrationTx: {0}")]
     InvalidRelayMigrationTx(RelayTxError),
+    #[error("InvalidReplyId")]
+    InvalidReplyId {},
 }
 
 impl From<MigrationMsgError> for ContractError {
