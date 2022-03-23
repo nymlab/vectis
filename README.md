@@ -95,6 +95,24 @@ npm i           # Install all dependencies
 npm test        # Run tests
 ```
 
+### Local Juno node
+
+Follow the [instruction](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation):
+
+```sh
+# clone juno repo
+git clone https://github.com/CosmosContracts/juno.git && cd juno
+
+# get current testnet tag
+git fetch --tags
+git checkout v2.3.0-beta
+
+# build juno executable
+make build && make install
+
+which junod
+```
+
 ### Gitpod integration
 
 The `/contracts` directory is generated from the [cosmwasm template](https://github.com/CosmWasm/cw-template) which provides config for gitpod.

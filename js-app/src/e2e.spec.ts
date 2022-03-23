@@ -1,7 +1,7 @@
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { coin } from "@cosmjs/stargate";
-import { Secp256k1, sha256 } from "@cosmjs/crypto";
-import { toBase64, toUtf8, toHex, fromHex } from "@cosmjs/encoding";
+import { sha256 } from "@cosmjs/crypto";
+import { toBase64, toUtf8, toHex} from "@cosmjs/encoding";
 import { assert } from "@cosmjs/utils";
 
 import {
@@ -13,16 +13,13 @@ import {
   factoryCodePath,
   proxyCodePath,
   rpcEndPoint,
-  userPrivKey,
+  userMnemonic,
   userAddr,
   relayer1Addr,
   relayer2Addr,
   guardian1Addr,
   guardian2Addr,
-  guardian1Mnemonic,
-  guardian2Mnemonic,
   relayer1Mnemonic,
-  relayer2Mnemonic,
 } from "./util/config";
 import {
   defaultUploadFee,
@@ -31,6 +28,7 @@ import {
   defaultWalletCreationFee,
   defaultExecuteFee,
   defaultRelayFee,
+  mnemonicToKeyPair,
   CreateWalletMsg,
   WalletInstance,
   FactoryInstance,
@@ -38,7 +36,6 @@ import {
   WasmExecuteMsg,
   BankMsg,
   createSigningClient,
-  createSigningClientFromKey,
   createRelayTransaction,
 } from "./util/tests";
 
@@ -128,12 +125,12 @@ describe("End to End testing: ", () => {
   it("creating new wallet with multisig guardians", async () => {
     assert(factory);
     const adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-    const userkeypair = await Secp256k1.makeKeypair(fromHex(userPrivKey!));
+	const userKeypair = await mnemonicToKeyPair(userMnemonic!);
     const walletInitialFunds = [coin(1000, "ucosm")];
     const walletMultisigInitialFunds = [coin(100, "ucosm")];
 
     const walletInitMsg: CreateWalletMsg = {
-      user_pubkey: toBase64(userkeypair.pubkey),
+      user_pubkey: toBase64(userKeypair.pubkey),
       guardians: {
         addresses: [guardian1Addr!, guardian2Addr!],
         guardians_multisig: {
@@ -203,8 +200,8 @@ describe("End to End testing: ", () => {
   it("user can send funds via execute", async () => {
     assert(factory);
     assert(wallet);
-    const userClient = await createSigningClientFromKey(
-      fromHex(userPrivKey!),
+    const userClient = await createSigningClient(
+	  userMnemonic!,
       addrPrefix!
     );
     const sendAmount = coin(2, "ucosm");
@@ -247,7 +244,7 @@ describe("End to End testing: ", () => {
     };
 
     const relayTransaction = await createRelayTransaction(
-      fromHex(userPrivKey!),
+      userMnemonic!,
       0,
       JSON.stringify(sendMsg)
     );
@@ -312,7 +309,7 @@ describe("End to End testing: ", () => {
       },
     };
 
-	const relayTransaction = await createRelayTransaction(fromHex(userPrivKey!), 1, JSON.stringify(wasmMsg));
+	const relayTransaction = await createRelayTransaction(userMnemonic!, 1, JSON.stringify(wasmMsg));
     await relayerClient.execute(
       relayer1Addr!,
       wallet.address,
