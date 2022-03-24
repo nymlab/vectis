@@ -48,13 +48,29 @@ cargo test
 
 ### Local Node
 
-#### 1. Set up `wasmd` locally, which has the Cosmwasm module and a CLI
+#### 1. Set up a node locally
+
+You can use either `juno` or `wasmd`
+
+##### For juno node
+
+###### Option 1: Docker
+
+Make sure you have docker installer.
+Then simply run `./local-juno-setup.sh` which will spin up a container and run the setup script to seed some accounts.
+Please make sure you have `.env.juno.local` to use these accounts if you want to run js-app tests
+
+###### Option 2: Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
+
+**Note:** this requires you to do a setup script to seed the accounts use for js-app test specified in the `.env.juno.local`
+
+##### For Wasmd
 
 ```sh
 git clone https://github.com/CosmWasm/wasmd.git
 cd wasmd
 # replace the v0.18.0 with the most stable version on https://github.com/CosmWasm/wasmd/releases
-git checkout v0.20.0
+git checkout v0.24.0
 make install
 
 # verify the installation
@@ -64,7 +80,7 @@ wasmd version
 > **INFO:** `make install` will copy wasmd to `$HOME/go/bin` or the default directory for binaries from Go,
 > please make sure that is in your `PATH`.
 
-#### 2. Start the node
+##### Start the node
 
 ```sh
 ./local-node-setup.sh
@@ -84,33 +100,14 @@ We are using [cosmJS](https://github.com/cosmos/cosmjs) to test the smart contra
 The testing framework used is [Jasmine](https://jasmine.github.io/)
 The JS app is in the `js-app` directory.
 
-Please ensure you have set up the `.env.dev` file according to the `example.env`.
-More details of the roles are in `./local-node-setup.sh`.
+Please ensure you have set up the `.env.juno.local` or `.env.dev` file according to the `example.env`.
 
-> Note: _The tests include deploying the contracts_
+> Note: _The tests include storing and instantiating the contracts_
 
 ```sh
 cd js-app
 npm i           # Install all dependencies
-npm test        # Run tests
-```
-
-### Local Juno node
-
-Follow the [instruction](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation):
-
-```sh
-# clone juno repo
-git clone https://github.com/CosmosContracts/juno.git && cd juno
-
-# get current testnet tag
-git fetch --tags
-git checkout v2.3.0-beta
-
-# build juno executable
-make build && make install
-
-which junod
+export NODE_ENV=juno-local && npm test        # Run tests for juno local or use "dev"
 ```
 
 ### Gitpod integration
