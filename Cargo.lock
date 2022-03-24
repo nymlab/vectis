@@ -807,6 +807,7 @@ dependencies = [
  "cw3",
  "cw3-fixed-multisig",
  "derivative",
+ "hex",
  "sc-wallet",
  "schemars",
  "secp256k1",
