@@ -8,7 +8,7 @@ import { makeCosmoshubPath} from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { Coin, calculateFee, GasPrice } from "@cosmjs/stargate";
 import * as fs from 'fs';
-import { rpcEndPoint } from "./config";
+import { rpcEndPoint, gasprice} from "./config";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {
   broadcastPollIntervalMs: 300,
@@ -89,16 +89,16 @@ export async function createRelayTransaction(mnemonic: string, nonce: number, js
 	}
 }
 
-export const defaultGasPrice = GasPrice.fromString("0.025ucosm");
-export const defaultUploadFee = calculateFee(2_500_000, defaultGasPrice);
-export const defaultInstantiateFee = calculateFee(500_000, defaultGasPrice);
-export const defaultSendFee = calculateFee(80_000, defaultGasPrice);
-export const defaultExecuteFee = calculateFee(200_000, defaultGasPrice);
-export const defaultRelayFee = calculateFee(400_000, defaultGasPrice);
-export const defaultWalletCreationFee = calculateFee(500_000, defaultGasPrice);
-export const defaultMigrateFee = calculateFee(200_000, defaultGasPrice);
-export const defaultUpdateAdminFee = calculateFee(80_000, defaultGasPrice);
-export const defaultClearAdminFee = calculateFee(80_000, defaultGasPrice);
+export const defaultGasPrice = GasPrice.fromString(gasprice!);
+export const defaultUploadFee = calculateFee(55_500_000, defaultGasPrice);
+export const defaultInstantiateFee = calculateFee(1_500_000, defaultGasPrice);
+export const defaultSendFee = calculateFee(800_000, defaultGasPrice);
+export const defaultExecuteFee = calculateFee(1_200_000, defaultGasPrice);
+export const defaultRelayFee = calculateFee(1_400_000, defaultGasPrice);
+export const defaultWalletCreationFee = calculateFee(1_500_000, defaultGasPrice);
+export const defaultMigrateFee = calculateFee(1_200_000, defaultGasPrice);
+export const defaultUpdateAdminFee = calculateFee(800_000, defaultGasPrice);
+export const defaultClearAdminFee = calculateFee(800_000, defaultGasPrice);
 
 export interface FactoryInstance {
   readonly instantiateMsg: {
@@ -161,4 +161,3 @@ export interface RelayTransaction {
 		nonce: number;
 	}
 }
-
