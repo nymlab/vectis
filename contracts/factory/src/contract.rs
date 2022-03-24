@@ -277,21 +277,24 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdErro
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
     let expected_id = TOTAL_CREATED.load(deps.storage)?;
     if reply.id == expected_id {
-        match reply.result.into_result() {
-            Ok(response) => {
-                // Note: This is the default instantiate event
-                let addr_str = &response.events[0].attributes[0].value;
-                let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(addr_str)?;
+        let data = reply.result.into_result().map_err(StdError::generic_err)?;
+        let first_instantiate_event = data
+            .events
+            .iter()
+            .find(|e| e.ty == "instantiate")
+            .ok_or_else(|| StdError::generic_err(format!("unable to find reply event")))?;
 
-                WALLETS.save(deps.storage, &wallet_addr, &())?;
+        // When running in multitest the key for addr is _contract_addr
+        // However, it is _contract_address when deployed to wasmd chain
+        // TODO: issue
+        let str_addr = &first_instantiate_event.attributes[0].value;
+        let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&str_addr)?;
+        WALLETS.save(deps.storage, &wallet_addr, &())?;
 
-                let res = Response::new()
-                    .add_attribute("action", "Wallet Proxy Stored")
-                    .add_attribute("proxy_address", addr_str);
-                Ok(res)
-            }
-            Err(e) => Err(StdError::GenericErr { msg: e }),
-        }
+        let res = Response::new()
+            .add_attribute("action", "Wallet Proxy Stored")
+            .add_attribute("proxy_address", str_addr);
+        Ok(res)
     } else {
         Err(StdError::GenericErr {
             msg: ContractError::InvalidReplyId {}.to_string(),

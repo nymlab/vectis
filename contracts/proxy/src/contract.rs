@@ -41,7 +41,7 @@ const MAX_MULTISIG_VOTING_PERIOD: Duration = Duration::Time(2 << 27);
 /// Used to spot an multisig instantiate reply
 const MULTISIG_INSTANTIATE_ID: u64 = u64::MAX;
 
-#[cfg_attr(not(any(feature = "library", feature = "migration")), entry_point)]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
@@ -363,22 +363,26 @@ pub fn execute_update_guardians(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> StdResult<Response> {
     if reply.id == MULTISIG_INSTANTIATE_ID {
-        match reply.result.into_result() {
-            // when new wallet with guardians multisig support instantiated
-            Ok(response) => {
-                // Note: This is the default instantiate event
-                let addr_str = &response.events[0].attributes[0].value;
-                let multisig_addr: CanonicalAddr = deps.api.addr_canonicalize(addr_str)?;
+        let data = reply.result.into_result().map_err(StdError::generic_err)?;
+        let first_instantiate_event = data
+            .events
+            .iter()
+            .find(|e| e.ty == "instantiate")
+            .ok_or_else(|| StdError::generic_err(format!("unable to find reply event")))?;
 
-                MULTISIG_ADDRESS.save(deps.storage, &multisig_addr)?;
+        // When running in multitest the key for addr is _contract_addr
+        // However, it is _contract_address when deployed to wasmd chain
+        // TODO: issue
+        let str_addr = &first_instantiate_event.attributes[0].value;
 
-                let res = Response::new()
-                    .add_attribute("action", "Fixed Multisig Stored")
-                    .add_attribute("multisig_address", addr_str);
-                Ok(res)
-            }
-            Err(e) => Err(StdError::GenericErr { msg: e }),
-        }
+        let multisig_addr: CanonicalAddr = deps.api.addr_canonicalize(str_addr)?;
+
+        MULTISIG_ADDRESS.save(deps.storage, &multisig_addr)?;
+
+        let res = Response::new()
+            .add_attribute("action", "Fixed Multisig Stored")
+            .add_attribute("multisig_address", str_addr);
+        Ok(res)
     } else {
         Err(StdError::GenericErr {
             msg: ContractError::InvalidMessage {}.to_string(),
