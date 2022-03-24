@@ -282,13 +282,13 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdErro
             .events
             .iter()
             .find(|e| e.ty == "instantiate")
-            .ok_or_else(|| StdError::generic_err(format!("unable to find reply event")))?;
+            .ok_or_else(|| StdError::generic_err("Reply: Unable to find reply event"))?;
 
         // When running in multitest the key for addr is _contract_addr
         // However, it is _contract_address when deployed to wasmd chain
         // TODO: issue
         let str_addr = &first_instantiate_event.attributes[0].value;
-        let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&str_addr)?;
+        let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(str_addr)?;
         WALLETS.save(deps.storage, &wallet_addr, &())?;
 
         let res = Response::new()
