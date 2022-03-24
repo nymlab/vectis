@@ -1,6 +1,7 @@
 import * as dotenv from "dotenv";
 
 dotenv.config();
+console.log("Test for: ", process.env.NODE_ENV);
 let path;
 switch (process.env.NODE_ENV) {
   case "juno-local": 
@@ -18,14 +19,15 @@ switch (process.env.NODE_ENV) {
 dotenv.config({ path: path });
 
 // in hex
+export const gasprice = process.env.GAS_PRICE; 
+export const coinDenom = process.env.COIN_DENOM;
+export const coinMinDenom = process.env.COIN_MIN_DENOM;
 export const rpcEndPoint = process.env.RPC;
 export const chainId = process.env.CHAIN_ID;
 export const adminMnemonic = process.env.ADMIN_MNEMONIC;
 export const adminAddr= process.env.ADMIN_ADDR;
 export const userMnemonic = process.env.USER_MNEMONIC;
 export const userAddr = process.env.USER_ADDR;
-export const userPrivKey = process.env.USER_PRIV;
-
 export const guardian1Mnemonic = process.env.GUARDIAN1_MNEMONIC;
 export const guardian1Addr = process.env.GUARDIAN1_ADDR;
 export const guardian2Mnemonic = process.env.GUARDIAN2_MNEMONIC;
