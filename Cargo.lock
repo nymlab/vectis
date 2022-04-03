@@ -246,6 +246,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bde60d92c3494c1b95651a530a7a655ece887ad2bb953451045b9f41a328bc7"
+dependencies = [
+ "cosmwasm-std",
+ "cw-utils",
+ "schemars",
+ "serde",
+]
+
+[[package]]
 name = "cw3"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -413,6 +425,23 @@ dependencies = [
  "cfg-if",
  "libc",
  "wasi 0.10.2+wasi-snapshot-preview1",
+]
+
+[[package]]
+name = "govec"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw1",
+ "cw2",
+ "cw20",
+ "derivative",
+ "hex",
+ "schemars",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

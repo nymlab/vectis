@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/proxy", "contracts/factory"]
+members = ["packages/*", "contracts/proxy", "contracts/factory", "contracts/govec"]
 exclude = ["contracts/tests","packages/images"]
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
@@ -8,6 +8,10 @@ codegen-units = 1
 incremental = false
 
 [profile.release.package.wallet-proxy]
+codegen-units = 1
+incremental = false
+
+[profile.release.package.govec]
 codegen-units = 1
 incremental = false
 
