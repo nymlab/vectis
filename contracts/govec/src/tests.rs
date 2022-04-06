@@ -432,8 +432,36 @@ fn burn() {
     );
 
     // check balance query (empty)
-    let data = query(deps.as_ref(), env, QueryMsg::Balance { address: addr1 });
+    let data = query(
+        deps.as_ref(),
+        env,
+        QueryMsg::Balance {
+            address: addr1.clone(),
+        },
+    );
     assert!(data.is_err());
+
+    // cannot transfer to burnt wallet
+    let info = mock_info(addr3.as_ref(), &[]);
+    let env = mock_env();
+    let msg = ExecuteMsg::Transfer {
+        recipient: addr1.clone(),
+        amount: Uint128::new(1),
+    };
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // cannot send to burnt wallet
+    let info = mock_info(addr3.as_ref(), &[]);
+    let env = mock_env();
+    let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
+    let msg = ExecuteMsg::Send {
+        contract: addr1,
+        amount: Uint128::new(1),
+        msg: send_msg,
+    };
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 
     // cannot burn too little
     let info = mock_info(addr2.as_ref(), &[]);
