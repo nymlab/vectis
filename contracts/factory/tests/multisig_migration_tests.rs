@@ -29,6 +29,7 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
     );
+    println!("create_proxy_rsp: {:?}", create_proxy_rsp);
 
     assert!(create_proxy_rsp.is_ok());
 

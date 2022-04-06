@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Coin, CosmosMsg, Empty, QueryRequest, StdError, WasmQuery,
+    coin, to_binary, Addr, Binary, Coin, CosmosMsg, Empty, QueryRequest, StdError, Uint128,
+    WasmQuery,
 };
 use cw3::VoterListResponse;
 use cw3_fixed_multisig::contract::{
@@ -117,6 +118,8 @@ impl Suite {
                     proxy_code_id,
                     proxy_multisig_code_id,
                     addr_prefix: "wasm".to_string(),
+                    coin_denom: "ucosm".to_string(),
+                    wallet_fee: Uint128::new(0u128),
                 }, // InstantiateMsg
                 &init_funds,
                 "wallet-factory", // label: human readible name for contract
