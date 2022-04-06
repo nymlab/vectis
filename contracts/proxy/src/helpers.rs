@@ -51,16 +51,14 @@ pub fn ensure_is_contract_self(env: &Env, sender: &Addr) -> Result<(), ContractE
 }
 
 /// Is used to authorize guardian or multisig contract
-pub fn authorize_guardian_or_multisig(
-    deps: Deps,
-    sender: &CanonicalAddr,
-) -> Result<(), ContractError> {
+pub fn authorize_guardian_or_multisig(deps: Deps, sender: &Addr) -> Result<(), ContractError> {
+    let s = deps.api.addr_canonicalize(sender.as_ref())?;
     match MULTISIG_ADDRESS.may_load(deps.storage)? {
         // if multisig is set, ensure it's address equal to the caller address
-        Some(multisig_address) if multisig_address.eq(sender) => Ok(()),
+        Some(multisig_address) if multisig_address.eq(&s) => Ok(()),
         Some(_) => Err(ContractError::IsNotMultisig {}),
         // if multisig is not set, ensure caller address is guardian
-        _ => ensure_is_guardian(deps, sender),
+        _ => ensure_is_guardian(deps, &s),
     }
 }
 
@@ -74,7 +72,7 @@ pub fn authorize_user_or_guardians(deps: Deps, sender: &Addr) -> Result<(), Cont
         _ => {
             let is_user_result = ensure_is_user(deps, sender.as_ref());
             // either guardian or multisig.
-            let is_guardian_result = authorize_guardian_or_multisig(deps, &addr_canonical);
+            let is_guardian_result = authorize_guardian_or_multisig(deps, sender);
             if is_user_result.is_ok() || is_guardian_result.is_ok() {
                 Ok(())
             } else {

@@ -252,10 +252,8 @@ pub fn execute_revert_freeze_status(
     deps: DepsMut,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    let sender = deps.api.addr_canonicalize(info.sender.as_ref())?;
-
     // Ensure caller is guardian or multisig
-    authorize_guardian_or_multisig(deps.as_ref(), &sender)?;
+    authorize_guardian_or_multisig(deps.as_ref(), &info.sender)?;
 
     // Invert frozen status
     let frozen = FROZEN.update(deps.storage, |mut frozen| -> StdResult<_> {
@@ -275,10 +273,8 @@ pub fn execute_rotate_user_key(
     info: MessageInfo,
     new_user_address: String,
 ) -> Result<Response, ContractError> {
-    let sender = deps.api.addr_canonicalize(info.sender.as_ref())?;
-
     // Ensure caller is guardian or multisig
-    authorize_guardian_or_multisig(deps.as_ref(), &sender)?;
+    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
 
     // Ensure provided address is different from current
     let new_user_address = deps.api.addr_canonicalize(new_user_address.as_ref())?;
