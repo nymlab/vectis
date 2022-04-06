@@ -283,7 +283,7 @@ fn ensure_is_staking_or_wallet(deps: Deps, contract: &Addr) -> Result<(), Contra
             return Ok(());
         }
     }
-    if let Some(_) = wallet {
+    if wallet.is_some() {
         return Ok(());
     }
     Err(ContractError::Unauthorized {})
@@ -336,5 +336,5 @@ pub fn query_minter(deps: Deps) -> StdResult<Option<MinterResponse>> {
 }
 
 pub fn query_staking(deps: Deps) -> StdResult<Addr> {
-    Ok(STAKING_ADDR.load(deps.storage)?)
+    STAKING_ADDR.load(deps.storage)
 }
