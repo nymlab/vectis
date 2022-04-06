@@ -1,13 +1,14 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
-    ADDR_PREFIX, ADMIN, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED, WALLETS,
+    ADDR_PREFIX, ADMIN, COIN_DENOM, FEE, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
+    WALLETS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order,
-    Reply, Response, StdError, StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -36,6 +37,8 @@ pub fn instantiate(
     PROXY_MULTISIG_CODE_ID.save(deps.storage, &msg.proxy_multisig_code_id)?;
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
+    COIN_DENOM.save(deps.storage, &msg.coin_denom)?;
+    FEE.save(deps.storage, &Uint128::from(msg.wallet_fee))?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -49,7 +52,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::CreateWallet { create_wallet_msg } => {
-            create_wallet(deps, env, info, create_wallet_msg)
+            create_wallet(deps, env, create_wallet_msg)
         }
         ExecuteMsg::MigrateWallet {
             wallet_address,
@@ -61,6 +64,7 @@ pub fn execute(
         ExecuteMsg::UpdateProxyMultisigCodeId { new_code_id } => {
             update_proxy_multisig_code_id(deps, info, new_code_id)
         }
+        ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
     }
 }
 
@@ -68,16 +72,11 @@ pub fn execute(
 fn create_wallet(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
-    // Only admin DAO can create a new wallet
-    ensure_is_admin(deps.as_ref(), info.sender.as_ref())?;
-
     if create_wallet_msg.guardians.addresses.is_empty() {
         return Err(ContractError::EmptyGuardians {});
     }
-
     // Ensure fixed multisig threshold is valid, if provided
     ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
 
@@ -98,6 +97,22 @@ fn create_wallet(
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
         let res = Response::new().add_submessage(msg);
         TOTAL_CREATED.save(deps.storage, &next_id)?;
+
+        // Transfer tokenFEE.load(deps.storage)?s to the DAO
+        let fee = FEE.load(deps.storage)?;
+        if fee != Uint128::zero() {
+            let bank_msg = CosmosMsg::Bank(BankMsg::Send {
+                to_address: deps
+                    .api
+                    .addr_humanize(&ADMIN.load(deps.storage)?)?
+                    .to_string(),
+                amount: vec![Coin {
+                    denom: COIN_DENOM.load(deps.storage)?,
+                    amount: fee,
+                }],
+            });
+            return Ok(res.add_message(bank_msg));
+        }
         Ok(res)
     } else {
         Err(ContractError::OverFlow {})
@@ -269,6 +284,19 @@ fn update_proxy_multisig_code_id(
     Ok(Response::new()
         .add_attribute("config", "Proxy Multisig Code Id")
         .add_attribute("proxy_multisig_code_id", format!("{}", updated_code_id)))
+}
+
+fn update_wallet_fee(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_fee: u128,
+) -> Result<Response, ContractError> {
+    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    let fee = Uint128::new(new_fee);
+    FEE.save(deps.storage, &fee)?;
+    Ok(Response::new()
+        .add_attribute("action", "wallet_fee_updated")
+        .add_attribute("new fee", fee))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

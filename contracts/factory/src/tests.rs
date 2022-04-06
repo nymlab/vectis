@@ -1,6 +1,6 @@
 #[cfg(test)]
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::DepsMut;
+use cosmwasm_std::{DepsMut, Uint128};
 
 use crate::contract::{execute, instantiate, query_proxy_code_id, query_wallet_list};
 use crate::msg::{ExecuteMsg, InstantiateMsg, WalletListResponse};
@@ -11,12 +11,16 @@ fn do_instantiate(
     proxy_code_id: u64,
     proxy_multisig_code_id: u64,
     addr_prefix: &str,
+    coin_denom: &str,
+    wallet_fee: Uint128,
 ) {
     // we do not do integrated tests here so code ids are arbitrary
     let instantiate_msg = InstantiateMsg {
         proxy_code_id,
         proxy_multisig_code_id,
         addr_prefix: addr_prefix.to_string(),
+        coin_denom: coin_denom.to_string(),
+        wallet_fee: wallet_fee,
     };
     let info = mock_info("admin", &[]);
     let env = mock_env();
@@ -28,7 +32,7 @@ fn do_instantiate(
 fn initialise_with_no_wallets() {
     let mut deps = mock_dependencies();
 
-    do_instantiate(deps.as_mut(), 0, 1, "wasm");
+    do_instantiate(deps.as_mut(), 0, 1, "wasm", "ucosm", Uint128::new(1));
 
     // no wallets to start
     let wallets: WalletListResponse = query_wallet_list(deps.as_ref()).unwrap();
@@ -40,12 +44,13 @@ fn initialise_with_correct_code_id() {
     let mut deps = mock_dependencies();
     let initial_code_id = 1111;
     let initial_multisig_code_id = 2222;
-    let addr_prefix = "wasm";
     do_instantiate(
         deps.as_mut(),
         initial_code_id,
         initial_multisig_code_id,
-        addr_prefix,
+        "wasm",
+        "ucosm",
+        Uint128::new(1),
     );
     let proxy_code_id = query_proxy_code_id(deps.as_ref()).unwrap();
     assert_eq!(proxy_code_id, initial_code_id);
@@ -62,6 +67,8 @@ fn admin_upgrade_proxy_code_id_works() {
         initial_code_id,
         initial_multisig_code_id,
         "wasm",
+        "ucosm",
+        Uint128::new(1),
     );
     let proxy_code_id = query_proxy_code_id(deps.as_ref()).unwrap();
     assert_eq!(proxy_code_id, initial_code_id);
