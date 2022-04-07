@@ -8,7 +8,7 @@ pub mod common;
 use common::*;
 
 #[test]
-fn user_can_migrate_proxy_multisig_with_direct_message() {
+fn user_can_update_proxy_multisig_with_direct_message() {
     let mut suite = Suite::init().unwrap();
     let init_wallet_fund: Coin = coin(400, "ucosm");
     let factory = suite.instantiate_factory(
@@ -29,7 +29,6 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
     );
-    println!("create_proxy_rsp: {:?}", create_proxy_rsp);
 
     assert!(create_proxy_rsp.is_ok());
 
@@ -91,7 +90,7 @@ fn user_can_migrate_proxy_multisig_with_direct_message() {
 }
 
 #[test]
-fn relayer_can_migrate_proxy_multisig_with_user_signature() {
+fn relayer_can_update_proxy_multisig_with_user_signature() {
     let mut suite = Suite::init().unwrap();
     let init_wallet_fund: Coin = coin(400, "ucosm");
     let factory = suite.instantiate_factory(

@@ -111,6 +111,53 @@ fn non_guardian_cannot_revert_freeze_status() {
 }
 
 #[test]
+fn frozen_contract_cannot_execute_user_tx() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    do_instantiate(deps.as_mut());
+
+    let info = mock_info(GUARD1, &[]);
+    let env = mock_env();
+    let msg = ExecuteMsg::RevertFreezeStatus {};
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(response.attributes, [("action", "frozen")]);
+
+    let exec_msg: ExecuteMsg = ExecuteMsg::Execute {
+        msgs: vec![CosmosMsg::Bank(BankMsg::Burn {
+            amount: coins(1, "ucosm"),
+        })],
+    };
+    let exec_err = execute(deps.as_mut(), env, info, exec_msg).unwrap_err();
+    assert_eq!(exec_err, ContractError::Frozen {});
+}
+
+#[test]
+fn frozen_contract_user_cannot_rotate_guardians() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    let info = mock_info(GUARD1, &[]);
+    let env = mock_env();
+    let msg = ExecuteMsg::RevertFreezeStatus {};
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(response.attributes, [("action", "frozen")]);
+
+    let info = mock_info(user_addr.as_str(), &[]);
+    let env = mock_env();
+
+    let new_guardians = Guardians {
+        addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
+        guardians_multisig: None,
+    };
+    let msg = ExecuteMsg::UpdateGuardians {
+        guardians: new_guardians,
+        new_multisig_code_id: None,
+    };
+
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::Frozen {});
+}
+
+#[test]
 fn user_can_update_non_multisig_guardian() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     let user_addr = do_instantiate(deps.as_mut());
@@ -230,7 +277,31 @@ fn guardian_can_rotate_user_key() {
 }
 
 #[test]
-fn non_guardian_cannot_rotate_user_key() {
+fn user_can_rotate_user_key() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    // initially it is not frozen
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert!(!wallet_info.is_frozen);
+
+    let info = mock_info(&user_addr.to_string(), &[]);
+    let env = mock_env();
+
+    let new_address = "new_key";
+    let msg = ExecuteMsg::RotateUserKey {
+        new_user_address: new_address.to_string(),
+    };
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
+
+    // Ensure key is rotated successfully
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert!(new_address.eq(wallet_info.user_addr.as_str()));
+}
+
+#[test]
+fn invalid_guardian_or_use_cannot_rotate_user_key() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     do_instantiate(deps.as_mut());
 
@@ -243,8 +314,8 @@ fn non_guardian_cannot_rotate_user_key() {
         new_user_address: new_address.to_string(),
     };
 
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::IsNotGuardian {});
+    let res = execute(deps.as_mut(), env, info, msg);
+    assert!(res.is_err());
 }
 
 #[test]
@@ -469,4 +540,49 @@ fn relay_proxy_user_tx_invalid_nonce_fails() {
         response,
         ContractError::RelayTxError(RelayTxError::NoncesAreNotEqual {})
     );
+}
+
+#[test]
+fn frozen_contract_relay_proxy_user_tx_fails() {
+    let coins = coins(2, "token");
+
+    let mut deps = mock_dependencies_with_balance(&coins);
+    do_instantiate(deps.as_mut());
+
+    // GUARD1 is a valid relayer
+    let info = mock_info(GUARD1, &[]);
+    let env = mock_env();
+    let msg = ExecuteMsg::RevertFreezeStatus {};
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(response.attributes, [("action", "frozen")]);
+
+    // RELAYER1 is a valid relayer
+    let info = mock_info(RELAYER1, &[]);
+    let nonce = query_info(deps.as_ref()).unwrap().nonce;
+
+    let secp = Secp256k1::new();
+    let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
+    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+
+    let bank_msg = BankMsg::Burn { amount: coins };
+    let cosmos_msg = CosmosMsg::<()>::Bank(bank_msg);
+    let msg_bytes = to_binary(&cosmos_msg).unwrap();
+    let message_with_nonce = Message::from_hashed_data::<sha256::Hash>(
+        &msg_bytes
+            .iter()
+            .chain(&nonce.to_be_bytes())
+            .copied()
+            .collect::<Vec<u8>>(),
+    );
+    let sig = secp.sign(&message_with_nonce, &secret_key);
+
+    let relay_transaction = RelayTransaction {
+        message: Binary(msg_bytes.to_vec()),
+        user_pubkey: Binary(public_key.serialize().to_vec()),
+        signature: Binary(sig.serialize_compact().to_vec()),
+        nonce,
+    };
+
+    let err = execute_relay(deps.as_mut(), info, relay_transaction).unwrap_err();
+    assert_eq!(err, ContractError::Frozen {});
 }

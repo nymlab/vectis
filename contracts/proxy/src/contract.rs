@@ -167,6 +167,11 @@ pub fn execute_relay(
     let relayer_addr = deps.api.addr_canonicalize(info.sender.as_ref())?;
     ensure_is_relayer(deps.as_ref(), &relayer_addr)?;
 
+    // make sure guardians have not frozen the contract
+    if is_frozen(deps.as_ref())? {
+        return Err(ContractError::Frozen {});
+    }
+
     // Get user addr from it's pubkey
     let addr = pub_key_to_address(
         &deps,
@@ -273,8 +278,13 @@ pub fn execute_rotate_user_key(
     info: MessageInfo,
     new_user_address: String,
 ) -> Result<Response, ContractError> {
-    // Ensure caller is guardian or multisig
+    // Ensure caller is guardian or multisig or user
     authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
+
+    // make sure guardians have not frozen the contract
+    if is_frozen(deps.as_ref())? {
+        return Err(ContractError::Frozen {});
+    }
 
     // Ensure provided address is different from current
     let new_user_address = deps.api.addr_canonicalize(new_user_address.as_ref())?;
@@ -306,6 +316,11 @@ pub fn execute_update_guardians(
         is_user?;
         is_contract?;
     };
+
+    // make sure guardians have not frozen the contract
+    if is_frozen(deps.as_ref())? {
+        return Err(ContractError::Frozen {});
+    }
 
     // Replace the entire locally stored guardians list
     let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS)?;
