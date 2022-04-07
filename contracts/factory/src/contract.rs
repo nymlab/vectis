@@ -1,8 +1,7 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
-    ADDR_PREFIX, ADMIN, COIN_DENOM, FEE, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
-    WALLETS,
+    ADDR_PREFIX, ADMIN, FEE, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED, WALLETS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -37,8 +36,7 @@ pub fn instantiate(
     PROXY_MULTISIG_CODE_ID.save(deps.storage, &msg.proxy_multisig_code_id)?;
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
-    COIN_DENOM.save(deps.storage, &msg.coin_denom)?;
-    FEE.save(deps.storage, &Uint128::from(msg.wallet_fee))?;
+    FEE.save(deps.storage, &msg.wallet_fee)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -52,7 +50,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::CreateWallet { create_wallet_msg } => {
-            create_wallet(deps, env, create_wallet_msg)
+            create_wallet(deps, info, env, create_wallet_msg)
         }
         ExecuteMsg::MigrateWallet {
             wallet_address,
@@ -68,9 +66,43 @@ pub fn execute(
     }
 }
 
+/// Ensure user has sent in enough to cover the fee and the initial proxy balance
+fn ensure_enough_native_funds(
+    fee: Coin,
+    proxy_initial_fund: Vec<Coin>,
+    sent_fund: Vec<Coin>,
+) -> Result<(), ContractError> {
+    let init_native_fund = proxy_initial_fund.iter().fold(Uint128::zero(), |acc, c| {
+        if c.denom == fee.denom {
+            acc + c.amount
+        } else {
+            acc
+        }
+    });
+
+    let total_native_fund = fee.amount + init_native_fund;
+
+    let total_sent = sent_fund.iter().fold(Uint128::zero(), |acc, c| {
+        if c.denom == fee.denom {
+            acc + c.amount
+        } else {
+            acc
+        }
+    });
+
+    if total_native_fund == total_sent {
+        Ok(())
+    } else {
+        Err(ContractError::InvalidNativeFund(
+            total_native_fund,
+            total_sent,
+        ))
+    }
+}
 /// Creates a SCW by instantiating an instance of the `wallet_proxy` contract
 fn create_wallet(
     deps: DepsMut,
+    info: MessageInfo,
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
@@ -78,7 +110,13 @@ fn create_wallet(
         return Err(ContractError::EmptyGuardians {});
     }
     // Ensure fixed multisig threshold is valid, if provided
+    let fee = FEE.load(deps.storage)?;
     ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
+    ensure_enough_native_funds(
+        fee.clone(),
+        create_wallet_msg.proxy_initial_funds.clone(),
+        info.funds,
+    )?;
 
     if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
         // The wasm message containing the `wallet_proxy` instantiation message
@@ -98,18 +136,13 @@ fn create_wallet(
         let res = Response::new().add_submessage(msg);
         TOTAL_CREATED.save(deps.storage, &next_id)?;
 
-        // Transfer tokenFEE.load(deps.storage)?s to the DAO
-        let fee = FEE.load(deps.storage)?;
-        if fee != Uint128::zero() {
+        if fee.amount != Uint128::zero() {
             let bank_msg = CosmosMsg::Bank(BankMsg::Send {
                 to_address: deps
                     .api
                     .addr_humanize(&ADMIN.load(deps.storage)?)?
                     .to_string(),
-                amount: vec![Coin {
-                    denom: COIN_DENOM.load(deps.storage)?,
-                    amount: fee,
-                }],
+                amount: vec![fee],
             });
             return Ok(res.add_message(bank_msg));
         }
@@ -289,14 +322,13 @@ fn update_proxy_multisig_code_id(
 fn update_wallet_fee(
     deps: DepsMut,
     info: MessageInfo,
-    new_fee: u128,
+    new_fee: Coin,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
-    let fee = Uint128::new(new_fee);
-    FEE.save(deps.storage, &fee)?;
+    FEE.save(deps.storage, &new_fee)?;
     Ok(Response::new()
-        .add_attribute("action", "wallet_fee_updated")
-        .add_attribute("new fee", fee))
+        .add_attribute("config", "Wallet Fee")
+        .add_attribute("New Fee", format!("{}", new_fee)))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -336,7 +368,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Wallets {} => to_binary(&query_wallet_list(deps)?),
         QueryMsg::ProxyCodeId {} => to_binary(&query_proxy_code_id(deps)?),
         QueryMsg::MultisigCodeId {} => to_binary(&query_multisig_code_id(deps)?),
+        QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
     }
+}
+
+/// Returns fees required for wallet creation
+pub fn query_fee(deps: Deps) -> StdResult<Coin> {
+    FEE.load(deps.storage)
 }
 
 /// Returns all the wallets created

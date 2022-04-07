@@ -10,11 +10,12 @@ use common::*;
 #[test]
 fn user_can_update_proxy_multisig_with_direct_message() {
     let mut suite = Suite::init().unwrap();
-    let init_wallet_fund: Coin = coin(400, "ucosm");
+    let init_factory_fund: Coin = coin(400, "ucosm");
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        vec![init_wallet_fund],
+        vec![init_factory_fund],
+        10,
     );
     let init_proxy_fund: Coin = coin(300, "ucosm");
     let init_multisig_fund: Coin = coin(50, "ucosm");
@@ -25,9 +26,12 @@ fn user_can_update_proxy_multisig_with_direct_message() {
     };
 
     let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked("user"),
         factory.clone(),
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
+        "ucosm",
+        310,
     );
 
     assert!(create_proxy_rsp.is_ok());
@@ -97,6 +101,7 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         vec![init_wallet_fund],
+        10,
     );
     let init_proxy_fund: Coin = coin(300, "ucosm");
     let init_multisig_fund: Coin = coin(50, "ucosm");
@@ -107,9 +112,12 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
     };
 
     let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked("user"),
         factory.clone(),
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
+        "ucosm",
+        310,
     );
 
     assert!(create_proxy_rsp.is_ok());
