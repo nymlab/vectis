@@ -80,9 +80,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.
-    Balance {
-        address: String,
-    },
+    Balance { address: String },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},
@@ -90,6 +88,7 @@ pub enum QueryMsg {
     /// Returns who can mint and the hard cap on maximum tokens after minting.
     /// Return type: MinterResponse.
     Minter {},
+    /// Returns the staking contract address
     Staking {},
     /// Only with "enumerable" extension
     /// Returns all accounts that have balances. Supports pagination.
