@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Coin};
 pub use sc_wallet::{WalletFactoryExecuteMsg as ExecuteMsg, WalletFactoryQueryMsg as QueryMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -12,10 +12,8 @@ pub struct InstantiateMsg {
     pub proxy_multisig_code_id: u64,
     /// Chain address prefix
     pub addr_prefix: String,
-    /// Native token denom
-    pub coin_denom: String,
     /// Fee in native token to be sent to Admin (DAO)
-    pub wallet_fee: Uint128,
+    pub wallet_fee: Coin,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]

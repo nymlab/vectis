@@ -84,12 +84,15 @@ impl Suite {
     pub fn init() -> Result<Suite> {
         let genesis_funds = vec![coin(100000, "ucosm")];
         let owner = Addr::unchecked("owner");
+        let user = Addr::unchecked("user");
         let mut app = App::new(|router, _, storage| {
             router
                 .bank
                 .init_balance(storage, &owner, genesis_funds)
                 .unwrap();
         });
+        let for_user = vec![coin(50000, "ucosm")];
+        app.send_tokens(owner.clone(), user, &for_user)?;
 
         let sc_factory_id = app.store_code(contract_factory());
         let sc_proxy_id = app.store_code(contract_proxy());
@@ -109,6 +112,7 @@ impl Suite {
         proxy_code_id: u64,
         proxy_multisig_code_id: u64,
         init_funds: Vec<Coin>,
+        wallet_fee: u128,
     ) -> Addr {
         self.app
             .instantiate_contract(
@@ -118,8 +122,10 @@ impl Suite {
                     proxy_code_id,
                     proxy_multisig_code_id,
                     addr_prefix: "wasm".to_string(),
-                    coin_denom: "ucosm".to_string(),
-                    wallet_fee: Uint128::new(0u128),
+                    wallet_fee: Coin {
+                        denom: "ucosm".to_string(),
+                        amount: Uint128::new(wallet_fee),
+                    },
                 }, // InstantiateMsg
                 &init_funds,
                 "wallet-factory", // label: human readible name for contract
@@ -130,9 +136,14 @@ impl Suite {
 
     pub fn create_new_proxy(
         &mut self,
+        user: Addr,
         factory: Addr,
         initial_fund: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
+        coin_denom: &str,
+        // This is both the initial proxy wallet initial balance
+        // and the fee for wallet creation
+        native_tokens: u128,
     ) -> Result<AppResponse> {
         let g1 = GUARD1.to_owned();
         let g2 = GUARD2.to_owned();
@@ -157,10 +168,13 @@ impl Suite {
 
         self.app
             .execute_contract(
-                self.owner.clone(), //sender: Addr,
-                factory,            //contract_addr: Addr,
-                &execute,           //msg: &T,
-                &[],                //send_funds: &[Coin],
+                user,
+                factory,
+                &execute,
+                &[Coin {
+                    denom: coin_denom.to_string(),
+                    amount: Uint128::new(native_tokens),
+                }],
             )
             .map_err(|err| anyhow!(err))
     }

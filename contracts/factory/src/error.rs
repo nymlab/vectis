@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, StdError};
+use cosmwasm_std::{Addr, StdError, Uint128};
 use sc_wallet::{MigrationMsgError, RelayTxError};
 use thiserror::Error;
 
@@ -30,6 +30,8 @@ pub enum ContractError {
     InvalidRelayMigrationTx(RelayTxError),
     #[error("InvalidReplyId")]
     InvalidReplyId {},
+    #[error("InvalidNativeFund: Expected: {1}, Got: {0}")]
+    InvalidNativeFund(Uint128, Uint128),
 }
 
 impl From<MigrationMsgError> for ContractError {

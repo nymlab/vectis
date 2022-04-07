@@ -1,4 +1,4 @@
-use cosmwasm_std::{CanonicalAddr, Uint128};
+use cosmwasm_std::{CanonicalAddr, Coin};
 use cw_storage_plus::{Item, Map};
 pub use sc_wallet::WalletInfo;
 
@@ -16,7 +16,5 @@ pub const PROXY_MULTISIG_CODE_ID: Item<u64> = Item::new("proxy_multisig_code_id"
 pub const WALLETS: Map<&[u8], ()> = Map::new("wallets");
 /// Chain address prefix
 pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
-/// Coin denom string
-pub const COIN_DENOM: Item<String> = Item::new("coin_denom");
 /// Fee for DAO when a wallet is created
-pub const FEE: Item<Uint128> = Item::new("fee");
+pub const FEE: Item<Coin> = Item::new("fee");
