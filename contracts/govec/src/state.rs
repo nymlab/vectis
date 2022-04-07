@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, CanonicalAddr, Uint128};
 use cw_storage_plus::{Item, Map};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -28,5 +28,5 @@ impl TokenInfo {
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
 pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
-pub const STAKING_ADDR: Item<Addr> = Item::new("staking_addr");
-pub const DAO_ADDR: Item<Addr> = Item::new("DAO_addr");
+pub const STAKING_ADDR: Item<CanonicalAddr> = Item::new("staking_addr");
+pub const DAO_ADDR: Item<CanonicalAddr> = Item::new("DAO_addr");

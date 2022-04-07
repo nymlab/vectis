@@ -2,13 +2,16 @@ use cosmwasm_std::testing::{
     mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info,
 };
 use cosmwasm_std::{
-    coins, from_binary, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg, Uint128, WasmMsg,
+    coins, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg,
+    Uint128, WasmMsg,
 };
+use stake_cw20::msg::InstantiateMsg as StakeInstantiateMsg;
 
 use crate::contract::*;
 use crate::enumerable::*;
 use crate::error::*;
 use crate::msg::*;
+use crate::state::MinterData;
 
 use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MinterResponse, TokenInfoResponse};
 
@@ -41,17 +44,43 @@ fn do_instantiate(
         minter: minter.to_string(),
         cap,
     };
+    let staking_options = StakingOptions {
+        duration: None,
+        code_id: 1,
+    };
+
     let instantiate_msg = InstantiateMsg {
         name: "Auto Gen".to_string(),
         symbol: "AUTO".to_string(),
         initial_balances: coins,
+        staking: Some(staking_options.clone()),
         mint: Some(mint.clone()),
-        staking: Some(STAKE_ADDR.to_string()),
+        dao: deps.api.addr_canonicalize(DAO_ADDR).unwrap(),
     };
+
     let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
-    let res = instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    let res = instantiate(deps.branch(), env.clone(), info, instantiate_msg).unwrap();
+    // ensure proper send message sent
+    // this is the message we want delivered to the other side
+    let staking_inst_msg = StakeInstantiateMsg {
+        admin: Some(Addr::unchecked(DAO_ADDR)),
+        token_address: env.contract.address,
+        unstaking_duration: staking_options.duration,
+    };
+
+    let expected_msg = SubMsg::reply_always(
+        WasmMsg::Instantiate {
+            admin: Some(DAO_ADDR.into()),
+            code_id: staking_options.code_id,
+            msg: to_binary(&staking_inst_msg).unwrap(),
+            funds: vec![],
+            label: "Vectis Staking contract".into(),
+        },
+        STAKING_REPLY_ID,
+    );
+    // and this is how it must be wrapped for the vm to process it
+    assert_eq!(res.messages[0], expected_msg);
 
     let meta = query_token_info(deps.as_ref()).unwrap();
     assert_eq!(
@@ -60,10 +89,11 @@ fn do_instantiate(
             name: "Auto Gen".to_string(),
             symbol: "AUTO".to_string(),
             decimals: 0,
-            total_supply: total_supply,
+            total_supply
         }
     );
     assert_eq!(query_minter(deps.as_ref()).unwrap(), Some(mint));
+    assert_eq!(query_dao(deps.as_ref()).unwrap(), DAO_ADDR);
     meta
 }
 
@@ -85,6 +115,7 @@ fn mintable() {
             cap: Some(limit),
         }),
         staking: None,
+        dao: deps.as_mut().api.addr_canonicalize(DAO_ADDR).unwrap(),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -131,6 +162,7 @@ fn cannot_mint_over_cap() {
             cap: Some(limit),
         }),
         staking: None,
+        dao: deps.as_mut().api.addr_canonicalize(DAO_ADDR).unwrap(),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -177,6 +209,51 @@ fn dao_can_update_staking_addr() {
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(query_staking(deps.as_ref()).unwrap(), new_staking);
+}
+
+#[test]
+fn dao_can_update_mint_data() {
+    let mut deps = mock_dependencies();
+    let genesis = String::from("genesis");
+    let amount = Uint128::new(0);
+    let limit = Uint128::new(12);
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![genesis.as_str()],
+        vec![amount],
+        MINTER_ADDR,
+        Some(limit),
+    );
+
+    let msg = ExecuteMsg::UpdateMintData { new_mint: None };
+
+    // only dao can update mint data
+    let info = mock_info(MINTER_ADDR, &[]);
+    let env = mock_env();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    let new_mint = MinterData {
+        minter: Addr::unchecked("new minter"),
+        cap: Some(Uint128::new(200)),
+    };
+    // dao can update mint data
+    let msg = ExecuteMsg::UpdateMintData {
+        new_mint: Some(new_mint.clone()),
+    };
+    let info = mock_info(DAO_ADDR, &[]);
+    let env = mock_env();
+    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+    assert_eq!(
+        query_minter(deps.as_ref()).unwrap().unwrap().minter,
+        new_mint.minter
+    );
+    assert_eq!(
+        query_minter(deps.as_ref()).unwrap().unwrap().cap,
+        new_mint.cap
+    );
 }
 
 #[test]
@@ -258,6 +335,7 @@ fn instantiate_multiple_accounts() {
         ],
         mint: None,
         staking: None,
+        dao: deps.as_mut().api.addr_canonicalize(DAO_ADDR).unwrap(),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -375,7 +453,6 @@ fn transfer() {
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
-
     assert_eq!(get_balance(deps.as_ref(), addr1.clone()), amount1);
     assert_eq!(
         query_token_info(deps.as_ref()).unwrap().total_supply,
@@ -511,18 +588,18 @@ fn send() {
     let info = mock_info(addr1.as_ref(), &[]);
     let env = mock_env();
     let msg = ExecuteMsg::Send {
-        contract: STAKE_ADDR.to_string(),
+        contract: addr2.to_string(),
         amount: too_much,
         msg: send_msg.clone(),
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
-    // valid transfer to staking addr
+    // valid transfer to existing addr
     let info = mock_info(addr1.as_ref(), &[]);
     let env = mock_env();
     let msg = ExecuteMsg::Send {
-        contract: STAKE_ADDR.to_string(),
+        contract: addr2.to_string(),
         amount: transfer,
         msg: send_msg.clone(),
     };
@@ -542,7 +619,7 @@ fn send() {
     assert_eq!(
         res.messages[0],
         SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: STAKE_ADDR.to_string(),
+            contract_addr: addr2.to_string(),
             msg: binary_msg,
             funds: vec![],
         }))
@@ -551,7 +628,7 @@ fn send() {
     // ensure balance is properly transferred
     let remainder = amount1.checked_sub(transfer).unwrap();
     assert_eq!(get_balance(deps.as_ref(), &addr1), remainder);
-    assert_eq!(get_balance(deps.as_ref(), STAKE_ADDR), transfer);
+    assert_eq!(get_balance(deps.as_ref(), &addr2), transfer);
     assert_eq!(
         query_token_info(deps.as_ref()).unwrap().total_supply,
         amount1
@@ -567,36 +644,6 @@ fn send() {
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
-
-    // valid transfer to another wallet
-    let info = mock_info(addr1.as_ref(), &[]);
-    let env = mock_env();
-    let msg = ExecuteMsg::Send {
-        contract: addr2.clone(),
-        amount: transfer,
-        msg: send_msg.clone(),
-    };
-    let res = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(res.messages.len(), 1);
-
-    // ensure proper send message sent
-    // this is the message we want delivered to the other side
-    let binary_msg = Cw20ReceiveMsg {
-        sender: addr1.clone(),
-        amount: transfer,
-        msg: send_msg.clone(),
-    }
-    .into_binary()
-    .unwrap();
-    // and this is how it must be wrapped for the vm to process it
-    assert_eq!(
-        res.messages[0],
-        SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: addr2,
-            msg: binary_msg,
-            funds: vec![],
-        }))
-    );
 }
 
 #[test]
@@ -646,7 +693,7 @@ fn query_all_accounts_works() {
 }
 
 #[test]
-fn query_minter_staking_works() {
+fn query_minter_works() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
     // insert order and lexicographical order are different
@@ -661,7 +708,5 @@ fn query_minter_staking_works() {
     );
 
     let minter = query_minter(deps.as_ref()).unwrap();
-    let staking = query_staking(deps.as_ref()).unwrap();
     assert_eq!(minter.unwrap().minter, MINTER_ADDR);
-    assert_eq!(staking, STAKE_ADDR);
 }

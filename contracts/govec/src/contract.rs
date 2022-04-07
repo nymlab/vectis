@@ -1,12 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    Uint128,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+    SubMsg, Uint128, WasmMsg,
 };
 
 use cw2::set_contract_version;
 use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MinterResponse, TokenInfoResponse};
+use stake_cw20::msg::InstantiateMsg as StakeInstantiateMsg;
 
 use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
@@ -16,12 +17,13 @@ use crate::state::{MinterData, TokenInfo, BALANCES, DAO_ADDR, STAKING_ADDR, TOKE
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const STAKING_REPLY_ID: u64 = u64::MAX;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     mut deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
+    env: Env,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -56,16 +58,31 @@ pub fn instantiate(
     };
     TOKEN_INFO.save(deps.storage, &data)?;
 
-    // store staking contract addr
-    if let Some(staking) = msg.staking {
-        let address = deps.api.addr_validate(&staking)?;
-        STAKING_ADDR.save(deps.storage, &address)?;
-    }
-
     // store DAO contract addr
-    DAO_ADDR.save(deps.storage, &info.sender)?;
+    DAO_ADDR.save(deps.storage, &msg.dao)?;
 
-    Ok(Response::default())
+    let response = Response::new();
+
+    if let Some(staking_options) = msg.staking {
+        // Instantiate Staking
+        let staking_inst_msg = StakeInstantiateMsg {
+            admin: Some(deps.api.addr_humanize(&msg.dao)?),
+            token_address: env.contract.address,
+            unstaking_duration: staking_options.duration,
+        };
+
+        return Ok(response.add_submessage(SubMsg::reply_always(
+            WasmMsg::Instantiate {
+                admin: Some(deps.api.addr_humanize(&msg.dao)?.to_string()),
+                code_id: staking_options.code_id,
+                msg: to_binary(&staking_inst_msg)?,
+                funds: vec![],
+                label: "Vectis Staking contract".into(),
+            },
+            STAKING_REPLY_ID,
+        )));
+    }
+    Ok(response)
 }
 
 pub fn create_accounts(deps: &mut DepsMut, accounts: &[Cw20Coin]) -> StdResult<Uint128> {
@@ -76,6 +93,28 @@ pub fn create_accounts(deps: &mut DepsMut, accounts: &[Cw20Coin]) -> StdResult<U
         total_supply += row.amount;
     }
     Ok(total_supply)
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdError> {
+    if reply.id != STAKING_REPLY_ID {
+        return Err(StdError::generic_err("Unsupported reply id"));
+    }
+
+    let data = reply.result.into_result().map_err(StdError::generic_err)?;
+    let staking_instantiation_event = data
+        .events
+        .iter()
+        .find(|e| e.ty == "instantiate")
+        .ok_or_else(|| StdError::generic_err("Reply: Unable to find instantiate event"))?;
+
+    let staking_addr_str = &staking_instantiation_event.attributes[0].value;
+    STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(staking_addr_str)?)?;
+
+    let res = Response::new()
+        .add_attribute("action", "Staking Deployed")
+        .add_attribute("Staking", staking_addr_str);
+    Ok(res)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -97,6 +136,7 @@ pub fn execute(
         } => execute_send(deps, env, info, contract, amount, msg),
         ExecuteMsg::Mint { new_wallet } => execute_mint(deps, env, info, new_wallet),
         ExecuteMsg::UpdateStakingAddr { new_addr } => execute_update_staking(deps, info, new_addr),
+        ExecuteMsg::UpdateMintData { new_mint } => execute_update_mint_data(deps, info, new_mint),
     }
 }
 
@@ -258,7 +298,7 @@ pub fn execute_update_staking(
 ) -> Result<Response, ContractError> {
     ensure_is_dao(deps.as_ref(), info.sender)?;
 
-    STAKING_ADDR.save(deps.storage, &deps.api.addr_validate(&new_addr)?)?;
+    STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&new_addr)?)?;
 
     let res = Response::new()
         .add_attribute("action", "update_staking_address")
@@ -267,9 +307,33 @@ pub fn execute_update_staking(
     Ok(res)
 }
 
+pub fn execute_update_mint_data(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_mint: Option<MinterData>,
+) -> Result<Response, ContractError> {
+    ensure_is_dao(deps.as_ref(), info.sender)?;
+
+    TOKEN_INFO.update(deps.storage, |mut t| -> StdResult<_> {
+        t.mint = new_mint.clone();
+        Ok(t)
+    })?;
+
+    let m = new_mint.unwrap_or(MinterData {
+        minter: Addr::unchecked(""),
+        cap: None,
+    });
+    let res = Response::new()
+        .add_attribute("action", "update_minter_data")
+        .add_attribute("new_minter", m.minter)
+        .add_attribute("cap", m.cap.unwrap_or_default());
+
+    Ok(res)
+}
+
 fn ensure_is_dao(deps: Deps, sender: Addr) -> Result<(), ContractError> {
     let dao = DAO_ADDR.load(deps.storage)?;
-    if dao != sender {
+    if dao != deps.api.addr_canonicalize(sender.as_str())? {
         return Err(ContractError::Unauthorized {});
     }
     Ok(())
@@ -279,7 +343,7 @@ fn ensure_is_staking_or_wallet(deps: Deps, contract: &Addr) -> Result<(), Contra
     let staking = STAKING_ADDR.may_load(deps.storage)?;
     let wallet = BALANCES.may_load(deps.storage, contract)?;
     if let Some(staking_addr) = staking {
-        if contract == &staking_addr {
+        if contract == &deps.api.addr_humanize(&staking_addr)? {
             return Ok(());
         }
     }
@@ -296,6 +360,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Minter {} => to_binary(&query_minter(deps)?),
         QueryMsg::Staking {} => to_binary(&query_staking(deps)?),
+        QueryMsg::Dao {} => to_binary(&query_dao(deps)?),
         QueryMsg::AllAccounts { start_after, limit } => {
             to_binary(&query_all_accounts(deps, start_after, limit)?)
         }
@@ -336,5 +401,9 @@ pub fn query_minter(deps: Deps) -> StdResult<Option<MinterResponse>> {
 }
 
 pub fn query_staking(deps: Deps) -> StdResult<Addr> {
-    STAKING_ADDR.load(deps.storage)
+    deps.api.addr_humanize(&STAKING_ADDR.load(deps.storage)?)
+}
+
+pub fn query_dao(deps: Deps) -> StdResult<Addr> {
+    deps.api.addr_humanize(&DAO_ADDR.load(deps.storage)?)
 }
