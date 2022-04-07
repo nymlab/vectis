@@ -10,6 +10,10 @@ pub struct InstantiateMsg {
     /// Wallet guardians multisig contract code id
     /// Currently v0.13.0 cw-plus cw3-fixed-multisig
     pub proxy_multisig_code_id: u64,
+    /// staking contract code id
+    pub staking_code_id: u64,
+    /// govec token contract code id
+    pub govec_code_id: u64,
     /// Chain address prefix
     pub addr_prefix: String,
     /// Fee in native token to be sent to Admin (DAO)

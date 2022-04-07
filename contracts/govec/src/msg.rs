@@ -1,5 +1,7 @@
-use cosmwasm_std::{Binary, StdError, StdResult, Uint128};
-use cw20::{Cw20Coin, MinterResponse};
+use crate::state::MinterData;
+use cosmwasm_std::{Binary, CanonicalAddr, StdError, StdResult, Uint128};
+pub use cw20::{Cw20Coin, MinterResponse};
+use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -8,8 +10,9 @@ pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
     pub initial_balances: Vec<Cw20Coin>,
-    pub staking: Option<String>,
+    pub staking: Option<StakingOptions>,
     pub mint: Option<MinterResponse>,
+    pub dao: CanonicalAddr,
 }
 
 impl InstantiateMsg {
@@ -31,6 +34,12 @@ impl InstantiateMsg {
         }
         Ok(())
     }
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+pub struct StakingOptions {
+    pub duration: Option<Duration>,
+    pub code_id: u64,
 }
 
 fn is_valid_name(name: &str) -> bool {
@@ -58,7 +67,10 @@ fn is_valid_symbol(symbol: &str) -> bool {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     /// Transfer is a base message to move tokens to another account without triggering actions
-    Transfer { recipient: String, amount: Uint128 },
+    Transfer {
+        recipient: String,
+        amount: Uint128,
+    },
     /// Burn is a base message to destroy tokens forever
     /// Logic checks that caller only has exactly 1 vote token in their balance
     Burn {},
@@ -70,9 +82,16 @@ pub enum ExecuteMsg {
         msg: Binary,
     },
     /// If authorized, creates 1 new vote token and adds to the new wallets .
-    Mint { new_wallet: String },
+    Mint {
+        new_wallet: String,
+    },
     /// Updates the staking contract address.Authorized by the DAO
-    UpdateStakingAddr { new_addr: String },
+    UpdateStakingAddr {
+        new_addr: String,
+    },
+    UpdateMintData {
+        new_mint: Option<MinterData>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -84,12 +103,13 @@ pub enum QueryMsg {
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},
-    /// Only with "mintable" extension.
     /// Returns who can mint and the hard cap on maximum tokens after minting.
     /// Return type: MinterResponse.
     Minter {},
     /// Returns the staking contract address
     Staking {},
+    /// Returns the dao contract address
+    Dao {},
     /// Only with "enumerable" extension
     /// Returns all accounts that have balances. Supports pagination.
     /// Return type: AllAccountsResponse.

@@ -3,6 +3,7 @@ use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, CosmosMsg, Empty, QueryRequest, StdError, Uint128,
     WasmQuery,
 };
+use cw20::Cw20Coin;
 use cw3::VoterListResponse;
 use cw3_fixed_multisig::contract::{
     execute as fixed_multisig_execute, instantiate as fixed_multisig_instantiate,
@@ -11,9 +12,19 @@ use cw3_fixed_multisig::contract::{
 use cw3_fixed_multisig::msg::QueryMsg as MultiSigQueryMsg;
 use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
 use derivative::Derivative;
-use sc_wallet::{CreateWalletMsg, Guardians, MultiSig, RelayTransaction};
+use govec::contract::{
+    execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
+    reply as govec_reply,
+};
+use govec::msg::StakingOptions;
+use sc_wallet::{
+    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, ThresholdAbsoluteCount,
+};
 use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 use serde::de::DeserializeOwned;
+use stake_cw20::contract::{
+    execute as stake_execute, instantiate as stake_instantiate, query as stake_query,
+};
 use wallet_factory::{
     contract::{
         execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
@@ -31,8 +42,6 @@ use wallet_proxy::{
     },
     msg::QueryMsg as ProxyQueryMsg,
 };
-
-use sc_wallet::ThresholdAbsoluteCount;
 
 pub const USER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
@@ -53,6 +62,17 @@ pub fn contract_proxy() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(proxy_execute, proxy_instantiate, proxy_query)
         .with_migrate(proxy_migrate)
         .with_reply(proxy_reply);
+    Box::new(contract)
+}
+
+pub fn contract_govec() -> Box<dyn Contract<Empty>> {
+    let contract =
+        ContractWrapper::new(govec_execute, govec_instantiate, govec_query).with_reply(govec_reply);
+    Box::new(contract)
+}
+
+pub fn contract_stake() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(stake_execute, stake_instantiate, stake_query);
     Box::new(contract)
 }
 
@@ -78,6 +98,10 @@ pub struct Suite {
     pub sc_proxy_id: u64,
     // ID of stored code for proxy multisig
     pub sc_proxy_multisig_code_id: u64,
+    // ID of stored code for govec
+    pub govec_id: u64,
+    // ID of stored code for staking
+    pub stake_id: u64,
 }
 
 impl Suite {
@@ -97,6 +121,8 @@ impl Suite {
         let sc_factory_id = app.store_code(contract_factory());
         let sc_proxy_id = app.store_code(contract_proxy());
         let sc_proxy_multisig_code_id = app.store_code(contract_multisig());
+        let govec_id = app.store_code(contract_govec());
+        let stake_id = app.store_code(contract_stake());
 
         Ok(Suite {
             app,
@@ -104,6 +130,8 @@ impl Suite {
             sc_factory_id,
             sc_proxy_id,
             sc_proxy_multisig_code_id,
+            govec_id,
+            stake_id,
         })
     }
 
@@ -111,6 +139,8 @@ impl Suite {
         &mut self,
         proxy_code_id: u64,
         proxy_multisig_code_id: u64,
+        govec_code_id: u64,
+        staking_code_id: u64,
         init_funds: Vec<Coin>,
         wallet_fee: u128,
     ) -> Addr {
@@ -121,6 +151,8 @@ impl Suite {
                 &InstantiateMsg {
                     proxy_code_id,
                     proxy_multisig_code_id,
+                    govec_code_id,
+                    staking_code_id,
                     addr_prefix: "wasm".to_string(),
                     wallet_fee: Coin {
                         denom: "ucosm".to_string(),
@@ -134,16 +166,62 @@ impl Suite {
             .unwrap()
     }
 
+    pub fn instantiate_factory_with_governance(
+        &mut self,
+        proxy_code_id: u64,
+        proxy_multisig_code_id: u64,
+        govec_code_id: u64,
+        staking_code_id: u64,
+        init_funds: Vec<Coin>,
+        wallet_fee: u128,
+    ) -> Addr {
+        let factory = self.instantiate_factory(
+            proxy_code_id,
+            proxy_multisig_code_id,
+            govec_code_id,
+            staking_code_id,
+            init_funds,
+            wallet_fee,
+        );
+
+        self.create_governance(
+            Some(StakingOptions {
+                duration: None,
+                code_id: self.stake_id,
+            }),
+            vec![],
+            factory.clone(),
+        )
+        .unwrap();
+        factory
+    }
+
+    pub fn create_governance(
+        &mut self,
+        staking_options: Option<StakingOptions>,
+        initial_balances: Vec<Cw20Coin>,
+        factory: Addr,
+    ) -> Result<AppResponse> {
+        self.app.execute_contract(
+            self.owner.clone(),
+            factory,
+            &FactoryExecuteMsg::CreateGovernance {
+                staking_options,
+                initial_balances,
+            },
+            &[],
+        )
+    }
+
     pub fn create_new_proxy(
         &mut self,
         user: Addr,
         factory: Addr,
         initial_fund: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
-        coin_denom: &str,
         // This is both the initial proxy wallet initial balance
         // and the fee for wallet creation
-        native_tokens: u128,
+        native_tokens_amount: u128,
     ) -> Result<AppResponse> {
         let g1 = GUARD1.to_owned();
         let g2 = GUARD2.to_owned();
@@ -171,10 +249,7 @@ impl Suite {
                 user,
                 factory,
                 &execute,
-                &[Coin {
-                    denom: coin_denom.to_string(),
-                    amount: Uint128::new(native_tokens),
-                }],
+                &[coin(native_tokens_amount, "ucosm")],
             )
             .map_err(|err| anyhow!(err))
     }
@@ -213,7 +288,10 @@ impl Suite {
             .execute_contract(
                 self.owner.clone(),
                 factory,
-                &FactoryExecuteMsg::UpdateProxyCodeId { new_code_id },
+                &FactoryExecuteMsg::UpdateCodeId {
+                    ty: CodeIdType::Proxy,
+                    new_code_id,
+                },
                 &[],
             )
             .map_err(|err| anyhow!(err))
@@ -228,7 +306,10 @@ impl Suite {
             .execute_contract(
                 self.owner.clone(),
                 factory,
-                &FactoryExecuteMsg::UpdateProxyMultisigCodeId { new_code_id },
+                &FactoryExecuteMsg::UpdateCodeId {
+                    ty: CodeIdType::Multisig,
+                    new_code_id,
+                },
                 &[],
             )
             .map_err(|err| anyhow!(err))

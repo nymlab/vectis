@@ -8,6 +8,11 @@ pub const TOTAL_CREATED: Item<u64> = Item::new("total_created");
 /// The admin where the fees for new wallet goes to, also the admin of the contract.
 /// Likely a DAO
 pub const ADMIN: Item<CanonicalAddr> = Item::new("admin");
+/// The latest supported `govec` code id stored onchain
+pub const GOVEC_CODE_ID: Item<u64> = Item::new("govec_code_id");
+/// The latest supported `staking-cw20` code id stored onchain
+/// from dao-contracts
+pub const STAKING_CODE_ID: Item<u64> = Item::new("staking_code_id");
 /// The latest supported `wallet_proxy` code id stored onchain
 pub const PROXY_CODE_ID: Item<u64> = Item::new("proxy_code_id");
 /// The latest default `multisig` code id stored onchain for the proxy
@@ -18,3 +23,7 @@ pub const WALLETS: Map<&[u8], ()> = Map::new("wallets");
 pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
 /// Fee for DAO when a wallet is created
 pub const FEE: Item<Coin> = Item::new("fee");
+/// Governing token contract Addr
+pub const GOVEC: Item<CanonicalAddr> = Item::new("govec");
+/// Staking token contract Addr
+pub const STAKE: Item<CanonicalAddr> = Item::new("stake");

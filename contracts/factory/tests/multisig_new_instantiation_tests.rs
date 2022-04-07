@@ -11,9 +11,11 @@ use common::*;
 fn user_can_update_proxy_multisig_with_direct_message() {
     let mut suite = Suite::init().unwrap();
     let init_factory_fund: Coin = coin(400, "ucosm");
-    let factory = suite.instantiate_factory(
+    let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
         vec![init_factory_fund],
         10,
     );
@@ -30,7 +32,6 @@ fn user_can_update_proxy_multisig_with_direct_message() {
         factory.clone(),
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
-        "ucosm",
         310,
     );
 
@@ -97,9 +98,11 @@ fn user_can_update_proxy_multisig_with_direct_message() {
 fn relayer_can_update_proxy_multisig_with_user_signature() {
     let mut suite = Suite::init().unwrap();
     let init_wallet_fund: Coin = coin(400, "ucosm");
-    let factory = suite.instantiate_factory(
+    let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
         vec![init_wallet_fund],
         10,
     );
@@ -116,7 +119,6 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
         factory.clone(),
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
-        "ucosm",
         310,
     );
 

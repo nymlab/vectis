@@ -1,4 +1,5 @@
 [alias]
 wasm-proxy = "build --release --target wasm32-unknown-unknown --package wallet-proxy"
 wasm-factory= "build --release --target wasm32-unknown-unknown --package wallet-factory"
+wasm-govec= "build --release --target wasm32-unknown-unknown --package govec"
 schema = "run --example schema"

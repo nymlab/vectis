@@ -1,5 +1,7 @@
 use crate::wallet::{ProxyMigrationTxMsg, WalletAddr};
 use cosmwasm_std::{Binary, Coin};
+use cw20::Cw20Coin;
+use govec::msg::StakingOptions;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -42,6 +44,9 @@ pub enum WalletFactoryQueryMsg {
     Wallets {},
     ProxyCodeId {},
     MultisigCodeId {},
+    /// Returns the fee required to create a wallet
+    /// Fee goes to the DAO
+    Fee {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -54,15 +59,25 @@ pub enum WalletFactoryExecuteMsg {
         wallet_address: WalletAddr,
         migration_msg: ProxyMigrationTxMsg,
     },
-    UpdateProxyCodeId {
-        new_code_id: u64,
-    },
-    UpdateProxyMultisigCodeId {
+    UpdateCodeId {
+        ty: CodeIdType,
         new_code_id: u64,
     },
     UpdateWalletFee {
-        new_fee: u128,
+        new_fee: Coin,
     },
+    CreateGovernance {
+        staking_options: Option<StakingOptions>,
+        initial_balances: Vec<Cw20Coin>,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum CodeIdType {
+    Proxy,
+    Multisig,
+    Govec,
+    Staking,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]

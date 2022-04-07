@@ -15,9 +15,11 @@ fn create_new_proxy() {
     let wallet_fee = 10u128;
 
     let init_factory_fund: Coin = coin(1000, "ucosm");
-    let factory = suite.instantiate_factory(
+    let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
         vec![init_factory_fund.clone()],
         wallet_fee,
     );
@@ -28,9 +30,8 @@ fn create_new_proxy() {
     let rsp = suite.create_new_proxy(
         Addr::unchecked("user"),
         factory.clone(),
-        vec![init_wallet_fund.clone()],
+        vec![coin(10, "ucosm"), coin(90, "ucosm")],
         None,
-        "ucosm",
         110,
     );
     assert_matches!(rsp, Ok(_));
@@ -61,9 +62,11 @@ fn cannot_create_new_proxy_without_payment() {
     let mut suite = Suite::init().unwrap();
 
     let genesis_fund: Coin = coin(1000, "ucosm");
-    let factory = suite.instantiate_factory(
+    let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
         vec![genesis_fund.clone()],
         10,
     );
@@ -74,7 +77,6 @@ fn cannot_create_new_proxy_without_payment() {
         factory.clone(),
         vec![init_wallet_fund.clone()],
         None,
-        "ucosm",
         0,
     );
     assert!(rsp.is_err());
@@ -84,9 +86,11 @@ fn cannot_create_new_proxy_without_payment() {
 fn user_can_execute_message() {
     let mut suite = Suite::init().unwrap();
     let genesis_fund: Coin = coin(1000, "ucosm");
-    let factory = suite.instantiate_factory(
+    let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
         vec![genesis_fund.clone()],
         10,
     );
@@ -96,7 +100,6 @@ fn user_can_execute_message() {
         factory.clone(),
         vec![init_wallet_fund.clone()],
         None,
-        "ucosm",
         110,
     );
     assert!(create_proxy_rsp.is_ok());
@@ -139,9 +142,11 @@ fn create_new_proxy_with_multisig_guardians() {
     let mut suite = Suite::init().unwrap();
 
     let genesis_fund: Coin = coin(1000, "ucosm");
-    let factory = suite.instantiate_factory(
+    let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
         vec![genesis_fund.clone()],
         10,
     );
@@ -159,7 +164,6 @@ fn create_new_proxy_with_multisig_guardians() {
         factory.clone(),
         vec![init_wallet_fund.clone()],
         Some(multisig),
-        "ucosm",
         110,
     );
     assert_matches!(rsp, Ok(_));

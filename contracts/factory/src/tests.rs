@@ -2,7 +2,9 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Coin, DepsMut};
 
-use crate::contract::{execute, instantiate, query_fee, query_proxy_code_id, query_wallet_list};
+use crate::contract::{
+    execute, instantiate, query_fee, query_proxy_code_id, query_wallet_list, CodeIdType,
+};
 use crate::msg::{ExecuteMsg, InstantiateMsg, WalletListResponse};
 
 // this will set up the instantiation for other tests
@@ -10,6 +12,8 @@ fn do_instantiate(
     mut deps: DepsMut,
     proxy_code_id: u64,
     proxy_multisig_code_id: u64,
+    govec_code_id: u64,
+    staking_code_id: u64,
     addr_prefix: &str,
     wallet_fee: Coin,
 ) {
@@ -17,6 +21,8 @@ fn do_instantiate(
     let instantiate_msg = InstantiateMsg {
         proxy_code_id,
         proxy_multisig_code_id,
+        govec_code_id,
+        staking_code_id,
         addr_prefix: addr_prefix.to_string(),
         wallet_fee,
     };
@@ -30,7 +36,7 @@ fn do_instantiate(
 fn initialise_with_no_wallets() {
     let mut deps = mock_dependencies();
 
-    do_instantiate(deps.as_mut(), 0, 1, "wasm", coin(1, "ucosm"));
+    do_instantiate(deps.as_mut(), 0, 1, 2, 3, "wasm", coin(1, "ucosm"));
 
     // no wallets to start
     let wallets: WalletListResponse = query_wallet_list(deps.as_ref()).unwrap();
@@ -42,10 +48,14 @@ fn initialise_with_correct_code_id() {
     let mut deps = mock_dependencies();
     let initial_code_id = 1111;
     let initial_multisig_code_id = 2222;
+    let initial_govec_code_id = 3333;
+    let initial_staking_code_id = 4444;
     do_instantiate(
         deps.as_mut(),
         initial_code_id,
         initial_multisig_code_id,
+        initial_govec_code_id,
+        initial_staking_code_id,
         "wasm",
         coin(1, "ucosm"),
     );
@@ -57,12 +67,17 @@ fn initialise_with_correct_code_id() {
 fn admin_upgrade_proxy_code_id_works() {
     let mut deps = mock_dependencies();
     let initial_code_id = 1111;
-    let new_code_id = 2222;
+    let new_code_id = 7777;
+    let ty = CodeIdType::Proxy;
     let initial_multisig_code_id = 2222;
+    let initial_govec_code_id = 3333;
+    let initial_staking_code_id = 4444;
     do_instantiate(
         deps.as_mut(),
         initial_code_id,
         initial_multisig_code_id,
+        initial_govec_code_id,
+        initial_staking_code_id,
         "wasm",
         coin(1, "ucosm"),
     );
@@ -71,13 +86,17 @@ fn admin_upgrade_proxy_code_id_works() {
 
     let info = mock_info("admin", &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::UpdateProxyCodeId { new_code_id };
+    let msg = ExecuteMsg::UpdateCodeId {
+        ty: ty.clone(),
+        new_code_id,
+    };
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
         response.attributes,
         [
-            ("config", "Proxy Code Id"),
-            ("proxy_code_id", &new_code_id.to_string())
+            ("config", "Code Id"),
+            ("type", &format!("{:?}", ty)),
+            ("new Id", &new_code_id.to_string())
         ]
     );
 
@@ -91,10 +110,14 @@ fn admin_update_fee_works() {
     let mut deps = mock_dependencies();
     let initial_code_id = 1111;
     let initial_multisig_code_id = 2222;
+    let initial_govec_code_id = 3333;
+    let initial_staking_code_id = 4444;
     do_instantiate(
         deps.as_mut(),
         initial_code_id,
         initial_multisig_code_id,
+        initial_govec_code_id,
+        initial_staking_code_id,
         "wasm",
         fee.clone(),
     );

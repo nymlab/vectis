@@ -18,7 +18,6 @@ switch (process.env.NODE_ENV) {
 }
 dotenv.config({ path: path });
 
-// in hex
 export const gasprice = process.env.GAS_PRICE; 
 export const coinDenom = process.env.COIN_DENOM;
 export const coinMinDenom = process.env.COIN_MIN_DENOM;
@@ -41,3 +40,6 @@ export const fixMultiSigCodePath = process.env.FIXEDMULTISIG_CODE_PATH;
 export const cw20CodePath = process.env.CW20_CODE_PATH;
 export const factoryCodePath = process.env.FACTORY_CODE_PATH;
 export const proxyCodePath = process.env.PROXY_CODE_PATH;
+export const DAOCodePath= process.env.DAO_CODE_PATH;
+export const StakingCodePath= process.env.STAKING_CODE_PATH;
+export const GovecCodePath= process.env.GOVEC_CODE_PATH;

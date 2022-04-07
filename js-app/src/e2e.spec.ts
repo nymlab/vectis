@@ -12,6 +12,8 @@ import {
   cw20CodePath,
   factoryCodePath,
   proxyCodePath,
+  GovecCodePath,
+  StakingCodePath,
   rpcEndPoint,
   userMnemonic,
   userAddr,
@@ -30,11 +32,15 @@ import {
   defaultWalletCreationFee,
   defaultExecuteFee,
   defaultRelayFee,
+  walletFee,
   mnemonicToKeyPair,
   CreateWalletMsg,
+  CreateGovernanceMsg,
   WalletInstance,
   FactoryInstance,
   MultisigInstance,
+  StakingInstance,
+  GovecInstance,
   WasmExecuteMsg,
   BankMsg,
   createSigningClient,
@@ -45,6 +51,8 @@ describe("End to End testing: ", () => {
   let factory: FactoryInstance | undefined;
   let wallet: WalletInstance | undefined;
   let multisig: MultisigInstance | undefined;
+  let staking: StakingInstance | undefined;
+  let govec: GovecInstance | undefined;
 
   it("should store contracts", async () => {
     const client = await createSigningClient(adminMnemonic!, addrPrefix!);
@@ -69,6 +77,20 @@ describe("End to End testing: ", () => {
       defaultUploadFee
     );
 
+    const govecCode= getContract(GovecCodePath!);
+    const govecRes = await client.upload(
+      adminAddr!,
+      govecCode,
+      defaultUploadFee
+    );
+
+    const stakeCode= getContract(StakingCodePath!);
+    const stakeRes = await client.upload(
+      adminAddr!,
+      stakeCode,
+      defaultUploadFee
+    );
+
     const initialFund = coin(10000000, coinMinDenom!);
     const { contractAddress } = await client.instantiate(
       adminAddr!,
@@ -76,7 +98,10 @@ describe("End to End testing: ", () => {
       {
         proxy_code_id: proxyRes.codeId,
         proxy_multisig_code_id: multisigRes.codeId,
+		staking_code_id: stakeRes.codeId,
+		govec_code_id: govecRes.codeId,
         addr_prefix: addrPrefix!,
+		wallet_fee: walletFee, 
       },
       "wallet factory",
       defaultInstantiateFee,
@@ -94,9 +119,21 @@ describe("End to End testing: ", () => {
       initialFund: [initialFund],
     };
 
+	staking = {
+		address: null,
+		codeId: stakeRes.codeId
+	};
+
+	govec = {
+		address: null,
+		codeId: govecRes.codeId
+	};
+
     expect(factoryRes.originalChecksum).toEqual(toHex(sha256(factoryCode)));
     expect(proxyRes.originalChecksum).toEqual(toHex(sha256(proxyCode)));
     expect(multisigRes.originalChecksum).toEqual(toHex(sha256(multisigCode)));
+    expect(govecRes.originalChecksum).toEqual(toHex(sha256(govecCode)));
+    expect(stakeRes.originalChecksum).toEqual(toHex(sha256(stakeCode)));
     expect(factoryRes.compressedSize).toBeLessThan(factoryCode.length * 0.5);
     expect(proxyRes.compressedSize).toBeLessThan(proxyCode.length * 0.5);
     expect(factoryRes.codeId).toBeGreaterThanOrEqual(1);
@@ -124,12 +161,29 @@ describe("End to End testing: ", () => {
     client.disconnect();
   });
 
+  it("should create govec and staking contract with create_governance", async()=> {
+	  assert(factory);
+	  assert(staking);
+	  const adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
+	  const createGovernanceMsg: CreateGovernanceMsg  = {
+		staking_options: { duration: null, code_id: staking.codeId },
+		initial_balances: []
+	  };
+	  const res = await adminClient.execute(
+		  adminAddr!,
+		  factory.address,
+		  {create_governance: createGovernanceMsg},
+		  defaultInstantiateFee
+	  )
+	  // TODO verify events
+  })
+
   it("creating new wallet with multisig guardians", async () => {
     assert(factory);
     const adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
     const userKeypair = await mnemonicToKeyPair(userMnemonic!);
-    const walletInitialFunds = [coin(1000, coinMinDenom!)];
-    const walletMultisigInitialFunds = [coin(1, coinMinDenom!)];
+    const walletInitialFunds = coin(1000, coinMinDenom!);
+    const walletMultisigInitialFunds = coin(1, coinMinDenom!);
 
     const walletInitMsg: CreateWalletMsg = {
       user_pubkey: toBase64(userKeypair.pubkey),
@@ -137,18 +191,21 @@ describe("End to End testing: ", () => {
         addresses: [guardian1Addr!, guardian2Addr!],
         guardians_multisig: {
           threshold_absolute_count: 1,
-          multisig_initial_funds: walletMultisigInitialFunds,
+          multisig_initial_funds: [walletMultisigInitialFunds],
         },
       },
       relayers: [relayer1Addr!, relayer2Addr!],
-      proxy_initial_funds: walletInitialFunds,
+      proxy_initial_funds: [walletInitialFunds],
     };
 
     const newWalletRes = await adminClient.execute(
       adminAddr!,
       factory.address,
       { create_wallet: { create_wallet_msg: walletInitMsg } },
-      defaultWalletCreationFee
+      defaultWalletCreationFee,
+	  undefined,
+	  //TODO: error when passing in multiple coins in the following array
+	  [coin(1100, coinMinDenom!)] 
     );
 
     // wasm event is the last one

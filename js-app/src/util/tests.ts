@@ -6,9 +6,9 @@ import {
 import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
 import { makeCosmoshubPath} from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { Coin, calculateFee, GasPrice } from "@cosmjs/stargate";
+import { Coin, calculateFee, GasPrice, coin } from "@cosmjs/stargate";
 import * as fs from 'fs';
-import { rpcEndPoint, gasprice} from "./config";
+import { rpcEndPoint, gasprice, coinMinDenom} from "./config";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {
   broadcastPollIntervalMs: 300,
@@ -99,6 +99,7 @@ export const defaultWalletCreationFee = calculateFee(1_500_000, defaultGasPrice)
 export const defaultMigrateFee = calculateFee(1_200_000, defaultGasPrice);
 export const defaultUpdateAdminFee = calculateFee(800_000, defaultGasPrice);
 export const defaultClearAdminFee = calculateFee(800_000, defaultGasPrice);
+export const walletFee = coin(100, coinMinDenom!);
 
 export interface FactoryInstance {
   readonly instantiateMsg: {
@@ -114,6 +115,20 @@ export interface MultisigInstance {
   readonly address: string;
 }
 
+export interface DAOInstance {
+  readonly address: string;
+}
+
+export interface GovecInstance {
+  readonly address: string | null;
+  readonly codeId: number;
+}
+
+export interface StakingInstance {
+  readonly address: string | null;
+  readonly codeId: number;
+}
+
 export interface CreateWalletMsg {
   user_pubkey: string;
   guardians: {
@@ -122,6 +137,29 @@ export interface CreateWalletMsg {
   };
   relayers: string[];
   proxy_initial_funds: Coin[];
+}
+
+export interface CreateGovernanceMsg{
+   staking_options: StakingOptions | null,
+   initial_balances: Cw20Coin[],
+}
+
+export interface StakingOptions{
+    duration: Height | Time | null,
+    code_id: number,
+}
+
+export interface Height {
+	height: number,
+}
+
+export interface Time {
+	time: number,
+}
+
+export interface Cw20Coin {
+    address: string,
+    amount: number,
 }
 
 export interface MultiSig {

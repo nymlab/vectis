@@ -24,13 +24,15 @@ pub enum ContractError {
     SameProxyMultisigCodeId {},
     #[error("Unauthorized")]
     Unauthorized {},
+    #[error("Missing Duration")]
+    MissingDuration {},
     #[error("InvalidMigrationMsg: {0}")]
     InvalidMigrationMsg(MigrationMsgError),
     #[error("InvalidRelayMigrationTx: {0}")]
     InvalidRelayMigrationTx(RelayTxError),
     #[error("InvalidReplyId")]
     InvalidReplyId {},
-    #[error("InvalidNativeFund: Expected: {1}, Got: {0}")]
+    #[error("InvalidNativeFund: Expected: {0}, Got: {1}")]
     InvalidNativeFund(Uint128, Uint128),
 }
 
