@@ -644,3 +644,24 @@ fn query_all_accounts_works() {
         query_all_accounts(deps.as_ref(), Some(accounts.accounts[0].clone()), Some(777)).unwrap();
     assert_eq!(accounts.accounts, expected_order[3..].to_vec());
 }
+
+#[test]
+fn query_minter_staking_works() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+
+    // insert order and lexicographical order are different
+    let acct1 = String::from("acct01");
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![acct1.as_str()],
+        vec![Uint128::new(1)],
+        MINTER_ADDR,
+        None,
+    );
+
+    let minter = query_minter(deps.as_ref()).unwrap();
+    let staking = query_staking(deps.as_ref()).unwrap();
+    assert_eq!(minter.unwrap().minter, MINTER_ADDR);
+    assert_eq!(staking, STAKE_ADDR);
+}
