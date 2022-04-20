@@ -15,8 +15,7 @@
 .idea
 
 # local chain data
-.wasmd*/
-.env*
+.wasmd*/	
 
 ## js-app builds
 **/node_modules/
