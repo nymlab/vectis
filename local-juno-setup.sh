@@ -21,6 +21,7 @@ sleep 5
 
 echo "📖️ Deploying Vectis contracts and running tests..."
 
+npm ci
 export NODE_ENV=juno-local && npm test
 
 echo "✅️ All done, have fun!"
