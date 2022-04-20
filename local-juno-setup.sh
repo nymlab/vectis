@@ -1,6 +1,13 @@
 #!/bin/bash
 
+set -e
 cd ./js-app
+
+echo "👀 Checking and setting up requirements on your machine..."
+
+command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed on your machine, local Juno node can't be ran. Install it from here: https://www.docker.com/get-started"; exit 1; }
+command -v cargo >/dev/null 2>&1 || { echo >&2 "Rust is not installed on your machine, Vectis contracts can't be compiled. Install it from here: https://www.rust-lang.org/tools/install"; exit 1; }
+rustup target add wasm32-unknown-unknown
 
 echo "⚙️  Running Juno local node on Docker..."
 
@@ -21,6 +28,11 @@ sleep 5
 
 echo "📖️ Deploying Vectis contracts and running tests..."
 
+RUSTFLAGS='-C link-arg=-s' cargo wasm-factory
+RUSTFLAGS='-C link-arg=-s' cargo wasm-proxy
+RUSTFLAGS='-C link-arg=-s' cargo wasm-govec
+
+npm ci
 export NODE_ENV=juno-local && npm test
 
 echo "✅️ All done, have fun!"
