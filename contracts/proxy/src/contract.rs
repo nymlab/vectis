@@ -99,9 +99,11 @@ pub fn instantiate(
             label: "Wallet-Multisig".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
-        Response::new().add_submessage(msg)
+        Response::new()
+            .add_submessage(msg)
+            .add_attribute("user", addr_human)
     } else {
-        Response::default()
+        Response::new().add_attribute("user", addr_human)
     };
 
     Ok(resp)

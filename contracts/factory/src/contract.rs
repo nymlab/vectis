@@ -2,7 +2,7 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
     ADDR_PREFIX, ADMIN, FEE, GOVEC, GOVEC_CODE_ID, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, STAKE,
-    STAKING_CODE_ID, TOTAL_CREATED, WALLETS,
+    STAKING_CODE_ID, TOTAL_CREATED, WALLETS_OF,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -13,6 +13,7 @@ use cosmwasm_std::{
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 use cw20::Cw20Coin;
+use cw_storage_plus::Bound;
 use govec::msg::{
     ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg, MinterResponse, StakingOptions,
 };
@@ -29,6 +30,10 @@ use wallet_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as Proxy
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const GOV_REPLY_ID: u64 = u64::MIN;
+
+// settings for pagination for wallet list
+const MAX_LIMIT: u32 = 100;
+const DEFAULT_LIMIT: u32 = 10;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -418,7 +423,25 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdErro
 
             let str_addr = &first_instantiate_event.attributes[0].value;
             let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(str_addr)?;
-            WALLETS.save(deps.storage, &wallet_addr, &())?;
+
+            let user = data
+                .events
+                .iter()
+                .find(|e| e.ty == "wasm")
+                .ok_or_else(|| StdError::generic_err("Reply: Unable to find wasm event"))?
+                .attributes
+                .iter()
+                .find(|k| k.key == "user")
+                .ok_or_else(|| StdError::generic_err("Reply: Unable to find user attribute"))?;
+
+            WALLETS_OF.save(
+                deps.storage,
+                (
+                    deps.api.addr_canonicalize(&user.value)?.as_slice(),
+                    wallet_addr.as_slice(),
+                ),
+                &(),
+            )?;
 
             // Mint Govec Vote for the newly created proxy wallet
             let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
@@ -448,7 +471,14 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdErro
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Wallets {} => to_binary(&query_wallet_list(deps)?),
+        QueryMsg::Wallets { start_after, limit } => {
+            to_binary(&query_wallet_list(deps, start_after, limit)?)
+        }
+        QueryMsg::WalletsOf {
+            user,
+            start_after,
+            limit,
+        } => to_binary(&query_wallets_of(deps, user, start_after, limit)?),
         QueryMsg::ProxyCodeId {} => to_binary(&query_proxy_code_id(deps)?),
         QueryMsg::MultisigCodeId {} => to_binary(&query_multisig_code_id(deps)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
@@ -460,11 +490,52 @@ pub fn query_fee(deps: Deps) -> StdResult<Coin> {
     FEE.load(deps.storage)
 }
 
-/// Returns all the wallets created
-pub fn query_wallet_list(deps: Deps) -> StdResult<WalletListResponse> {
-    let wallets: Result<Vec<_>, _> = WALLETS
-        .keys(deps.storage, None, None, Order::Ascending)
-        .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key?)))
+/// Returns wallets created with limit
+pub fn query_wallet_list(
+    deps: Deps,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> StdResult<WalletListResponse> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = match start_after {
+        Some(s) => {
+            let addr = deps.api.addr_canonicalize(&s)?;
+            Some(Bound::ExclusiveRaw(addr.into()))
+        }
+        None => None,
+    };
+    let wallets: Result<Vec<_>, _> = WALLETS_OF
+        .sub_prefix(())
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|w| deps.api.addr_humanize(&CanonicalAddr::from(w?.0 .1)))
+        .collect();
+
+    Ok(WalletListResponse { wallets: wallets? })
+}
+
+/// Returns wallets of user
+pub fn query_wallets_of(
+    deps: Deps,
+    user: String,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> StdResult<WalletListResponse> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = match start_after {
+        Some(s) => {
+            let addr = deps.api.addr_canonicalize(&s)?;
+            Some(Bound::ExclusiveRaw(addr.into()))
+        }
+        None => None,
+    };
+    let user_addr = deps.api.addr_validate(&user)?;
+    let user_addr = deps.api.addr_canonicalize(user_addr.as_str())?;
+    let wallets: Result<Vec<_>, _> = WALLETS_OF
+        .prefix(user_addr.as_slice())
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key?.0)))
         .collect();
 
     Ok(WalletListResponse { wallets: wallets? })

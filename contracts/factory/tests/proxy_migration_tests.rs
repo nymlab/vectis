@@ -21,7 +21,7 @@ fn user_can_migrate_proxy_with_direct_message() {
     );
     let init_proxy_fund: Coin = coin(90, "ucosm");
     let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked("user"),
+        Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![init_proxy_fund.clone()],
         None,
@@ -30,7 +30,7 @@ fn user_can_migrate_proxy_with_direct_message() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -103,12 +103,17 @@ fn relayer_can_migrate_proxy_with_user_signature() {
         vec![],
         10,
     );
-    let create_proxy_rsp =
-        suite.create_new_proxy(Addr::unchecked("user"), factory.clone(), vec![], None, 10);
+    let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        10,
+    );
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -157,13 +162,18 @@ fn user_cannot_migrate_others_wallet() {
         vec![],
         10,
     );
-    let create_proxy_rsp =
-        suite.create_new_proxy(Addr::unchecked("user"), factory.clone(), vec![], None, 10);
+    let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        10,
+    );
 
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -212,12 +222,17 @@ fn user_cannot_migrate_with_mismatched_code_id() {
         vec![],
         10,
     );
-    let create_proxy_rsp =
-        suite.create_new_proxy(Addr::unchecked("user"), factory.clone(), vec![], None, 10);
+    let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        10,
+    );
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -268,12 +283,17 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
         vec![],
         10,
     );
-    let create_proxy_rsp =
-        suite.create_new_proxy(Addr::unchecked("user"), factory.clone(), vec![], None, 10);
+    let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        10,
+    );
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -315,12 +335,17 @@ fn relayer_cannot_migrate_others_wallet() {
         vec![],
         10,
     );
-    let create_proxy_rsp =
-        suite.create_new_proxy(Addr::unchecked("user"), factory.clone(), vec![], None, 10);
+    let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        10,
+    );
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -367,12 +392,17 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
         vec![],
         10,
     );
-    let create_proxy_rsp =
-        suite.create_new_proxy(Addr::unchecked("user"), factory.clone(), vec![], None, 10);
+    let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        10,
+    );
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -422,12 +452,17 @@ fn relayer_cannot_migrate_proxy_with_invalid_signature() {
         vec![],
         10,
     );
-    let create_proxy_rsp =
-        suite.create_new_proxy(Addr::unchecked("user"), factory.clone(), vec![], None, 10);
+    let create_proxy_rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        10,
+    );
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()

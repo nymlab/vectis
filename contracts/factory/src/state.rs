@@ -17,8 +17,8 @@ pub const STAKING_CODE_ID: Item<u64> = Item::new("staking_code_id");
 pub const PROXY_CODE_ID: Item<u64> = Item::new("proxy_code_id");
 /// The latest default `multisig` code id stored onchain for the proxy
 pub const PROXY_MULTISIG_CODE_ID: Item<u64> = Item::new("proxy_multisig_code_id");
-/// All created wallets by CanonicalAddr
-pub const WALLETS: Map<&[u8], ()> = Map::new("wallets");
+/// All user with wallets by user CanonicalAddr and wallet CanonicalAddr
+pub const WALLETS_OF: Map<(&[u8], &[u8]), ()> = Map::new("wallets_of");
 /// Chain address prefix
 pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
 /// Fee for DAO when a wallet is created
