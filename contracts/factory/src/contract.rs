@@ -160,9 +160,6 @@ fn create_wallet(
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
-    if create_wallet_msg.guardians.addresses.is_empty() {
-        return Err(ContractError::EmptyGuardians {});
-    }
     // Ensure fixed multisig threshold is valid, if provided
     let fee = FEE.load(deps.storage)?;
     ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
