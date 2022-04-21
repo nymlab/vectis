@@ -27,8 +27,9 @@ fn create_new_proxy() {
     let owner = Addr::unchecked("owner");
     let init_owner_fund = suite.query_balance(&owner, "ucosm".into()).unwrap();
     let init_wallet_fund: Coin = coin(100, "ucosm");
+
     let rsp = suite.create_new_proxy(
-        Addr::unchecked("user"),
+        Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![coin(10, "ucosm"), coin(90, "ucosm")],
         None,
@@ -36,9 +37,14 @@ fn create_new_proxy() {
     );
     assert_matches!(rsp, Ok(_));
 
-    let mut r = suite.query_wallet_addresses(&factory).unwrap();
-    assert_matches!(r.wallets.len(), 1);
-    let wallet_addr = r.wallets.pop().unwrap();
+    let mut r_user = suite
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .unwrap();
+    let r_all = suite.query_all_wallet_addresses(&factory).unwrap();
+    assert_eq!(r_user.wallets[0], r_all.wallets[0]);
+    assert_eq!(r_user.wallets.len(), 1);
+    assert_eq!(r_all.wallets.len(), 1);
+    let wallet_addr = r_user.wallets.pop().unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
 
@@ -55,6 +61,35 @@ fn create_new_proxy() {
     assert_eq!(w.code_id, suite.sc_proxy_id);
     assert!(w.guardians.contains(&Addr::unchecked(GUARD1)));
     assert!(!w.is_frozen);
+
+    // Create another wallet for the same user
+    let rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![coin(10, "ucosm"), coin(90, "ucosm")],
+        None,
+        110,
+    );
+    assert_matches!(rsp, Ok(_));
+
+    let all = suite.query_all_wallet_addresses(&factory).unwrap();
+    println!("all: {:?}", all);
+    let userl = suite
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .unwrap();
+    println!(
+        "userl: {:?}, :::: {:?}",
+        userl,
+        Some(all.wallets[0].to_string())
+    );
+    let pagination_second = suite
+        .query_user_wallet_addresses(&factory, USER_ADDR, Some(all.wallets[0].to_string()), None)
+        .unwrap();
+
+    println!("pagination_second: {:?}", pagination_second);
+    assert_eq!(all.wallets.len(), 2);
+    assert_eq!(pagination_second.wallets.len(), 1);
+    assert_eq!(all.wallets[1], pagination_second.wallets[0]);
 }
 
 #[test]
@@ -73,7 +108,7 @@ fn cannot_create_new_proxy_without_payment() {
 
     let init_wallet_fund: Coin = coin(0, "ucosm");
     let rsp = suite.create_new_proxy(
-        Addr::unchecked("user"),
+        Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![init_wallet_fund.clone()],
         None,
@@ -96,7 +131,7 @@ fn user_can_execute_message() {
     );
     let init_wallet_fund: Coin = coin(100, "ucosm");
     let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked("user"),
+        Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![init_wallet_fund.clone()],
         None,
@@ -105,7 +140,7 @@ fn user_can_execute_message() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -160,7 +195,7 @@ fn create_new_proxy_with_multisig_guardians() {
     };
 
     let rsp = suite.create_new_proxy(
-        Addr::unchecked("user"),
+        Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![init_wallet_fund.clone()],
         Some(multisig),
@@ -168,7 +203,9 @@ fn create_new_proxy_with_multisig_guardians() {
     );
     assert_matches!(rsp, Ok(_));
 
-    let mut r = suite.query_wallet_addresses(&factory).unwrap();
+    let mut r = suite
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .unwrap();
     assert_matches!(r.wallets.len(), 1);
     let wallet_addr = r.wallets.pop().unwrap();
 

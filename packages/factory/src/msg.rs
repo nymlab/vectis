@@ -39,9 +39,21 @@ pub struct MultiSig {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum WalletFactoryQueryMsg {
-    /// Shows all the proxy wallet address
+    /// Shows proxy wallet address
     /// Returns WalletListResponse
-    Wallets {},
+    Wallets {
+        // Address string to start after
+        start_after: Option<String>,
+        // Max is 30 and default is 10
+        limit: Option<u32>,
+    },
+    WalletsOf {
+        user: String,
+        // Address string to start after
+        start_after: Option<String>,
+        // Max is 30 and default is 10
+        limit: Option<u32>,
+    },
     ProxyCodeId {},
     MultisigCodeId {},
     /// Returns the fee required to create a wallet

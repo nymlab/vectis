@@ -21,7 +21,6 @@ pub struct WalletInfo {
     pub user_addr: Addr,
     pub version: cw2::ContractVersion,
     pub code_id: u64,
-    // code if of multisig contract utilised by wallet instance
     pub multisig_code_id: u64,
     pub guardians: Vec<Addr>,
     pub relayers: Vec<Addr>,

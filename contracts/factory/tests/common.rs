@@ -47,7 +47,7 @@ pub const USER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
     185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 26,
 ];
-
+pub const USER_ADDR: &str = "wasm1ky4epcqzk0mngu7twqz06qzmpgrxstxhfch6yl";
 pub const MULTISIG_THRESHOLD: ThresholdAbsoluteCount = 2;
 pub const GUARD1: &str = "guardian1";
 pub const GUARD2: &str = "guardian2";
@@ -108,7 +108,7 @@ impl Suite {
     pub fn init() -> Result<Suite> {
         let genesis_funds = vec![coin(100000, "ucosm")];
         let owner = Addr::unchecked("owner");
-        let user = Addr::unchecked("user");
+        let user = Addr::unchecked(USER_ADDR);
         let mut app = App::new(|router, _, storage| {
             router
                 .bank
@@ -315,17 +315,45 @@ impl Suite {
             .map_err(|err| anyhow!(err))
     }
 
-    pub fn query_wallet_addresses(
+    pub fn query_all_wallet_addresses(
         &self,
         contract_addr: &Addr,
     ) -> Result<WalletListResponse, StdError> {
-        let r: WalletListResponse =
-            self.app
-                .wrap()
-                .query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: contract_addr.to_string(),
-                    msg: to_binary(&FactoryQueryMsg::Wallets {}).unwrap(),
-                }))?;
+        let r = self
+            .app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&FactoryQueryMsg::Wallets {
+                    start_after: None,
+                    limit: None,
+                })
+                .unwrap(),
+            }))
+            .unwrap();
+        Ok(r)
+    }
+
+    pub fn query_user_wallet_addresses(
+        &self,
+        contract_addr: &Addr,
+        user: &str,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<WalletListResponse, StdError> {
+        let r = self
+            .app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&FactoryQueryMsg::WalletsOf {
+                    user: user.to_string(),
+                    start_after,
+                    limit,
+                })
+                .unwrap(),
+            }))
+            .unwrap();
         Ok(r)
     }
 

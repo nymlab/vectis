@@ -28,7 +28,7 @@ fn user_can_update_proxy_multisig_with_direct_message() {
     };
 
     let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked("user"),
+        Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
@@ -38,7 +38,7 @@ fn user_can_update_proxy_multisig_with_direct_message() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -115,7 +115,7 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
     };
 
     let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked("user"),
+        Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![init_proxy_fund.clone()],
         Some(multisig.clone()),
@@ -124,7 +124,7 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_wallet_addresses(&factory)
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()

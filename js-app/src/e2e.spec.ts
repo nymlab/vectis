@@ -231,7 +231,7 @@ describe("End to End testing: ", () => {
     assert(wallet);
     const client = await CosmWasmClient.connect(rpcEndPoint!);
     const storedAddrs = await client.queryContractSmart(factory.address, {
-      wallets: {},
+      wallets_of: {user: userAddr!, start_after: null, limit: null  },
     });
     expect(storedAddrs.wallets[0]).toEqual(wallet.address);
     client.disconnect();

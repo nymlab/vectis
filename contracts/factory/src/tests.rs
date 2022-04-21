@@ -39,7 +39,7 @@ fn initialise_with_no_wallets() {
     do_instantiate(deps.as_mut(), 0, 1, 2, 3, "wasm", coin(1, "ucosm"));
 
     // no wallets to start
-    let wallets: WalletListResponse = query_wallet_list(deps.as_ref()).unwrap();
+    let wallets: WalletListResponse = query_wallet_list(deps.as_ref(), None, None).unwrap();
     assert_eq!(wallets.wallets.len(), 0);
 }
 
