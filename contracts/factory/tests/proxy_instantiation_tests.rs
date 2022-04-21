@@ -4,6 +4,7 @@ use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
 use cw_multi_test::Executor;
 use sc_wallet::{MultiSig, WalletInfo};
+use wallet_factory::ContractError;
 use wallet_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 
 pub mod common;
@@ -73,20 +74,10 @@ fn create_new_proxy() {
     assert_matches!(rsp, Ok(_));
 
     let all = suite.query_all_wallet_addresses(&factory).unwrap();
-    println!("all: {:?}", all);
-    let userl = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
-        .unwrap();
-    println!(
-        "userl: {:?}, :::: {:?}",
-        userl,
-        Some(all.wallets[0].to_string())
-    );
     let pagination_second = suite
         .query_user_wallet_addresses(&factory, USER_ADDR, Some(all.wallets[0].to_string()), None)
         .unwrap();
 
-    println!("pagination_second: {:?}", pagination_second);
     assert_eq!(all.wallets.len(), 2);
     assert_eq!(pagination_second.wallets.len(), 1);
     assert_eq!(all.wallets[1], pagination_second.wallets[0]);
@@ -106,15 +97,69 @@ fn cannot_create_new_proxy_without_payment() {
         10,
     );
 
-    let init_wallet_fund: Coin = coin(0, "ucosm");
-    let rsp = suite.create_new_proxy(
+    let rsp = suite.create_new_proxy(Addr::unchecked(USER_ADDR), factory.clone(), vec![], None, 0);
+    assert!(rsp.is_err());
+}
+
+#[test]
+fn create_new_proxy_without_guardians() {
+    let mut suite = Suite::init().unwrap();
+
+    let genesis_fund: Coin = coin(1000, "ucosm");
+    let factory = suite.instantiate_factory_with_governance(
+        suite.sc_proxy_id,
+        suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
+        vec![genesis_fund.clone()],
+        10,
+    );
+
+    let rsp = suite.create_new_proxy_without_guardians(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
-        vec![init_wallet_fund.clone()],
+        vec![],
         None,
-        0,
+        10,
     );
-    assert!(rsp.is_err());
+    assert!(rsp.is_ok());
+}
+
+#[test]
+fn cannot_create_new_proxy_with_multisig_and_without_guardians() {
+    let mut suite = Suite::init().unwrap();
+
+    let genesis_fund: Coin = coin(1000, "ucosm");
+    let factory = suite.instantiate_factory_with_governance(
+        suite.sc_proxy_id,
+        suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
+        vec![genesis_fund.clone()],
+        10,
+    );
+
+    let multisig = MultiSig {
+        threshold_absolute_count: 0,
+        multisig_initial_funds: vec![],
+    };
+
+    let rsp: ContractError = suite
+        .create_new_proxy_without_guardians(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![],
+            Some(multisig),
+            10,
+        )
+        .unwrap_err()
+        .downcast()
+        .unwrap();
+
+    assert_eq!(
+        rsp.to_string(),
+        String::from("ThresholdShouldBeGreaterThenZero")
+    );
 }
 
 #[test]

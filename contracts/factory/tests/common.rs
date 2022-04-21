@@ -212,6 +212,43 @@ impl Suite {
             &[],
         )
     }
+    pub fn create_new_proxy_without_guardians(
+        &mut self,
+        user: Addr,
+        factory: Addr,
+        initial_fund: Vec<Coin>,
+        guardians_multisig: Option<MultiSig>,
+        // This is both the initial proxy wallet initial balance
+        // and the fee for wallet creation
+        native_tokens_amount: u128,
+    ) -> Result<AppResponse> {
+        let r = "relayer".to_owned();
+        let secp = Secp256k1::new();
+
+        let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
+        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+
+        let create_wallet_msg = CreateWalletMsg {
+            user_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
+            guardians: Guardians {
+                addresses: vec![],
+                guardians_multisig,
+            },
+            relayers: vec![r],
+            proxy_initial_funds: initial_fund,
+        };
+
+        let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
+
+        self.app
+            .execute_contract(
+                user,
+                factory,
+                &execute,
+                &[coin(native_tokens_amount, "ucosm")],
+            )
+            .map_err(|err| anyhow!(err))
+    }
 
     pub fn create_new_proxy(
         &mut self,
