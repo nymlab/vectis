@@ -205,7 +205,7 @@ describe("End to End testing: ", () => {
       defaultWalletCreationFee,
       undefined,
       //TODO: error when passing in multiple coins in the following array
-      [coin(1101, coinMinDenom!)]
+      [coin(1100, coinMinDenom!)]
     );
 
     // wasm event is the last one
