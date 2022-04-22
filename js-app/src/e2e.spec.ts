@@ -77,14 +77,14 @@ describe("End to End testing: ", () => {
       defaultUploadFee
     );
 
-    const govecCode= getContract(GovecCodePath!);
+    const govecCode = getContract(GovecCodePath!);
     const govecRes = await client.upload(
       adminAddr!,
       govecCode,
       defaultUploadFee
     );
 
-    const stakeCode= getContract(StakingCodePath!);
+    const stakeCode = getContract(StakingCodePath!);
     const stakeRes = await client.upload(
       adminAddr!,
       stakeCode,
@@ -98,10 +98,10 @@ describe("End to End testing: ", () => {
       {
         proxy_code_id: proxyRes.codeId,
         proxy_multisig_code_id: multisigRes.codeId,
-		staking_code_id: stakeRes.codeId,
-		govec_code_id: govecRes.codeId,
+        staking_code_id: stakeRes.codeId,
+        govec_code_id: govecRes.codeId,
         addr_prefix: addrPrefix!,
-		wallet_fee: walletFee, 
+        wallet_fee: walletFee,
       },
       "wallet factory",
       defaultInstantiateFee,
@@ -119,15 +119,15 @@ describe("End to End testing: ", () => {
       initialFund: [initialFund],
     };
 
-	staking = {
-		address: null,
-		codeId: stakeRes.codeId
-	};
+    staking = {
+      address: null,
+      codeId: stakeRes.codeId,
+    };
 
-	govec = {
-		address: null,
-		codeId: govecRes.codeId
-	};
+    govec = {
+      address: null,
+      codeId: govecRes.codeId,
+    };
 
     expect(factoryRes.originalChecksum).toEqual(toHex(sha256(factoryCode)));
     expect(proxyRes.originalChecksum).toEqual(toHex(sha256(proxyCode)));
@@ -161,22 +161,22 @@ describe("End to End testing: ", () => {
     client.disconnect();
   });
 
-  it("should create govec and staking contract with create_governance", async()=> {
-	  assert(factory);
-	  assert(staking);
-	  const adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-	  const createGovernanceMsg: CreateGovernanceMsg  = {
-		staking_options: { duration: null, code_id: staking.codeId },
-		initial_balances: []
-	  };
-	  const res = await adminClient.execute(
-		  adminAddr!,
-		  factory.address,
-		  {create_governance: createGovernanceMsg},
-		  defaultInstantiateFee
-	  )
-	  // TODO verify events
-  })
+  it("should create govec and staking contract with create_governance", async () => {
+    assert(factory);
+    assert(staking);
+    const adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
+    const createGovernanceMsg: CreateGovernanceMsg = {
+      staking_options: { duration: null, code_id: staking.codeId },
+      initial_balances: [],
+    };
+    const res = await adminClient.execute(
+      adminAddr!,
+      factory.address,
+      { create_governance: createGovernanceMsg },
+      defaultInstantiateFee
+    );
+    // TODO verify events
+  });
 
   it("creating new wallet with multisig guardians", async () => {
     assert(factory);
@@ -203,14 +203,15 @@ describe("End to End testing: ", () => {
       factory.address,
       { create_wallet: { create_wallet_msg: walletInitMsg } },
       defaultWalletCreationFee,
-	  undefined,
-	  //TODO: error when passing in multiple coins in the following array
-	  [coin(1100, coinMinDenom!)] 
+      undefined,
+      //TODO: error when passing in multiple coins in the following array
+      [coin(1100, coinMinDenom!)]
     );
 
     // wasm event is the last one
     const wasmEvent = newWalletRes.logs[0].events.length;
-    const wasmEventAttributes = newWalletRes.logs[0].events[wasmEvent - 1].attributes;
+    const wasmEventAttributes =
+      newWalletRes.logs[0].events[wasmEvent - 1].attributes;
     for (let i in wasmEventAttributes) {
       if (wasmEventAttributes[i].key == "multisig_address") {
         multisig = { address: wasmEventAttributes[i].value };
@@ -231,7 +232,7 @@ describe("End to End testing: ", () => {
     assert(wallet);
     const client = await CosmWasmClient.connect(rpcEndPoint!);
     const storedAddrs = await client.queryContractSmart(factory.address, {
-      wallets_of: {user: userAddr!, start_after: null, limit: null  },
+      wallets_of: { user: userAddr!, start_after: null, limit: null },
     });
     expect(storedAddrs.wallets[0]).toEqual(wallet.address);
     client.disconnect();
@@ -260,6 +261,20 @@ describe("End to End testing: ", () => {
       Number(wallet_fund) - Number(multisig_fund)
     );
     expect(Number(post_multisig_fund.amount)).toEqual(Number(multisig_fund));
+    client.disconnect();
+  });
+
+  it("proxy wallet has correct info", async () => {
+    assert(factory);
+    assert(wallet);
+    assert(multisig);
+
+    const client = await CosmWasmClient.connect(rpcEndPoint!);
+    const info = await client.queryContractSmart(wallet.address, {
+      info: {}
+    });
+
+    expect(info).toBeTruthy();
     client.disconnect();
   });
 
