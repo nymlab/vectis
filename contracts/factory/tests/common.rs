@@ -355,17 +355,15 @@ impl Suite {
     pub fn query_all_wallet_addresses(
         &self,
         contract_addr: &Addr,
+        start_after: Option<(String, String)>,
+        limit: Option<u32>,
     ) -> Result<WalletListResponse, StdError> {
         let r = self
             .app
             .wrap()
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: contract_addr.to_string(),
-                msg: to_binary(&FactoryQueryMsg::Wallets {
-                    start_after: None,
-                    limit: None,
-                })
-                .unwrap(),
+                msg: to_binary(&FactoryQueryMsg::Wallets { start_after, limit }).unwrap(),
             }))
             .unwrap();
         Ok(r)

@@ -43,7 +43,7 @@ pub enum WalletFactoryQueryMsg {
     /// Returns WalletListResponse
     Wallets {
         // Address string to start after
-        start_after: Option<String>,
+        start_after: Option<(String, String)>,
         // Max is 30 and default is 10
         limit: Option<u32>,
     },
