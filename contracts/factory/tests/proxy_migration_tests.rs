@@ -10,14 +10,13 @@ use common::*;
 #[test]
 fn user_can_migrate_proxy_with_direct_message() {
     let mut suite = Suite::init().unwrap();
-    let init_wallet_fund: Coin = coin(100, "ucosm");
     let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
         suite.stake_id,
-        vec![init_wallet_fund],
-        10,
+        vec![],
+        WALLET_FEE,
     );
     let init_proxy_fund: Coin = coin(90, "ucosm");
     let create_proxy_rsp = suite.create_new_proxy(
@@ -25,7 +24,7 @@ fn user_can_migrate_proxy_with_direct_message() {
         factory.clone(),
         vec![init_proxy_fund.clone()],
         None,
-        100,
+        WALLET_FEE + init_proxy_fund.amount.u128(),
     );
     assert!(create_proxy_rsp.is_ok());
 
@@ -41,8 +40,9 @@ fn user_can_migrate_proxy_with_direct_message() {
     assert_eq!(old_code_id, suite.sc_proxy_id);
 
     let new_code_id = suite.app.store_code(contract_proxy());
-    let r = suite.update_proxy_code_id(new_code_id, factory.clone());
-    assert!(r.is_ok());
+    suite
+        .update_proxy_code_id(new_code_id, factory.clone())
+        .unwrap();
 
     // User migrates their wallet to the new code id
     let migrate_wallet_msg = FactoryExecuteMsg::MigrateWallet {
@@ -101,14 +101,14 @@ fn relayer_can_migrate_proxy_with_user_signature() {
         suite.govec_id,
         suite.stake_id,
         vec![],
-        10,
+        WALLET_FEE,
     );
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
 
     assert!(create_proxy_rsp.is_ok());
@@ -160,14 +160,14 @@ fn user_cannot_migrate_others_wallet() {
         suite.govec_id,
         suite.stake_id,
         vec![],
-        10,
+        WALLET_FEE,
     );
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
 
     assert!(create_proxy_rsp.is_ok());
@@ -220,14 +220,14 @@ fn user_cannot_migrate_with_mismatched_code_id() {
         suite.govec_id,
         suite.stake_id,
         vec![],
-        10,
+        WALLET_FEE,
     );
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
     assert!(create_proxy_rsp.is_ok());
 
@@ -281,14 +281,14 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
         suite.govec_id,
         suite.stake_id,
         vec![],
-        10,
+        WALLET_FEE,
     );
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
     assert!(create_proxy_rsp.is_ok());
 
@@ -333,14 +333,14 @@ fn relayer_cannot_migrate_others_wallet() {
         suite.govec_id,
         suite.stake_id,
         vec![],
-        10,
+        WALLET_FEE,
     );
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
 
     assert!(create_proxy_rsp.is_ok());
@@ -390,14 +390,15 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
         suite.govec_id,
         suite.stake_id,
         vec![],
-        10,
+        WALLET_FEE,
     );
+
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
 
     assert!(create_proxy_rsp.is_ok());
@@ -450,14 +451,14 @@ fn relayer_cannot_migrate_proxy_with_invalid_signature() {
         suite.govec_id,
         suite.stake_id,
         vec![],
-        10,
+        WALLET_FEE,
     );
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
 
     assert!(create_proxy_rsp.is_ok());

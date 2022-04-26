@@ -339,11 +339,14 @@ pub fn execute_update_guardians(
         } else {
             match MULTISIG_CODE_ID.may_load(deps.storage)? {
                 Some(id) => id,
-                None => deps
-                    .querier
-                    .query_wasm_smart(deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?, &{
-                        WalletFactoryQueryMsg::MultisigCodeId {}
-                    })?,
+                None => deps.querier.query_wasm_smart(
+                    deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
+                    &{
+                        WalletFactoryQueryMsg::CodeId {
+                            ty: sc_wallet::CodeIdType::Multisig,
+                        }
+                    },
+                )?,
             }
         };
         MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;

@@ -27,7 +27,7 @@ pub struct Guardians {
     pub guardians_multisig: Option<MultiSig>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct MultiSig {
     // Declares that a fixed weight of Yes votes is needed to pass.
     /// Only Fixed multisig is supported in this version
@@ -54,8 +54,9 @@ pub enum WalletFactoryQueryMsg {
         // Max is 30 and default is 10
         limit: Option<u32>,
     },
-    ProxyCodeId {},
-    MultisigCodeId {},
+    CodeId {
+        ty: CodeIdType,
+    },
     /// Returns the fee required to create a wallet
     /// Fee goes to the DAO
     Fee {},

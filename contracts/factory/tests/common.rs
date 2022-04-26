@@ -43,6 +43,7 @@ use wallet_proxy::{
     msg::QueryMsg as ProxyQueryMsg,
 };
 
+pub const WALLET_FEE: u128 = 10u128;
 pub const USER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
     185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 26,
@@ -146,8 +147,8 @@ impl Suite {
     ) -> Addr {
         self.app
             .instantiate_contract(
-                self.sc_factory_id,                  // code_id: u64,
-                Addr::unchecked(self.owner.clone()), // sender: Addr,
+                self.sc_factory_id,
+                self.owner.clone(),
                 &InstantiateMsg {
                     proxy_code_id,
                     proxy_multisig_code_id,
@@ -158,10 +159,10 @@ impl Suite {
                         denom: "ucosm".to_string(),
                         amount: Uint128::new(wallet_fee),
                     },
-                }, // InstantiateMsg
+                },
                 &init_funds,
                 "wallet-factory", // label: human readible name for contract
-                None,             // admin: Option<String>, will need this for upgrading
+                Some(self.owner.to_string()), // admin: Option<String>, will need this for upgrading
             )
             .unwrap()
     }
@@ -252,9 +253,9 @@ impl Suite {
 
     pub fn create_new_proxy(
         &mut self,
-        user: Addr,
+        payer: Addr,
         factory: Addr,
-        initial_fund: Vec<Coin>,
+        proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
         // This is both the initial proxy wallet initial balance
         // and the fee for wallet creation
@@ -276,14 +277,14 @@ impl Suite {
                 guardians_multisig,
             },
             relayers: vec![r],
-            proxy_initial_funds: initial_fund,
+            proxy_initial_funds,
         };
 
         let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
 
         self.app
             .execute_contract(
-                user,
+                payer,
                 factory,
                 &execute,
                 &[coin(native_tokens_amount, "ucosm")],

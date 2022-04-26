@@ -17,25 +17,25 @@ fn user_can_update_proxy_multisig_with_direct_message() {
         suite.govec_id,
         suite.stake_id,
         vec![init_factory_fund],
-        10,
+        WALLET_FEE,
     );
     let init_proxy_fund: Coin = coin(300, "ucosm");
     let init_multisig_fund: Coin = coin(50, "ucosm");
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![init_multisig_fund],
+        multisig_initial_funds: vec![init_multisig_fund.clone()],
     };
 
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        factory.clone(),
-        vec![init_proxy_fund.clone()],
-        Some(multisig.clone()),
-        310,
-    );
-
-    assert!(create_proxy_rsp.is_ok());
+    suite
+        .create_new_proxy(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![init_proxy_fund.clone()],
+            Some(multisig.clone()),
+            WALLET_FEE + init_proxy_fund.amount.u128() + init_multisig_fund.amount.u128(),
+        )
+        .unwrap();
 
     let wallet_address = suite
         .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
@@ -104,25 +104,24 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
         suite.govec_id,
         suite.stake_id,
         vec![init_wallet_fund],
-        10,
+        WALLET_FEE,
     );
-    let init_proxy_fund: Coin = coin(300, "ucosm");
-    let init_multisig_fund: Coin = coin(50, "ucosm");
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![init_multisig_fund],
+        multisig_initial_funds: vec![],
     };
 
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        factory.clone(),
-        vec![init_proxy_fund.clone()],
-        Some(multisig.clone()),
-        310,
-    );
+    suite
+        .create_new_proxy(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![],
+            Some(multisig.clone()),
+            WALLET_FEE,
+        )
+        .unwrap();
 
-    assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
         .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap()

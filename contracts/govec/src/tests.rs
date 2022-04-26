@@ -466,7 +466,17 @@ fn transfer() {
         recipient: addr2.clone(),
         amount: transfer,
     };
-    execute(deps.as_mut(), env, info, msg).unwrap();
+    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+
+    assert_eq!(
+        res.attributes,
+        [
+            ("action", "transfer"),
+            ("from", &addr1),
+            ("to", &addr2),
+            ("amount", &transfer.to_string())
+        ]
+    );
 
     assert_eq!(get_balance(deps.as_ref(), addr2.clone()), transfer);
     assert_eq!(
@@ -507,16 +517,14 @@ fn burn() {
         query_token_info(deps.as_ref()).unwrap().total_supply,
         remainder
     );
-
-    // check balance query (empty)
-    let data = query(
+    assert!(query(
         deps.as_ref(),
         env,
         QueryMsg::Balance {
             address: addr1.clone(),
         },
-    );
-    assert!(data.is_err());
+    )
+    .is_err());
 
     // cannot transfer to burnt wallet
     let info = mock_info(addr3.as_ref(), &[]);
@@ -604,7 +612,15 @@ fn send() {
         msg: send_msg.clone(),
     };
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(res.messages.len(), 1);
+    assert_eq!(
+        res.attributes,
+        [
+            ("action", "send"),
+            ("from", &addr1),
+            ("to", &addr2),
+            ("amount", &transfer.to_string())
+        ]
+    );
 
     // ensure proper send message sent
     // this is the message we want delivered to the other side
