@@ -121,9 +121,10 @@ fn create_governance(
 
 /// Ensure user has sent in enough to cover the fee and the initial proxy balance
 fn ensure_enough_native_funds(
-    fee: Coin,
-    proxy_initial_fund: Vec<Coin>,
-    sent_fund: Vec<Coin>,
+    fee: &Coin,
+    proxy_initial_fund: &[Coin],
+    multisig_initial_fund: &[Coin],
+    sent_fund: &[Coin],
 ) -> Result<(), ContractError> {
     let init_native_fund = proxy_initial_fund.iter().fold(Uint128::zero(), |acc, c| {
         if c.denom == fee.denom {
@@ -133,7 +134,17 @@ fn ensure_enough_native_funds(
         }
     });
 
-    let total_native_fund = fee.amount + init_native_fund;
+    let init_multisig_native_fund = multisig_initial_fund
+        .iter()
+        .fold(Uint128::zero(), |acc, c| {
+            if c.denom == fee.denom {
+                acc + c.amount
+            } else {
+                acc
+            }
+        });
+
+    let total_native_fund_required = fee.amount + init_native_fund + init_multisig_native_fund;
 
     let total_sent = sent_fund.iter().fold(Uint128::zero(), |acc, c| {
         if c.denom == fee.denom {
@@ -143,11 +154,11 @@ fn ensure_enough_native_funds(
         }
     });
 
-    if total_native_fund == total_sent {
+    if total_native_fund_required == total_sent {
         Ok(())
     } else {
         Err(ContractError::InvalidNativeFund(
-            total_native_fund,
+            total_native_fund_required,
             total_sent,
         ))
     }
@@ -159,13 +170,21 @@ fn create_wallet(
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
-    // Ensure fixed multisig threshold is valid, if provided
     let fee = FEE.load(deps.storage)?;
+    let multisig_initial_funds = create_wallet_msg
+        .guardians
+        .guardians_multisig
+        .clone()
+        .unwrap_or_default()
+        .multisig_initial_funds;
+
+    // Ensure fixed multisig threshold is valid, if provided
     ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
     ensure_enough_native_funds(
-        fee.clone(),
-        create_wallet_msg.proxy_initial_funds.clone(),
-        info.funds,
+        &fee,
+        &create_wallet_msg.proxy_initial_funds,
+        &multisig_initial_funds,
+        &info.funds,
     )?;
 
     if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
@@ -179,7 +198,11 @@ fn create_wallet(
                 code_id: PROXY_CODE_ID.load(deps.storage)?,
                 addr_prefix: ADDR_PREFIX.load(deps.storage)?,
             })?,
-            funds: create_wallet_msg.proxy_initial_funds,
+            funds: vec![
+                create_wallet_msg.proxy_initial_funds,
+                multisig_initial_funds,
+            ]
+            .concat(),
             label: "Wallet-Proxy".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
@@ -475,8 +498,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         } => to_binary(&query_wallets_of(deps, user, start_after, limit)?),
-        QueryMsg::ProxyCodeId {} => to_binary(&query_proxy_code_id(deps)?),
-        QueryMsg::MultisigCodeId {} => to_binary(&query_multisig_code_id(deps)?),
+        QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
     }
 }
@@ -538,17 +560,16 @@ pub fn query_wallets_of(
     Ok(WalletListResponse { wallets: wallets? })
 }
 
-/// Returns the current supported `wallet_proxy` code id
-pub fn query_proxy_code_id(deps: Deps) -> StdResult<u64> {
-    let id = PROXY_CODE_ID.load(deps.storage)?;
-    Ok(id)
-}
-
-/// Returns the current default `multisig` code id for `wallet_proxy`
-/// wallet user can use their own version, however we only support the cw3-fixed-multisig
-/// `instantiateMsg` for the time being
-pub fn query_multisig_code_id(deps: Deps) -> StdResult<u64> {
-    let id = PROXY_MULTISIG_CODE_ID.load(deps.storage)?;
+/// Returns the current supported code Id:
+/// - `wallet_proxy`
+///  - `multisig` wallet user can use their own version, however we only support the cw3-fixed-multisig
+pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
+    let id = match ty {
+        CodeIdType::Proxy => PROXY_CODE_ID.load(deps.storage)?,
+        CodeIdType::Multisig => PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
+        CodeIdType::Govec => GOVEC_CODE_ID.load(deps.storage)?,
+        CodeIdType::Staking => STAKING_CODE_ID.load(deps.storage)?,
+    };
     Ok(id)
 }
 
