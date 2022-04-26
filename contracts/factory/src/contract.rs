@@ -17,7 +17,6 @@ use cw_storage_plus::Bound;
 use govec::msg::{
     ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg, MinterResponse, StakingOptions,
 };
-
 pub use sc_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
@@ -434,8 +433,8 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdErro
             WALLETS_OF.save(
                 deps.storage,
                 (
-                    deps.api.addr_canonicalize(&user.value)?.as_slice(),
-                    wallet_addr.as_slice(),
+                    deps.api.addr_canonicalize(&user.value)?.to_vec(),
+                    wallet_addr.to_vec(),
                 ),
                 &(),
             )?;
@@ -490,14 +489,15 @@ pub fn query_fee(deps: Deps) -> StdResult<Coin> {
 /// Returns wallets created with limit
 pub fn query_wallet_list(
     deps: Deps,
-    start_after: Option<String>,
+    start_after: Option<(String, String)>,
     limit: Option<u32>,
 ) -> StdResult<WalletListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = match start_after {
         Some(s) => {
-            let addr = deps.api.addr_canonicalize(&s)?;
-            Some(Bound::ExclusiveRaw(addr.into()))
+            let user_addr = deps.api.addr_canonicalize(s.0.as_str())?.to_vec();
+            let wallet_addr = deps.api.addr_canonicalize(s.1.as_str())?.to_vec();
+            Some(Bound::exclusive((user_addr, wallet_addr)))
         }
         None => None,
     };
@@ -505,12 +505,11 @@ pub fn query_wallet_list(
         .sub_prefix(())
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
-        .map(|w| deps.api.addr_humanize(&CanonicalAddr::from(w?.0 .1)))
+        .map(|w| -> StdResult<Addr> { deps.api.addr_humanize(&CanonicalAddr::from(w?.0 .1)) })
         .collect();
 
     Ok(WalletListResponse { wallets: wallets? })
 }
-
 /// Returns wallets of user
 pub fn query_wallets_of(
     deps: Deps,
@@ -528,8 +527,9 @@ pub fn query_wallets_of(
     };
     let user_addr = deps.api.addr_validate(&user)?;
     let user_addr = deps.api.addr_canonicalize(user_addr.as_str())?;
+
     let wallets: Result<Vec<_>, _> = WALLETS_OF
-        .prefix(user_addr.as_slice())
+        .prefix(user_addr.to_vec())
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key?.0)))
