@@ -12,20 +12,12 @@ use cw3_fixed_multisig::contract::{
 use cw3_fixed_multisig::msg::QueryMsg as MultiSigQueryMsg;
 use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
 use derivative::Derivative;
-use govec::contract::{
-    execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
-    reply as govec_reply,
-};
-use govec::msg::StakingOptions;
-use sc_wallet::{
-    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, ThresholdAbsoluteCount,
-};
 use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 use serde::de::DeserializeOwned;
 use stake_cw20::contract::{
     execute as stake_execute, instantiate as stake_instantiate, query as stake_query,
 };
-use wallet_factory::{
+use vectis_factory::{
     contract::{
         execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
         reply as factory_reply,
@@ -35,12 +27,20 @@ use wallet_factory::{
         WalletListResponse,
     },
 };
-use wallet_proxy::{
+use vectis_govec::contract::{
+    execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
+    reply as govec_reply,
+};
+use vectis_proxy::{
     contract::{
         execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
         query as proxy_query, reply as proxy_reply,
     },
     msg::QueryMsg as ProxyQueryMsg,
+};
+use vectis_wallet::{
+    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, StakingOptions,
+    ThresholdAbsoluteCount,
 };
 
 pub const WALLET_FEE: u128 = 10u128;

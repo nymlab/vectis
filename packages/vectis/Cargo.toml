@@ -1,5 +1,5 @@
 [package]
-name = "sc-wallet"
+name = "vectis-wallet"
 authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>"]
 version = "0.1.0"
 edition = "2018"
@@ -17,4 +17,3 @@ cw2 = "0.13.0"
 thiserror = { version = "1.0.26" }
 cw-utils = "0.11"
 cw20 = "0.13.0"
-govec = { path = "../../contracts/govec", features = ["library"] }

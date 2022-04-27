@@ -1,5 +1,5 @@
 [package]
-name = "govec"
+name = "vectis-govec"
 version = "0.1.0"
 edition = "2018"
 description = "Whitelisted governance token contract. Not cw20 compatible"
@@ -26,6 +26,7 @@ thiserror = { version = "1.0.26" }
 derivative = "2"
 hex = "0.4"
 stake-cw20 = {version = "0.2.6", features = ['library']}
+vectis-wallet = {path = "../../packages/vectis"}
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0-beta6" }

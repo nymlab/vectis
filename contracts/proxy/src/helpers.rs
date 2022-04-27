@@ -5,7 +5,7 @@ use crate::error::ContractError;
 use crate::state::{User, FROZEN, GUARDIANS, MULTISIG_ADDRESS, RELAYERS, USER};
 use cw3_fixed_multisig::msg::Voter;
 use cw_storage_plus::Map;
-use sc_wallet::RelayTxError;
+use vectis_wallet::RelayTxError;
 
 // Converts addresses to voters with weight of 1
 pub fn addresses_to_voters(addresses: &[String]) -> Vec<Voter> {

@@ -1,8 +1,8 @@
 use cosmwasm_std::{coin, to_binary, Addr, Coin, CosmosMsg, WasmMsg};
 use cw3::VoterDetail;
 use cw_multi_test::Executor;
-use sc_wallet::{Guardians, MultiSig, WalletInfo};
-use wallet_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_wallet::{Guardians, MultiSig, WalletInfo};
 
 pub mod common;
 use common::*;
