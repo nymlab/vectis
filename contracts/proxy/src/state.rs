@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::ContractError;
 use cosmwasm_std::CanonicalAddr;
 use cw_storage_plus::{Item, Map};
-use sc_wallet::{Nonce, RelayTxError};
+use vectis_wallet::{Nonce, RelayTxError};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct User {

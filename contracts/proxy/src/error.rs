@@ -1,6 +1,6 @@
 use cosmwasm_std::StdError;
-use sc_wallet::RelayTxError;
 use thiserror::Error;
+use vectis_wallet::RelayTxError;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {

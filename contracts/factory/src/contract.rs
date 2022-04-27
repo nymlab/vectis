@@ -14,16 +14,14 @@ use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 use cw20::Cw20Coin;
 use cw_storage_plus::Bound;
-use govec::msg::{
-    ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg, MinterResponse, StakingOptions,
-};
-pub use sc_wallet::{
+use vectis_govec::msg::{ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg, MinterResponse};
+pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
-    WalletAddr, WalletInfo,
+    StakingOptions, WalletAddr, WalletInfo,
 };
 // use stake_cw20::msg::InstantiateMsg as StakingInstantiateMsg;
-use wallet_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
+use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";

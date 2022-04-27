@@ -505,25 +505,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "govec"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 0.13.0",
- "cw-utils 0.11.1",
- "cw1",
- "cw2 0.13.0",
- "cw20 0.13.0",
- "derivative",
- "hex",
- "schemars",
- "serde",
- "stake-cw20",
- "thiserror",
-]
-
-[[package]]
 name = "group"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -684,25 +665,6 @@ name = "ryu"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c9613b5a66ab9ba26415184cfc41156594925a9cf3a2057e57f31ff145f6568"
-
-[[package]]
-name = "sc-wallet"
-version = "0.1.0"
-dependencies = [
- "bech32",
- "cosmwasm-std",
- "cw-utils 0.11.1",
- "cw2 0.13.0",
- "cw20 0.13.0",
- "govec",
- "hex",
- "primitive-types",
- "ripemd160",
- "schemars",
- "serde",
- "sha2",
- "thiserror",
-]
 
 [[package]]
 name = "schemars"
@@ -917,13 +879,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 
 [[package]]
-name = "version_check"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
-
-[[package]]
-name = "wallet-factory"
+name = "vectis-factory"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -939,19 +895,39 @@ dependencies = [
  "cw3",
  "cw3-fixed-multisig",
  "derivative",
- "govec",
  "hex",
- "sc-wallet",
  "schemars",
  "secp256k1",
  "serde",
  "stake-cw20",
  "thiserror",
- "wallet-proxy",
+ "vectis-govec",
+ "vectis-proxy",
+ "vectis-wallet",
 ]
 
 [[package]]
-name = "wallet-proxy"
+name = "vectis-govec"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 0.13.0",
+ "cw-utils 0.11.1",
+ "cw1",
+ "cw2 0.13.0",
+ "cw20 0.13.0",
+ "derivative",
+ "hex",
+ "schemars",
+ "serde",
+ "stake-cw20",
+ "thiserror",
+ "vectis-wallet",
+]
+
+[[package]]
+name = "vectis-proxy"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
@@ -963,13 +939,37 @@ dependencies = [
  "cw3",
  "cw3-fixed-multisig",
  "hex",
- "sc-wallet",
  "schemars",
  "secp256k1",
  "serde",
  "sha2",
  "thiserror",
+ "vectis-wallet",
 ]
+
+[[package]]
+name = "vectis-wallet"
+version = "0.1.0"
+dependencies = [
+ "bech32",
+ "cosmwasm-std",
+ "cw-utils 0.11.1",
+ "cw2 0.13.0",
+ "cw20 0.13.0",
+ "hex",
+ "primitive-types",
+ "ripemd160",
+ "schemars",
+ "serde",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
+name = "version_check"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 
 [[package]]
 name = "wasi"

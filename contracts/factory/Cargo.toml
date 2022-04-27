@@ -1,5 +1,5 @@
 [package]
-name = "wallet-factory"
+name = "vectis-factory"
 version = "0.1.0"
 authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>"]
 edition = "2018"
@@ -27,15 +27,16 @@ cw-storage-plus = "0.13.0"
 cw1 = "0.13.0"
 cw2 = "0.13.0"
 cw20 = "0.13.0"
-wallet-proxy = { path = "../proxy", features = ["library"]}
-sc-wallet = {path = "../../packages/factory"}
 schemars = "0.8.3"
 serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.26" }
 derivative = "2"
 hex = "0.4"
-govec = { path = "../govec", features = ["library"]}
 cw-utils = "0.11" # required lower version due to stake-cw20
+# Vectis libs
+vectis-proxy = { path = "../proxy", features = ["library"]}
+vectis-govec = { path = "../govec", features = ["library"]}
+vectis-wallet = {path = "../../packages/vectis"}
 
 [dev-dependencies]
 anyhow = "1"
@@ -45,5 +46,5 @@ cw-multi-test = "0.13.0"
 secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}
 cw3 = "0.13.0"
 cw3-fixed-multisig = { version = "0.13.0", features = ["library"] }
-wallet-proxy = { path = "../proxy", features = ["migration", "library"]}
 stake-cw20 = "0.2.6"
+vectis-proxy = { path = "../proxy", features = ["migration", "library"]}

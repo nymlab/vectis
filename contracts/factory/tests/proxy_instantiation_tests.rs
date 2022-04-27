@@ -3,9 +3,9 @@ use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, WasmM
 use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
 use cw_multi_test::Executor;
-use sc_wallet::{MultiSig, WalletInfo};
-use wallet_factory::ContractError;
-use wallet_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_factory::ContractError;
+use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_wallet::{MultiSig, WalletInfo};
 
 pub mod common;
 use common::*;

@@ -1,7 +1,8 @@
-use crate::wallet::{ProxyMigrationTxMsg, WalletAddr};
+use crate::govec::StakingOptions;
+use crate::wallet::{RelayTransaction, WalletAddr};
+use crate::MigrationMsgError;
 use cosmwasm_std::{Binary, Coin};
 use cw20::Cw20Coin;
-use govec::msg::StakingOptions;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -34,6 +35,38 @@ pub struct MultiSig {
     pub threshold_absolute_count: ThresholdAbsoluteCount,
     // intial funds for multisig contract
     pub multisig_initial_funds: Vec<Coin>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum CodeIdType {
+    Proxy,
+    Multisig,
+    Govec,
+    Staking,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub enum ProxyMigrationTxMsg {
+    RelayTx(RelayTransaction),
+    DirectMigrationMsg(Binary),
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct ProxyMigrateMsg {
+    pub new_code_id: u64,
+}
+
+impl ProxyMigrateMsg {
+    /// Ensures code id of multisig contract is equal to current factory multisig code id,
+    pub fn ensure_is_supported_proxy_code_id(
+        &self,
+        factory_proxy_code_id: u64,
+    ) -> Result<(), MigrationMsgError> {
+        if factory_proxy_code_id != self.new_code_id {
+            return Err(MigrationMsgError::MismatchProxyCodeId);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -83,23 +116,4 @@ pub enum WalletFactoryExecuteMsg {
         staking_options: Option<StakingOptions>,
         initial_balances: Vec<Cw20Coin>,
     },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum CodeIdType {
-    Proxy,
-    Multisig,
-    Govec,
-    Staking,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
-pub struct WalletInit {
-    /// User pubkey
-    pub user_pubkey: Binary,
-    /// Message to verify
-    pub message: Binary,
-    /// Serialized signature. Cosmos format (64 bytes).
-    /// Cosmos format (secp256k1 verification scheme).
-    pub signature: Binary,
 }

@@ -1,8 +1,8 @@
 use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, WasmMsg};
 use cw_multi_test::Executor;
-use sc_wallet::{ProxyMigrateMsg, ProxyMigrationTxMsg, WalletAddr, WalletInfo};
-use wallet_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
-use wallet_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
+use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_wallet::{ProxyMigrateMsg, ProxyMigrationTxMsg, WalletAddr, WalletInfo};
 
 pub mod common;
 use common::*;

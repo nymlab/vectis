@@ -1,6 +1,6 @@
 use cosmwasm_std::{CanonicalAddr, Coin};
 use cw_storage_plus::{Item, Map};
-pub use sc_wallet::WalletInfo;
+pub use vectis_wallet::WalletInfo;
 
 /// The total number of wallets successfully created by the factory
 /// i.e. if creation fail, this is not incremented

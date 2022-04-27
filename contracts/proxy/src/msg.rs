@@ -1,8 +1,8 @@
 use cosmwasm_std::{Addr, CosmosMsg, Empty};
-use sc_wallet::{CreateWalletMsg, Guardians, RelayTransaction};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use vectis_wallet::{CreateWalletMsg, Guardians, RelayTransaction};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
