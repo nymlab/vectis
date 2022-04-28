@@ -382,7 +382,6 @@ fn relay_proxy_user_tx_succeeds() {
 }
 
 #[test]
-#[test]
 fn relay_proxy_user_tx_invalid_msg_fails() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     do_instantiate(deps.as_mut());
