@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, StdError, Uint128};
-use sc_wallet::{MigrationMsgError, RelayTxError};
 use thiserror::Error;
+use vectis_wallet::{MigrationMsgError, RelayTxError};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {

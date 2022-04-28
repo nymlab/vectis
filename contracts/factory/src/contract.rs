@@ -14,17 +14,14 @@ use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
 use cw20::Cw20Coin;
 use cw_storage_plus::Bound;
-use govec::msg::{
-    ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg, MinterResponse, StakingOptions,
-};
-
-pub use sc_wallet::{
+use vectis_govec::msg::{ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg, MinterResponse};
+pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
-    WalletAddr, WalletInfo,
+    StakingOptions, WalletAddr, WalletInfo,
 };
 // use stake_cw20::msg::InstantiateMsg as StakingInstantiateMsg;
-use wallet_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
+use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
@@ -122,9 +119,10 @@ fn create_governance(
 
 /// Ensure user has sent in enough to cover the fee and the initial proxy balance
 fn ensure_enough_native_funds(
-    fee: Coin,
-    proxy_initial_fund: Vec<Coin>,
-    sent_fund: Vec<Coin>,
+    fee: &Coin,
+    proxy_initial_fund: &[Coin],
+    multisig_initial_fund: &[Coin],
+    sent_fund: &[Coin],
 ) -> Result<(), ContractError> {
     let init_native_fund = proxy_initial_fund.iter().fold(Uint128::zero(), |acc, c| {
         if c.denom == fee.denom {
@@ -134,7 +132,17 @@ fn ensure_enough_native_funds(
         }
     });
 
-    let total_native_fund = fee.amount + init_native_fund;
+    let init_multisig_native_fund = multisig_initial_fund
+        .iter()
+        .fold(Uint128::zero(), |acc, c| {
+            if c.denom == fee.denom {
+                acc + c.amount
+            } else {
+                acc
+            }
+        });
+
+    let total_native_fund_required = fee.amount + init_native_fund + init_multisig_native_fund;
 
     let total_sent = sent_fund.iter().fold(Uint128::zero(), |acc, c| {
         if c.denom == fee.denom {
@@ -144,11 +152,11 @@ fn ensure_enough_native_funds(
         }
     });
 
-    if total_native_fund == total_sent {
+    if total_native_fund_required == total_sent {
         Ok(())
     } else {
         Err(ContractError::InvalidNativeFund(
-            total_native_fund,
+            total_native_fund_required,
             total_sent,
         ))
     }
@@ -160,13 +168,21 @@ fn create_wallet(
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
-    // Ensure fixed multisig threshold is valid, if provided
     let fee = FEE.load(deps.storage)?;
+    let multisig_initial_funds = create_wallet_msg
+        .guardians
+        .guardians_multisig
+        .clone()
+        .unwrap_or_default()
+        .multisig_initial_funds;
+
+    // Ensure fixed multisig threshold is valid, if provided
     ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
     ensure_enough_native_funds(
-        fee.clone(),
-        create_wallet_msg.proxy_initial_funds.clone(),
-        info.funds,
+        &fee,
+        &create_wallet_msg.proxy_initial_funds,
+        &multisig_initial_funds,
+        &info.funds,
     )?;
 
     if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
@@ -180,7 +196,11 @@ fn create_wallet(
                 code_id: PROXY_CODE_ID.load(deps.storage)?,
                 addr_prefix: ADDR_PREFIX.load(deps.storage)?,
             })?,
-            funds: create_wallet_msg.proxy_initial_funds,
+            funds: vec![
+                create_wallet_msg.proxy_initial_funds,
+                multisig_initial_funds,
+            ]
+            .concat(),
             label: "Wallet-Proxy".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
@@ -434,8 +454,8 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdErro
             WALLETS_OF.save(
                 deps.storage,
                 (
-                    deps.api.addr_canonicalize(&user.value)?.as_slice(),
-                    wallet_addr.as_slice(),
+                    deps.api.addr_canonicalize(&user.value)?.to_vec(),
+                    wallet_addr.to_vec(),
                 ),
                 &(),
             )?;
@@ -476,8 +496,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         } => to_binary(&query_wallets_of(deps, user, start_after, limit)?),
-        QueryMsg::ProxyCodeId {} => to_binary(&query_proxy_code_id(deps)?),
-        QueryMsg::MultisigCodeId {} => to_binary(&query_multisig_code_id(deps)?),
+        QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
     }
 }
@@ -490,14 +509,15 @@ pub fn query_fee(deps: Deps) -> StdResult<Coin> {
 /// Returns wallets created with limit
 pub fn query_wallet_list(
     deps: Deps,
-    start_after: Option<String>,
+    start_after: Option<(String, String)>,
     limit: Option<u32>,
 ) -> StdResult<WalletListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = match start_after {
         Some(s) => {
-            let addr = deps.api.addr_canonicalize(&s)?;
-            Some(Bound::ExclusiveRaw(addr.into()))
+            let user_addr = deps.api.addr_canonicalize(s.0.as_str())?.to_vec();
+            let wallet_addr = deps.api.addr_canonicalize(s.1.as_str())?.to_vec();
+            Some(Bound::exclusive((user_addr, wallet_addr)))
         }
         None => None,
     };
@@ -505,12 +525,11 @@ pub fn query_wallet_list(
         .sub_prefix(())
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
-        .map(|w| deps.api.addr_humanize(&CanonicalAddr::from(w?.0 .1)))
+        .map(|w| -> StdResult<Addr> { deps.api.addr_humanize(&CanonicalAddr::from(w?.0 .1)) })
         .collect();
 
     Ok(WalletListResponse { wallets: wallets? })
 }
-
 /// Returns wallets of user
 pub fn query_wallets_of(
     deps: Deps,
@@ -528,8 +547,9 @@ pub fn query_wallets_of(
     };
     let user_addr = deps.api.addr_validate(&user)?;
     let user_addr = deps.api.addr_canonicalize(user_addr.as_str())?;
+
     let wallets: Result<Vec<_>, _> = WALLETS_OF
-        .prefix(user_addr.as_slice())
+        .prefix(user_addr.to_vec())
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key?.0)))
@@ -538,17 +558,16 @@ pub fn query_wallets_of(
     Ok(WalletListResponse { wallets: wallets? })
 }
 
-/// Returns the current supported `wallet_proxy` code id
-pub fn query_proxy_code_id(deps: Deps) -> StdResult<u64> {
-    let id = PROXY_CODE_ID.load(deps.storage)?;
-    Ok(id)
-}
-
-/// Returns the current default `multisig` code id for `wallet_proxy`
-/// wallet user can use their own version, however we only support the cw3-fixed-multisig
-/// `instantiateMsg` for the time being
-pub fn query_multisig_code_id(deps: Deps) -> StdResult<u64> {
-    let id = PROXY_MULTISIG_CODE_ID.load(deps.storage)?;
+/// Returns the current supported code Id:
+/// - `wallet_proxy`
+///  - `multisig` wallet user can use their own version, however we only support the cw3-fixed-multisig
+pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
+    let id = match ty {
+        CodeIdType::Proxy => PROXY_CODE_ID.load(deps.storage)?,
+        CodeIdType::Multisig => PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
+        CodeIdType::Govec => GOVEC_CODE_ID.load(deps.storage)?,
+        CodeIdType::Staking => STAKING_CODE_ID.load(deps.storage)?,
+    };
     Ok(id)
 }
 

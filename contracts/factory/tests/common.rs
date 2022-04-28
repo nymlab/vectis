@@ -12,20 +12,12 @@ use cw3_fixed_multisig::contract::{
 use cw3_fixed_multisig::msg::QueryMsg as MultiSigQueryMsg;
 use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
 use derivative::Derivative;
-use govec::contract::{
-    execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
-    reply as govec_reply,
-};
-use govec::msg::StakingOptions;
-use sc_wallet::{
-    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, ThresholdAbsoluteCount,
-};
 use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 use serde::de::DeserializeOwned;
 use stake_cw20::contract::{
     execute as stake_execute, instantiate as stake_instantiate, query as stake_query,
 };
-use wallet_factory::{
+use vectis_factory::{
     contract::{
         execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
         reply as factory_reply,
@@ -35,14 +27,23 @@ use wallet_factory::{
         WalletListResponse,
     },
 };
-use wallet_proxy::{
+use vectis_govec::contract::{
+    execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
+    reply as govec_reply,
+};
+use vectis_proxy::{
     contract::{
         execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
         query as proxy_query, reply as proxy_reply,
     },
     msg::QueryMsg as ProxyQueryMsg,
 };
+use vectis_wallet::{
+    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, StakingOptions,
+    ThresholdAbsoluteCount,
+};
 
+pub const WALLET_FEE: u128 = 10u128;
 pub const USER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
     185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 26,
@@ -146,8 +147,8 @@ impl Suite {
     ) -> Addr {
         self.app
             .instantiate_contract(
-                self.sc_factory_id,                  // code_id: u64,
-                Addr::unchecked(self.owner.clone()), // sender: Addr,
+                self.sc_factory_id,
+                self.owner.clone(),
                 &InstantiateMsg {
                     proxy_code_id,
                     proxy_multisig_code_id,
@@ -158,10 +159,10 @@ impl Suite {
                         denom: "ucosm".to_string(),
                         amount: Uint128::new(wallet_fee),
                     },
-                }, // InstantiateMsg
+                },
                 &init_funds,
                 "wallet-factory", // label: human readible name for contract
-                None,             // admin: Option<String>, will need this for upgrading
+                Some(self.owner.to_string()), // admin: Option<String>, will need this for upgrading
             )
             .unwrap()
     }
@@ -252,9 +253,9 @@ impl Suite {
 
     pub fn create_new_proxy(
         &mut self,
-        user: Addr,
+        payer: Addr,
         factory: Addr,
-        initial_fund: Vec<Coin>,
+        proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
         // This is both the initial proxy wallet initial balance
         // and the fee for wallet creation
@@ -276,14 +277,14 @@ impl Suite {
                 guardians_multisig,
             },
             relayers: vec![r],
-            proxy_initial_funds: initial_fund,
+            proxy_initial_funds,
         };
 
         let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
 
         self.app
             .execute_contract(
-                user,
+                payer,
                 factory,
                 &execute,
                 &[coin(native_tokens_amount, "ucosm")],
@@ -355,17 +356,15 @@ impl Suite {
     pub fn query_all_wallet_addresses(
         &self,
         contract_addr: &Addr,
+        start_after: Option<(String, String)>,
+        limit: Option<u32>,
     ) -> Result<WalletListResponse, StdError> {
         let r = self
             .app
             .wrap()
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: contract_addr.to_string(),
-                msg: to_binary(&FactoryQueryMsg::Wallets {
-                    start_after: None,
-                    limit: None,
-                })
-                .unwrap(),
+                msg: to_binary(&FactoryQueryMsg::Wallets { start_after, limit }).unwrap(),
             }))
             .unwrap();
         Ok(r)

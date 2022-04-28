@@ -5,9 +5,11 @@ use crate::contract::{execute, execute_relay, instantiate, query_info};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 
-use sc_wallet::{pub_key_to_address, CreateWalletMsg, Guardians, RelayTransaction, RelayTxError};
 use secp256k1::bitcoin_hashes::sha256;
 use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
+use vectis_wallet::{
+    pub_key_to_address, CreateWalletMsg, Guardians, RelayTransaction, RelayTxError,
+};
 
 const GUARD1: &str = "guardian1";
 const GUARD2: &str = "guardian2";

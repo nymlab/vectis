@@ -1,117 +1,117 @@
 use assert_matches::assert_matches;
-use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, Uint128, WasmMsg};
+use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, WasmMsg};
 use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
 use cw_multi_test::Executor;
-use sc_wallet::{MultiSig, WalletInfo};
-use wallet_factory::ContractError;
-use wallet_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_factory::ContractError;
+use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
+use vectis_wallet::{MultiSig, WalletInfo};
 
 pub mod common;
 use common::*;
 
 #[test]
 fn create_new_proxy() {
-    let mut suite = Suite::init().unwrap();
-    let wallet_fee = 10u128;
-
     let init_factory_fund: Coin = coin(1000, "ucosm");
+    let init_wallet_fund: Coin = coin(100, "ucosm");
+
+    let mut suite = Suite::init().unwrap();
     let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
         suite.stake_id,
         vec![init_factory_fund.clone()],
-        wallet_fee,
+        WALLET_FEE,
     );
 
-    let owner = Addr::unchecked("owner");
-    let init_owner_fund = suite.query_balance(&owner, "ucosm".into()).unwrap();
-    let init_wallet_fund: Coin = coin(100, "ucosm");
+    let init_user_fund = suite
+        .query_balance(&Addr::unchecked(USER_ADDR), "ucosm".into())
+        .unwrap();
+    let init_dao_fund = suite.query_balance(&suite.owner, "ucosm".into()).unwrap();
 
     let rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
         factory.clone(),
-        vec![coin(10, "ucosm"), coin(90, "ucosm")],
+        vec![init_wallet_fund.clone()],
         None,
-        110,
+        WALLET_FEE + init_wallet_fund.amount.u128(),
     );
     assert_matches!(rsp, Ok(_));
 
     let mut r_user = suite
         .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap();
-    let r_all = suite.query_all_wallet_addresses(&factory).unwrap();
+    let r_all = suite
+        .query_all_wallet_addresses(&factory, None, None)
+        .unwrap();
     assert_eq!(r_user.wallets[0], r_all.wallets[0]);
     assert_eq!(r_user.wallets.len(), 1);
     assert_eq!(r_all.wallets.len(), 1);
-    let wallet_addr = r_user.wallets.pop().unwrap();
 
+    let wallet_addr = r_user.wallets.pop().unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
 
     let factory_fund = suite.query_balance(&factory, "ucosm".into()).unwrap();
     let wallet_fund = suite.query_balance(&wallet_addr, "ucosm".into()).unwrap();
-    let post_owner_fund = suite.query_balance(&owner, "ucosm".into()).unwrap();
+    let post_user_fund = suite
+        .query_balance(&Addr::unchecked(USER_ADDR), "ucosm".into())
+        .unwrap();
+    let post_dao_fund = suite.query_balance(&suite.owner, "ucosm".into()).unwrap();
 
+    // factory fund does not change
     assert_eq!(init_factory_fund.amount, factory_fund.amount,);
+    // wallet fund should be what is specified
     assert_eq!(wallet_fund.amount, init_wallet_fund.amount,);
+    // user funds should be wallet_fee + init wallet fund less
     assert_eq!(
-        post_owner_fund.amount - init_owner_fund.amount,
-        Uint128::new(wallet_fee)
+        init_user_fund.amount.u128() - post_user_fund.amount.u128(),
+        WALLET_FEE + init_wallet_fund.amount.u128()
     );
+    // dao fund should increase by wallet_fee
+    assert_eq!(
+        post_dao_fund.amount.u128() - init_dao_fund.amount.u128(),
+        WALLET_FEE
+    );
+    // initial states should match creation params
     assert_eq!(w.code_id, suite.sc_proxy_id);
     assert!(w.guardians.contains(&Addr::unchecked(GUARD1)));
     assert!(!w.is_frozen);
-
-    // Create another wallet for the same user
-    let rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        factory.clone(),
-        vec![coin(10, "ucosm"), coin(90, "ucosm")],
-        None,
-        110,
-    );
-    assert_matches!(rsp, Ok(_));
-
-    let all = suite.query_all_wallet_addresses(&factory).unwrap();
-    let pagination_second = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, Some(all.wallets[0].to_string()), None)
-        .unwrap();
-
-    assert_eq!(all.wallets.len(), 2);
-    assert_eq!(pagination_second.wallets.len(), 1);
-    assert_eq!(all.wallets[1], pagination_second.wallets[0]);
 }
 
 #[test]
 fn cannot_create_new_proxy_without_payment() {
-    let mut suite = Suite::init().unwrap();
+    let no_wallet_fee = 0u128;
 
-    let genesis_fund: Coin = coin(1000, "ucosm");
+    let mut suite = Suite::init().unwrap();
     let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
         suite.stake_id,
-        vec![genesis_fund.clone()],
-        10,
+        vec![],
+        WALLET_FEE,
     );
 
-    let rsp = suite.create_new_proxy(Addr::unchecked(USER_ADDR), factory.clone(), vec![], None, 0);
+    let rsp = suite.create_new_proxy(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        no_wallet_fee,
+    );
     assert!(rsp.is_err());
 }
 
 #[test]
 fn create_new_proxy_without_guardians() {
     let mut suite = Suite::init().unwrap();
-
-    let genesis_fund: Coin = coin(1000, "ucosm");
     let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
         suite.stake_id,
-        vec![genesis_fund.clone()],
+        vec![],
         10,
     );
 
@@ -120,22 +120,20 @@ fn create_new_proxy_without_guardians() {
         factory.clone(),
         vec![],
         None,
-        10,
+        WALLET_FEE,
     );
     assert!(rsp.is_ok());
 }
 
 #[test]
-fn cannot_create_new_proxy_with_multisig_and_without_guardians() {
+fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let mut suite = Suite::init().unwrap();
-
-    let genesis_fund: Coin = coin(1000, "ucosm");
     let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
         suite.stake_id,
-        vec![genesis_fund.clone()],
+        vec![],
         10,
     );
 
@@ -163,16 +161,15 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians() {
 }
 
 #[test]
-fn user_can_execute_message() {
+fn user_can_execute_messages() {
     let mut suite = Suite::init().unwrap();
-    let genesis_fund: Coin = coin(1000, "ucosm");
     let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
         suite.stake_id,
-        vec![genesis_fund.clone()],
-        10,
+        vec![],
+        WALLET_FEE,
     );
     let init_wallet_fund: Coin = coin(100, "ucosm");
     let create_proxy_rsp = suite.create_new_proxy(
@@ -180,7 +177,7 @@ fn user_can_execute_message() {
         factory.clone(),
         vec![init_wallet_fund.clone()],
         None,
-        110,
+        WALLET_FEE + init_wallet_fund.amount.u128(),
     );
     assert!(create_proxy_rsp.is_ok());
 
@@ -192,8 +189,9 @@ fn user_can_execute_message() {
         .unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
-    let send_amount: Coin = coin(10, "ucosm");
 
+    // Can execute Bank msgs
+    let send_amount: Coin = coin(10, "ucosm");
     let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
         to_address: factory.to_string(),
         amount: vec![send_amount.clone()],
@@ -202,7 +200,9 @@ fn user_can_execute_message() {
     let execute_msg_resp = suite.app.execute_contract(
         user,
         wallet_address.clone(),
-        &ProxyExecuteMsg::Execute { msgs: vec![msg] },
+        &ProxyExecuteMsg::Execute {
+            msgs: vec![msg.clone(), msg.clone()],
+        },
         &[],
     );
     assert!(execute_msg_resp.is_ok());
@@ -212,46 +212,45 @@ fn user_can_execute_message() {
         .unwrap();
 
     assert_eq!(
-        init_wallet_fund.amount - send_amount.amount,
+        init_wallet_fund.amount - send_amount.amount - send_amount.amount,
         wallet_fund.amount
     );
 }
 
 #[test]
-fn create_new_proxy_with_multisig_guardians() {
+fn create_new_proxy_with_multisig_guardians_with_funds() {
     let mut suite = Suite::init().unwrap();
 
-    let genesis_fund: Coin = coin(1000, "ucosm");
     let factory = suite.instantiate_factory_with_governance(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
         suite.stake_id,
-        vec![genesis_fund.clone()],
-        10,
+        vec![],
+        WALLET_FEE,
     );
 
-    let init_wallet_fund: Coin = coin(100, "ucosm");
-    let init_multisig_fund: Coin = coin(100, "ucosm");
+    let init_multisig_fund: Coin = coin(200, "ucosm");
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![init_multisig_fund],
+        multisig_initial_funds: vec![init_multisig_fund.clone()],
     };
 
-    let rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        factory.clone(),
-        vec![init_wallet_fund.clone()],
-        Some(multisig),
-        110,
-    );
-    assert_matches!(rsp, Ok(_));
+    suite
+        .create_new_proxy(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![],
+            Some(multisig),
+            WALLET_FEE + init_multisig_fund.amount.u128(),
+        )
+        .unwrap();
 
     let mut r = suite
         .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap();
-    assert_matches!(r.wallets.len(), 1);
+    //assert_matches!(r.wallets.len(), 1);
     let wallet_addr = r.wallets.pop().unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
@@ -320,4 +319,70 @@ fn create_new_proxy_with_multisig_guardians() {
 
     // Ensure freezing msg passed
     assert!(w.is_frozen);
+}
+
+#[test]
+fn query_all_wallets() {
+    let mut suite = Suite::init().unwrap();
+    let wallet_fee = 10u128;
+
+    let init_factory_fund: Coin = coin(1000, "ucosm");
+    let factory = suite.instantiate_factory_with_governance(
+        suite.sc_proxy_id,
+        suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
+        vec![init_factory_fund.clone()],
+        wallet_fee,
+    );
+
+    // Create a few wallets
+    suite
+        .create_new_proxy(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![],
+            None,
+            WALLET_FEE,
+        )
+        .unwrap();
+
+    suite
+        .create_new_proxy(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![],
+            None,
+            WALLET_FEE,
+        )
+        .unwrap();
+
+    suite
+        .create_new_proxy(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![],
+            None,
+            WALLET_FEE,
+        )
+        .unwrap();
+
+    let all = suite
+        .query_all_wallet_addresses(&factory, None, None)
+        .unwrap();
+    let wallet_info: WalletInfo = suite.query_wallet_info(&all.wallets[0]).unwrap();
+    let pagination_second = suite
+        .query_all_wallet_addresses(
+            &factory,
+            Some((
+                wallet_info.user_addr.to_string(),
+                all.wallets[0].to_string(),
+            )),
+            None,
+        )
+        .unwrap();
+
+    assert_eq!(all.wallets.len(), 3);
+    assert_eq!(pagination_second.wallets.len(), 2);
+    assert_eq!(all.wallets[1], pagination_second.wallets[0]);
 }

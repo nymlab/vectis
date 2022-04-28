@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Coin};
-pub use sc_wallet::{WalletFactoryExecuteMsg as ExecuteMsg, WalletFactoryQueryMsg as QueryMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+pub use vectis_wallet::{WalletFactoryExecuteMsg as ExecuteMsg, WalletFactoryQueryMsg as QueryMsg};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {

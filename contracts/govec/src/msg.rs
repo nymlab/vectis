@@ -1,9 +1,9 @@
 use crate::state::MinterData;
 use cosmwasm_std::{Binary, CanonicalAddr, StdError, StdResult, Uint128};
 pub use cw20::{Cw20Coin, MinterResponse};
-use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+pub use vectis_wallet::StakingOptions;
 
 #[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 pub struct InstantiateMsg {
@@ -34,12 +34,6 @@ impl InstantiateMsg {
         }
         Ok(())
     }
-}
-
-#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
-pub struct StakingOptions {
-    pub duration: Option<Duration>,
-    pub code_id: u64,
 }
 
 fn is_valid_name(name: &str) -> bool {

@@ -1,5 +1,5 @@
 [package]
-name = "wallet-proxy"
+name = "vectis-proxy"
 version = "0.1.0"
 authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>"]
 edition = "2018"
@@ -30,12 +30,12 @@ cw2 = "0.13.0"
 cw3-fixed-multisig = { version = "0.13.0", features = ["library"] }
 cw3 = "0.13.0"
 cw-utils = "0.13.0"
-sc-wallet = { path = "../../packages/factory" }
 schemars = "0.8.3"
 serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.26" }
 sha2 = "0.9"
 hex = { version = "0.4", default-features = false }
+vectis-wallet = { path = "../../packages/vectis" }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0-beta7" }

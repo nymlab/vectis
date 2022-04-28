@@ -6,11 +6,12 @@ use cosmwasm_std::{
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
-use sc_wallet::{
-    pub_key_to_address, query_verify_cosmos, RelayTransaction, WalletFactoryQueryMsg, WalletInfo,
-};
 use schemars::JsonSchema;
 use std::fmt;
+use vectis_wallet::{
+    pub_key_to_address, query_verify_cosmos, CodeIdType, Guardians, RelayTransaction, RelayTxError,
+    WalletFactoryQueryMsg, WalletInfo,
+};
 
 use crate::error::ContractError;
 use crate::helpers::{
@@ -25,10 +26,9 @@ use crate::state::{
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{Duration, Threshold};
-use sc_wallet::{Guardians, RelayTxError};
 
 #[cfg(feature = "migration")]
-use sc_wallet::ProxyMigrateMsg;
+use vectis_wallet::ProxyMigrateMsg;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-proxy";
@@ -339,11 +339,14 @@ pub fn execute_update_guardians(
         } else {
             match MULTISIG_CODE_ID.may_load(deps.storage)? {
                 Some(id) => id,
-                None => deps
-                    .querier
-                    .query_wasm_smart(deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?, &{
-                        WalletFactoryQueryMsg::MultisigCodeId {}
-                    })?,
+                None => deps.querier.query_wasm_smart(
+                    deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
+                    &{
+                        WalletFactoryQueryMsg::CodeId {
+                            ty: CodeIdType::Multisig,
+                        }
+                    },
+                )?,
             }
         };
         MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;
