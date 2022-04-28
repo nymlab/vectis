@@ -17,6 +17,9 @@
 # local chain data
 .wasmd*/	
 
+# testnet
+**.testnet
+
 ## js-app builds
 **/node_modules/
 **/build/

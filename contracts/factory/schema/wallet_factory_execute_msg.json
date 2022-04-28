@@ -49,19 +49,23 @@
     {
       "type": "object",
       "required": [
-        "update_proxy_code_id"
+        "update_code_id"
       ],
       "properties": {
-        "update_proxy_code_id": {
+        "update_code_id": {
           "type": "object",
           "required": [
-            "new_code_id"
+            "new_code_id",
+            "ty"
           ],
           "properties": {
             "new_code_id": {
               "type": "integer",
               "format": "uint64",
               "minimum": 0.0
+            },
+            "ty": {
+              "$ref": "#/definitions/CodeIdType"
             }
           }
         }
@@ -71,19 +75,50 @@
     {
       "type": "object",
       "required": [
-        "update_proxy_multisig_code_id"
+        "update_wallet_fee"
       ],
       "properties": {
-        "update_proxy_multisig_code_id": {
+        "update_wallet_fee": {
           "type": "object",
           "required": [
-            "new_code_id"
+            "new_fee"
           ],
           "properties": {
-            "new_code_id": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
+            "new_fee": {
+              "$ref": "#/definitions/Coin"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "create_governance"
+      ],
+      "properties": {
+        "create_governance": {
+          "type": "object",
+          "required": [
+            "initial_balances"
+          ],
+          "properties": {
+            "initial_balances": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Cw20Coin"
+              }
+            },
+            "staking_options": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/StakingOptions"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         }
@@ -102,6 +137,15 @@
     },
     "CanonicalAddr": {
       "$ref": "#/definitions/Binary"
+    },
+    "CodeIdType": {
+      "type": "string",
+      "enum": [
+        "Proxy",
+        "Multisig",
+        "Govec",
+        "Staking"
+      ]
     },
     "Coin": {
       "type": "object",
@@ -147,6 +191,55 @@
           "$ref": "#/definitions/Binary"
         }
       }
+    },
+    "Cw20Coin": {
+      "type": "object",
+      "required": [
+        "address",
+        "amount"
+      ],
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "amount": {
+          "$ref": "#/definitions/Uint128"
+        }
+      }
+    },
+    "Duration": {
+      "description": "Duration is a delta of time. You can add it to a BlockInfo or Expiration to move that further in the future. Note that an height-based Duration and a time-based Expiration cannot be combined",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "height"
+          ],
+          "properties": {
+            "height": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "Time in seconds",
+          "type": "object",
+          "required": [
+            "time"
+          ],
+          "properties": {
+            "time": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "Guardians": {
       "type": "object",
@@ -259,6 +352,29 @@
           "allOf": [
             {
               "$ref": "#/definitions/Binary"
+            }
+          ]
+        }
+      }
+    },
+    "StakingOptions": {
+      "type": "object",
+      "required": [
+        "code_id"
+      ],
+      "properties": {
+        "code_id": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Duration"
+            },
+            {
+              "type": "null"
             }
           ]
         }
