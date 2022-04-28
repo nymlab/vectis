@@ -3,14 +3,40 @@
   "title": "WalletFactoryQueryMsg",
   "oneOf": [
     {
-      "description": "Shows all the proxy wallet address Returns WalletListResponse",
+      "description": "Shows proxy wallet address Returns WalletListResponse",
       "type": "object",
       "required": [
         "wallets"
       ],
       "properties": {
         "wallets": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "start_after": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -18,11 +44,33 @@
     {
       "type": "object",
       "required": [
-        "proxy_code_id"
+        "wallets_of"
       ],
       "properties": {
-        "proxy_code_id": {
-          "type": "object"
+        "wallets_of": {
+          "type": "object",
+          "required": [
+            "user"
+          ],
+          "properties": {
+            "limit": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "start_after": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "user": {
+              "type": "string"
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -30,14 +78,46 @@
     {
       "type": "object",
       "required": [
-        "multisig_code_id"
+        "code_id"
       ],
       "properties": {
-        "multisig_code_id": {
+        "code_id": {
+          "type": "object",
+          "required": [
+            "ty"
+          ],
+          "properties": {
+            "ty": {
+              "$ref": "#/definitions/CodeIdType"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Returns the fee required to create a wallet Fee goes to the DAO",
+      "type": "object",
+      "required": [
+        "fee"
+      ],
+      "properties": {
+        "fee": {
           "type": "object"
         }
       },
       "additionalProperties": false
     }
-  ]
+  ],
+  "definitions": {
+    "CodeIdType": {
+      "type": "string",
+      "enum": [
+        "Proxy",
+        "Multisig",
+        "Govec",
+        "Staking"
+      ]
+    }
+  }
 }
