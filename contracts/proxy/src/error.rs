@@ -19,6 +19,8 @@ pub enum ContractError {
     IsNotContractSelf {},
     #[error("IsNotMultisig")]
     IsNotMultisig {},
+    #[error("IsNotUser")]
+    IsNotUser {},
     #[error("PubKeyIsNotValid")]
     PubKeyIsNotValid {},
     #[error("PubKeyLengthIsNotValid")]

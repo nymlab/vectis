@@ -169,6 +169,7 @@ fn create_wallet(
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
     let fee = FEE.load(deps.storage)?;
+    let proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
     let multisig_initial_funds = create_wallet_msg
         .guardians
         .guardians_multisig
@@ -180,7 +181,7 @@ fn create_wallet(
     ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
     ensure_enough_native_funds(
         &fee,
-        &create_wallet_msg.proxy_initial_funds,
+        &proxy_init_funds,
         &multisig_initial_funds,
         &info.funds,
     )?;
@@ -192,15 +193,11 @@ fn create_wallet(
             code_id: PROXY_CODE_ID.load(deps.storage)?,
             msg: to_binary(&ProxyInstantiateMsg {
                 multisig_code_id: PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
-                create_wallet_msg: create_wallet_msg.clone(),
+                create_wallet_msg,
                 code_id: PROXY_CODE_ID.load(deps.storage)?,
                 addr_prefix: ADDR_PREFIX.load(deps.storage)?,
             })?,
-            funds: vec![
-                create_wallet_msg.proxy_initial_funds,
-                multisig_initial_funds,
-            ]
-            .concat(),
+            funds: vec![proxy_init_funds, multisig_initial_funds].concat(),
             label: "Wallet-Proxy".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, next_id);

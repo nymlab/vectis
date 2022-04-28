@@ -55,6 +55,6 @@ pub const USER: Item<User> = Item::new("user");
 pub const GUARDIANS: Map<&[u8], ()> = Map::new("guardians");
 pub const RELAYERS: Map<&[u8], ()> = Map::new("relayers");
 // An address of fixed multisig contract, used for guardians multisig support.
-pub const MULTISIG_ADDRESS: Item<CanonicalAddr> = Item::new("fixed_multisig_address");
+pub const MULTISIG_ADDRESS: Item<Option<CanonicalAddr>> = Item::new("fixed_multisig_address");
 /// Chain address prefix
 pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");

@@ -1,5 +1,5 @@
 use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
-use cosmwasm_std::{coins, to_binary, Addr, BankMsg, Binary, CosmosMsg, DepsMut};
+use cosmwasm_std::{coins, to_binary, Addr, BankMsg, Binary, CosmosMsg, DepsMut, WasmMsg};
 
 use crate::contract::{execute, execute_relay, instantiate, query_info};
 use crate::error::ContractError;
@@ -382,6 +382,7 @@ fn relay_proxy_user_tx_succeeds() {
 }
 
 #[test]
+#[test]
 fn relay_proxy_user_tx_invalid_msg_fails() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     do_instantiate(deps.as_mut());
@@ -493,10 +494,7 @@ fn relay_proxy_user_tx_is_not_user_fails() {
 
     let response = execute_relay(deps.as_mut(), info, relay_transaction).unwrap_err();
 
-    assert_eq!(
-        response,
-        ContractError::RelayTxError(RelayTxError::IsNotUser {})
-    );
+    assert_eq!(response, ContractError::IsNotUser {});
 }
 
 #[test]
