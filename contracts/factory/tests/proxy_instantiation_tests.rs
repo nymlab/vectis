@@ -218,7 +218,7 @@ fn user_can_execute_messages() {
 }
 
 #[test]
-fn create_new_proxy_with_multisig_guardians_with_funds() {
+fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
     let mut suite = Suite::init().unwrap();
 
     let factory = suite.instantiate_factory_with_governance(
@@ -230,36 +230,28 @@ fn create_new_proxy_with_multisig_guardians_with_funds() {
         WALLET_FEE,
     );
 
-    let init_multisig_fund: Coin = coin(200, "ucosm");
-
-    let multisig = MultiSig {
-        threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![init_multisig_fund.clone()],
-    };
-
     suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
             factory.clone(),
             vec![],
-            Some(multisig),
-            WALLET_FEE + init_multisig_fund.amount.u128(),
+            Some(MultiSig {
+                threshold_absolute_count: MULTISIG_THRESHOLD,
+                multisig_initial_funds: vec![],
+            }),
+            WALLET_FEE,
         )
         .unwrap();
 
     let mut r = suite
         .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
         .unwrap();
-    //assert_matches!(r.wallets.len(), 1);
     let wallet_addr = r.wallets.pop().unwrap();
-
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
-
-    // Test wallet freezing, when multisig scenario is enabled
     assert!(!w.is_frozen);
 
+    // Create proposal and vote for freezing
     let multisig_contract_addr = w.multisig_address.unwrap();
-
     let execute_revert_freeze_status_msg = WasmMsg::Execute {
         contract_addr: wallet_addr.to_string(),
         msg: to_binary(&ProxyExecuteMsg::<Empty>::RevertFreezeStatus {}).unwrap(),
@@ -319,6 +311,56 @@ fn create_new_proxy_with_multisig_guardians_with_funds() {
 
     // Ensure freezing msg passed
     assert!(w.is_frozen);
+}
+
+#[test]
+fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
+    let mut suite = Suite::init().unwrap();
+
+    let factory = suite.instantiate_factory_with_governance(
+        suite.sc_proxy_id,
+        suite.sc_proxy_multisig_code_id,
+        suite.govec_id,
+        suite.stake_id,
+        vec![],
+        WALLET_FEE,
+    );
+
+    let init_multisig_fund: Coin = coin(200, "ucosm");
+    let init_proxy_fund: Coin = coin(100, "ucosm");
+    let init_user_balance = suite.query_balance(&Addr::unchecked(USER_ADDR), "ucosm".to_string());
+
+    suite
+        .create_new_proxy(
+            Addr::unchecked(USER_ADDR),
+            factory.clone(),
+            vec![init_proxy_fund.clone()],
+            Some(MultiSig {
+                threshold_absolute_count: MULTISIG_THRESHOLD,
+                multisig_initial_funds: vec![init_multisig_fund.clone()],
+            }),
+            WALLET_FEE + init_multisig_fund.amount.u128() + init_proxy_fund.amount.u128(),
+        )
+        .unwrap();
+
+    let mut r = suite
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .unwrap();
+    let proxy_addr = r.wallets.pop().unwrap();
+
+    let w: WalletInfo = suite.query_wallet_info(&proxy_addr).unwrap();
+    let multisig_balance = suite.query_balance(&w.multisig_address.unwrap(), "ucosm".to_string());
+    let proxy_balance = suite.query_balance(&proxy_addr, "ucosm".to_string());
+    let user_balance = suite.query_balance(&Addr::unchecked(USER_ADDR), "ucosm".to_string());
+    assert_eq!(multisig_balance.unwrap().amount, init_multisig_fund.amount);
+    assert_eq!(proxy_balance.unwrap().amount, init_proxy_fund.amount);
+    assert_eq!(
+        user_balance.unwrap().amount.u128()
+            + WALLET_FEE
+            + init_proxy_fund.amount.u128()
+            + init_multisig_fund.amount.u128(),
+        init_user_balance.unwrap().amount.u128()
+    );
 }
 
 #[test]

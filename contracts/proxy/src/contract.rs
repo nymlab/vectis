@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply,
-    Response, StdError, StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
+    StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -371,6 +371,7 @@ pub fn execute_update_guardians(
             .add_submessage(msg)
             .add_attribute("action", "Updated wallet guardians: Multisig"))
     } else {
+        MULTISIG_ADDRESS.save(deps.storage, &None)?;
         Ok(Response::new().add_attribute("action", "Updated wallet guardians: Non-Multisig"))
     }
 }
@@ -391,9 +392,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> StdResult<Response> {
         // TODO: issue
         let str_addr = &first_instantiate_event.attributes[0].value;
 
-        let multisig_addr: CanonicalAddr = deps.api.addr_canonicalize(str_addr)?;
-
-        MULTISIG_ADDRESS.save(deps.storage, &multisig_addr)?;
+        MULTISIG_ADDRESS.save(deps.storage, &Some(deps.api.addr_canonicalize(str_addr)?))?;
 
         let res = Response::new()
             .add_attribute("action", "Fixed Multisig Stored")
@@ -418,12 +417,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
     let guardians = load_addresses(&deps, GUARDIANS)?;
     let relayers = load_addresses(&deps, RELAYERS)?;
-    let multisig_address =
-        if let Some(multisig_address) = MULTISIG_ADDRESS.may_load(deps.storage)? {
-            Some(deps.api.addr_humanize(&multisig_address)?)
-        } else {
-            None
-        };
+    let multisig_address = match MULTISIG_ADDRESS.may_load(deps.storage)? {
+        Some(Some(c)) => Some(deps.api.addr_humanize(&c)?),
+        _ => None,
+    };
 
     let user = USER.load(deps.storage)?;
 

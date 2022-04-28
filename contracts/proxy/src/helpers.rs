@@ -5,7 +5,6 @@ use crate::error::ContractError;
 use crate::state::{User, FROZEN, GUARDIANS, MULTISIG_ADDRESS, RELAYERS, USER};
 use cw3_fixed_multisig::msg::Voter;
 use cw_storage_plus::Map;
-use vectis_wallet::RelayTxError;
 
 // Converts addresses to voters with weight of 1
 pub fn addresses_to_voters(addresses: &[String]) -> Vec<Voter> {
@@ -55,7 +54,7 @@ pub fn authorize_guardian_or_multisig(deps: Deps, sender: &Addr) -> Result<(), C
     let s = deps.api.addr_canonicalize(sender.as_ref())?;
     match MULTISIG_ADDRESS.may_load(deps.storage)? {
         // if multisig is set, ensure it's address equal to the caller address
-        Some(multisig_address) if multisig_address.eq(&s) => Ok(()),
+        Some(Some(multisig_address)) if multisig_address.eq(&s) => Ok(()),
         Some(_) => Err(ContractError::IsNotMultisig {}),
         // if multisig is not set, ensure caller address is guardian
         _ => ensure_is_guardian(deps, &s),
@@ -67,7 +66,7 @@ pub fn authorize_user_or_guardians(deps: Deps, sender: &Addr) -> Result<(), Cont
     let addr_canonical = deps.api.addr_canonicalize(sender.as_ref())?;
     match MULTISIG_ADDRESS.may_load(deps.storage)? {
         // if multisig adrdess is set, check whether sender is equal to it
-        Some(multisig_address) if multisig_address.eq(&addr_canonical) => Ok(()),
+        Some(Some(multisig_address)) if multisig_address.eq(&addr_canonical) => Ok(()),
         // otherwise do user or guardian auth
         _ => {
             let is_user_result = ensure_is_user(deps, sender.as_ref());
@@ -101,7 +100,7 @@ pub fn ensure_is_user(deps: Deps, sender: &str) -> Result<User, ContractError> {
     if registered_user.addr == s {
         Ok(registered_user)
     } else {
-        Err(ContractError::RelayTxError(RelayTxError::IsNotUser {}))
+        Err(ContractError::IsNotUser {})
     }
 }
 
