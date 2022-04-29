@@ -178,12 +178,11 @@ describe("End to End testing: ", () => {
     // TODO verify events
   });
 
-  it("creating new wallet with multisig guardians", async () => {
+  it("creating new wallet with multisig guardians (without multisig initial fund)", async () => {
     assert(factory);
     const adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
     const userKeypair = await mnemonicToKeyPair(userMnemonic!);
     const walletInitialFunds = coin(1000, coinMinDenom!);
-    const walletMultisigInitialFunds = coin(1, coinMinDenom!);
 
     const walletInitMsg: CreateWalletMsg = {
       user_pubkey: toBase64(userKeypair.pubkey),
@@ -191,7 +190,7 @@ describe("End to End testing: ", () => {
         addresses: [guardian1Addr!, guardian2Addr!],
         guardians_multisig: {
           threshold_absolute_count: 1,
-          multisig_initial_funds: [walletMultisigInitialFunds],
+          multisig_initial_funds: [],
         },
       },
       relayers: [relayer1Addr!, relayer2Addr!],
@@ -205,8 +204,10 @@ describe("End to End testing: ", () => {
       defaultWalletCreationFee,
       undefined,
       //TODO: error when passing in multiple coins in the following array
+      //  invalid coin? [walletFee, walletInitialFunds, walletMultisigInitialFunds ]
       [coin(1100, coinMinDenom!)]
     );
+
 
     // wasm event is the last one
     const wasmEvent = newWalletRes.logs[0].events.length;
@@ -247,20 +248,10 @@ describe("End to End testing: ", () => {
       wallet.address,
       coinMinDenom!
     );
-    const post_multisig_fund = await client.getBalance(
-      multisig.address,
-      coinMinDenom!
-    );
-
-    const wallet_fund = wallet.instantiateMsg.proxy_initial_funds[0].amount;
-    const multisig_fund =
-      wallet.instantiateMsg.guardians.guardians_multisig!
-        .multisig_initial_funds[0].amount;
 
     expect(Number(post_wallet_fund.amount)).toEqual(
-      Number(wallet_fund) - Number(multisig_fund)
+      Number(wallet.instantiateMsg.proxy_initial_funds[0].amount)
     );
-    expect(Number(post_multisig_fund.amount)).toEqual(Number(multisig_fund));
     client.disconnect();
   });
 
