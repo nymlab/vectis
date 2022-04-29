@@ -155,7 +155,7 @@ describe("End to End testing: ", () => {
     assert(factory);
     const client = await CosmWasmClient.connect(rpcEndPoint!);
     const codeId = await client.queryContractSmart(factory.address, {
-      proxy_code_id: {},
+      code_id: { ty: "Proxy" },
     });
     expect(codeId).toEqual(factory.instantiateMsg.proxy_code_id);
     client.disconnect();
@@ -205,7 +205,7 @@ describe("End to End testing: ", () => {
       defaultWalletCreationFee,
       undefined,
       //TODO: error when passing in multiple coins in the following array
-      [coin(1100, coinMinDenom!)]
+      [coin(1101, coinMinDenom!)]
     );
 
     // wasm event is the last one
