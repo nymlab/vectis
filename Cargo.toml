@@ -3,15 +3,15 @@ members = ["packages/*", "contracts/proxy", "contracts/factory", "contracts/gove
 exclude = ["contracts/tests","packages/images"]
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
-[profile.release.package.wallet-factory]
+[profile.release.package.vectis-factory]
 codegen-units = 1
 incremental = false
 
-[profile.release.package.wallet-proxy]
+[profile.release.package.vectis-proxy]
 codegen-units = 1
 incremental = false
 
-[profile.release.package.govec]
+[profile.release.package.vectis-govec]
 codegen-units = 1
 incremental = false
 
