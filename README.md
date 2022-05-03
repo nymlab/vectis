@@ -29,7 +29,7 @@ There are 3 roles in a SCW:
 
 ### Note on Relayer gas fees
 
-When a message a relayed, the smart contract wallet has to verify the relayed transaction has been signed by the user and that it was not replayed.
+When a message is relayed, the smart contract wallet has to verify the relayed transaction has been signed by the user and that it was not replayed.
 This operation adds some amount of gas to a transaction that was just directly sent by the user to the SCW.
 
 For reference (tested on a local node):
@@ -56,9 +56,9 @@ You can use either `juno` or `wasmd`
 
 ###### Option 1: Docker
 
-Make sure you have docker installer.
-Then simply run `./local-juno-setup.sh` which will spin up a container and run the setup script to seed some accounts.
-Please make sure you have `.env.juno.local` to use these accounts if you want to run js-app tests
+Simply run `./local-juno-setup.sh` which will spin up a Juno container and run the setup script to seed some accounts, then compile Rust contracts and run the E2E spec to deploy contracts and test functionalities. When everything is done, you can use the local node on your machine.
+
+The script will check if you have both Docker and Rust installed. In case you haven't, a link will be shown to install said dependencies.
 
 ###### Option 2: Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
 
