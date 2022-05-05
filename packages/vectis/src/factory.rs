@@ -1,8 +1,6 @@
-use crate::govec::StakingOptions;
-use crate::wallet::{RelayTransaction, WalletAddr};
+use crate::wallet::RelayTransaction;
 use crate::MigrationMsgError;
 use cosmwasm_std::{Binary, Coin};
-use cw20::Cw20Coin;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -93,27 +91,4 @@ pub enum WalletFactoryQueryMsg {
     /// Returns the fee required to create a wallet
     /// Fee goes to the DAO
     Fee {},
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum WalletFactoryExecuteMsg {
-    CreateWallet {
-        create_wallet_msg: CreateWalletMsg,
-    },
-    MigrateWallet {
-        wallet_address: WalletAddr,
-        migration_msg: ProxyMigrationTxMsg,
-    },
-    UpdateCodeId {
-        ty: CodeIdType,
-        new_code_id: u64,
-    },
-    UpdateWalletFee {
-        new_fee: Coin,
-    },
-    CreateGovernance {
-        staking_options: Option<StakingOptions>,
-        initial_balances: Vec<Cw20Coin>,
-    },
 }
