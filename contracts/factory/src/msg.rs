@@ -1,7 +1,11 @@
 use cosmwasm_std::{Addr, Coin};
+use cw20::Cw20Coin;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-pub use vectis_wallet::{WalletFactoryExecuteMsg as ExecuteMsg, WalletFactoryQueryMsg as QueryMsg};
+pub use vectis_wallet::{
+    CodeIdType, CreateWalletMsg, ProxyMigrationTxMsg, StakingOptions, WalletAddr,
+    WalletFactoryQueryMsg as QueryMsg,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -18,6 +22,29 @@ pub struct InstantiateMsg {
     pub addr_prefix: String,
     /// Fee in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ExecuteMsg {
+    CreateWallet {
+        create_wallet_msg: CreateWalletMsg,
+    },
+    MigrateWallet {
+        wallet_address: WalletAddr,
+        migration_msg: ProxyMigrationTxMsg,
+    },
+    UpdateCodeId {
+        ty: CodeIdType,
+        new_code_id: u64,
+    },
+    UpdateWalletFee {
+        new_fee: Coin,
+    },
+    CreateGovernance {
+        staking_options: Option<StakingOptions>,
+        initial_balances: Vec<Cw20Coin>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
