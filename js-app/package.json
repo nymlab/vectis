@@ -5,24 +5,33 @@
   "license": "MIT",
   "description": "Testing application for smart contract wallet",
   "scripts": {
-    "test": "rm -rf build/ && npx tsc && npx ts-node node_modules/jasmine/bin/jasmine"
+    "generate-types": "./generate-types.sh",
+    "test": "rm -rf build/ && npx tsc && npx ts-node node_modules/jasmine/bin/jasmine",
+    "prepare": "cd .. && ./js-app/node_modules/.bin/husky install js-app/.husky"
+  },
+  "dependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.28.4",
+    "@cosmjs/proto-signing": "^0.28.4",
+    "@cosmjs/stargate": "^0.28.4",
+    "@types/dotenv": "^8.2.0",
+    "dotenv": "^10.0.0",
+    "yargs": "^15.4.1"
   },
   "devDependencies": {
     "@cosmjs/cli": "^0.26.3",
     "@types/jasmine": "^3.10.1",
     "@types/node": "^13.13.52",
     "@types/yargs": "^17.0.4",
+    "cosmwasm-typescript-gen": "^0.2.3",
+    "husky": ">=6",
     "jasmine": "^3.10.0",
     "jasmine-ts-console-reporter": "^3.1.1",
+    "lint-staged": ">=10",
+    "prettier": "^2.6.2",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.4"
   },
-  "dependencies": {
-    "@cosmjs/cosmwasm-stargate": "^0.26.4",
-    "@cosmjs/proto-signing": "^0.26.4",
-    "@cosmjs/stargate": "^0.26.4",
-    "@types/dotenv": "^8.2.0",
-    "dotenv": "^10.0.0",
-    "yargs": "^15.4.1"
+  "lint-staged": {
+    "*.{ts,tsx,css,md}": "./js-app/node_modules/.bin/prettier --write"
   }
 }

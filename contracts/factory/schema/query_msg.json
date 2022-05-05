@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "WalletFactoryQueryMsg",
+  "title": "QueryMsg",
   "oneOf": [
     {
       "description": "Shows proxy wallet address Returns WalletListResponse",
@@ -22,19 +22,9 @@
             },
             "start_after": {
               "type": [
-                "array",
+                "string",
                 "null"
-              ],
-              "items": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ],
-              "maxItems": 2,
-              "minItems": 2
+              ]
             }
           }
         }
