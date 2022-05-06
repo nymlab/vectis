@@ -3,9 +3,8 @@ import { DirectSecp256k1Wallet, DirectSecp256k1HdWallet } from "@cosmjs/proto-si
 import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
 import { makeCosmoshubPath } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { calculateFee, GasPrice, coin } from "@cosmjs/stargate";
-import { rpcEndPoint, gasPrice, coinMinDenom } from "./env";
-import { Coin, RelayTransaction } from "types/ProxyContract";
+import { rpcEndPoint } from "./env";
+import { RelayTransaction } from "../../types/ProxyContract";
 import * as fs from "fs";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {

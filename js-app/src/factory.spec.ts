@@ -3,7 +3,7 @@ import { toBase64 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { deployFactoryContract, FACTORY_INITIAL_FUND } from "./util/contracts";
 import { createSigningClient, mnemonicToKeyPair } from "./util/utils";
-import { Coin, FactoryClient, Addr } from "types/FactoryContract";
+import { Coin, FactoryClient, Addr } from "../types/FactoryContract";
 import { coin } from "@cosmjs/stargate";
 
 import {
