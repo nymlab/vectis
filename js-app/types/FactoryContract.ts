@@ -5,26 +5,42 @@
  */
 
 import { CosmWasmClient, ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { StdFee } from "@cosmjs/amino";
-import { Cw20Coin, StakingOptions } from "./GovecContract";
-import { CreateWalletMsg, Binary } from "./ProxyContract";
-
-export type Uint128 = string;
-
-// THESE HAVE BEEN MANUALLY ADDED
+import { Coin, StdFee } from "@cosmjs/amino";
+export type CodeIdResponse = number;
 export type CodeIdType = "Proxy" | "Multisig" | "Govec" | "Staking";
-export type CodeIdResponse = string;
-export type FeeResponse = string;
-export type ProxyMigrationTxMsg = { RelayTx: RelayTransaction } | { DirectMigrationMsg: Binary };
-//
-
-export interface RelayTransaction {
-    transaction: {
-        user_pubkey: string;
-        message: string;
-        signature: string;
-        nonce: number;
-    };
+export type Uint128 = string;
+export type Binary = string;
+export interface CreateWalletMsg {
+    guardians: Guardians;
+    proxy_initial_funds: Coin[];
+    relayers: string[];
+    user_pubkey: Binary;
+    [k: string]: unknown;
+}
+export interface Guardians {
+    addresses: string[];
+    guardians_multisig?: MultiSig | null;
+    [k: string]: unknown;
+}
+export interface MultiSig {
+    multisig_initial_funds: Coin[];
+    threshold_absolute_count: number;
+    [k: string]: unknown;
+}
+export interface Coin {
+    amount: Uint128;
+    denom: string;
+    [k: string]: unknown;
+}
+export interface Cw20Coin {
+    address: string;
+    amount: Uint128;
+    [k: string]: unknown;
+}
+export interface FeeResponse {
+    amount: Uint128;
+    denom: string;
+    [k: string]: unknown;
 }
 export interface InstantiateMsg {
     addr_prefix: string;
@@ -35,11 +51,39 @@ export interface InstantiateMsg {
     wallet_fee: Coin;
     [k: string]: unknown;
 }
-export interface Coin {
-    amount: Uint128;
-    denom: string;
+export type ProxyMigrationTxMsg =
+    | {
+          RelayTx: RelayTransaction;
+      }
+    | {
+          DirectMigrationMsg: Binary;
+      };
+export interface RelayTransaction {
+    message: Binary;
+    nonce: number;
+    signature: Binary;
+    user_pubkey: Binary;
     [k: string]: unknown;
 }
+export type Duration =
+    | {
+          height: number;
+      }
+    | {
+          time: number;
+      };
+export interface StakingOptions {
+    code_id: number;
+    duration?: Duration | null;
+    [k: string]: unknown;
+}
+export type WalletAddr =
+    | {
+          Canonical: Binary;
+      }
+    | {
+          Addr: Addr;
+      };
 export type Addr = string;
 export interface WalletInfo {
     code_id: number;
@@ -58,13 +102,22 @@ export interface ContractVersion {
     version: string;
     [k: string]: unknown;
 }
-export interface WalletListResponse {
+export interface WalletQueryPrefix {
+    user_addr: string;
+    wallet_addr: string;
+    [k: string]: unknown;
+}
+export interface WalletsOfResponse {
+    wallets: Addr[];
+    [k: string]: unknown;
+}
+export interface WalletsResponse {
     wallets: Addr[];
     [k: string]: unknown;
 }
 export interface FactoryReadOnlyInterface {
     contractAddress: string;
-    wallets: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<WalletListResponse>;
+    wallets: ({ limit, startAfter }: { limit?: number; startAfter?: WalletQueryPrefix }) => Promise<WalletsResponse>;
     walletsOf: ({
         limit,
         startAfter,
@@ -73,7 +126,7 @@ export interface FactoryReadOnlyInterface {
         limit?: number;
         startAfter?: string;
         user: string;
-    }) => Promise<WalletListResponse>;
+    }) => Promise<WalletsOfResponse>;
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<CodeIdResponse>;
     fee: () => Promise<FeeResponse>;
 }
@@ -90,7 +143,13 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.fee = this.fee.bind(this);
     }
 
-    wallets = async ({ limit, startAfter }: { limit?: number; startAfter?: string }): Promise<WalletListResponse> => {
+    wallets = async ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: WalletQueryPrefix;
+    }): Promise<WalletsResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             wallets: {
                 limit,
@@ -106,7 +165,7 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         limit?: number;
         startAfter?: string;
         user: string;
-    }): Promise<WalletListResponse> => {
+    }): Promise<WalletsOfResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             wallets_of: {
                 limit,
@@ -147,7 +206,7 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
             walletAddress,
         }: {
             migrationMsg: ProxyMigrationTxMsg;
-            walletAddress: Addr;
+            walletAddress: WalletAddr;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -189,9 +248,9 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
     ) => Promise<ExecuteResult>;
 }
 export class FactoryClient extends FactoryQueryClient implements FactoryInterface {
-    override client: SigningCosmWasmClient;
+    client: SigningCosmWasmClient;
     sender: string;
-    override contractAddress: string;
+    contractAddress: string;
 
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
         super(client, contractAddress);
@@ -234,7 +293,7 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
             walletAddress,
         }: {
             migrationMsg: ProxyMigrationTxMsg;
-            walletAddress: Addr;
+            walletAddress: WalletAddr;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,

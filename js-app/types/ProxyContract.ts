@@ -5,63 +5,12 @@
  */
 
 import { CosmWasmClient, ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { StdFee } from "@cosmjs/amino";
-import { RelayTransaction } from "./FactoryContract";
-
-// THESE HAVE BEEN MANUALLY ADDED
-export type InfoResponse = WalletInfo;
+import { Coin, StdFee } from "@cosmjs/amino";
 export interface CanExecuteRelayResponse {
     can_execute: boolean;
+    [k: string]: unknown;
 }
-export type Empty = object;
-export type BankMsg =
-    | {
-          send: {
-              amount: Coin[];
-              to_address: Addr;
-          };
-      }
-    | {
-          burn: {
-              amount: Coin[];
-          };
-      };
-export type WasmMsg =
-    | {
-          execute: {
-              contract_address: Addr;
-              funds: Coin[];
-              msg: Binary;
-          };
-      }
-    | {
-          instantiate: {
-              admin: Addr | null;
-              code_id: number;
-              funds: Coin[];
-              label: string;
-              msg: Binary;
-          };
-      }
-    | {
-          migrate: {
-              contract_addr: Addr;
-              msg: Binary;
-              new_code_id: number;
-          };
-      }
-    | {
-          update_admin: {
-              admin: Addr;
-              contract_addr: Addr;
-          };
-      }
-    | {
-          clear_admin: {
-              contract_addr: Addr;
-          };
-      };
-export type CosmosMsg_for_Empty =
+export type CosmosMsgFor_Empty =
     | {
           bank: BankMsg;
       }
@@ -71,10 +20,88 @@ export type CosmosMsg_for_Empty =
     | {
           wasm: WasmMsg;
       };
-//
-
+export type BankMsg =
+    | {
+          send: {
+              amount: Coin[];
+              to_address: string;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          burn: {
+              amount: Coin[];
+              [k: string]: unknown;
+          };
+      };
 export type Uint128 = string;
+export type WasmMsg =
+    | {
+          execute: {
+              contract_addr: string;
+              funds: Coin[];
+              msg: Binary;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          instantiate: {
+              admin?: string | null;
+              code_id: number;
+              funds: Coin[];
+              label: string;
+              msg: Binary;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          migrate: {
+              contract_addr: string;
+              msg: Binary;
+              new_code_id: number;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          update_admin: {
+              admin: string;
+              contract_addr: string;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          clear_admin: {
+              contract_addr: string;
+              [k: string]: unknown;
+          };
+      };
 export type Binary = string;
+export interface Coin {
+    amount: Uint128;
+    denom: string;
+    [k: string]: unknown;
+}
+export interface Empty {
+    [k: string]: unknown;
+}
+export type Addr = string;
+export interface InfoResponse {
+    code_id: number;
+    guardians: Addr[];
+    is_frozen: boolean;
+    multisig_address?: Addr | null;
+    multisig_code_id: number;
+    nonce: number;
+    relayers: Addr[];
+    user_addr: Addr;
+    version: ContractVersion;
+    [k: string]: unknown;
+}
+export interface ContractVersion {
+    contract: string;
+    version: string;
+    [k: string]: unknown;
+}
 export interface InstantiateMsg {
     addr_prefix: string;
     code_id: number;
@@ -99,29 +126,14 @@ export interface MultiSig {
     threshold_absolute_count: number;
     [k: string]: unknown;
 }
-export interface Coin {
-    amount: Uint128;
-    denom: string;
-    [k: string]: unknown;
-}
-export type Addr = string;
-export interface WalletInfo {
-    code_id: number;
-    guardians: Addr[];
-    is_frozen: boolean;
-    multisig_address?: Addr | null;
-    multisig_code_id: number;
+export interface RelayTransaction {
+    message: Binary;
     nonce: number;
-    relayers: Addr[];
-    user_addr: Addr;
-    version: ContractVersion;
+    signature: Binary;
+    user_pubkey: Binary;
     [k: string]: unknown;
 }
-export interface ContractVersion {
-    contract: string;
-    version: string;
-    [k: string]: unknown;
-}
+export type Uint64 = number;
 export interface ProxyReadOnlyInterface {
     contractAddress: string;
     info: () => Promise<InfoResponse>;
@@ -223,9 +235,9 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
     ) => Promise<ExecuteResult>;
 }
 export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
-    override client: SigningCosmWasmClient;
+    client: SigningCosmWasmClient;
     sender: string;
-    override contractAddress: string;
+    contractAddress: string;
 
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
         super(client, contractAddress);

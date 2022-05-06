@@ -1,7 +1,7 @@
 pub use crate::error::{MigrationMsgError, RelayTxError};
 pub use crate::factory::{
     CodeIdType, CreateWalletMsg, Guardians, MultiSig, ProxyMigrateMsg, ProxyMigrationTxMsg,
-    ThresholdAbsoluteCount, WalletFactoryQueryMsg,
+    ThresholdAbsoluteCount, WalletFactoryQueryMsg, WalletQueryPrefix,
 };
 pub use crate::govec::StakingOptions;
 pub use crate::pubkey::pub_key_to_address;

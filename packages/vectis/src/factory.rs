@@ -67,6 +67,12 @@ impl ProxyMigrateMsg {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct WalletQueryPrefix {
+    pub user_addr: String,
+    pub wallet_addr: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum WalletFactoryQueryMsg {
@@ -74,7 +80,7 @@ pub enum WalletFactoryQueryMsg {
     /// Returns WalletListResponse
     Wallets {
         // Address string to start after
-        start_after: Option<(String, String)>,
+        start_after: Option<WalletQueryPrefix>,
         // Max is 30 and default is 10
         limit: Option<u32>,
     },

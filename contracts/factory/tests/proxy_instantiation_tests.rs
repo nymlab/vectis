@@ -5,7 +5,7 @@ use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
 use cw_multi_test::Executor;
 use vectis_factory::ContractError;
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
-use vectis_wallet::{MultiSig, WalletInfo};
+use vectis_wallet::{MultiSig, WalletInfo, WalletQueryPrefix};
 
 pub mod common;
 use common::*;
@@ -416,10 +416,10 @@ fn query_all_wallets() {
     let pagination_second = suite
         .query_all_wallet_addresses(
             &factory,
-            Some((
-                wallet_info.user_addr.to_string(),
-                all.wallets[0].to_string(),
-            )),
+            Some(WalletQueryPrefix {
+                user_addr: wallet_info.user_addr.to_string(),
+                wallet_addr: all.wallets[0].to_string(),
+            }),
             None,
         )
         .unwrap();

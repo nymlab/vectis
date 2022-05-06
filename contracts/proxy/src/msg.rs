@@ -36,7 +36,7 @@ where
         transaction: RelayTransaction,
     },
     // /// Rotating the User Key
-    // /// Priviledge: Guardian/Multisig
+    // /// Priviledge: User, Guardian/Multisig
     RotateUserKey {
         new_user_address: String,
     },

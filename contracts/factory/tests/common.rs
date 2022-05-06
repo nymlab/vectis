@@ -40,7 +40,7 @@ use vectis_proxy::{
 };
 use vectis_wallet::{
     CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, StakingOptions,
-    ThresholdAbsoluteCount,
+    ThresholdAbsoluteCount, WalletQueryPrefix,
 };
 
 pub const WALLET_FEE: u128 = 10u128;
@@ -360,7 +360,7 @@ impl Suite {
     pub fn query_all_wallet_addresses(
         &self,
         contract_addr: &Addr,
-        start_after: Option<(String, String)>,
+        start_after: Option<WalletQueryPrefix>,
         limit: Option<u32>,
     ) -> Result<WalletListResponse, StdError> {
         let r = self
