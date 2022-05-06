@@ -1,20 +1,23 @@
 use crate::error::ContractError;
+use crate::helpers::{
+    ensure_enough_native_funds, ensure_has_govec, ensure_is_admin, ensure_is_valid_migration_msg,
+    ensure_is_valid_threshold,
+};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
-    ADDR_PREFIX, ADMIN, FEE, GOVEC, GOVEC_CODE_ID, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, STAKE,
+    ADDR_PREFIX, ADMIN, FEE, GOVEC, GOVEC_CODE_ID, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
     STAKING_CODE_ID, TOTAL_CREATED, WALLETS_OF,
 };
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
+    to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
-use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
-use cw20::Cw20Coin;
 use cw_storage_plus::Bound;
-use vectis_govec::msg::{ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg, MinterResponse};
+use vectis_govec::msg::ExecuteMsg::Mint;
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
@@ -26,7 +29,6 @@ use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as Proxy
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-const GOV_REPLY_ID: u64 = u64::MIN;
 
 // settings for pagination for wallet list
 const MAX_LIMIT: u32 = 100;
@@ -50,6 +52,9 @@ pub fn instantiate(
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     FEE.save(deps.storage, &msg.wallet_fee)?;
+    if let Some(addr) = msg.govec {
+        GOVEC.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
+    }
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -72,95 +77,11 @@ pub fn execute(
         // TODO: update_code_id(new_code_id, enum::proxy / multisig, staking, govec)
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => update_code_id(deps, info, ty, new_code_id),
         ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
-        ExecuteMsg::CreateGovernance {
-            staking_options,
-            initial_balances,
-        } => create_governance(deps, info, env, staking_options, initial_balances),
+        ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
+        ExecuteMsg::UpdateAdmin { addr } => update_admin_addr(deps, info, addr),
     }
 }
 
-/// Creates the governance structure for the DAO
-/// This instantiates the govec token contract,
-/// which instantiates the the staking contract
-/// Admins for these contracts is the DAO
-/// Minter of the govec token contract is this factory
-fn create_governance(
-    deps: DepsMut,
-    info: MessageInfo,
-    env: Env,
-    staking: Option<StakingOptions>,
-    initial_balances: Vec<Cw20Coin>,
-) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_ref())?;
-    let dao = ADMIN.load(deps.storage)?;
-    let govec_inst_msg = GovecInstantiateMsg {
-        name: "Vectis Governance Token Contract".into(),
-        symbol: "VEC".into(),
-        initial_balances,
-        staking,
-        mint: Some(MinterResponse {
-            minter: env.contract.address.to_string(),
-            cap: None,
-        }),
-        dao: dao.clone(),
-    };
-
-    Ok(Response::new().add_submessage(SubMsg::reply_always(
-        WasmMsg::Instantiate {
-            admin: Some(deps.api.addr_humanize(&dao)?.to_string()),
-            code_id: GOVEC_CODE_ID.load(deps.storage)?,
-            msg: to_binary(&govec_inst_msg)?,
-            funds: vec![],
-            label: "Governance Token".into(),
-        },
-        GOV_REPLY_ID,
-    )))
-}
-
-/// Ensure user has sent in enough to cover the fee and the initial proxy balance
-fn ensure_enough_native_funds(
-    fee: &Coin,
-    proxy_initial_fund: &[Coin],
-    multisig_initial_fund: &[Coin],
-    sent_fund: &[Coin],
-) -> Result<(), ContractError> {
-    let init_native_fund = proxy_initial_fund.iter().fold(Uint128::zero(), |acc, c| {
-        if c.denom == fee.denom {
-            acc + c.amount
-        } else {
-            acc
-        }
-    });
-
-    let init_multisig_native_fund = multisig_initial_fund
-        .iter()
-        .fold(Uint128::zero(), |acc, c| {
-            if c.denom == fee.denom {
-                acc + c.amount
-            } else {
-                acc
-            }
-        });
-
-    let total_native_fund_required = fee.amount + init_native_fund + init_multisig_native_fund;
-
-    let total_sent = sent_fund.iter().fold(Uint128::zero(), |acc, c| {
-        if c.denom == fee.denom {
-            acc + c.amount
-        } else {
-            acc
-        }
-    });
-
-    if total_native_fund_required == total_sent {
-        Ok(())
-    } else {
-        Err(ContractError::InvalidNativeFund(
-            total_native_fund_required,
-            total_sent,
-        ))
-    }
-}
 /// Creates a SCW by instantiating an instance of the `wallet_proxy` contract
 fn create_wallet(
     deps: DepsMut,
@@ -168,6 +89,7 @@ fn create_wallet(
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
+    ensure_has_govec(deps.as_ref())?;
     let fee = FEE.load(deps.storage)?;
     let proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
     let multisig_initial_funds = create_wallet_msg
@@ -280,68 +202,6 @@ fn migrate_wallet(
         .add_attribute("action", "wallet migration"))
 }
 
-// Perform security checks to ensure migration message is valid
-fn ensure_is_valid_migration_msg(
-    deps: &DepsMut,
-    info: MessageInfo,
-    wallet_info: &WalletInfo,
-    wallet_addr: &Addr,
-    migration_msg: ProxyMigrationTxMsg,
-) -> Result<CosmosMsg, ContractError> {
-    let tx_msg: CosmosMsg = match migration_msg {
-        ProxyMigrationTxMsg::RelayTx(tx) => {
-            let can_execute_relay: CanExecuteResponse = deps.querier.query_wasm_smart(
-                wallet_addr.clone(),
-                &ProxyQueryMsg::CanExecuteRelay {
-                    sender: info.sender.to_string(),
-                },
-            )?;
-
-            // Ensure caller is a wallet relayer
-            if !can_execute_relay.can_execute {
-                return Err(ContractError::Unauthorized {});
-            } else {
-                // Ensure Signer of relayed message is the wallet user
-                if wallet_info.user_addr
-                    != pub_key_to_address(
-                        deps,
-                        &ADDR_PREFIX.load(deps.storage)?,
-                        &tx.user_pubkey.0,
-                    )?
-                {
-                    return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayTxError::IsNotUser {},
-                    ));
-                };
-
-                // Ensure none of relayed message is the expected next wallet nonce
-                if wallet_info.nonce != tx.nonce {
-                    return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayTxError::NoncesAreNotEqual {},
-                    ));
-                };
-
-                // Verify signature
-                if !query_verify_cosmos(deps, &tx)? {
-                    return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayTxError::SignatureVerificationError {},
-                    ));
-                };
-
-                cosmwasm_std::from_slice(tx.message.0.as_slice())?
-            }
-        }
-        ProxyMigrationTxMsg::DirectMigrationMsg(msg) => {
-            // Ensure caller is the wallet user
-            if wallet_info.user_addr != info.sender {
-                return Err(ContractError::Unauthorized {});
-            }
-            cosmwasm_std::from_slice(&msg)?
-        }
-    };
-    Ok(tx_msg)
-}
-
 /// Updates the latest code id for the supported `wallet_proxy`
 fn update_code_id(
     deps: DepsMut,
@@ -382,103 +242,89 @@ fn update_wallet_fee(
         .add_attribute("New Fee", format!("{}", new_fee)))
 }
 
+fn update_govec_addr(
+    deps: DepsMut,
+    info: MessageInfo,
+    addr: String,
+) -> Result<Response, ContractError> {
+    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    GOVEC.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
+    Ok(Response::new()
+        .add_attribute("config", "Govec Addr")
+        .add_attribute("New Addr", addr))
+}
+
+fn update_admin_addr(
+    deps: DepsMut,
+    info: MessageInfo,
+    addr: String,
+) -> Result<Response, ContractError> {
+    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    ADMIN.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
+    Ok(Response::new()
+        .add_attribute("config", "Admin")
+        .add_attribute("New Admin", addr))
+}
+
 /// reply hooks handles 2 types of replies wrt to reply_id
-/// - GOV_REPLY_ID: govec token contract instantiation reply in create_governance
 /// - TOTAL_CREATED: proxy wallet instantiation
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdError> {
     // NOTE: Error returned in `reply` is equivalent to contract error, all states revert,
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
 
-    // Handles create_governance reply.
-    // Specifically, we save the Govec token contract and staking contract addresses
-    if reply.id == GOV_REPLY_ID {
+    let expected_id = TOTAL_CREATED.load(deps.storage)?;
+    if reply.id == expected_id {
         let data = reply.result.into_result().map_err(StdError::generic_err)?;
-        let instantiate_events: Vec<&Event> = data
+        let first_instantiate_event = data
             .events
             .iter()
-            .filter(|e| e.ty == "instantiate")
-            .collect();
+            .find(|e| e.ty == "instantiate")
+            .ok_or_else(|| StdError::generic_err("Reply: Unable to find reply event"))?;
 
-        // There are 2 instantiations events
-        // 1. Govec contract
-        // 2. Stake-cw20 contract
-        if instantiate_events.len() != 2 {
-            return Err(StdError::generic_err(
-                "Invalid reply events for create_governance",
-            ));
-        }
-        GOVEC.save(
+        let str_addr = &first_instantiate_event.attributes[0].value;
+        let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(str_addr)?;
+
+        let user = data
+            .events
+            .iter()
+            .find(|e| e.ty == "wasm")
+            .ok_or_else(|| StdError::generic_err("Reply: Unable to find wasm event"))?
+            .attributes
+            .iter()
+            .find(|k| k.key == "user")
+            .ok_or_else(|| StdError::generic_err("Reply: Unable to find user attribute"))?;
+
+        WALLETS_OF.save(
             deps.storage,
-            &deps
-                .api
-                .addr_canonicalize(&instantiate_events[0].attributes[0].value)?,
+            (
+                deps.api.addr_canonicalize(&user.value)?.to_vec(),
+                wallet_addr.to_vec(),
+            ),
+            &(),
         )?;
-        STAKE.save(
-            deps.storage,
-            &deps
+
+        // Mint Govec Vote for the newly created proxy wallet
+        let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
+            contract_addr: deps
                 .api
-                .addr_canonicalize(&instantiate_events[1].attributes[0].value)?,
-        )?;
+                .addr_humanize(&GOVEC.load(deps.storage)?)?
+                .to_string(),
+            msg: to_binary(&Mint {
+                new_wallet: str_addr.into(),
+            })?,
+            funds: vec![],
+        });
 
         let res = Response::new()
-            .add_attribute("action", "Govec Deployed")
-            .add_attribute("Govec", &instantiate_events[0].attributes[0].value);
+            .add_submessage(mint_msg)
+            .add_attribute("action", "Wallet Proxy Stored")
+            .add_attribute("proxy_address", str_addr);
         Ok(res)
     } else {
-        let expected_id = TOTAL_CREATED.load(deps.storage)?;
-        if reply.id == expected_id {
-            let data = reply.result.into_result().map_err(StdError::generic_err)?;
-            let first_instantiate_event = data
-                .events
-                .iter()
-                .find(|e| e.ty == "instantiate")
-                .ok_or_else(|| StdError::generic_err("Reply: Unable to find reply event"))?;
-
-            let str_addr = &first_instantiate_event.attributes[0].value;
-            let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(str_addr)?;
-
-            let user = data
-                .events
-                .iter()
-                .find(|e| e.ty == "wasm")
-                .ok_or_else(|| StdError::generic_err("Reply: Unable to find wasm event"))?
-                .attributes
-                .iter()
-                .find(|k| k.key == "user")
-                .ok_or_else(|| StdError::generic_err("Reply: Unable to find user attribute"))?;
-
-            WALLETS_OF.save(
-                deps.storage,
-                (
-                    deps.api.addr_canonicalize(&user.value)?.to_vec(),
-                    wallet_addr.to_vec(),
-                ),
-                &(),
-            )?;
-
-            // Mint Govec Vote for the newly created proxy wallet
-            let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
-                contract_addr: deps
-                    .api
-                    .addr_humanize(&GOVEC.load(deps.storage)?)?
-                    .to_string(),
-                msg: to_binary(&Mint {
-                    new_wallet: str_addr.into(),
-                })?,
-                funds: vec![],
-            });
-
-            let res = Response::new()
-                .add_submessage(mint_msg)
-                .add_attribute("action", "Wallet Proxy Stored")
-                .add_attribute("proxy_address", str_addr);
-            Ok(res)
-        } else {
-            Err(StdError::GenericErr {
-                msg: ContractError::InvalidReplyId {}.to_string(),
-            })
-        }
+        Err(StdError::GenericErr {
+            msg: ContractError::InvalidReplyId {}.to_string(),
+        })
     }
 }
 
@@ -495,6 +341,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&query_wallets_of(deps, user, start_after, limit)?),
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
+        QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
+        QueryMsg::AdminAddr {} => to_binary(&query_admin_addr(deps)?),
     }
 }
 
@@ -567,27 +415,12 @@ pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
     };
     Ok(id)
 }
-
-/// Ensures provided addr is the state stored ADMIN
-fn ensure_is_admin(deps: Deps, sender: &str) -> Result<(), ContractError> {
-    let admin = ADMIN.load(deps.storage)?;
-    let caller = deps.api.addr_canonicalize(sender)?;
-    if caller == admin {
-        Ok(())
-    } else {
-        Err(ContractError::Unauthorized {})
-    }
+/// Returns govec token address
+pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
+    deps.api.addr_humanize(&GOVEC.load(deps.storage)?)
 }
 
-/// Ensures provided fixed multisig threshold is valid.
-fn ensure_is_valid_threshold(guardians: &Guardians) -> Result<(), ContractError> {
-    match &guardians.guardians_multisig {
-        Some(g) if g.threshold_absolute_count == 0 => {
-            Err(ContractError::ThresholdShouldBeGreaterThenZero {})
-        }
-        Some(g) if g.threshold_absolute_count > guardians.addresses.len() as u64 => {
-            Err(ContractError::ThresholdShouldBeLessThenGuardiansCount {})
-        }
-        _ => Ok(()),
-    }
+/// Returns admin address
+pub fn query_admin_addr(deps: Deps) -> StdResult<Addr> {
+    deps.api.addr_humanize(&ADMIN.load(deps.storage)?)
 }

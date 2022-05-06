@@ -2,12 +2,11 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
-    SubMsg, Uint128, WasmMsg,
+    Uint128,
 };
 
 use cw2::set_contract_version;
 use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MinterResponse, TokenInfoResponse};
-use stake_cw20::msg::InstantiateMsg as StakeInstantiateMsg;
 
 use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
@@ -22,7 +21,7 @@ pub const STAKING_REPLY_ID: u64 = u64::MAX;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     mut deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -38,15 +37,6 @@ pub fn instantiate(
         }
     }
 
-    // store minter info
-    let minter = match msg.minter {
-        Some(m) => Some(MinterData {
-            minter: deps.api.addr_validate(&m.minter)?,
-            cap: m.cap,
-        }),
-        None => None,
-    };
-
     // store token info
     // votes cannot be split, therefore decimals is 0
     let data = TokenInfo {
@@ -54,35 +44,21 @@ pub fn instantiate(
         symbol: msg.symbol,
         decimals: 0,
         total_supply,
-        minter,
+        mint: msg.minter,
     };
     TOKEN_INFO.save(deps.storage, &data)?;
 
     // store DAO contract addr
-    DAO_ADDR.save(deps.storage, &info.sender)?;
+    DAO_ADDR.save(
+        deps.storage,
+        &deps.api.addr_canonicalize(info.sender.as_str())?,
+    )?;
 
-    let response = Response::new();
-
-    if let Some(staking_options) = msg.staking {
-        // Instantiate Staking
-        let staking_inst_msg = StakeInstantiateMsg {
-            admin: Some(deps.api.addr_humanize(&msg.dao)?),
-            token_address: env.contract.address,
-            unstaking_duration: staking_options.duration,
-        };
-
-        return Ok(response.add_submessage(SubMsg::reply_always(
-            WasmMsg::Instantiate {
-                admin: Some(deps.api.addr_humanize(&msg.dao)?.to_string()),
-                code_id: staking_options.code_id,
-                msg: to_binary(&staking_inst_msg)?,
-                funds: vec![],
-                label: "Vectis Staking contract".into(),
-            },
-            STAKING_REPLY_ID,
-        )));
+    if let Some(addr) = msg.staking_addr {
+        STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
     }
-    Ok(response)
+
+    Ok(Response::default())
 }
 
 pub fn create_accounts(deps: &mut DepsMut, accounts: &[Cw20Coin]) -> StdResult<Uint128> {
@@ -319,10 +295,7 @@ pub fn execute_update_mint_data(
         Ok(t)
     })?;
 
-    let m = new_mint.unwrap_or(MinterData {
-        minter: Addr::unchecked(""),
-        cap: None,
-    });
+    let m = new_mint.unwrap_or_default();
     let res = Response::new()
         .add_attribute("action", "update_minter_data")
         .add_attribute("new_minter", m.minter)

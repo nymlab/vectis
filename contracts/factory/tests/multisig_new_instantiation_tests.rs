@@ -12,7 +12,7 @@ use common::*;
 fn user_can_update_proxy_multisig_with_direct_message() {
     let mut suite = Suite::init().unwrap();
     let init_factory_fund: Coin = coin(400, "ucosm");
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -95,7 +95,7 @@ fn user_can_update_proxy_multisig_with_direct_message() {
 fn user_without_multisig_can_instantiate_with_direct_message() {
     let mut suite = Suite::init().unwrap();
     let init_factory_fund: Coin = coin(400, "ucosm");
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -157,7 +157,7 @@ fn user_without_multisig_can_instantiate_with_direct_message() {
 fn user_can_remove_multisig_for_guardians() {
     let mut suite = Suite::init().unwrap();
     let init_factory_fund: Coin = coin(400, "ucosm");
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -217,7 +217,7 @@ fn user_can_remove_multisig_for_guardians() {
 fn relayer_can_update_proxy_multisig_with_user_signature() {
     let mut suite = Suite::init().unwrap();
     let init_wallet_fund: Coin = coin(400, "ucosm");
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -295,7 +295,7 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
 #[test]
 fn non_user_update_proxy_multisig_with_direct_message_fails() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -349,7 +349,7 @@ fn non_user_update_proxy_multisig_with_direct_message_fails() {
 #[test]
 fn relayer_update_proxy_multisig_with_non_user_fails() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,

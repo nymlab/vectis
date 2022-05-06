@@ -3,7 +3,6 @@ use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, CosmosMsg, Empty, QueryRequest, StdError, Uint128,
     WasmQuery,
 };
-use cw20::Cw20Coin;
 use cw3::VoterListResponse;
 use cw3_fixed_multisig::contract::{
     execute as fixed_multisig_execute, instantiate as fixed_multisig_instantiate,
@@ -27,9 +26,13 @@ use vectis_factory::{
         WalletListResponse,
     },
 };
-use vectis_govec::contract::{
-    execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
-    reply as govec_reply,
+use vectis_govec::{
+    contract::{
+        execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
+        reply as govec_reply,
+    },
+    msg::{ExecuteMsg as GovecExecuteMsg, InstantiateMsg as GovecInstantiateMsg},
+    state::MinterData,
 };
 use vectis_proxy::{
     contract::{
@@ -39,8 +42,8 @@ use vectis_proxy::{
     msg::QueryMsg as ProxyQueryMsg,
 };
 use vectis_wallet::{
-    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, StakingOptions,
-    ThresholdAbsoluteCount, WalletQueryPrefix,
+    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, ThresholdAbsoluteCount,
+    WalletQueryPrefix,
 };
 
 pub const WALLET_FEE: u128 = 10u128;
@@ -107,6 +110,8 @@ pub struct Suite {
     pub govec_id: u64,
     // ID of stored code for staking
     pub stake_id: u64,
+    // govec address
+    pub govec_addr: String,
 }
 
 impl Suite {
@@ -129,6 +134,23 @@ impl Suite {
         let govec_id = app.store_code(contract_govec());
         let stake_id = app.store_code(contract_stake());
 
+        let govec_addr = app
+            .instantiate_contract(
+                govec_id,
+                owner.clone(),
+                &GovecInstantiateMsg {
+                    name: String::from("govec"),
+                    symbol: String::from("gov"),
+                    initial_balances: vec![],
+                    staking_addr: None,
+                    minter: None,
+                },
+                &[],
+                "govec",                 // label: human readible name for contract
+                Some(owner.to_string()), // admin: Option<String>, will need this for upgrading
+            )
+            .unwrap();
+
         Ok(Suite {
             app,
             owner,
@@ -137,6 +159,7 @@ impl Suite {
             sc_proxy_multisig_code_id,
             govec_id,
             stake_id,
+            govec_addr: govec_addr.to_string(),
         })
     }
 
@@ -149,7 +172,8 @@ impl Suite {
         init_funds: Vec<Coin>,
         wallet_fee: u128,
     ) -> Addr {
-        self.app
+        let addr = self
+            .app
             .instantiate_contract(
                 self.sc_factory_id,
                 self.owner.clone(),
@@ -163,60 +187,33 @@ impl Suite {
                         denom: "ucosm".to_string(),
                         amount: Uint128::new(wallet_fee),
                     },
+                    govec: Some(self.govec_addr.clone()),
                 },
                 &init_funds,
                 "wallet-factory", // label: human readible name for contract
                 Some(self.owner.to_string()), // admin: Option<String>, will need this for upgrading
             )
-            .unwrap()
-    }
+            .unwrap();
 
-    pub fn instantiate_factory_with_governance(
-        &mut self,
-        proxy_code_id: u64,
-        proxy_multisig_code_id: u64,
-        govec_code_id: u64,
-        staking_code_id: u64,
-        init_funds: Vec<Coin>,
-        wallet_fee: u128,
-    ) -> Addr {
-        let factory = self.instantiate_factory(
-            proxy_code_id,
-            proxy_multisig_code_id,
-            govec_code_id,
-            staking_code_id,
-            init_funds,
-            wallet_fee,
-        );
-
-        self.create_governance(
-            Some(StakingOptions {
-                duration: None,
-                code_id: self.stake_id,
+        let execute = GovecExecuteMsg::UpdateMintData {
+            new_mint: Some(MinterData {
+                minter: addr.to_string(),
+                cap: Some(Uint128::new(1000)),
             }),
-            vec![],
-            factory.clone(),
-        )
-        .unwrap();
-        factory
+        };
+
+        self.app
+            .execute_contract(
+                self.owner.clone(),
+                Addr::unchecked(self.govec_addr.clone()),
+                &execute,
+                &[],
+            )
+            .map_err(|err| anyhow!(err))
+            .unwrap();
+        addr
     }
 
-    pub fn create_governance(
-        &mut self,
-        staking_options: Option<StakingOptions>,
-        initial_balances: Vec<Cw20Coin>,
-        factory: Addr,
-    ) -> Result<AppResponse> {
-        self.app.execute_contract(
-            self.owner.clone(),
-            factory,
-            &FactoryExecuteMsg::CreateGovernance {
-                staking_options,
-                initial_balances,
-            },
-            &[],
-        )
-    }
     pub fn create_new_proxy_without_guardians(
         &mut self,
         user: Addr,

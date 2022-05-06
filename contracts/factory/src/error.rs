@@ -32,6 +32,8 @@ pub enum ContractError {
     InvalidReplyId {},
     #[error("InvalidNativeFund: Expected: {0}, Got: {1}")]
     InvalidNativeFund(Uint128, Uint128),
+    #[error("GovecNotSet")]
+    GovecNotSet {},
 }
 
 impl From<MigrationMsgError> for ContractError {
