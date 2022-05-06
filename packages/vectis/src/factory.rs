@@ -97,4 +97,7 @@ pub enum WalletFactoryQueryMsg {
     /// Returns the fee required to create a wallet
     /// Fee goes to the DAO
     Fee {},
+    /// Retursn he address
+    GovecAddr {},
+    AdminAddr {},
 }

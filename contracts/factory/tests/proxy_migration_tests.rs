@@ -10,7 +10,7 @@ use common::*;
 #[test]
 fn user_can_migrate_proxy_with_direct_message() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -95,7 +95,7 @@ fn user_can_migrate_proxy_with_direct_message() {
 #[test]
 fn relayer_can_migrate_proxy_with_user_signature() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -154,7 +154,7 @@ fn relayer_can_migrate_proxy_with_user_signature() {
 #[test]
 fn user_cannot_migrate_others_wallet() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -214,7 +214,7 @@ fn user_cannot_migrate_others_wallet() {
 #[test]
 fn user_cannot_migrate_with_mismatched_code_id() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -275,7 +275,7 @@ fn user_cannot_migrate_with_mismatched_code_id() {
 #[test]
 fn user_cannot_migrate_with_invalid_wasm_msg() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -327,7 +327,7 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
 #[test]
 fn relayer_cannot_migrate_others_wallet() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -384,7 +384,7 @@ fn relayer_cannot_migrate_others_wallet() {
 #[test]
 fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -445,7 +445,7 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
 #[test]
 fn relayer_cannot_migrate_proxy_with_invalid_signature() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,

@@ -1,5 +1,4 @@
 use cosmwasm_std::{Addr, Coin};
-use cw20::Cw20Coin;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 pub use vectis_wallet::{
@@ -22,6 +21,8 @@ pub struct InstantiateMsg {
     pub addr_prefix: String,
     /// Fee in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
+    /// Governance Token, Govec, address
+    pub govec: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -41,9 +42,11 @@ pub enum ExecuteMsg {
     UpdateWalletFee {
         new_fee: Coin,
     },
-    CreateGovernance {
-        staking_options: Option<StakingOptions>,
-        initial_balances: Vec<Cw20Coin>,
+    UpdateGovecAddr {
+        addr: String,
+    },
+    UpdateAdmin {
+        addr: String,
     },
 }
 

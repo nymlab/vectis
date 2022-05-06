@@ -1,5 +1,5 @@
 use crate::state::MinterData;
-use cosmwasm_std::{Addr, Binary, CanonicalAddr, StdError, StdResult, Uint128};
+use cosmwasm_std::{Binary, StdError, StdResult, Uint128};
 pub use cw20::Cw20Coin;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
     pub initial_balances: Vec<Cw20Coin>,
-    pub staking_addr: Option<Addr>,
+    pub staking_addr: Option<String>,
     pub minter: Option<MinterData>,
 }
 

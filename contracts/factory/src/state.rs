@@ -25,5 +25,3 @@ pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
 pub const FEE: Item<Coin> = Item::new("fee");
 /// Governing token contract Addr
 pub const GOVEC: Item<CanonicalAddr> = Item::new("govec");
-/// Staking token contract Addr
-pub const STAKE: Item<CanonicalAddr> = Item::new("stake");

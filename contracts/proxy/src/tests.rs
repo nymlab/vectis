@@ -1,5 +1,5 @@
 use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
-use cosmwasm_std::{coins, to_binary, Addr, BankMsg, Binary, CosmosMsg, DepsMut, WasmMsg};
+use cosmwasm_std::{coins, to_binary, Addr, BankMsg, Binary, CosmosMsg, DepsMut};
 
 use crate::contract::{execute, execute_relay, instantiate, query_info};
 use crate::error::ContractError;

@@ -16,7 +16,7 @@ fn create_new_proxy() {
     let init_wallet_fund: Coin = coin(100, "ucosm");
 
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -84,7 +84,7 @@ fn cannot_create_new_proxy_without_payment() {
     let no_wallet_fee = 0u128;
 
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -106,7 +106,7 @@ fn cannot_create_new_proxy_without_payment() {
 #[test]
 fn create_new_proxy_without_guardians() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -128,7 +128,7 @@ fn create_new_proxy_without_guardians() {
 #[test]
 fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -163,7 +163,7 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
 #[test]
 fn user_can_execute_messages() {
     let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -221,7 +221,7 @@ fn user_can_execute_messages() {
 fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
     let mut suite = Suite::init().unwrap();
 
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -317,7 +317,7 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
     let mut suite = Suite::init().unwrap();
 
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,
@@ -369,7 +369,7 @@ fn query_all_wallets() {
     let wallet_fee = 10u128;
 
     let init_factory_fund: Coin = coin(1000, "ucosm");
-    let factory = suite.instantiate_factory_with_governance(
+    let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
         suite.govec_id,

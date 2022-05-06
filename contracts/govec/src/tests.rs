@@ -2,10 +2,8 @@ use cosmwasm_std::testing::{
     mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info,
 };
 use cosmwasm_std::{
-    coins, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg,
-    Uint128, WasmMsg,
+    coins, from_binary, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg, Uint128, WasmMsg,
 };
-use stake_cw20::msg::InstantiateMsg as StakeInstantiateMsg;
 
 use crate::contract::*;
 use crate::enumerable::*;
@@ -40,47 +38,21 @@ fn do_instantiate(
         });
         total_supply = amount[i] + total_supply;
     }
-    let mint = MinterResponse {
+    let mint = MinterData {
         minter: minter.to_string(),
         cap,
     };
-    let staking_options = StakingOptions {
-        duration: None,
-        code_id: 1,
-    };
-
     let instantiate_msg = InstantiateMsg {
         name: "Auto Gen".to_string(),
         symbol: "AUTO".to_string(),
         initial_balances: coins,
-        staking: Some(staking_options.clone()),
-        mint: Some(mint.clone()),
-        dao: deps.api.addr_canonicalize(DAO_ADDR).unwrap(),
+        staking_addr: None,
+        minter: Some(mint.clone()),
     };
 
     let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
-    let res = instantiate(deps.branch(), env.clone(), info, instantiate_msg).unwrap();
-    // ensure proper send message sent
-    // this is the message we want delivered to the other side
-    let staking_inst_msg = StakeInstantiateMsg {
-        admin: Some(Addr::unchecked(DAO_ADDR)),
-        token_address: env.contract.address,
-        unstaking_duration: staking_options.duration,
-    };
-
-    let expected_msg = SubMsg::reply_always(
-        WasmMsg::Instantiate {
-            admin: Some(DAO_ADDR.into()),
-            code_id: staking_options.code_id,
-            msg: to_binary(&staking_inst_msg).unwrap(),
-            funds: vec![],
-            label: "Vectis Staking contract".into(),
-        },
-        STAKING_REPLY_ID,
-    );
-    // and this is how it must be wrapped for the vm to process it
-    assert_eq!(res.messages[0], expected_msg);
+    instantiate(deps.branch(), env.clone(), info, instantiate_msg).unwrap();
 
     let meta = query_token_info(deps.as_ref()).unwrap();
     assert_eq!(
@@ -92,7 +64,13 @@ fn do_instantiate(
             total_supply
         }
     );
-    assert_eq!(query_minter(deps.as_ref()).unwrap(), Some(mint));
+    assert_eq!(
+        query_minter(deps.as_ref()).unwrap(),
+        Some(MinterResponse {
+            minter: mint.minter,
+            cap: mint.cap
+        })
+    );
     assert_eq!(query_dao(deps.as_ref()).unwrap(), DAO_ADDR);
     meta
 }
@@ -110,12 +88,11 @@ fn mintable() {
             address: "addr0000".into(),
             amount,
         }],
-        mint: Some(MinterResponse {
+        minter: Some(MinterData {
             minter: minter.clone(),
             cap: Some(limit),
         }),
-        staking: None,
-        dao: deps.as_mut().api.addr_canonicalize(DAO_ADDR).unwrap(),
+        staking_addr: None,
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -157,12 +134,11 @@ fn cannot_mint_over_cap() {
             address: String::from("addr0000"),
             amount,
         }],
-        mint: Some(MinterResponse {
+        minter: Some(MinterData {
             minter,
             cap: Some(limit),
         }),
-        staking: None,
-        dao: deps.as_mut().api.addr_canonicalize(DAO_ADDR).unwrap(),
+        staking_addr: None,
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -235,7 +211,7 @@ fn dao_can_update_mint_data() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     let new_mint = MinterData {
-        minter: Addr::unchecked("new minter"),
+        minter: "new_minter".to_string(),
         cap: Some(Uint128::new(200)),
     };
     // dao can update mint data
@@ -333,9 +309,8 @@ fn instantiate_multiple_accounts() {
                 amount: amount2,
             },
         ],
-        mint: None,
-        staking: None,
-        dao: deps.as_mut().api.addr_canonicalize(DAO_ADDR).unwrap(),
+        minter: None,
+        staking_addr: None,
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
