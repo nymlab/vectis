@@ -24,7 +24,6 @@ fn main() {
         "CosmosMsg_for_Empty",
     );
     export_schema_with_title(&schema_for!(WalletInfo), &out_dir, "InfoResponse");
-
     export_schema_with_title(
         &schema_for!(CanExecuteResponse),
         &out_dir,

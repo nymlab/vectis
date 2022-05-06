@@ -5,12 +5,12 @@
  */
 
 import { CosmWasmClient, ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { Coin, StdFee } from "@cosmjs/amino";
+import { StdFee } from "@cosmjs/amino";
 export interface CanExecuteRelayResponse {
     can_execute: boolean;
     [k: string]: unknown;
 }
-export type CosmosMsgFor_Empty =
+export type CosmosMsg_for_Empty =
     | {
           bank: BankMsg;
       }
