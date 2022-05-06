@@ -34,13 +34,17 @@ describe("Factory Suite: ", () => {
     let proxyWalletAddress: Addr;
 
     beforeAll(async () => {
-        adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-        client = await CosmWasmClient.connect(rpcEndPoint!);
-        const { contractAddress, proxyRes, stakingRes } = await deployFactoryContract(adminClient);
-        proxyCodeId = proxyRes.codeId;
-        stakingCodeId = stakingRes.codeId;
+        try {
+            adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
+            client = await CosmWasmClient.connect(rpcEndPoint!);
+            const { contractAddress, proxyRes, stakingRes } = await deployFactoryContract(adminClient);
+            proxyCodeId = proxyRes.codeId;
+            stakingCodeId = stakingRes.codeId;
 
-        factoryClient = new FactoryClient(adminClient, adminAddr!, contractAddress);
+            factoryClient = new FactoryClient(adminClient, adminAddr!, contractAddress);
+        } catch (err) {
+            console.error("Failed to load scenario!", err);
+        }
     });
 
     beforeEach(() => {
