@@ -23,7 +23,7 @@ pub const STAKING_REPLY_ID: u64 = u64::MAX;
 pub fn instantiate(
     mut deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -39,7 +39,7 @@ pub fn instantiate(
     }
 
     // store minter info
-    let mint = match msg.mint {
+    let minter = match msg.minter {
         Some(m) => Some(MinterData {
             minter: deps.api.addr_validate(&m.minter)?,
             cap: m.cap,
@@ -54,12 +54,12 @@ pub fn instantiate(
         symbol: msg.symbol,
         decimals: 0,
         total_supply,
-        mint,
+        minter,
     };
     TOKEN_INFO.save(deps.storage, &data)?;
 
     // store DAO contract addr
-    DAO_ADDR.save(deps.storage, &msg.dao)?;
+    DAO_ADDR.save(deps.storage, &info.sender)?;
 
     let response = Response::new();
 
