@@ -11,7 +11,7 @@ use crate::error::*;
 use crate::msg::*;
 use crate::state::MinterData;
 
-use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MinterResponse, TokenInfoResponse};
+use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 
 fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
     query_balance(deps, address.into()).unwrap().balance
@@ -66,7 +66,7 @@ fn do_instantiate(
     );
     assert_eq!(
         query_minter(deps.as_ref()).unwrap(),
-        Some(MinterResponse {
+        Some(MinterData {
             minter: mint.minter,
             cap: mint.cap
         })
@@ -114,7 +114,7 @@ fn mintable() {
     );
     assert_eq!(
         query_minter(deps.as_ref()).unwrap(),
-        Some(MinterResponse {
+        Some(MinterData {
             minter,
             cap: Some(limit),
         }),
