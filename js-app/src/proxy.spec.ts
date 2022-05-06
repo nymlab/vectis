@@ -1,11 +1,11 @@
-import { defaultExecuteFee, defaultInstantiateFee, defaultRelayFee, defaultUploadFee } from "./util/fee";
+import { defaultExecuteFee, defaultInstantiateFee, defaultUploadFee } from "./util/fee";
 import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createRelayTransaction, createSigningClient, getContract, mnemonicToKeyPair } from "./util/utils";
 import { deployFactoryContract } from "./util/contracts";
-import { Addr, BankMsg, Coin, ProxyClient } from "types/ProxyContract";
-import { FactoryClient } from "types/FactoryContract";
+import { Addr, BankMsg, Coin, ProxyClient } from "../types/ProxyContract";
+import { FactoryClient } from "../types/FactoryContract";
 import { coin } from "@cosmjs/stargate";
 
 import {

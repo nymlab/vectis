@@ -3,21 +3,8 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 console.log("Test for: ", process.env.NODE_ENV);
-let path;
-switch (process.env.NODE_ENV) {
-    case "juno-local":
-        path = `${__dirname}/../../../.env.juno.local`;
-        break;
-    case "test":
-        path = `${__dirname}/../../../.env.test`;
-        break;
-    case "production":
-        path = `${__dirname}/../../../.env.production`;
-        break;
-    default:
-        path = `${__dirname}/../../../.env.dev`;
-}
-dotenv.config({ path: path });
+const path = `${__dirname}/../../../../.env.${process.env.NODE_ENV?.replace("-", ".") ?? "dev"}`;
+dotenv.config({ path });
 
 export const gasPrice = process.env.GAS_PRICE;
 export const coinDenom = process.env.COIN_DENOM;
