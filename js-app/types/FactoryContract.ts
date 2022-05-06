@@ -5,7 +5,7 @@
  */
 
 import { CosmWasmClient, ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { Coin, StdFee } from "@cosmjs/amino";
+import { StdFee } from "@cosmjs/amino";
 export type CodeIdResponse = number;
 export type CodeIdType = "Proxy" | "Multisig" | "Govec" | "Staking";
 export type Uint128 = string;
