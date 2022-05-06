@@ -190,9 +190,9 @@ export interface GovecInterface extends GovecReadOnlyInterface {
     ) => Promise<ExecuteResult>;
 }
 export class GovecClient extends GovecQueryClient implements GovecInterface {
-    client: SigningCosmWasmClient;
+    override client: SigningCosmWasmClient;
     sender: string;
-    contractAddress: string;
+    override contractAddress: string;
 
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
         super(client, contractAddress);
