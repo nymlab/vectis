@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 
 use cw2::set_contract_version;
-use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MinterResponse, TokenInfoResponse};
+use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 
 use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
@@ -361,16 +361,9 @@ pub fn query_token_info(deps: Deps) -> StdResult<TokenInfoResponse> {
     Ok(res)
 }
 
-pub fn query_minter(deps: Deps) -> StdResult<Option<MinterResponse>> {
+pub fn query_minter(deps: Deps) -> StdResult<Option<MinterData>> {
     let meta = TOKEN_INFO.load(deps.storage)?;
-    let minter = match meta.mint {
-        Some(m) => Some(MinterResponse {
-            minter: m.minter.into(),
-            cap: m.cap,
-        }),
-        None => None,
-    };
-    Ok(minter)
+    Ok(meta.mint)
 }
 
 pub fn query_staking(deps: Deps) -> StdResult<Addr> {
