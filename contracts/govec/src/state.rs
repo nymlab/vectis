@@ -11,18 +11,18 @@ pub struct TokenInfo {
     pub symbol: String,
     pub decimals: u8,
     pub total_supply: Uint128,
-    pub mint: Option<MinterData>,
+    pub minter: Option<MinterData>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct MinterData {
-    pub minter: Addr,
+    pub minter: String,
     pub cap: Option<Uint128>,
 }
 
 impl TokenInfo {
     pub fn get_cap(&self) -> Option<Uint128> {
-        self.mint.as_ref().and_then(|v| v.cap)
+        self.minter.as_ref().and_then(|v| v.cap)
     }
 }
 

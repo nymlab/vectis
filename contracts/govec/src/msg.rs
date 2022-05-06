@@ -1,6 +1,6 @@
 use crate::state::MinterData;
-use cosmwasm_std::{Binary, CanonicalAddr, StdError, StdResult, Uint128};
-pub use cw20::{Cw20Coin, MinterResponse};
+use cosmwasm_std::{Addr, Binary, CanonicalAddr, StdError, StdResult, Uint128};
+pub use cw20::Cw20Coin;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 pub use vectis_wallet::StakingOptions;
@@ -10,14 +10,13 @@ pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
     pub initial_balances: Vec<Cw20Coin>,
-    pub staking: Option<StakingOptions>,
-    pub mint: Option<MinterResponse>,
-    pub dao: CanonicalAddr,
+    pub staking_addr: Option<Addr>,
+    pub minter: Option<MinterData>,
 }
 
 impl InstantiateMsg {
     pub fn get_cap(&self) -> Option<Uint128> {
-        self.mint.as_ref().and_then(|v| v.cap)
+        self.minter.as_ref().and_then(|v| v.cap)
     }
 
     pub fn validate(&self) -> StdResult<()> {
