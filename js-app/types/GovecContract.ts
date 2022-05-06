@@ -6,17 +6,6 @@
 
 import { CosmWasmClient, ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Addr } from "./ProxyContract";
-
-// THESE HAVE BEEN MANUALLY ADDED
-export type StakingResponse = any;
-export type DaoResponse = any;
-export interface MinterData {
-    minter: Addr;
-    cap: Uint128 | null;
-}
-//
-
 export interface AllAccountsResponse {
     accounts: string[];
     [k: string]: unknown;
@@ -26,6 +15,7 @@ export interface BalanceResponse {
     balance: Uint128;
     [k: string]: unknown;
 }
+export type DaoResponse = string;
 export type Binary = string;
 export type Duration =
     | {
@@ -58,6 +48,13 @@ export interface StakingOptions {
     duration?: Duration | null;
     [k: string]: unknown;
 }
+export type Addr = string;
+export interface MinterData {
+    cap?: Uint128 | null;
+    minter: Addr;
+    [k: string]: unknown;
+}
+export type StakingResponse = string;
 export interface TokenInfoResponse {
     decimals: number;
     name: string;
@@ -193,9 +190,9 @@ export interface GovecInterface extends GovecReadOnlyInterface {
     ) => Promise<ExecuteResult>;
 }
 export class GovecClient extends GovecQueryClient implements GovecInterface {
-    override client: SigningCosmWasmClient;
+    client: SigningCosmWasmClient;
     sender: string;
-    override contractAddress: string;
+    contractAddress: string;
 
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
         super(client, contractAddress);

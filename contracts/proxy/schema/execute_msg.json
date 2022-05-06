@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ExecuteMsg_for_Empty",
+  "title": "ExecuteMsg",
   "oneOf": [
     {
       "description": "Execute requests the contract to re-dispatch all these messages with the contract's address as sender. Priviledge: User",

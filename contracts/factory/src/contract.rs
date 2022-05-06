@@ -18,7 +18,7 @@ use vectis_govec::msg::{ExecuteMsg::Mint, InstantiateMsg as GovecInstantiateMsg,
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
-    StakingOptions, WalletAddr, WalletInfo,
+    StakingOptions, WalletAddr, WalletInfo, WalletQueryPrefix,
 };
 // use stake_cw20::msg::InstantiateMsg as StakingInstantiateMsg;
 use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
@@ -506,14 +506,14 @@ pub fn query_fee(deps: Deps) -> StdResult<Coin> {
 /// Returns wallets created with limit
 pub fn query_wallet_list(
     deps: Deps,
-    start_after: Option<(String, String)>,
+    start_after: Option<WalletQueryPrefix>,
     limit: Option<u32>,
 ) -> StdResult<WalletListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = match start_after {
         Some(s) => {
-            let user_addr = deps.api.addr_canonicalize(s.0.as_str())?.to_vec();
-            let wallet_addr = deps.api.addr_canonicalize(s.1.as_str())?.to_vec();
+            let user_addr = deps.api.addr_canonicalize(s.user_addr.as_str())?.to_vec();
+            let wallet_addr = deps.api.addr_canonicalize(s.wallet_addr.as_str())?.to_vec();
             Some(Bound::exclusive((user_addr, wallet_addr)))
         }
         None => None,
