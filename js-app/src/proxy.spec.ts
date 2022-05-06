@@ -67,15 +67,19 @@ describe("Proxy Suite: ", () => {
     }
 
     beforeAll(async () => {
-        userClient = await createSigningClient(userMnemonic!, addrPrefix!);
-        adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-        client = await CosmWasmClient.connect(rpcEndPoint!);
-        const { contractAddress } = await deployFactoryContract(userClient);
+        try {
+            userClient = await createSigningClient(userMnemonic!, addrPrefix!);
+            adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
+            client = await CosmWasmClient.connect(rpcEndPoint!);
+            const { contractAddress } = await deployFactoryContract(adminClient);
 
-        factoryClient = new FactoryClient(userClient, userAddr!, contractAddress);
-        proxyWalletAddress = await createTestProxyWallet();
+            factoryClient = new FactoryClient(userClient, userAddr!, contractAddress);
+            proxyWalletAddress = await createTestProxyWallet();
 
-        proxyClient = new ProxyClient(userClient, userAddr!, proxyWalletAddress);
+            proxyClient = new ProxyClient(userClient, userAddr!, proxyWalletAddress);
+        } catch (err) {
+            console.error("Failed to load scenario!", err);
+        }
     });
 
     beforeEach(() => {
