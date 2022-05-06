@@ -1,7 +1,7 @@
 [package]
 name = "vectis-govec"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 description = "Whitelisted governance token contract. Not cw20 compatible"
 repository = "https://github.com/nymlab/vectis"
 
