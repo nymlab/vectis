@@ -5,8 +5,8 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
-    ADDR_PREFIX, ADMIN, FEE, GOVEC, GOVEC_CODE_ID, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
-    STAKING_CODE_ID, TOTAL_CREATED, WALLETS_OF,
+    ADDR_PREFIX, ADMIN, FEE, GOVEC, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
+    WALLETS_OF,
 };
 
 #[cfg(not(feature = "library"))]
@@ -47,8 +47,6 @@ pub fn instantiate(
     ADMIN.save(deps.storage, &admin_addr)?;
     PROXY_CODE_ID.save(deps.storage, &msg.proxy_code_id)?;
     PROXY_MULTISIG_CODE_ID.save(deps.storage, &msg.proxy_multisig_code_id)?;
-    STAKING_CODE_ID.save(deps.storage, &msg.staking_code_id)?;
-    GOVEC_CODE_ID.save(deps.storage, &msg.govec_code_id)?;
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     FEE.save(deps.storage, &msg.wallet_fee)?;
@@ -217,12 +215,6 @@ fn update_code_id(
         CodeIdType::Multisig => {
             PROXY_MULTISIG_CODE_ID.save(deps.storage, &new_code_id)?;
         }
-        CodeIdType::Govec => {
-            GOVEC_CODE_ID.save(deps.storage, &new_code_id)?;
-        }
-        CodeIdType::Staking => {
-            STAKING_CODE_ID.save(deps.storage, &new_code_id)?;
-        }
     }
     Ok(Response::new()
         .add_attribute("config", "Code Id")
@@ -275,7 +267,10 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdErro
 
     let expected_id = TOTAL_CREATED.load(deps.storage)?;
     if reply.id == expected_id {
-        let data = reply.result.into_result().map_err(StdError::generic_err)?;
+        let data = reply
+            .result
+            .into_result()
+            .map_err(|err| StdError::generic_err(format!("Reply from proxy creation: {}", err)))?;
         let first_instantiate_event = data
             .events
             .iter()
@@ -410,8 +405,6 @@ pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
     let id = match ty {
         CodeIdType::Proxy => PROXY_CODE_ID.load(deps.storage)?,
         CodeIdType::Multisig => PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
-        CodeIdType::Govec => GOVEC_CODE_ID.load(deps.storage)?,
-        CodeIdType::Staking => STAKING_CODE_ID.load(deps.storage)?,
     };
     Ok(id)
 }

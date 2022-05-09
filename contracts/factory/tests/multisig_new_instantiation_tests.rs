@@ -15,8 +15,6 @@ fn user_can_update_proxy_multisig_with_direct_message() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![init_factory_fund],
         WALLET_FEE,
     );
@@ -98,8 +96,6 @@ fn user_without_multisig_can_instantiate_with_direct_message() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![init_factory_fund],
         WALLET_FEE,
     );
@@ -160,8 +156,6 @@ fn user_can_remove_multisig_for_guardians() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![init_factory_fund],
         WALLET_FEE,
     );
@@ -220,8 +214,6 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![init_wallet_fund],
         WALLET_FEE,
     );
@@ -298,8 +290,6 @@ fn non_user_update_proxy_multisig_with_direct_message_fails() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -352,8 +342,6 @@ fn relayer_update_proxy_multisig_with_non_user_fails() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );

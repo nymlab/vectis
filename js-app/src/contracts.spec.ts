@@ -1,7 +1,7 @@
 import { sha256 } from "@cosmjs/crypto";
 import { toHex } from "@cosmjs/encoding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { deployFactoryContract } from "./util/contracts";
+import { uploadContracts } from "./util/contracts";
 import { createSigningClient, getContract } from "./util/utils";
 
 import {
@@ -24,8 +24,8 @@ describe("Contracts Suite: ", () => {
         adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
     });
 
-    it("Should upload contracts and deploy Factory contract", async () => {
-        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await deployFactoryContract(adminClient);
+    it("Should upload contracts", async () => {
+        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await uploadContracts(adminClient);
         const factoryCode = getContract(factoryCodePath!);
         const proxyCode = getContract(proxyCodePath!);
         const multisigCode = getContract(fixMultiSigCodePath!);

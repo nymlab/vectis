@@ -39,8 +39,6 @@ pub struct MultiSig {
 pub enum CodeIdType {
     Proxy,
     Multisig,
-    Govec,
-    Staking,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

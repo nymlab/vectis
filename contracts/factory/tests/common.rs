@@ -167,8 +167,6 @@ impl Suite {
         &mut self,
         proxy_code_id: u64,
         proxy_multisig_code_id: u64,
-        govec_code_id: u64,
-        staking_code_id: u64,
         init_funds: Vec<Coin>,
         wallet_fee: u128,
     ) -> Addr {
@@ -180,8 +178,6 @@ impl Suite {
                 &InstantiateMsg {
                     proxy_code_id,
                     proxy_multisig_code_id,
-                    govec_code_id,
-                    staking_code_id,
                     addr_prefix: "wasm".to_string(),
                     wallet_fee: Coin {
                         denom: "ucosm".to_string(),

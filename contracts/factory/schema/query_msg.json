@@ -101,6 +101,31 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "description": "Retursn he address",
+      "type": "object",
+      "required": [
+        "govec_addr"
+      ],
+      "properties": {
+        "govec_addr": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "admin_addr"
+      ],
+      "properties": {
+        "admin_addr": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   ],
   "definitions": {
@@ -108,9 +133,7 @@
       "type": "string",
       "enum": [
         "Proxy",
-        "Multisig",
-        "Govec",
-        "Staking"
+        "Multisig"
       ]
     },
     "WalletQueryPrefix": {

@@ -3,25 +3,21 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "dao",
     "initial_balances",
     "name",
     "symbol"
   ],
   "properties": {
-    "dao": {
-      "$ref": "#/definitions/CanonicalAddr"
-    },
     "initial_balances": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/Cw20Coin"
       }
     },
-    "mint": {
+    "minter": {
       "anyOf": [
         {
-          "$ref": "#/definitions/MinterResponse"
+          "$ref": "#/definitions/MinterData"
         },
         {
           "type": "null"
@@ -31,14 +27,10 @@
     "name": {
       "type": "string"
     },
-    "staking": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/StakingOptions"
-        },
-        {
-          "type": "null"
-        }
+    "staking_addr": {
+      "type": [
+        "string",
+        "null"
       ]
     },
     "symbol": {
@@ -46,13 +38,6 @@
     }
   },
   "definitions": {
-    "Binary": {
-      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>",
-      "type": "string"
-    },
-    "CanonicalAddr": {
-      "$ref": "#/definitions/Binary"
-    },
     "Cw20Coin": {
       "type": "object",
       "required": [
@@ -68,48 +53,13 @@
         }
       }
     },
-    "Duration": {
-      "description": "Duration is a delta of time. You can add it to a BlockInfo or Expiration to move that further in the future. Note that an height-based Duration and a time-based Expiration cannot be combined",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "height"
-          ],
-          "properties": {
-            "height": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "description": "Time in seconds",
-          "type": "object",
-          "required": [
-            "time"
-          ],
-          "properties": {
-            "time": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
-    },
-    "MinterResponse": {
+    "MinterData": {
       "type": "object",
       "required": [
         "minter"
       ],
       "properties": {
         "cap": {
-          "description": "cap is a hard cap on total supply that can be achieved by minting. Note that this refers to total_supply. If None, there is unlimited cap.",
           "anyOf": [
             {
               "$ref": "#/definitions/Uint128"
@@ -121,29 +71,6 @@
         },
         "minter": {
           "type": "string"
-        }
-      }
-    },
-    "StakingOptions": {
-      "type": "object",
-      "required": [
-        "code_id"
-      ],
-      "properties": {
-        "code_id": {
-          "type": "integer",
-          "format": "uint64",
-          "minimum": 0.0
-        },
-        "duration": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Duration"
-            },
-            {
-              "type": "null"
-            }
-          ]
         }
       }
     },

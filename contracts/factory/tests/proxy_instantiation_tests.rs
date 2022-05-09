@@ -19,8 +19,6 @@ fn create_new_proxy() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![init_factory_fund.clone()],
         WALLET_FEE,
     );
@@ -87,8 +85,6 @@ fn cannot_create_new_proxy_without_payment() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -109,8 +105,6 @@ fn create_new_proxy_without_guardians() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         10,
     );
@@ -131,8 +125,6 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         10,
     );
@@ -166,8 +158,6 @@ fn user_can_execute_messages() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -224,8 +214,6 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -320,8 +308,6 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -372,8 +358,6 @@ fn query_all_wallets() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![init_factory_fund.clone()],
         wallet_fee,
     );

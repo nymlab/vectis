@@ -1,7 +1,12 @@
 import { assert } from "@cosmjs/utils";
 import { toBase64 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { deployFactoryContract, FACTORY_INITIAL_FUND } from "./util/contracts";
+import {
+    uploadContracts,
+    FACTORY_INITIAL_FUND,
+    instantiateFactoryContract,
+    instantiateGovecWithMinter,
+} from "./util/contracts";
 import { createSigningClient, mnemonicToKeyPair } from "./util/utils";
 import { Coin, FactoryClient, Addr } from "../types/FactoryContract";
 import { coin } from "@cosmjs/stargate";
@@ -20,6 +25,7 @@ import {
     userAddr,
     userMnemonic,
 } from "./util/env";
+import { defaultWalletCreationFee } from "./util/fee";
 
 /**
  * This suite tests Factory contract methods
@@ -28,7 +34,7 @@ describe("Factory Suite: ", () => {
     let adminClient: SigningCosmWasmClient;
     let client: CosmWasmClient;
     let proxyCodeId: number;
-    let stakingCodeId: number;
+    let multisigCodeId: number;
 
     let factoryClient: FactoryClient;
     let proxyWalletAddress: Addr;
@@ -37,11 +43,23 @@ describe("Factory Suite: ", () => {
         try {
             adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
             client = await CosmWasmClient.connect(rpcEndPoint!);
-            const { contractAddress, proxyRes, stakingRes } = await deployFactoryContract(adminClient);
+            const { factoryRes, proxyRes, multisigRes, govecRes } = await uploadContracts(adminClient);
             proxyCodeId = proxyRes.codeId;
-            stakingCodeId = stakingRes.codeId;
+            multisigCodeId = multisigRes.codeId;
 
-            factoryClient = new FactoryClient(adminClient, adminAddr!, contractAddress);
+            const { factoryAddr } = await instantiateFactoryContract(
+                adminClient,
+                factoryRes.codeId,
+                proxyCodeId,
+                multisigCodeId
+            );
+            factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
+
+            const { govecAddr } = await instantiateGovecWithMinter(adminClient, govecRes.codeId, factoryAddr);
+
+            await factoryClient.updateGovecAddr({ addr: govecAddr });
+            let govec = await factoryClient.govecAddr();
+            expect(govec).toEqual(govecAddr);
         } catch (err) {
             console.error("Failed to load scenario!", err);
         }
@@ -65,18 +83,10 @@ describe("Factory Suite: ", () => {
         expect(codeId).toEqual(proxyCodeId);
     });
 
-    it("Should create Governance and Staking contracts from Factory contract", async () => {
-        const res = await factoryClient.createGovernance({
-            stakingOptions: { duration: null, code_id: stakingCodeId },
-            initialBalances: [],
-        });
-        expect(res).toBeTruthy();
-        // TODO: Verify events
-    });
-
     it("Should create a new proxy wallet with multisig", async () => {
         const userKeypair = await mnemonicToKeyPair(userMnemonic!);
         const walletCreationFee = await factoryClient.fee();
+        const totalFee: Number = Number(walletCreationFee.amount) + Number(testWalletInitialFunds.amount);
 
         const newWalletRes = await factoryClient.createWallet(
             {
@@ -93,9 +103,9 @@ describe("Factory Suite: ", () => {
                     proxy_initial_funds: [testWalletInitialFunds as Coin],
                 },
             },
-            Number(walletCreationFee.amount),
+            defaultWalletCreationFee,
             undefined,
-            [coin(1100, coinMinDenom!) as Coin]
+            [coin(totalFee.toString(), coinMinDenom!) as Coin]
         );
 
         const wasmEvent = newWalletRes.logs[0].events.length;
