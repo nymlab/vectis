@@ -9,8 +9,8 @@ pub enum ContractError {
 
     #[error("Frozen")]
     Frozen {},
-    #[error("InvalidMessage")]
-    InvalidMessage {},
+    #[error("InvalidMessage: {msg}")]
+    InvalidMessage { msg: String },
     #[error("IsNotGuardian")]
     IsNotGuardian {},
     #[error("IsNotRelayer")]

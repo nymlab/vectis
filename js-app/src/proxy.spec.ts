@@ -11,7 +11,7 @@ import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createRelayTransaction, createSigningClient, getContract, mnemonicToKeyPair } from "./util/utils";
 import { uploadContracts, instantiateFactoryContract, instantiateGovecWithMinter } from "./util/contracts";
-import { Addr, BankMsg, Coin, ProxyClient } from "../types/ProxyContract";
+import { Addr, CosmosMsg_for_Empty as CosmosMsg, BankMsg, Coin, ProxyClient } from "../types/ProxyContract";
 import { FactoryClient } from "../types/FactoryContract";
 import { coin } from "@cosmjs/stargate";
 
@@ -173,10 +173,12 @@ describe("Proxy Suite: ", () => {
         const info = await relayerProxyClient.info();
 
         const sendAmount = coin(10_000, coinMinDenom!);
-        const sendMsg: BankMsg = {
-            send: {
-                to_address: adminAddr!,
-                amount: [sendAmount as Coin],
+        const sendMsg: CosmosMsg = {
+            bank: {
+                send: {
+                    to_address: adminAddr!,
+                    amount: [sendAmount as Coin],
+                },
             },
         };
 
@@ -228,7 +230,7 @@ describe("Proxy Suite: ", () => {
             transfer: { recipient: guardian1Addr!, amount: transferAmount },
         };
 
-        const wasmMsg = {
+        const cosmosWasmMsg: CosmosMsg = {
             wasm: {
                 execute: {
                     contract_addr: cw20contract.contractAddress,
@@ -238,7 +240,7 @@ describe("Proxy Suite: ", () => {
             },
         };
 
-        const relayTransaction = await createRelayTransaction(userMnemonic!, 1, JSON.stringify(wasmMsg));
+        const relayTransaction = await createRelayTransaction(userMnemonic!, 1, JSON.stringify(cosmosWasmMsg));
         await relayerProxyClient.relay(
             {
                 transaction: relayTransaction,
