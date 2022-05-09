@@ -413,7 +413,10 @@ fn relay_proxy_user_tx_invalid_msg_fails() {
 
     let response = execute_relay(deps.as_mut(), info, relay_transaction).unwrap_err();
 
-    assert_eq!(response, ContractError::InvalidMessage {});
+    match response {
+        ContractError::InvalidMessage { msg: _ } => {}
+        _ => panic!("Not correct response"),
+    }
 }
 
 #[test]
