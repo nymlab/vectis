@@ -2,7 +2,7 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Binary};
 use cw20::{AllAccountsResponse, BalanceResponse, TokenInfoResponse};
 use vectis_govec::{
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
@@ -22,6 +22,8 @@ fn main() {
     export_schema(&schema_for!(TokenInfoResponse), &out_dir);
     export_schema(&schema_for!(AllAccountsResponse), &out_dir);
     export_schema(&schema_for!(MinterData), &out_dir);
+    export_schema(&schema_for!(Binary), &out_dir);
+    export_schema_with_title(&schema_for!(MinterData), &out_dir, "MinterResponse");
     export_schema_with_title(&schema_for!(Addr), &out_dir, "StakingResponse");
     export_schema_with_title(&schema_for!(Addr), &out_dir, "DaoResponse");
 }

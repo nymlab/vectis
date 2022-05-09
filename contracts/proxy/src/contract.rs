@@ -380,7 +380,10 @@ pub fn execute_update_guardians(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> StdResult<Response> {
     if reply.id == MULTISIG_INSTANTIATE_ID {
-        let data = reply.result.into_result().map_err(StdError::generic_err)?;
+        let data = reply
+            .result
+            .into_result()
+            .map_err(|err| StdError::generic_err(format!("Reply from multisig: {}", err)))?;
         let first_instantiate_event = data
             .events
             .iter()

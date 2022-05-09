@@ -15,8 +15,6 @@ fn do_instantiate(
     mut deps: DepsMut,
     proxy_code_id: u64,
     proxy_multisig_code_id: u64,
-    govec_code_id: u64,
-    staking_code_id: u64,
     addr_prefix: &str,
     wallet_fee: Coin,
     govec: Option<String>,
@@ -25,8 +23,6 @@ fn do_instantiate(
     let instantiate_msg = InstantiateMsg {
         proxy_code_id,
         proxy_multisig_code_id,
-        govec_code_id,
-        staking_code_id,
         addr_prefix: addr_prefix.to_string(),
         wallet_fee,
         govec,
@@ -41,7 +37,7 @@ fn do_instantiate(
 fn initialise_with_no_wallets() {
     let mut deps = mock_dependencies();
 
-    do_instantiate(deps.as_mut(), 0, 1, 2, 3, "wasm", coin(1, "ucosm"), None);
+    do_instantiate(deps.as_mut(), 0, 1, "wasm", coin(1, "ucosm"), None);
 
     // no wallets to start
     let wallets: WalletListResponse = query_wallet_list(deps.as_ref(), None, None).unwrap();
@@ -57,8 +53,6 @@ fn admin_upgrade_code_id_works() {
         deps.as_mut(),
         initial_code_id,
         initial_code_id + 1,
-        initial_code_id + 2,
-        initial_code_id + 3,
         "wasm",
         coin(1, "ucosm"),
         None,
@@ -68,12 +62,7 @@ fn admin_upgrade_code_id_works() {
     let env = mock_env();
 
     // manual iter
-    let tys = vec![
-        CodeIdType::Proxy,
-        CodeIdType::Multisig,
-        CodeIdType::Govec,
-        CodeIdType::Staking,
-    ];
+    let tys = vec![CodeIdType::Proxy, CodeIdType::Multisig];
 
     for (i, t) in tys.iter().enumerate() {
         assert_eq!(
@@ -110,8 +99,6 @@ fn admin_update_fee_works() {
         deps.as_mut(),
         initial_code_id,
         initial_code_id,
-        initial_code_id,
-        initial_code_id,
         "wasm",
         fee.clone(),
         None,
@@ -142,8 +129,6 @@ fn admin_updates_addresses_work() {
     let initial_code_id = 1111;
     do_instantiate(
         deps.as_mut(),
-        initial_code_id,
-        initial_code_id,
         initial_code_id,
         initial_code_id,
         "wasm",
@@ -208,8 +193,6 @@ fn non_admin_update_code_id_fails() {
         deps.as_mut(),
         initial_code_id,
         initial_code_id + 1,
-        initial_code_id + 2,
-        initial_code_id + 3,
         "wasm",
         coin(1, "ucosm"),
         None,
@@ -240,8 +223,6 @@ fn non_admin_update_fees_fails() {
         deps.as_mut(),
         initial_code_id,
         initial_code_id + 1,
-        initial_code_id + 2,
-        initial_code_id + 3,
         "wasm",
         coin(1, "ucosm"),
         None,

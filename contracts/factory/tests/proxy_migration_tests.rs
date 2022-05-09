@@ -13,8 +13,6 @@ fn user_can_migrate_proxy_with_direct_message() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -98,8 +96,6 @@ fn relayer_can_migrate_proxy_with_user_signature() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -157,8 +153,6 @@ fn user_cannot_migrate_others_wallet() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -217,8 +211,6 @@ fn user_cannot_migrate_with_mismatched_code_id() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -278,8 +270,6 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -330,8 +320,6 @@ fn relayer_cannot_migrate_others_wallet() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -387,8 +375,6 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );
@@ -448,8 +434,6 @@ fn relayer_cannot_migrate_proxy_with_invalid_signature() {
     let factory = suite.instantiate_factory(
         suite.sc_proxy_id,
         suite.sc_proxy_multisig_code_id,
-        suite.govec_id,
-        suite.stake_id,
         vec![],
         WALLET_FEE,
     );

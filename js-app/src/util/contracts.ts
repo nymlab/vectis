@@ -4,6 +4,8 @@ import { SigningCosmWasmClient, UploadResult } from "@cosmjs/cosmwasm-stargate";
 import { getContract } from "./utils";
 import { defaultInstantiateFee, defaultUploadFee, walletFee } from "./fee";
 import { coin } from "@cosmjs/stargate";
+import { InstantiateMsg as FactoryInstantiateMsg } from "../../types/FactoryContract";
+import { InstantiateMsg as GovecInstantiateMsg } from "../../types/GovecContract";
 
 import {
     factoryCodePath,
@@ -29,12 +31,16 @@ export async function uploadContract(
 export const FACTORY_INITIAL_FUND = coin(10000000, coinMinDenom!);
 
 /**
- * Deploys Factory contract
+ * Uploads contracts needed for e2e tests
+ *  - factory
+ *  - proxy
+ *  - cw3 fixed mulitisig
+ *  - govec token contract
+ *  - dao-contracts: cw20 staking
  *
  * @param client Signing client
  */
-export async function deployFactoryContract(client: SigningCosmWasmClient): Promise<{
-    contractAddress: Addr;
+export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     factoryRes: UploadResult;
     proxyRes: UploadResult;
     multisigRes: UploadResult;
@@ -48,17 +54,33 @@ export async function deployFactoryContract(client: SigningCosmWasmClient): Prom
     const govecRes = await uploadContract(client, govecCodePath!);
     const stakingRes = await uploadContract(client, stakingCodePath!);
 
+    return {
+        factoryRes,
+        proxyRes,
+        multisigRes,
+        govecRes,
+        stakingRes,
+    };
+}
+
+export async function instantiateFactoryContract(
+    client: SigningCosmWasmClient,
+    factoryCodeId: number,
+    proxyCodeId: number,
+    multisigCodeId: number
+): Promise<{
+    factoryAddr: Addr;
+}> {
+    const instantiate: FactoryInstantiateMsg = {
+        proxy_code_id: proxyCodeId,
+        proxy_multisig_code_id: multisigCodeId,
+        addr_prefix: addrPrefix!,
+        wallet_fee: walletFee,
+    };
     const { contractAddress } = await client.instantiate(
         adminAddr!,
-        factoryRes.codeId,
-        {
-            proxy_code_id: proxyRes.codeId,
-            proxy_multisig_code_id: multisigRes.codeId,
-            govec_code_id: govecRes.codeId,
-            staking_code_id: stakingRes.codeId,
-            addr_prefix: addrPrefix!,
-            wallet_fee: walletFee,
-        },
+        factoryCodeId,
+        instantiate,
         "Wallet Factory",
         defaultInstantiateFee,
         {
@@ -67,11 +89,33 @@ export async function deployFactoryContract(client: SigningCosmWasmClient): Prom
     );
 
     return {
-        contractAddress,
-        factoryRes,
-        proxyRes,
-        multisigRes,
-        govecRes,
-        stakingRes,
+        factoryAddr: contractAddress,
+    };
+}
+
+export async function instantiateGovecWithMinter(
+    client: SigningCosmWasmClient,
+    govecCodeId: number,
+    minter: string,
+    minterCap?: string
+): Promise<{
+    govecAddr: Addr;
+}> {
+    const instantiate: GovecInstantiateMsg = {
+        name: "Govec",
+        symbol: "GOVEC",
+        initial_balances: [],
+        minter: { minter: minter, cap: minterCap },
+    };
+    const { contractAddress } = await client.instantiate(
+        adminAddr!,
+        govecCodeId,
+        instantiate,
+        "Govec",
+        defaultInstantiateFee
+    );
+
+    return {
+        govecAddr: contractAddress,
     };
 }

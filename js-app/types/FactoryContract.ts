@@ -6,8 +6,9 @@
 
 import { CosmWasmClient, ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
+export type AdminAddrResponse = string;
 export type CodeIdResponse = number;
-export type CodeIdType = "Proxy" | "Multisig" | "Govec" | "Staking";
+export type CodeIdType = "Proxy" | "Multisig";
 export type Uint128 = string;
 export type Binary = string;
 export interface CreateWalletMsg {
@@ -42,12 +43,12 @@ export interface FeeResponse {
     denom: string;
     [k: string]: unknown;
 }
+export type GovecAddrResponse = string;
 export interface InstantiateMsg {
     addr_prefix: string;
-    govec_code_id: number;
+    govec?: string | null;
     proxy_code_id: number;
     proxy_multisig_code_id: number;
-    staking_code_id: number;
     wallet_fee: Coin;
     [k: string]: unknown;
 }
@@ -129,6 +130,8 @@ export interface FactoryReadOnlyInterface {
     }) => Promise<WalletsOfResponse>;
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<CodeIdResponse>;
     fee: () => Promise<FeeResponse>;
+    govecAddr: () => Promise<GovecAddrResponse>;
+    adminAddr: () => Promise<AdminAddrResponse>;
 }
 export class FactoryQueryClient implements FactoryReadOnlyInterface {
     client: CosmWasmClient;
@@ -141,6 +144,8 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.walletsOf = this.walletsOf.bind(this);
         this.codeId = this.codeId.bind(this);
         this.fee = this.fee.bind(this);
+        this.govecAddr = this.govecAddr.bind(this);
+        this.adminAddr = this.adminAddr.bind(this);
     }
 
     wallets = async ({
@@ -184,6 +189,16 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
     fee = async (): Promise<FeeResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             fee: {},
+        });
+    };
+    govecAddr = async (): Promise<GovecAddrResponse> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            govec_addr: {},
+        });
+    };
+    adminAddr = async (): Promise<AdminAddrResponse> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            admin_addr: {},
         });
     };
 }
@@ -234,13 +249,21 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
         memo?: string,
         funds?: readonly Coin[]
     ) => Promise<ExecuteResult>;
-    createGovernance: (
+    updateGovecAddr: (
         {
-            initialBalances,
-            stakingOptions,
+            addr,
         }: {
-            initialBalances: Cw20Coin[];
-            stakingOptions?: StakingOptions;
+            addr: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ) => Promise<ExecuteResult>;
+    updateAdmin: (
+        {
+            addr,
+        }: {
+            addr: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -261,7 +284,8 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
         this.migrateWallet = this.migrateWallet.bind(this);
         this.updateCodeId = this.updateCodeId.bind(this);
         this.updateWalletFee = this.updateWalletFee.bind(this);
-        this.createGovernance = this.createGovernance.bind(this);
+        this.updateGovecAddr = this.updateGovecAddr.bind(this);
+        this.updateAdmin = this.updateAdmin.bind(this);
     }
 
     createWallet = async (
@@ -362,13 +386,11 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
             funds
         );
     };
-    createGovernance = async (
+    updateGovecAddr = async (
         {
-            initialBalances,
-            stakingOptions,
+            addr,
         }: {
-            initialBalances: Cw20Coin[];
-            stakingOptions?: StakingOptions;
+            addr: string;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -378,9 +400,31 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
             this.sender,
             this.contractAddress,
             {
-                create_governance: {
-                    initial_balances: initialBalances,
-                    staking_options: stakingOptions,
+                update_govec_addr: {
+                    addr,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateAdmin = async (
+        {
+            addr,
+        }: {
+            addr: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_admin: {
+                    addr,
                 },
             },
             fee,

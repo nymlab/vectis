@@ -15,21 +15,13 @@ export interface BalanceResponse {
     balance: Uint128;
     [k: string]: unknown;
 }
-export type DaoResponse = string;
 export type Binary = string;
-export type Duration =
-    | {
-          height: number;
-      }
-    | {
-          time: number;
-      };
+export type DaoResponse = string;
 export interface InstantiateMsg {
-    dao: Binary;
     initial_balances: Cw20Coin[];
-    mint?: MinterResponse | null;
+    minter?: MinterData | null;
     name: string;
-    staking?: StakingOptions | null;
+    staking_addr?: string | null;
     symbol: string;
     [k: string]: unknown;
 }
@@ -38,20 +30,14 @@ export interface Cw20Coin {
     amount: Uint128;
     [k: string]: unknown;
 }
-export interface MinterResponse {
+export interface MinterData {
     cap?: Uint128 | null;
     minter: string;
     [k: string]: unknown;
 }
-export interface StakingOptions {
-    code_id: number;
-    duration?: Duration | null;
-    [k: string]: unknown;
-}
-export type Addr = string;
-export interface MinterData {
+export interface MinterResponse {
     cap?: Uint128 | null;
-    minter: Addr;
+    minter: string;
     [k: string]: unknown;
 }
 export type StakingResponse = string;
