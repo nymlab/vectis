@@ -203,7 +203,9 @@ pub fn execute_relay(
                 .add_message(msg)
                 .add_attribute("action", "execute_relay"))
         } else {
-            Err(ContractError::InvalidMessage {})
+            Err(ContractError::InvalidMessage {
+                msg: msg.unwrap_err().to_string(),
+            })
         }
     } else {
         Err(ContractError::RelayTxError(
@@ -402,9 +404,12 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> StdResult<Response> {
             .add_attribute("multisig_address", str_addr);
         Ok(res)
     } else {
-        Err(StdError::GenericErr {
-            msg: ContractError::InvalidMessage {}.to_string(),
-        })
+        Err(StdError::generic_err(
+            ContractError::InvalidMessage {
+                msg: "invalid ID".to_string(),
+            }
+            .to_string(),
+        ))
     }
 }
 
