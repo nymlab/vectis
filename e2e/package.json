@@ -1,13 +1,12 @@
 {
-  "name": "js-app",
+  "name": "vectis-e2e",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MIT",
-  "description": "Testing application for smart contract wallet",
+  "description": "Testing application for Vectis",
   "scripts": {
     "generate-types": "./generate-types.sh",
     "test": "rm -rf build/ && npx tsc && npx ts-node node_modules/jasmine/bin/jasmine",
-    "prepare": "cd .. && ./js-app/node_modules/.bin/husky install js-app/.husky"
+    "prepare": "cd .. && ./e2e/node_modules/.bin/husky install e2e/.husky"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.28.4",
@@ -32,6 +31,6 @@
     "typescript": "^4.4.4"
   },
   "lint-staged": {
-    "*.{ts,tsx,css,md}": "./js-app/node_modules/.bin/prettier --write"
+    "*.{ts,tsx,css,md}": "./e2e/node_modules/.bin/prettier --write"
   }
 }

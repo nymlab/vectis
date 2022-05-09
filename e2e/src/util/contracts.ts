@@ -1,4 +1,4 @@
-import { Addr } from "./../../types/FactoryContract";
+import { Addr } from "../../types/FactoryContract";
 import { StdFee } from "@cosmjs/amino";
 import { SigningCosmWasmClient, UploadResult } from "@cosmjs/cosmwasm-stargate";
 import { getContract } from "./utils";

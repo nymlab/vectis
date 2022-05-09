@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-cd ./js-app
+cd ./e2e
 
 echo "👀 Checking and setting up requirements on your machine..."
 

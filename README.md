@@ -62,7 +62,7 @@ The script will check if you have both Docker and Rust installed. In case you ha
 
 ###### Option 2: Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
 
-**Note:** this requires you to do a setup script to seed the accounts use for js-app test specified in the `.env.juno.local`
+**Note:** this requires you to do a setup script to seed the accounts use for e2e test specified in the `.env.juno.local`
 
 ##### For Wasmd
 
@@ -98,14 +98,14 @@ RUSTFLAGS='-C link-arg=-s' cargo wasm-proxy
 
 We are using [cosmJS](https://github.com/cosmos/cosmjs) to test the smart contracts with the local node.
 The testing framework used is [Jasmine](https://jasmine.github.io/)
-The JS app is in the `js-app` directory.
+The E2E tests are in the `e2e` directory.
 
 Please ensure you have set up the `.env.juno.local` or `.env.dev` file according to the `example.env`.
 
 > Note: _The tests include storing and instantiating the contracts_
 
 ```sh
-cd js-app
+cd e2e
 npm i           # Install all dependencies
 export NODE_ENV=juno-local && npm test        # Run tests for juno local or use "dev"
 ```

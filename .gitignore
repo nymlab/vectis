@@ -20,6 +20,6 @@
 # testnet
 **.testnet
 
-## js-app builds
+## e2e builds
 **/node_modules/
 **/build/
