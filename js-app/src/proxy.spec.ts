@@ -13,6 +13,7 @@ import { createRelayTransaction, createSigningClient, getContract, mnemonicToKey
 import { uploadContracts, instantiateFactoryContract, instantiateGovec } from "./util/contracts";
 import { Addr, CosmosMsg_for_Empty as CosmosMsg, BankMsg, Coin, ProxyClient } from "../types/ProxyContract";
 import { FactoryClient } from "../types/FactoryContract";
+import { GovecClient } from "../types/GovecContract";
 import { coin } from "@cosmjs/stargate";
 
 import {
@@ -89,6 +90,9 @@ describe("Proxy Suite: ", () => {
             );
             factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
             const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
+            const govecClient = new GovecClient(adminClient, adminAddr!, govecAddr);
+            const minter = await govecClient.minter();
+            expect(minter.minter).toEqual(factoryAddr);
 
             await factoryClient.updateGovecAddr({ addr: govecAddr });
 
@@ -119,7 +123,7 @@ describe("Proxy Suite: ", () => {
         expect(info.relayers).toContain(relayer2Addr!);
         expect(info.relayers).toContain(relayer1Addr!);
         expect(info.is_frozen).toEqual(false);
-        expect(info.multisig_address).toBeTruthy();
+        expect(info.multisig_address).toBeDefined();
         expect(info.nonce).toEqual(0);
     });
 
