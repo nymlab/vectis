@@ -31,5 +31,7 @@ export const proxyCodePath = process.env.PROXY_CODE_PATH;
 export const daoCodePath = process.env.DAO_CODE_PATH;
 export const stakingCodePath = process.env.STAKING_CODE_PATH;
 export const govecCodePath = process.env.GOVEC_CODE_PATH;
+export const voteCodePath = process.env.VOTE_CODE_PATH;
+export const proposalSingleCodePath = process.env.PROP_CODE_PATH;
 
 export const testWalletInitialFunds = coin(5_000_000, coinMinDenom!);

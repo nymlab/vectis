@@ -220,7 +220,7 @@ pub fn execute_mint(
     Ok(res)
 }
 
-/// Send can only be to the staking contract
+/// Send can be used for the staking contract and other contracts in the future
 /// For delegation, use transfer instead where only wallets are in the whitelist
 pub fn execute_send(
     deps: DepsMut,
