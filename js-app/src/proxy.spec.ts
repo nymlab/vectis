@@ -88,11 +88,13 @@ describe("Proxy Suite: ", () => {
                 proxyRes.codeId,
                 multisigRes.codeId
             );
+
             factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
             const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
             const govecClient = new GovecClient(adminClient, adminAddr!, govecAddr);
-            const minter = await govecClient.minter();
-            expect(minter.minter).toEqual(factoryAddr);
+
+            const { minter } = await govecClient.minter();
+            expect(minter).toEqual(factoryAddr);
 
             await factoryClient.updateGovecAddr({ addr: govecAddr });
 
@@ -110,12 +112,12 @@ describe("Proxy Suite: ", () => {
     });
 
     beforeEach(() => {
-        assert(userClient);
-        assert(adminClient);
-        assert(client);
-        assert(proxyWalletAddress);
-        assert(factoryClient);
-        assert(proxyClient);
+        assert(userClient, "userClient is not defined");
+        assert(adminClient, "adminClient is not defined");
+        assert(client, "client is not defined");
+        assert(proxyWalletAddress, "proxyWalletAddress is not defined");
+        assert(factoryClient, "factoryClient is not defined");
+        assert(proxyClient, "proxyClient is not defined");
     });
 
     it("Should get correct info from proxy wallet", async () => {
