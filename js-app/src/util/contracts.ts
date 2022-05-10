@@ -14,6 +14,9 @@ import {
     fixMultiSigCodePath,
     govecCodePath,
     stakingCodePath,
+    daoCodePath,
+    voteCodePath,
+    proposalSingleCodePath,
     coinMinDenom,
     addrPrefix,
 } from "./env";
@@ -36,7 +39,12 @@ export const FACTORY_INITIAL_FUND = coin(10000000, coinMinDenom!);
  *  - proxy
  *  - cw3 fixed mulitisig
  *  - govec token contract
- *  - dao-contracts: cw20 staking
+ *  - dao-contracts: stake_cw20
+ *  - dao-contracts: cw20_staked_balance_voting
+ *  - dao-contracts: core
+ *  - dao-contracts: proposal-single
+ *
+ *  Current version of DAO contracts: 6831b7f706b16989b3cfac00cab1c2545d1b524 (on mainnet)
  *
  * @param client Signing client
  */
@@ -46,6 +54,9 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     multisigRes: UploadResult;
     govecRes: UploadResult;
     stakingRes: UploadResult;
+    daoRes: UploadResult;
+    voteRes: UploadResult;
+    proposalSingleRes: UploadResult;
 }> {
     // Upload required contracts
     const factoryRes = await uploadContract(client, factoryCodePath!);
@@ -53,6 +64,12 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     const multisigRes = await uploadContract(client, fixMultiSigCodePath!);
     const govecRes = await uploadContract(client, govecCodePath!);
     const stakingRes = await uploadContract(client, stakingCodePath!);
+    const daoRes = await uploadContract(client, daoCodePath!);
+    const voteRes = await uploadContract(client, voteCodePath!);
+    const proposalSingleRes = await uploadContract(client, proposalSingleCodePath!);
+    // const voteRes = await uploadContract(client, voteCodePath!);
+    // const proposalSingleRes = await uploadContract(client, proposalSingleCodePath!);
+    // console.log(factoryRes, proxyRes, multisigRes, govecRes, stakingRes, daoRes, voteRes, proposalSingleRes);
 
     return {
         factoryRes,
@@ -60,6 +77,9 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
         multisigRes,
         govecRes,
         stakingRes,
+        daoRes,
+        voteRes,
+        proposalSingleRes,
     };
 }
 
@@ -93,19 +113,20 @@ export async function instantiateFactoryContract(
     };
 }
 
-export async function instantiateGovecWithMinter(
+export async function instantiateGovec(
     client: SigningCosmWasmClient,
     govecCodeId: number,
-    minter: string,
+    minter?: string,
     minterCap?: string
 ): Promise<{
     govecAddr: Addr;
 }> {
+    const m = minter ? { minter: minter!, cap: minterCap } : null;
     const instantiate: GovecInstantiateMsg = {
         name: "Govec",
         symbol: "GOVEC",
         initial_balances: [],
-        minter: { minter: minter, cap: minterCap },
+        minter: m,
     };
     const { contractAddress } = await client.instantiate(
         adminAddr!,
