@@ -104,8 +104,6 @@ describe("Proxy Suite: ", () => {
             proxyWalletAddress = await createTestProxyWallet();
 
             proxyClient = new ProxyClient(userClient, userAddr!, proxyWalletAddress);
-            const info = await proxyClient.info();
-            expect(info.nonce).toEqual(0);
         } catch (err) {
             console.error("Failed to load scenario!", err);
         }
@@ -128,6 +126,7 @@ describe("Proxy Suite: ", () => {
         expect(info.relayers).toContain(relayer1Addr!);
         expect(info.is_frozen).toEqual(false);
         expect(info.multisig_address).toBeDefined();
+        expect(info.nonce).toEqual(0);
     });
 
     it("User can use wallet to send funds", async () => {
