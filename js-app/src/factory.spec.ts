@@ -61,9 +61,9 @@ describe("Factory Suite: ", () => {
     });
 
     beforeEach(() => {
-        assert(adminClient);
-        assert(client);
-        assert(factoryClient);
+        assert(adminClient, "adminClient is not defined");
+        assert(client, "client is not defined");
+        assert(factoryClient, "factooryClient is not defined");
     });
 
     it("Should have correct funds in Factory contract", async () => {
