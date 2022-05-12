@@ -1,8 +1,7 @@
-import { sha256 } from "@cosmjs/crypto";
-import { toBase64, toUtf8, toHex } from "@cosmjs/encoding";
-import { SigningCosmWasmClient, toBinary } from "@cosmjs/cosmwasm-stargate";
+import { toBase64, toUtf8 } from "@cosmjs/encoding";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { uploadContracts } from "./util/contracts";
-import { createSigningClient, getContract } from "./util/utils";
+import { createSigningClient } from "./util/utils";
 import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "./util/fee";
 import { GovecClient } from "../types/GovecContract";
 import {
@@ -15,18 +14,10 @@ import {
     ExecuteMsg as CwPropSingleExeucteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
-import {
-    InstantiateMsg as DaoCoreInstantiateMsg,
-    ModuleInstantiateInfo,
-    InitialItemInfo,
-    QueryMsg as DaoQueryMsg,
-} from "@dao-dao/types/contracts/cw-core";
+import { QueryMsg as DaoQueryMsg } from "@dao-dao/types/contracts/cw-core";
 import { QueryMsg as StakeQuery } from "@dao-dao/types/contracts/stake-cw20";
-import { Cw20ReceiveMsg } from "@dao-dao/types/contracts/stake-cw20";
 import { InstantiateMsg as FactoryInstantiateMsg } from "../types/FactoryContract";
-
 import { adminAddr, addrPrefix, adminMnemonic } from "./util/env";
-
 import { instantiateGovec } from "./util/contracts";
 import { CosmosMsg_for_Empty } from "types/ProxyContract";
 
@@ -186,7 +177,7 @@ describe("DAO Suite: ", () => {
         expect(stakingPower.balance).toBe("1");
     });
 
-    it("Should admin proposal to deploy factory contract", async () => {
+    it("Should propose to deploy Factory contract as admin", async () => {
         const factorInstMsg: FactoryInstantiateMsg = {
             proxy_code_id: proxyCodeId,
             proxy_multisig_code_id: multisigCodeId,
@@ -224,7 +215,7 @@ describe("DAO Suite: ", () => {
         expect(props.proposals[0].proposal.title).toBe(proposalTitle);
     });
 
-    it("Should admin should vote and execute factory deployment", async () => {
+    it("Should vote and execute Factory contract deployment as admin", async () => {
         const vote: CwPropSingleExeucteMsg = {
             vote: {
                 proposal_id: proposalId,
