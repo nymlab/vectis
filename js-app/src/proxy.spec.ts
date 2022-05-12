@@ -37,7 +37,7 @@ import {
 /**
  * This suite tests Proxy contract methods
  */
-fdescribe("Proxy Suite: ", () => {
+describe("Proxy Suite: ", () => {
     let userClient: SigningCosmWasmClient;
     let guardianClient: SigningCosmWasmClient;
     let adminClient: SigningCosmWasmClient;
@@ -60,10 +60,10 @@ fdescribe("Proxy Suite: ", () => {
                     user_pubkey: toBase64(userKeypair.pubkey),
                     guardians: {
                         addresses: [guardian1Addr!, guardian2Addr!],
-                        guardians_multisig: {
-                            threshold_absolute_count: 1,
-                            multisig_initial_funds: [],
-                        },
+                        // guardians_multisig: {
+                        //     threshold_absolute_count: 1,
+                        //     multisig_initial_funds: [],
+                        // },
                     },
                     relayers: [relayer1Addr!, relayer2Addr!],
                     proxy_initial_funds: [testWalletInitialFunds as Coin],
@@ -129,7 +129,7 @@ fdescribe("Proxy Suite: ", () => {
         expect(info.relayers).toContain(relayer2Addr!);
         expect(info.relayers).toContain(relayer1Addr!);
         expect(info.is_frozen).toEqual(false);
-        expect(info.multisig_address).toBeDefined();
+        expect(info.multisig_address).toBeFalsy();
         expect(info.nonce).toEqual(0);
     });
 
@@ -176,11 +176,19 @@ fdescribe("Proxy Suite: ", () => {
         expect(walletDiff).toEqual(-Number(sendAmount.amount));
     });
 
-    it("Should be able to freeze wallet as guardian", async () => {
+    it("Should be able to freeze and unfreeze wallet as guardian", async () => {
         assert(guardianProxyClient, "guardianProxyClient is not defined");
+        let is_frozen: boolean = false;
+
+        // Freeze
         await guardianProxyClient.revertFreezeStatus();
-        const { frozen } = await proxyClient.info();
-        expect(frozen).toBeTrue();
+        is_frozen = (await proxyClient.info()).is_frozen;
+        expect(is_frozen).toBeTrue();
+
+        // Unfreeze
+        await guardianProxyClient.revertFreezeStatus();
+        is_frozen = (await proxyClient.info()).is_frozen;
+        expect(is_frozen).toBeFalse();
     });
 
     it("Should relay bank message as a relayer", async () => {
