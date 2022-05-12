@@ -107,6 +107,7 @@ export async function instantiateFactoryContract(
             funds: [FACTORY_INITIAL_FUND],
         }
     );
+    console.log("Factory contract was deployed at the following address:", contractAddress);
 
     return {
         factoryAddr: contractAddress,

@@ -23,6 +23,7 @@ import {
     coinMinDenom,
     cw20CodePath,
     guardian1Addr,
+    guardian1Mnemonic,
     guardian2Addr,
     relayer1Addr,
     relayer1Mnemonic,
@@ -36,17 +37,19 @@ import {
 /**
  * This suite tests Proxy contract methods
  */
-describe("Proxy Suite: ", () => {
+fdescribe("Proxy Suite: ", () => {
     let userClient: SigningCosmWasmClient;
+    let guardianClient: SigningCosmWasmClient;
     let adminClient: SigningCosmWasmClient;
     let client: CosmWasmClient;
     let proxyWalletAddress: Addr;
 
     let factoryClient: FactoryClient;
     let proxyClient: ProxyClient;
+    let guardianProxyClient: ProxyClient;
 
     async function createTestProxyWallet(): Promise<Addr> {
-        assert(factoryClient);
+        assert(factoryClient, "factoryClient is not defined");
         const userKeypair = await mnemonicToKeyPair(userMnemonic!);
         const walletCreationFee = await factoryClient.fee();
         const totalFee: Number = Number(walletCreationFee.amount) + Number(testWalletInitialFunds.amount);
@@ -57,7 +60,6 @@ describe("Proxy Suite: ", () => {
                     user_pubkey: toBase64(userKeypair.pubkey),
                     guardians: {
                         addresses: [guardian1Addr!, guardian2Addr!],
-                        // guardians_multisig: null,
                         guardians_multisig: {
                             threshold_absolute_count: 1,
                             multisig_initial_funds: [],
@@ -80,6 +82,7 @@ describe("Proxy Suite: ", () => {
         try {
             userClient = await createSigningClient(userMnemonic!, addrPrefix!);
             adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
+            guardianClient = await createSigningClient(guardian1Mnemonic!, addrPrefix!);
             client = await CosmWasmClient.connect(rpcEndPoint!);
             const { factoryRes, proxyRes, multisigRes, govecRes } = await uploadContracts(adminClient);
             const { factoryAddr } = await instantiateFactoryContract(
@@ -104,6 +107,7 @@ describe("Proxy Suite: ", () => {
             proxyWalletAddress = await createTestProxyWallet();
 
             proxyClient = new ProxyClient(userClient, userAddr!, proxyWalletAddress);
+            guardianProxyClient = new ProxyClient(guardianClient, guardian1Addr!, proxyWalletAddress);
         } catch (err) {
             console.error("Failed to load scenario!", err);
         }
@@ -129,7 +133,7 @@ describe("Proxy Suite: ", () => {
         expect(info.nonce).toEqual(0);
     });
 
-    it("User can use wallet to send funds", async () => {
+    it("Should be able to use wallet to send funds as user", async () => {
         const sendAmount = coin(2, coinMinDenom!);
         const sendMsg: BankMsg = {
             send: {
@@ -157,7 +161,7 @@ describe("Proxy Suite: ", () => {
         expect(adminDiff).toEqual(-Number(sendAmount.amount));
     });
 
-    it("User can send funds to wallet", async () => {
+    it("Should be able to send funds to wallet as user", async () => {
         const sendAmount = coin(10_000, coinMinDenom!);
         const userBalanceBefore = await client.getBalance(userAddr!, coinMinDenom!);
         const walletBalanceBefore = await client.getBalance(proxyWalletAddress, coinMinDenom!);
@@ -168,9 +172,15 @@ describe("Proxy Suite: ", () => {
         const userDiff = Number(userBalanceBefore.amount) - Number(userBalanceAfter.amount);
         const walletDiff = Number(walletBalanceBefore.amount) - Number(walletBalanceAfter.amount);
 
-        // Gas price
         expect(userDiff).toBeGreaterThanOrEqual(Number(sendAmount.amount));
         expect(walletDiff).toEqual(-Number(sendAmount.amount));
+    });
+
+    it("Should be able to freeze wallet as guardian", async () => {
+        assert(guardianProxyClient, "guardianProxyClient is not defined");
+        await guardianProxyClient.revertFreezeStatus();
+        const { frozen } = await proxyClient.info();
+        expect(frozen).toBeTrue();
     });
 
     it("Should relay bank message as a relayer", async () => {
@@ -263,7 +273,9 @@ describe("Proxy Suite: ", () => {
     });
 
     afterAll(() => {
+        adminClient?.disconnect();
         userClient?.disconnect();
+        guardianClient?.disconnect();
         client?.disconnect();
     });
 });
