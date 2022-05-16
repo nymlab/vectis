@@ -37,7 +37,7 @@ import {
 /**
  * This suite tests Proxy contract methods
  */
-fdescribe("Proxy Suite: ", () => {
+describe("Proxy Suite: ", () => {
     let userClient: SigningCosmWasmClient;
     let guardianClient: SigningCosmWasmClient;
     let adminClient: SigningCosmWasmClient;
