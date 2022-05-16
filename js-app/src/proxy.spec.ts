@@ -37,7 +37,7 @@ import {
 /**
  * This suite tests Proxy contract methods
  */
-describe("Proxy Suite: ", () => {
+fdescribe("Proxy Suite: ", () => {
     let userClient: SigningCosmWasmClient;
     let guardianClient: SigningCosmWasmClient;
     let adminClient: SigningCosmWasmClient;
@@ -189,6 +189,86 @@ describe("Proxy Suite: ", () => {
         await guardianProxyClient.revertFreezeStatus();
         is_frozen = (await proxyClient.info()).is_frozen;
         expect(is_frozen).toBeFalse();
+    });
+
+    it("Shouldn't be able to perform operations if a wallet is frozen", async () => {
+        assert(guardianProxyClient, "guardianProxyClient is not defined");
+
+        // Freeze
+        await guardianProxyClient.revertFreezeStatus();
+
+        // Try to send a bank message
+        try {
+            const sendMsg: BankMsg = {
+                send: {
+                    to_address: adminAddr!,
+                    amount: [coin(2, coinMinDenom!) as Coin],
+                },
+            };
+            await proxyClient.execute({
+                msgs: [
+                    {
+                        bank: sendMsg,
+                    },
+                ],
+            });
+
+            // Force test failure, function didn't throw :/
+            expect(false).toBeTrue();
+        } catch (err) {
+            const error: Error = err as any;
+            expect(error).toBeTruthy();
+            expect(error.message).toContain("Frozen");
+        }
+
+        // Unfreeze
+        await guardianProxyClient.revertFreezeStatus();
+    });
+
+    it("Should rotate user key as guardian", async () => {
+        assert(guardianProxyClient, "guardianProxyClient is not defined");
+
+        // New owner is admin
+        await guardianProxyClient.rotateUserKey({
+            newUserAddress: adminAddr!,
+        });
+
+        // User (old wallet owner) shouldn't have the wallet anymore
+        const { wallets: userWallets } = await factoryClient.walletsOf({ user: userAddr! });
+        expect(userWallets).not.toContain(proxyWalletAddress);
+
+        // Admin (admin wallet owner) should have the wallet
+        const { wallets: adminWallets } = await factoryClient.walletsOf({ user: userAddr! });
+        expect(adminWallets).toContain(proxyWalletAddress);
+
+        // Shouldn't be able to perform operations as user since it's not his wallet anymore
+        try {
+            const sendMsg: BankMsg = {
+                send: {
+                    to_address: adminAddr!,
+                    amount: [coin(2, coinMinDenom!) as Coin],
+                },
+            };
+            await proxyClient.execute({
+                msgs: [
+                    {
+                        bank: sendMsg,
+                    },
+                ],
+            });
+
+            // Force test failure, function didn't throw :/
+            expect(false).toBeTrue();
+        } catch (err) {
+            const error: Error = err as any;
+            expect(err).toBeTruthy();
+            expect(error.message).toContain("IsNotUser");
+        }
+
+        // Return wallet to the user
+        await guardianProxyClient.rotateUserKey({
+            newUserAddress: userAddr!,
+        });
     });
 
     it("Should relay bank message as a relayer", async () => {
