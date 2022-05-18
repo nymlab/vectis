@@ -15,6 +15,7 @@ import { Addr, CosmosMsg_for_Empty as CosmosMsg, BankMsg, Coin, ProxyClient } fr
 import { FactoryClient } from "../types/FactoryContract";
 import { GovecClient } from "../types/GovecContract";
 import { coin } from "@cosmjs/stargate";
+import { CwPropSingleExecuteMsg, QueryMsg as ProposalQueryMsg } from "@dao-dao/types/contracts/cw-proposal-single";
 
 import {
     addrPrefix,
@@ -25,6 +26,7 @@ import {
     guardian1Addr,
     guardian1Mnemonic,
     guardian2Addr,
+    guardian2Mnemonic,
     relayer1Addr,
     relayer1Mnemonic,
     relayer2Addr,
@@ -43,12 +45,13 @@ describe("Proxy Suite: ", () => {
     let adminClient: SigningCosmWasmClient;
     let client: CosmWasmClient;
     let proxyWalletAddress: Addr;
+    let proxyWalletMultisigAddress: Addr;
 
     let factoryClient: FactoryClient;
     let proxyClient: ProxyClient;
     let guardianProxyClient: ProxyClient;
 
-    async function createTestProxyWallet(): Promise<Addr> {
+    async function createTestProxyWallets(): Promise<Addr[]> {
         assert(factoryClient, "factoryClient is not defined");
         const userKeypair = await mnemonicToKeyPair(userMnemonic!);
         const walletCreationFee = await factoryClient.fee();
@@ -60,10 +63,27 @@ describe("Proxy Suite: ", () => {
                     user_pubkey: toBase64(userKeypair.pubkey),
                     guardians: {
                         addresses: [guardian1Addr!, guardian2Addr!],
-                        // guardians_multisig: {
-                        //     threshold_absolute_count: 1,
-                        //     multisig_initial_funds: [],
-                        // },
+                    },
+                    relayers: [relayer1Addr!, relayer2Addr!],
+                    proxy_initial_funds: [testWalletInitialFunds as Coin],
+                },
+            },
+            defaultWalletCreationFee,
+            undefined,
+            [coin(totalFee.toString(), coinMinDenom!) as Coin]
+        );
+        const [walletAddress] = (await factoryClient.walletsOf({ user: userAddr! })).wallets;
+
+        await factoryClient.createWallet(
+            {
+                createWalletMsg: {
+                    user_pubkey: toBase64(userKeypair.pubkey),
+                    guardians: {
+                        addresses: [guardian1Addr!, guardian2Addr!],
+                        guardians_multisig: {
+                            threshold_absolute_count: 2,
+                            multisig_initial_funds: [],
+                        },
                     },
                     relayers: [relayer1Addr!, relayer2Addr!],
                     proxy_initial_funds: [testWalletInitialFunds as Coin],
@@ -74,8 +94,10 @@ describe("Proxy Suite: ", () => {
             [coin(totalFee.toString(), coinMinDenom!) as Coin]
         );
 
-        const { wallets } = await factoryClient.walletsOf({ user: userAddr! });
-        return wallets[0];
+        const walletMSAddress = (await factoryClient.walletsOf({ user: userAddr! })).wallets.find(
+            (w) => w !== walletAddress
+        );
+        return [walletAddress, walletMSAddress!];
     }
 
     beforeAll(async () => {
@@ -104,7 +126,9 @@ describe("Proxy Suite: ", () => {
             let govec = await factoryClient.govecAddr();
             expect(govec).toEqual(govecAddr);
 
-            proxyWalletAddress = await createTestProxyWallet();
+            const [walletAddr, walletMSAddr] = await createTestProxyWallets();
+            proxyWalletAddress = walletAddr;
+            proxyWalletMultisigAddress = walletMSAddr;
 
             proxyClient = new ProxyClient(userClient, userAddr!, proxyWalletAddress);
             guardianProxyClient = new ProxyClient(guardianClient, guardian1Addr!, proxyWalletAddress);
@@ -269,6 +293,79 @@ describe("Proxy Suite: ", () => {
         await guardianProxyClient.rotateUserKey({
             newUserAddress: userAddr!,
         });
+    });
+
+    it("Should be able to freeze and unfreeze multisig wallet", async () => {
+        const clientG1 = await createSigningClient(guardian1Mnemonic!, addrPrefix!);
+        const clientG2 = await createSigningClient(guardian2Mnemonic!, addrPrefix!);
+
+        try {
+            const msProxyClient = new ProxyClient(userClient, userAddr!, proxyWalletMultisigAddress);
+            const { multisig_address } = await msProxyClient.info();
+
+            // Propose freezing of multisig wallet
+            const revertFreezeStatusMsg: CosmosMsg = {
+                wasm: {
+                    execute: {
+                        contract_addr: multisig_address!,
+                        msg: toBase64(
+                            toUtf8(
+                                JSON.stringify({
+                                    execute: {
+                                        revert_freeze_status: {},
+                                    },
+                                })
+                            )
+                        ),
+                        funds: [],
+                    },
+                },
+            };
+            const proposal: CwPropSingleExecuteMsg = {
+                propose: {
+                    title: "Revert freeze status",
+                    description: "Need to revert freeze status",
+                    msgs: [revertFreezeStatusMsg],
+                    latest: null,
+                },
+            };
+            await clientG1.execute(guardian1Addr!, multisig_address!, proposal, defaultExecuteFee);
+
+            // Should have proposal in the list
+            const queryProps: ProposalQueryMsg = { list_proposals: {} };
+            const { proposals } = await clientG1.queryContractSmart(multisig_address!, queryProps);
+            const [freezeProp] = proposals;
+            expect(freezeProp).toBeTruthy();
+            expect(freezeProp.title).toBe(proposal.propose.title);
+            const freezePropId = freezeProp.id;
+
+            // At this point, since Guardian1 proposed, his vote is already YES
+            // Now Guardian2 votes YES
+            const voteYes: CwPropSingleExecuteMsg = {
+                vote: {
+                    proposal_id: freezePropId,
+                    vote: "yes",
+                },
+            };
+            await clientG2.execute(guardian2Addr!, multisig_address!, voteYes, defaultExecuteFee);
+
+            // Since threshold is 2, freezing should be approved and executed
+            const executeFreeze: CwPropSingleExecuteMsg = {
+                execute: {
+                    proposal_id: freezePropId,
+                },
+            };
+            await clientG2.execute(guardian2Addr!, multisig_address!, executeFreeze, defaultExecuteFee);
+
+            // At this point, the wallet should be frozen
+            const { is_frozen } = await proxyClient.info();
+            expect(is_frozen).toBeTrue();
+        } catch (err) {
+            throw err;
+        } finally {
+            clientG1.disconnect();
+            clientG2.disconnect();
+        }
     });
 
     it("Should relay bank message as a relayer", async () => {
