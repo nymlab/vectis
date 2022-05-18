@@ -11,7 +11,7 @@ import {
 } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
 import {
     InstantiateMsg as CwPropSingleInstantiateMsg,
-    ExecuteMsg as CwPropSingleExeucteMsg,
+    CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
 import { QueryMsg as DaoQueryMsg } from "@dao-dao/types/contracts/cw-core";
@@ -198,7 +198,7 @@ describe("DAO Suite: ", () => {
         };
 
         const proposalTitle = "Deploy Vectis Factory";
-        const proposal: CwPropSingleExeucteMsg = {
+        const proposal: CwPropSingleExecuteMsg = {
             propose: {
                 description: "Deploy Vectis Factory",
                 latest: null,
@@ -216,7 +216,7 @@ describe("DAO Suite: ", () => {
     });
 
     it("Should vote and execute Factory contract deployment as admin", async () => {
-        const vote: CwPropSingleExeucteMsg = {
+        const vote: CwPropSingleExecuteMsg = {
             vote: {
                 proposal_id: proposalId,
                 vote: "yes",
@@ -224,7 +224,7 @@ describe("DAO Suite: ", () => {
         };
         await adminClient.execute(adminAddr!, propAddrs[0], vote, defaultExecuteFee);
 
-        const execute: CwPropSingleExeucteMsg = {
+        const execute: CwPropSingleExecuteMsg = {
             execute: {
                 proposal_id: proposalId,
             },
