@@ -11,7 +11,7 @@ import {
 } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
 import {
     InstantiateMsg as CwPropSingleInstantiateMsg,
-    CwPropSingleExecuteMsg,
+    ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
 import { QueryMsg as DaoQueryMsg } from "@dao-dao/types/contracts/cw-core";

@@ -15,7 +15,10 @@ import { Addr, CosmosMsg_for_Empty as CosmosMsg, BankMsg, Coin, ProxyClient } fr
 import { FactoryClient } from "../types/FactoryContract";
 import { GovecClient } from "../types/GovecContract";
 import { coin } from "@cosmjs/stargate";
-import { CwPropSingleExecuteMsg, QueryMsg as ProposalQueryMsg } from "@dao-dao/types/contracts/cw-proposal-single";
+import {
+    ExecuteMsg as CwPropSingleExecuteMsg,
+    QueryMsg as ProposalQueryMsg,
+} from "@dao-dao/types/contracts/cw-proposal-single";
 
 import {
     addrPrefix,
