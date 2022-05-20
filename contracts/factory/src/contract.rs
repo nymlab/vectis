@@ -154,7 +154,7 @@ fn update_proxy_user(
     old_user: Addr,
 ) -> Result<Response, ContractError> {
     let old_owner = deps.api.addr_canonicalize(old_user.as_ref())?;
-    let proxy = deps.api.addr_canonicalize(&info.sender.as_ref())?;
+    let proxy = deps.api.addr_canonicalize(info.sender.as_str())?;
     ensure_is_wallet(deps.as_ref(), &old_owner, &proxy)?;
 
     let proxy_storage_key = proxy.to_vec();

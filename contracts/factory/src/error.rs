@@ -34,6 +34,8 @@ pub enum ContractError {
     InvalidNativeFund(Uint128, Uint128),
     #[error("GovecNotSet")]
     GovecNotSet {},
+    #[error("Not Wallet: (old owner, wallet addr) ({0}, {1})")]
+    NotWallet(Addr, Addr),
 }
 
 impl From<MigrationMsgError> for ContractError {

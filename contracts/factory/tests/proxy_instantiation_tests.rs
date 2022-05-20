@@ -3,7 +3,7 @@ use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, WasmM
 use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
 use cw_multi_test::Executor;
-use vectis_factory::ContractError;
+use vectis_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{MultiSig, WalletInfo, WalletQueryPrefix};
 
@@ -179,6 +179,41 @@ fn user_rotate_keys_updates_factory() {
     assert_eq!(new_user_wallet_addr, wallet_address);
 }
 
+#[test]
+fn non_wallet_cannot_update_factory() {
+    let mut suite = Suite::init().unwrap();
+    let factory = suite.instantiate_factory(
+        suite.sc_proxy_id,
+        suite.sc_proxy_multisig_code_id,
+        vec![],
+        10,
+    );
+
+    let rsp = suite.create_new_proxy_without_guardians(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        WALLET_FEE,
+    );
+    assert!(rsp.is_ok());
+
+    let new_address = "new_key";
+    let err = suite
+        .app
+        .execute_contract(
+            Addr::unchecked(USER_ADDR),
+            factory,
+            &FactoryExecuteMsg::UpdateProxyUser {
+                new_user: Addr::unchecked(new_address.to_string()),
+                old_user: Addr::unchecked(USER_ADDR),
+            },
+            &[],
+        )
+        .unwrap_err();
+
+    println!("err {:?}", err);
+}
 #[test]
 fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let mut suite = Suite::init().unwrap();
