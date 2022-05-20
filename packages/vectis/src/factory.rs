@@ -1,6 +1,6 @@
-use crate::wallet::RelayTransaction;
+use crate::wallet::{RelayTransaction, WalletAddr};
 use crate::MigrationMsgError;
-use cosmwasm_std::{Binary, Coin};
+use cosmwasm_std::{Addr, Binary, Coin};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -73,6 +73,35 @@ pub struct WalletQueryPrefix {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub enum WalletFactoryExecuteMsg {
+    CreateWallet {
+        create_wallet_msg: CreateWalletMsg,
+    },
+    UpdateProxyUser {
+        old_user: Addr,
+        new_user: Addr,
+    },
+    MigrateWallet {
+        wallet_address: WalletAddr,
+        migration_msg: ProxyMigrationTxMsg,
+    },
+    UpdateCodeId {
+        ty: CodeIdType,
+        new_code_id: u64,
+    },
+    UpdateWalletFee {
+        new_fee: Coin,
+    },
+    UpdateGovecAddr {
+        addr: String,
+    },
+    UpdateAdmin {
+        addr: String,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum WalletFactoryQueryMsg {
     /// Shows proxy wallet address
     /// Returns WalletListResponse
@@ -95,7 +124,8 @@ pub enum WalletFactoryQueryMsg {
     /// Returns the fee required to create a wallet
     /// Fee goes to the DAO
     Fee {},
-    /// Retursn he address
+    /// Retursn the address of the Govec Voting Tokens Contract
     GovecAddr {},
+    /// Retursn the address of the Admin of this contract
     AdminAddr {},
 }
