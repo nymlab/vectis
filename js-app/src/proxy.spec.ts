@@ -298,7 +298,7 @@ describe("Proxy Suite: ", () => {
         });
     });
 
-    it("Should be able to freeze and unfreeze multisig wallet", async () => {
+    it("Should be able to rotate key of multisig wallet", async () => {
         const clientG1 = await createSigningClient(guardian1Mnemonic!, addrPrefix!);
         const clientG2 = await createSigningClient(guardian2Mnemonic!, addrPrefix!);
 
@@ -310,13 +310,11 @@ describe("Proxy Suite: ", () => {
             const revertFreezeStatusMsg: CosmosMsg = {
                 wasm: {
                     execute: {
-                        contract_addr: multisig_address!,
+                        contract_addr: proxyWalletMultisigAddress,
                         msg: toBase64(
                             toUtf8(
                                 JSON.stringify({
-                                    execute: {
-                                        revert_freeze_status: {},
-                                    },
+                                    revert_freeze_status: {},
                                 })
                             )
                         ),
@@ -337,16 +335,16 @@ describe("Proxy Suite: ", () => {
             // Should have proposal in the list
             const queryProps: ProposalQueryMsg = { list_proposals: {} };
             const { proposals } = await clientG1.queryContractSmart(multisig_address!, queryProps);
-            const [freezeProp] = proposals;
-            expect(freezeProp).toBeTruthy();
-            expect(freezeProp.title).toBe(proposal.propose.title);
-            const freezePropId = freezeProp.id;
+            const [prop] = proposals;
+            expect(prop).toBeTruthy();
+            expect(prop.title).toBe(proposal.propose.title);
+            const propId = prop.id;
 
             // At this point, since Guardian1 proposed, his vote is already YES
             // Now Guardian2 votes YES
             const voteYes: CwPropSingleExecuteMsg = {
                 vote: {
-                    proposal_id: freezePropId,
+                    proposal_id: propId,
                     vote: "yes",
                 },
             };
@@ -355,14 +353,88 @@ describe("Proxy Suite: ", () => {
             // Since threshold is 2, freezing should be approved and executed
             const executeFreeze: CwPropSingleExecuteMsg = {
                 execute: {
-                    proposal_id: freezePropId,
+                    proposal_id: propId,
                 },
             };
             await clientG2.execute(guardian2Addr!, multisig_address!, executeFreeze, defaultExecuteFee);
 
             // At this point, the wallet should be frozen
-            const { is_frozen } = await proxyClient.info();
+            const { is_frozen } = await msProxyClient.info();
             expect(is_frozen).toBeTrue();
+
+            // TODO: Write the exact same thing but for unfreezing
+        } catch (err) {
+            throw err;
+        } finally {
+            clientG1.disconnect();
+            clientG2.disconnect();
+        }
+    });
+
+    it("Should be able to freeze multisig wallet", async () => {
+        const clientG1 = await createSigningClient(guardian1Mnemonic!, addrPrefix!);
+        const clientG2 = await createSigningClient(guardian2Mnemonic!, addrPrefix!);
+
+        try {
+            const msProxyClient = new ProxyClient(userClient, userAddr!, proxyWalletMultisigAddress);
+            const { multisig_address } = await msProxyClient.info();
+
+            // Propose freezing of multisig wallet
+            const revertFreezeStatusMsg: CosmosMsg = {
+                wasm: {
+                    execute: {
+                        contract_addr: proxyWalletMultisigAddress,
+                        msg: toBase64(
+                            toUtf8(
+                                JSON.stringify({
+                                    revert_freeze_status: {},
+                                })
+                            )
+                        ),
+                        funds: [],
+                    },
+                },
+            };
+            const proposal: CwPropSingleExecuteMsg = {
+                propose: {
+                    title: "Revert freeze status",
+                    description: "Need to revert freeze status",
+                    msgs: [revertFreezeStatusMsg],
+                    latest: null,
+                },
+            };
+            await clientG1.execute(guardian1Addr!, multisig_address!, proposal, defaultExecuteFee);
+
+            // Should have proposal in the list
+            const queryProps: ProposalQueryMsg = { list_proposals: {} };
+            const { proposals } = await clientG1.queryContractSmart(multisig_address!, queryProps);
+            const prop = proposals.find((p: any) => p.title === proposal.propose.title);
+            expect(prop).toBeTruthy();
+            const propId = prop.id;
+
+            // At this point, since Guardian1 proposed, his vote is already YES
+            // Now Guardian2 votes YES
+            const voteYes: CwPropSingleExecuteMsg = {
+                vote: {
+                    proposal_id: propId,
+                    vote: "yes",
+                },
+            };
+            await clientG2.execute(guardian2Addr!, multisig_address!, voteYes, defaultExecuteFee);
+
+            // Since threshold is 2, freezing should be approved and executed
+            const executeFreeze: CwPropSingleExecuteMsg = {
+                execute: {
+                    proposal_id: propId,
+                },
+            };
+            await clientG2.execute(guardian2Addr!, multisig_address!, executeFreeze, defaultExecuteFee);
+
+            // At this point, the wallet should be frozen
+            const { is_frozen } = await msProxyClient.info();
+            expect(is_frozen).toBeTrue();
+
+            // TODO: Write the exact same thing but for unfreezing
         } catch (err) {
             throw err;
         } finally {
