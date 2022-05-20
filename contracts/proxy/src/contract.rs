@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
-    StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Reply, Response,
+    StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -10,7 +10,7 @@ use schemars::JsonSchema;
 use std::fmt;
 use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, Guardians, RelayTransaction, RelayTxError,
-    WalletFactoryQueryMsg, WalletInfo,
+    WalletFactoryExecuteMsg, WalletFactoryQueryMsg, WalletInfo,
 };
 
 use crate::error::ContractError;
@@ -290,6 +290,19 @@ pub fn execute_rotate_user_key(
         return Err(ContractError::Frozen {});
     }
 
+    let update_factory = WasmMsg::Execute {
+        contract_addr: deps
+            .api
+            .addr_humanize(&FACTORY.load(deps.storage)?)?
+            .to_string(),
+        /// msg is the json-encoded ExecuteMsg struct (as raw Binary)
+        msg: to_binary(&WalletFactoryExecuteMsg::UpdateProxyUser {
+            old_user: info.sender,
+            new_user: deps.api.addr_validate(&new_user_address)?,
+        })?,
+        funds: vec![],
+    };
+    let msg = SubMsg::<Empty>::new(update_factory);
     // Ensure provided address is different from current
     let new_user_address = deps.api.addr_canonicalize(new_user_address.as_ref())?;
     USER.load(deps.storage)?
@@ -301,7 +314,9 @@ pub fn execute_rotate_user_key(
         Ok(user)
     })?;
 
-    Ok(Response::new().add_attribute("action", "execute_rotate_user_key"))
+    Ok(Response::new()
+        .add_submessage(msg)
+        .add_attribute("action", "execute_rotate_user_key"))
 }
 
 pub fn execute_update_guardians(

@@ -120,6 +120,66 @@ fn create_new_proxy_without_guardians() {
 }
 
 #[test]
+fn user_rotate_keys_updates_factory() {
+    let mut suite = Suite::init().unwrap();
+    let factory = suite.instantiate_factory(
+        suite.sc_proxy_id,
+        suite.sc_proxy_multisig_code_id,
+        vec![],
+        10,
+    );
+
+    let rsp = suite.create_new_proxy_without_guardians(
+        Addr::unchecked(USER_ADDR),
+        factory.clone(),
+        vec![],
+        None,
+        WALLET_FEE,
+    );
+    assert!(rsp.is_ok());
+
+    let wallet_address = suite
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .unwrap()
+        .wallets
+        .pop()
+        .unwrap();
+
+    let new_address = "new_key";
+    suite
+        .app
+        .execute_contract(
+            Addr::unchecked(USER_ADDR),
+            wallet_address.clone(),
+            &ProxyExecuteMsg::<Empty>::RotateUserKey {
+                new_user_address: new_address.to_string(),
+            },
+            &[],
+        )
+        .unwrap();
+
+    let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
+    assert_eq!(w.user_addr.as_str(), new_address);
+
+    let origin_user_wallets = suite
+        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .unwrap()
+        .wallets
+        .pop();
+
+    assert!(origin_user_wallets.is_none());
+
+    let new_user_wallet_addr = suite
+        .query_user_wallet_addresses(&factory, new_address, None, None)
+        .unwrap()
+        .wallets
+        .pop()
+        .unwrap();
+
+    assert_eq!(new_user_wallet_addr, wallet_address);
+}
+
+#[test]
 fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let mut suite = Suite::init().unwrap();
     let factory = suite.instantiate_factory(

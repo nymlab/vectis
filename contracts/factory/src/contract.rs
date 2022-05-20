@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::helpers::{
     ensure_enough_native_funds, ensure_has_govec, ensure_is_admin, ensure_is_valid_migration_msg,
-    ensure_is_valid_threshold,
+    ensure_is_valid_threshold, ensure_is_wallet,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
@@ -68,11 +68,13 @@ pub fn execute(
         ExecuteMsg::CreateWallet { create_wallet_msg } => {
             create_wallet(deps, info, env, create_wallet_msg)
         }
+        ExecuteMsg::UpdateProxyUser { new_user, old_user } => {
+            update_proxy_user(deps, info, new_user, old_user)
+        }
         ExecuteMsg::MigrateWallet {
             wallet_address,
             migration_msg,
         } => migrate_wallet(deps, info, wallet_address, migration_msg),
-        // TODO: update_code_id(new_code_id, enum::proxy / multisig, staking, govec)
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => update_code_id(deps, info, ty, new_code_id),
         ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
@@ -141,6 +143,37 @@ fn create_wallet(
     } else {
         Err(ContractError::OverFlow {})
     }
+}
+
+/// Update wallet
+
+fn update_proxy_user(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_user: Addr,
+    old_user: Addr,
+) -> Result<Response, ContractError> {
+    let old_owner = deps.api.addr_canonicalize(old_user.as_ref())?;
+    let proxy = deps.api.addr_canonicalize(&info.sender.as_ref())?;
+    ensure_is_wallet(deps.as_ref(), &old_owner, &proxy)?;
+
+    let proxy_storage_key = proxy.to_vec();
+    WALLETS_OF.remove(
+        deps.storage,
+        (old_owner.to_vec(), proxy_storage_key.clone()),
+    );
+    WALLETS_OF.save(
+        deps.storage,
+        (
+            deps.api.addr_canonicalize(new_user.as_str())?.to_vec(),
+            proxy_storage_key,
+        ),
+        &(),
+    )?;
+    Ok(Response::new()
+        .add_attribute("action", "wallet updated")
+        .add_attribute("wallet", info.sender)
+        .add_attribute("user", new_user))
 }
 
 /// Migrates the instantiated `wallet_proxy` instance to a new code id
