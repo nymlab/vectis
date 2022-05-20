@@ -151,5 +151,8 @@ pub fn ensure_is_wallet(
 ) -> Result<(), ContractError> {
     WALLETS_OF
         .may_load(deps.storage, (old_owner.to_vec(), sender.to_vec()))?
-        .ok_or(ContractError::Unauthorized {})
+        .ok_or(ContractError::NotWallet(
+            deps.api.addr_humanize(old_owner)?,
+            deps.api.addr_humanize(sender)?,
+        ))
 }

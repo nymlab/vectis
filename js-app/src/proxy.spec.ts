@@ -265,7 +265,7 @@ describe("Proxy Suite: ", () => {
         expect(userWallets).not.toContain(proxyWalletAddress);
 
         // Admin (admin wallet owner) should have the wallet
-        const { wallets: adminWallets } = await factoryClient.walletsOf({ user: userAddr! });
+        const { wallets: adminWallets } = await factoryClient.walletsOf({ user: adminAddr! });
         expect(adminWallets).toContain(proxyWalletAddress);
 
         // Shouldn't be able to perform operations as user since it's not his wallet anymore
@@ -306,15 +306,14 @@ describe("Proxy Suite: ", () => {
             const msProxyClient = new ProxyClient(userClient, userAddr!, proxyWalletMultisigAddress);
             const { multisig_address } = await msProxyClient.info();
 
-            // Propose freezing of multisig wallet
-            const revertFreezeStatusMsg: CosmosMsg = {
+            const rotateUserKey: CosmosMsg = {
                 wasm: {
                     execute: {
                         contract_addr: proxyWalletMultisigAddress,
                         msg: toBase64(
                             toUtf8(
                                 JSON.stringify({
-                                    revert_freeze_status: {},
+                                    rotate_user_key: { new_user_address: adminAddr! },
                                 })
                             )
                         ),
@@ -324,9 +323,9 @@ describe("Proxy Suite: ", () => {
             };
             const proposal: CwPropSingleExecuteMsg = {
                 propose: {
-                    title: "Revert freeze status",
-                    description: "Need to revert freeze status",
-                    msgs: [revertFreezeStatusMsg],
+                    title: "Rotate user key",
+                    description: "Need to rotate user key",
+                    msgs: [rotateUserKey],
                     latest: null,
                 },
             };
@@ -335,9 +334,8 @@ describe("Proxy Suite: ", () => {
             // Should have proposal in the list
             const queryProps: ProposalQueryMsg = { list_proposals: {} };
             const { proposals } = await clientG1.queryContractSmart(multisig_address!, queryProps);
-            const [prop] = proposals;
+            const prop = proposals.find((p: any) => p.title === proposal.propose.title);
             expect(prop).toBeTruthy();
-            expect(prop.title).toBe(proposal.propose.title);
             const propId = prop.id;
 
             // At this point, since Guardian1 proposed, his vote is already YES
@@ -359,10 +357,8 @@ describe("Proxy Suite: ", () => {
             await clientG2.execute(guardian2Addr!, multisig_address!, executeFreeze, defaultExecuteFee);
 
             // At this point, the wallet should be frozen
-            const { is_frozen } = await msProxyClient.info();
-            expect(is_frozen).toBeTrue();
-
-            // TODO: Write the exact same thing but for unfreezing
+            const { user_addr } = await msProxyClient.info();
+            expect(user_addr).toEqual(adminAddr!);
         } catch (err) {
             throw err;
         } finally {
@@ -445,6 +441,7 @@ describe("Proxy Suite: ", () => {
 
     it("Should relay bank message as a relayer", async () => {
         const relayerClient = await createSigningClient(relayer1Mnemonic!, addrPrefix!);
+        // We should use userAddr here
         const relayerProxyClient = new ProxyClient(relayerClient, relayer1Addr!, proxyWalletAddress);
         const info = await relayerProxyClient.info();
 
