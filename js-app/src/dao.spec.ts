@@ -1,7 +1,7 @@
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { uploadContracts } from "./util/contracts";
-import { createSigningClient } from "./util/utils";
+import { createSigningClient, delay } from "./util/utils";
 import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "./util/fee";
 import { GovecClient } from "../types/GovecContract";
 import {
@@ -42,10 +42,6 @@ describe("DAO Suite: ", () => {
     let propAddrs: string[];
     let goVecAddr: string;
     let proposalId: number;
-
-    const delay = (ms: number) => {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-    };
 
     beforeAll(async () => {
         adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
