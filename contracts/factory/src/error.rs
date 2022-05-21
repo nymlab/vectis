@@ -34,6 +34,8 @@ pub enum ContractError {
     InvalidNativeFund(Uint128, Uint128),
     #[error("GovecNotSet")]
     GovecNotSet {},
+    #[error("Proxy cannot be instantiated")]
+    ProxyInstantiationError {},
 }
 
 impl From<MigrationMsgError> for ContractError {

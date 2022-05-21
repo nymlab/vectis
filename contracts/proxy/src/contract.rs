@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Reply, Response,
-    StdError, StdResult, SubMsg, WasmMsg,
+    StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -25,7 +25,7 @@ use crate::state::{
     RELAYERS, USER,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
-use cw_utils::{Duration, Threshold};
+use cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
 
 #[cfg(feature = "migration")]
 use vectis_wallet::ProxyMigrateMsg;
@@ -67,7 +67,13 @@ pub fn instantiate(
 
     let addr = deps.api.addr_canonicalize(addr_human.as_str())?;
 
-    USER.save(deps.storage, &User { addr, nonce: 0 })?;
+    USER.save(
+        deps.storage,
+        &User {
+            addr: addr.clone(),
+            nonce: 0,
+        },
+    )?;
 
     let guardian_addresses = &msg.create_wallet_msg.guardians.addresses;
 
@@ -102,8 +108,11 @@ pub fn instantiate(
         Response::new()
             .add_submessage(msg)
             .add_attribute("user", addr_human)
+            .set_data(addr.0)
     } else {
-        Response::new().add_attribute("user", addr_human)
+        Response::new()
+            .add_attribute("user", addr_human)
+            .set_data(addr.0)
     };
 
     Ok(resp)
@@ -397,36 +406,24 @@ pub fn execute_update_guardians(
 
 // Used to handle different multisig actions
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> StdResult<Response> {
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     if reply.id == MULTISIG_INSTANTIATE_ID {
-        let data = reply
-            .result
-            .into_result()
-            .map_err(|err| StdError::generic_err(format!("Reply from multisig: {}", err)))?;
-        let first_instantiate_event = data
-            .events
-            .iter()
-            .find(|e| e.ty == "instantiate")
-            .ok_or_else(|| StdError::generic_err("Reply: Unable to find reply event"))?;
+        if let Ok(res) = parse_reply_instantiate_data(reply) {
+            MULTISIG_ADDRESS.save(
+                deps.storage,
+                &Some(deps.api.addr_canonicalize(&res.contract_address)?),
+            )?;
 
-        // When running in multitest the key for addr is _contract_addr
-        // However, it is _contract_address when deployed to wasmd chain
-        // TODO: issue
-        let str_addr = &first_instantiate_event.attributes[0].value;
-
-        MULTISIG_ADDRESS.save(deps.storage, &Some(deps.api.addr_canonicalize(str_addr)?))?;
-
-        let res = Response::new()
-            .add_attribute("action", "Fixed Multisig Stored")
-            .add_attribute("multisig_address", str_addr);
-        Ok(res)
+            Ok(Response::new()
+                .add_attribute("action", "Fixed Multisig Stored")
+                .add_attribute("multisig_address", res.contract_address))
+        } else {
+            Err(ContractError::MultisigInstantiationError {})
+        }
     } else {
-        Err(StdError::generic_err(
-            ContractError::InvalidMessage {
-                msg: "invalid ID".to_string(),
-            }
-            .to_string(),
-        ))
+        Err(ContractError::InvalidMessage {
+            msg: "invalid ID".to_string(),
+        })
     }
 }
 
