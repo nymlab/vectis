@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
     Uint128,
 };
 
@@ -16,7 +16,6 @@ use crate::state::{MinterData, TokenInfo, BALANCES, DAO_ADDR, STAKING_ADDR, TOKE
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const STAKING_REPLY_ID: u64 = u64::MAX;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -69,28 +68,6 @@ pub fn create_accounts(deps: &mut DepsMut, accounts: &[Cw20Coin]) -> StdResult<U
         total_supply += row.amount;
     }
     Ok(total_supply)
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdError> {
-    if reply.id != STAKING_REPLY_ID {
-        return Err(StdError::generic_err("Unsupported reply id"));
-    }
-
-    let data = reply.result.into_result().map_err(StdError::generic_err)?;
-    let staking_instantiation_event = data
-        .events
-        .iter()
-        .find(|e| e.ty == "instantiate")
-        .ok_or_else(|| StdError::generic_err("Reply: Unable to find instantiate event"))?;
-
-    let staking_addr_str = &staking_instantiation_event.attributes[0].value;
-    STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(staking_addr_str)?)?;
-
-    let res = Response::new()
-        .add_attribute("action", "Staking Deployed")
-        .add_attribute("Staking", staking_addr_str);
-    Ok(res)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
