@@ -25,6 +25,30 @@
     {
       "type": "object",
       "required": [
+        "update_proxy_user"
+      ],
+      "properties": {
+        "update_proxy_user": {
+          "type": "object",
+          "required": [
+            "new_user",
+            "old_user"
+          ],
+          "properties": {
+            "new_user": {
+              "$ref": "#/definitions/Addr"
+            },
+            "old_user": {
+              "$ref": "#/definitions/Addr"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "migrate_wallet"
       ],
       "properties": {

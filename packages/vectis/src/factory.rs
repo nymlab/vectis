@@ -124,8 +124,8 @@ pub enum WalletFactoryQueryMsg {
     /// Returns the fee required to create a wallet
     /// Fee goes to the DAO
     Fee {},
-    /// Retursn the address of the Govec Voting Tokens Contract
+    /// Returns the address of the Govec Voting Tokens Contract
     GovecAddr {},
-    /// Retursn the address of the Admin of this contract
+    /// Returns the address of the Admin of this contract
     AdminAddr {},
 }
