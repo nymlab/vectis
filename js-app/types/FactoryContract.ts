@@ -215,6 +215,18 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
         memo?: string,
         funds?: readonly Coin[]
     ) => Promise<ExecuteResult>;
+    updateProxyUser: (
+        {
+            newUser,
+            oldUser,
+        }: {
+            newUser: Addr;
+            oldUser: Addr;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ) => Promise<ExecuteResult>;
     migrateWallet: (
         {
             migrationMsg,
@@ -271,9 +283,9 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
     ) => Promise<ExecuteResult>;
 }
 export class FactoryClient extends FactoryQueryClient implements FactoryInterface {
-    override client: SigningCosmWasmClient;
+    client: SigningCosmWasmClient;
     sender: string;
-    override contractAddress: string;
+    contractAddress: string;
 
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
         super(client, contractAddress);
@@ -281,6 +293,7 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
         this.sender = sender;
         this.contractAddress = contractAddress;
         this.createWallet = this.createWallet.bind(this);
+        this.updateProxyUser = this.updateProxyUser.bind(this);
         this.migrateWallet = this.migrateWallet.bind(this);
         this.updateCodeId = this.updateCodeId.bind(this);
         this.updateWalletFee = this.updateWalletFee.bind(this);
@@ -304,6 +317,32 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
             {
                 create_wallet: {
                     create_wallet_msg: createWalletMsg,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateProxyUser = async (
+        {
+            newUser,
+            oldUser,
+        }: {
+            newUser: Addr;
+            oldUser: Addr;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_proxy_user: {
+                    new_user: newUser,
+                    old_user: oldUser,
                 },
             },
             fee,
