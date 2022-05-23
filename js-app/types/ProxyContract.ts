@@ -235,9 +235,9 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
     ) => Promise<ExecuteResult>;
 }
 export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
-    client: SigningCosmWasmClient;
+    override client: SigningCosmWasmClient;
     sender: string;
-    contractAddress: string;
+    override contractAddress: string;
 
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
         super(client, contractAddress);
