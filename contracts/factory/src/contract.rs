@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::helpers::{
     ensure_enough_native_funds, ensure_has_govec, ensure_is_admin, ensure_is_valid_migration_msg,
-    ensure_is_valid_threshold,
+    ensure_is_valid_threshold, ensure_is_wallet,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
@@ -13,10 +13,11 @@ use crate::state::{
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
+use cw_utils::parse_reply_instantiate_data;
 use vectis_govec::msg::ExecuteMsg::Mint;
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
@@ -68,11 +69,13 @@ pub fn execute(
         ExecuteMsg::CreateWallet { create_wallet_msg } => {
             create_wallet(deps, info, env, create_wallet_msg)
         }
+        ExecuteMsg::UpdateProxyUser { new_user, old_user } => {
+            update_proxy_user(deps, info, new_user, old_user)
+        }
         ExecuteMsg::MigrateWallet {
             wallet_address,
             migration_msg,
         } => migrate_wallet(deps, info, wallet_address, migration_msg),
-        // TODO: update_code_id(new_code_id, enum::proxy / multisig, staking, govec)
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => update_code_id(deps, info, ty, new_code_id),
         ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
@@ -141,6 +144,37 @@ fn create_wallet(
     } else {
         Err(ContractError::OverFlow {})
     }
+}
+
+/// Update wallet
+
+fn update_proxy_user(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_user: Addr,
+    old_user: Addr,
+) -> Result<Response, ContractError> {
+    let old_owner = deps.api.addr_canonicalize(old_user.as_ref())?;
+    let proxy = deps.api.addr_canonicalize(info.sender.as_str())?;
+    ensure_is_wallet(deps.as_ref(), &old_owner, &proxy)?;
+
+    let proxy_storage_key = proxy.to_vec();
+    WALLETS_OF.remove(
+        deps.storage,
+        (old_owner.to_vec(), proxy_storage_key.clone()),
+    );
+    WALLETS_OF.save(
+        deps.storage,
+        (
+            deps.api.addr_canonicalize(new_user.as_str())?.to_vec(),
+            proxy_storage_key,
+        ),
+        &(),
+    )?;
+    Ok(Response::new()
+        .add_attribute("action", "wallet updated")
+        .add_attribute("wallet", info.sender)
+        .add_attribute("user", new_user))
 }
 
 /// Migrates the instantiated `wallet_proxy` instance to a new code id
@@ -258,68 +292,41 @@ fn update_admin_addr(
         .add_attribute("New Admin", addr))
 }
 
-/// reply hooks handles 2 types of replies wrt to reply_id
-/// - TOTAL_CREATED: proxy wallet instantiation
+/// reply hooks handles replies from proxy wallet instantiation
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, StdError> {
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     // NOTE: Error returned in `reply` is equivalent to contract error, all states revert,
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
 
     let expected_id = TOTAL_CREATED.load(deps.storage)?;
     if reply.id == expected_id {
-        let data = reply
-            .result
-            .into_result()
-            .map_err(|err| StdError::generic_err(format!("Reply from proxy creation: {}", err)))?;
-        let first_instantiate_event = data
-            .events
-            .iter()
-            .find(|e| e.ty == "instantiate")
-            .ok_or_else(|| StdError::generic_err("Reply: Unable to find reply event"))?;
+        if let Ok(res) = parse_reply_instantiate_data(reply) {
+            let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&res.contract_address)?;
+            let addr_bin = res.data.ok_or(ContractError::ProxyInstantiationError {})?;
+            WALLETS_OF.save(deps.storage, (addr_bin.to_vec(), wallet_addr.to_vec()), &())?;
 
-        let str_addr = &first_instantiate_event.attributes[0].value;
-        let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(str_addr)?;
+            // Mint Govec Vote for the newly created proxy wallet
+            let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
+                contract_addr: deps
+                    .api
+                    .addr_humanize(&GOVEC.load(deps.storage)?)?
+                    .to_string(),
+                msg: to_binary(&Mint {
+                    new_wallet: res.contract_address.clone(),
+                })?,
+                funds: vec![],
+            });
 
-        let user = data
-            .events
-            .iter()
-            .find(|e| e.ty == "wasm")
-            .ok_or_else(|| StdError::generic_err("Reply: Unable to find wasm event"))?
-            .attributes
-            .iter()
-            .find(|k| k.key == "user")
-            .ok_or_else(|| StdError::generic_err("Reply: Unable to find user attribute"))?;
-
-        WALLETS_OF.save(
-            deps.storage,
-            (
-                deps.api.addr_canonicalize(&user.value)?.to_vec(),
-                wallet_addr.to_vec(),
-            ),
-            &(),
-        )?;
-
-        // Mint Govec Vote for the newly created proxy wallet
-        let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
-            contract_addr: deps
-                .api
-                .addr_humanize(&GOVEC.load(deps.storage)?)?
-                .to_string(),
-            msg: to_binary(&Mint {
-                new_wallet: str_addr.into(),
-            })?,
-            funds: vec![],
-        });
-
-        let res = Response::new()
-            .add_submessage(mint_msg)
-            .add_attribute("action", "Wallet Proxy Stored")
-            .add_attribute("proxy_address", str_addr);
-        Ok(res)
+            let res = Response::new()
+                .add_submessage(mint_msg)
+                .add_attribute("action", "Wallet Proxy Stored")
+                .add_attribute("proxy_address", res.contract_address);
+            Ok(res)
+        } else {
+            Err(ContractError::ProxyInstantiationError {})
+        }
     } else {
-        Err(StdError::GenericErr {
-            msg: ContractError::InvalidReplyId {}.to_string(),
-        })
+        Err(ContractError::InvalidReplyId {})
     }
 }
 

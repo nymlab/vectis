@@ -39,4 +39,6 @@ pub enum ContractError {
     RelayTxError(RelayTxError),
     #[error("InvalidReplyId")]
     InvalidReplyId {},
+    #[error("Multisig cannot be instantiated")]
+    MultisigInstantiationError {},
 }

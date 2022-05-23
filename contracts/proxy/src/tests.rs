@@ -187,7 +187,6 @@ fn user_can_update_non_multisig_guardian() {
         [("action", "Updated wallet guardians: Non-Multisig")]
     );
 
-    // Ensure relayer is added successfully
     let new_wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(!new_wallet_info.guardians.contains(&Addr::unchecked(GUARD2)));
     assert!(new_wallet_info.guardians.contains(&Addr::unchecked(GUARD3)));
@@ -215,7 +214,6 @@ fn user_can_add_relayer() {
         [("action", format!("Relayer {:?} added", new_relayer_address))]
     );
 
-    // Ensure relayer is added successfully
     wallet_info.relayers.push(new_relayer_address);
     let new_wallet_info = query_info(deps.as_ref()).unwrap();
     assert_eq!(wallet_info.relayers, new_wallet_info.relayers);
@@ -243,7 +241,6 @@ fn user_can_remove_relayer() {
         [("action", format!("Relayer {:?} removed", relayer_address))]
     );
 
-    // Ensure relayer is removed successfully
     wallet_info.relayers = wallet_info
         .relayers
         .into_iter()
@@ -273,7 +270,6 @@ fn guardian_can_rotate_user_key() {
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
 
-    // Ensure key is rotated successfully
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(new_address.eq(wallet_info.user_addr.as_str()));
 }
@@ -297,7 +293,6 @@ fn user_can_rotate_user_key() {
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
 
-    // Ensure key is rotated successfully
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(new_address.eq(wallet_info.user_addr.as_str()));
 }

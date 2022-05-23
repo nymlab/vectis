@@ -103,7 +103,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Retursn he address",
+      "description": "Returns the address of the Govec Voting Tokens Contract",
       "type": "object",
       "required": [
         "govec_addr"
@@ -116,6 +116,7 @@
       "additionalProperties": false
     },
     {
+      "description": "Returns the address of the Admin of this contract",
       "type": "object",
       "required": [
         "admin_addr"

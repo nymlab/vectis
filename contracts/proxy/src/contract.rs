@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
+    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Reply, Response,
     StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
@@ -10,7 +10,7 @@ use schemars::JsonSchema;
 use std::fmt;
 use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, Guardians, RelayTransaction, RelayTxError,
-    WalletFactoryQueryMsg, WalletInfo,
+    WalletFactoryExecuteMsg, WalletFactoryQueryMsg, WalletInfo,
 };
 
 use crate::error::ContractError;
@@ -25,7 +25,7 @@ use crate::state::{
     RELAYERS, USER,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
-use cw_utils::{Duration, Threshold};
+use cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
 
 #[cfg(feature = "migration")]
 use vectis_wallet::ProxyMigrateMsg;
@@ -67,7 +67,13 @@ pub fn instantiate(
 
     let addr = deps.api.addr_canonicalize(addr_human.as_str())?;
 
-    USER.save(deps.storage, &User { addr, nonce: 0 })?;
+    USER.save(
+        deps.storage,
+        &User {
+            addr: addr.clone(),
+            nonce: 0,
+        },
+    )?;
 
     let guardian_addresses = &msg.create_wallet_msg.guardians.addresses;
 
@@ -102,8 +108,11 @@ pub fn instantiate(
         Response::new()
             .add_submessage(msg)
             .add_attribute("user", addr_human)
+            .set_data(addr.0)
     } else {
-        Response::new().add_attribute("user", addr_human)
+        Response::new()
+            .add_attribute("user", addr_human)
+            .set_data(addr.0)
     };
 
     Ok(resp)
@@ -290,10 +299,25 @@ pub fn execute_rotate_user_key(
         return Err(ContractError::Frozen {});
     }
 
+    let user = USER.load(deps.storage)?;
+
+    let update_factory = WasmMsg::Execute {
+        contract_addr: deps
+            .api
+            .addr_humanize(&FACTORY.load(deps.storage)?)?
+            .to_string(),
+        /// msg is the json-encoded ExecuteMsg struct (as raw Binary)
+        msg: to_binary(&WalletFactoryExecuteMsg::UpdateProxyUser {
+            old_user: deps.api.addr_humanize(&user.addr)?,
+            new_user: deps.api.addr_validate(&new_user_address)?,
+        })?,
+        funds: vec![],
+    };
+    let msg = SubMsg::<Empty>::new(update_factory);
+
     // Ensure provided address is different from current
     let new_user_address = deps.api.addr_canonicalize(new_user_address.as_ref())?;
-    USER.load(deps.storage)?
-        .ensure_addresses_are_not_equal(&new_user_address)?;
+    user.ensure_addresses_are_not_equal(&new_user_address)?;
 
     // Update user address
     USER.update(deps.storage, |mut user| -> StdResult<_> {
@@ -301,7 +325,9 @@ pub fn execute_rotate_user_key(
         Ok(user)
     })?;
 
-    Ok(Response::new().add_attribute("action", "execute_rotate_user_key"))
+    Ok(Response::new()
+        .add_submessage(msg)
+        .add_attribute("action", "execute_rotate_user_key"))
 }
 
 pub fn execute_update_guardians(
@@ -380,36 +406,24 @@ pub fn execute_update_guardians(
 
 // Used to handle different multisig actions
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> StdResult<Response> {
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     if reply.id == MULTISIG_INSTANTIATE_ID {
-        let data = reply
-            .result
-            .into_result()
-            .map_err(|err| StdError::generic_err(format!("Reply from multisig: {}", err)))?;
-        let first_instantiate_event = data
-            .events
-            .iter()
-            .find(|e| e.ty == "instantiate")
-            .ok_or_else(|| StdError::generic_err("Reply: Unable to find reply event"))?;
+        if let Ok(res) = parse_reply_instantiate_data(reply) {
+            MULTISIG_ADDRESS.save(
+                deps.storage,
+                &Some(deps.api.addr_canonicalize(&res.contract_address)?),
+            )?;
 
-        // When running in multitest the key for addr is _contract_addr
-        // However, it is _contract_address when deployed to wasmd chain
-        // TODO: issue
-        let str_addr = &first_instantiate_event.attributes[0].value;
-
-        MULTISIG_ADDRESS.save(deps.storage, &Some(deps.api.addr_canonicalize(str_addr)?))?;
-
-        let res = Response::new()
-            .add_attribute("action", "Fixed Multisig Stored")
-            .add_attribute("multisig_address", str_addr);
-        Ok(res)
+            Ok(Response::new()
+                .add_attribute("action", "Fixed Multisig Stored")
+                .add_attribute("multisig_address", res.contract_address))
+        } else {
+            Err(ContractError::MultisigInstantiationError {})
+        }
     } else {
-        Err(StdError::generic_err(
-            ContractError::InvalidMessage {
-                msg: "invalid ID".to_string(),
-            }
-            .to_string(),
-        ))
+        Err(ContractError::InvalidMessage {
+            msg: "invalid ID".to_string(),
+        })
     }
 }
 

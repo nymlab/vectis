@@ -27,10 +27,7 @@ use vectis_factory::{
     },
 };
 use vectis_govec::{
-    contract::{
-        execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
-        reply as govec_reply,
-    },
+    contract::{execute as govec_execute, instantiate as govec_instantiate, query as govec_query},
     msg::{ExecuteMsg as GovecExecuteMsg, InstantiateMsg as GovecInstantiateMsg},
     state::MinterData,
 };
@@ -74,8 +71,7 @@ pub fn contract_proxy() -> Box<dyn Contract<Empty>> {
 }
 
 pub fn contract_govec() -> Box<dyn Contract<Empty>> {
-    let contract =
-        ContractWrapper::new(govec_execute, govec_instantiate, govec_query).with_reply(govec_reply);
+    let contract = ContractWrapper::new(govec_execute, govec_instantiate, govec_query);
     Box::new(contract)
 }
 
