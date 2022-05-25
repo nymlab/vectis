@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-cd ./js-app
 
 echo "👀 Checking and setting up requirements on your machine..."
 
@@ -26,11 +25,13 @@ docker run -d \
 
 sleep 5
 
+echo "🛠️ Building Vectis contracts"
+
+sh ./build.sh
+
 echo "📖️ Deploying Vectis contracts and running tests..."
 
-RUSTFLAGS='-C link-arg=-s' cargo wasm-factory
-RUSTFLAGS='-C link-arg=-s' cargo wasm-proxy
-RUSTFLAGS='-C link-arg=-s' cargo wasm-govec
+cd ./js-app
 
 npm ci
 export NODE_ENV=juno-local && npm test
