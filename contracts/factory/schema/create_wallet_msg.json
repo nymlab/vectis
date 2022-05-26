@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "guardians",
+    "label",
     "proxy_initial_funds",
     "relayers",
     "user_pubkey"
@@ -11,6 +12,9 @@
   "properties": {
     "guardians": {
       "$ref": "#/definitions/Guardians"
+    },
+    "label": {
+      "type": "string"
     },
     "proxy_initial_funds": {
       "type": "array",

@@ -89,6 +89,7 @@ export interface InfoResponse {
     code_id: number;
     guardians: Addr[];
     is_frozen: boolean;
+    label: string;
     multisig_address?: Addr | null;
     multisig_code_id: number;
     nonce: number;
@@ -111,6 +112,7 @@ export interface InstantiateMsg {
 }
 export interface CreateWalletMsg {
     guardians: Guardians;
+    label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
     user_pubkey: Binary;
@@ -233,6 +235,16 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
         memo?: string,
         funds?: readonly Coin[]
     ) => Promise<ExecuteResult>;
+    updateLabel: (
+        {
+            newLabel,
+        }: {
+            newLabel: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ) => Promise<ExecuteResult>;
 }
 export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
     override client: SigningCosmWasmClient;
@@ -251,6 +263,7 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
         this.addRelayer = this.addRelayer.bind(this);
         this.removeRelayer = this.removeRelayer.bind(this);
         this.updateGuardians = this.updateGuardians.bind(this);
+        this.updateLabel = this.updateLabel.bind(this);
     }
 
     execute = async (
@@ -403,6 +416,29 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
                 update_guardians: {
                     guardians,
                     new_multisig_code_id: newMultisigCodeId,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateLabel = async (
+        {
+            newLabel,
+        }: {
+            newLabel: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_label: {
+                    new_label: newLabel,
                 },
             },
             fee,

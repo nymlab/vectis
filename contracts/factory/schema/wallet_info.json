@@ -6,6 +6,7 @@
     "code_id",
     "guardians",
     "is_frozen",
+    "label",
     "multisig_code_id",
     "nonce",
     "relayers",
@@ -26,6 +27,9 @@
     },
     "is_frozen": {
       "type": "boolean"
+    },
+    "label": {
+      "type": "string"
     },
     "multisig_address": {
       "anyOf": [

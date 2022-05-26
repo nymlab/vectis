@@ -61,6 +61,7 @@
       "additionalProperties": false
     },
     {
+      "description": "Rotating the User Key Priviledge: User, Guardian/Multisig",
       "type": "object",
       "required": [
         "rotate_user_key"
@@ -81,6 +82,7 @@
       "additionalProperties": false
     },
     {
+      "description": "Adding a new relayer Priviledge: User/Multisig",
       "type": "object",
       "required": [
         "add_relayer"
@@ -101,6 +103,7 @@
       "additionalProperties": false
     },
     {
+      "description": "Removing relayer Priviledge: User/Multisig",
       "type": "object",
       "required": [
         "remove_relayer"
@@ -143,6 +146,27 @@
               ],
               "format": "uint64",
               "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Updates label by the user",
+      "type": "object",
+      "required": [
+        "update_label"
+      ],
+      "properties": {
+        "update_label": {
+          "type": "object",
+          "required": [
+            "new_label"
+          ],
+          "properties": {
+            "new_label": {
+              "type": "string"
             }
           }
         }
