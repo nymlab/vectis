@@ -13,6 +13,7 @@ export type Uint128 = string;
 export type Binary = string;
 export interface CreateWalletMsg {
     guardians: Guardians;
+    label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
     user_pubkey: Binary;
@@ -90,6 +91,7 @@ export interface WalletInfo {
     code_id: number;
     guardians: Addr[];
     is_frozen: boolean;
+    label: string;
     multisig_address?: Addr | null;
     multisig_code_id: number;
     nonce: number;
