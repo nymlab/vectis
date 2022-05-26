@@ -55,6 +55,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
         guardians: get_guardians(),
         relayers: vec![RELAYER1.into(), RELAYER2.into()],
         proxy_initial_funds: vec![],
+        label: "initial label".to_string(),
     };
 
     let instantiate_msg = InstantiateMsg {
@@ -272,6 +273,57 @@ fn guardian_can_rotate_user_key() {
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(new_address.eq(wallet_info.user_addr.as_str()));
+}
+
+#[test]
+fn user_can_update_label() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    // initially it is not frozen
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert!(!wallet_info.is_frozen);
+
+    let info = mock_info(&user_addr.to_string(), &[]);
+    let env = mock_env();
+
+    let new_label = "new label";
+    let msg = ExecuteMsg::UpdateLabel {
+        new_label: new_label.to_string(),
+    };
+
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(
+        response.attributes,
+        [("action", "update label"), ("label", new_label)]
+    );
+
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert_eq!(new_label, wallet_info.label.as_str());
+}
+
+#[test]
+fn non_user_update_label_fails() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let _ = do_instantiate(deps.as_mut());
+
+    // initially it is not frozen
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert!(!wallet_info.is_frozen);
+
+    let info = mock_info("Non-user", &[]);
+    let env = mock_env();
+
+    let new_label = "new label";
+    let msg = ExecuteMsg::UpdateLabel {
+        new_label: new_label.to_string(),
+    };
+
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::IsNotUser {});
+
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert_eq!("initial label", wallet_info.label.as_str());
 }
 
 #[test]

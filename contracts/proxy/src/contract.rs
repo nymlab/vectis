@@ -21,8 +21,8 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, MULTISIG_ADDRESS, MULTISIG_CODE_ID,
-    RELAYERS, USER,
+    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
+    MULTISIG_CODE_ID, RELAYERS, USER,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
@@ -57,6 +57,7 @@ pub fn instantiate(
     CODE_ID.save(deps.storage, &msg.code_id)?;
     MULTISIG_CODE_ID.save(deps.storage, &msg.multisig_code_id)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
+    LABEL.save(deps.storage, &msg.create_wallet_msg.label)?;
 
     // get user addr from it's pubkey
     let addr_human = pub_key_to_address(
@@ -142,6 +143,7 @@ pub fn execute(
             guardians,
             new_multisig_code_id,
         } => execute_update_guardians(deps, env, info, guardians, new_multisig_code_id),
+        ExecuteMsg::UpdateLabel { new_label } => execute_update_label(deps, info, env, new_label),
     }
 }
 
@@ -404,6 +406,25 @@ pub fn execute_update_guardians(
     }
 }
 
+/// Update label by user
+pub fn execute_update_label(
+    deps: DepsMut,
+    info: MessageInfo,
+    env: Env,
+    new_label: String,
+) -> Result<Response, ContractError> {
+    let is_user = ensure_is_user(deps.as_ref(), info.sender.as_str());
+    let is_contract = ensure_is_contract_self(&env, &info.sender);
+    if is_user.is_err() && is_contract.is_err() {
+        is_user?;
+        is_contract?;
+    }
+    LABEL.save(deps.storage, &new_label)?;
+    Ok(Response::default()
+        .add_attribute("action", "update label")
+        .add_attribute("label", new_label))
+}
+
 // Used to handle different multisig actions
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
@@ -456,6 +477,7 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
         relayers,
         is_frozen: FROZEN.load(deps.storage)?,
         multisig_address,
+        label: LABEL.load(deps.storage)?,
     })
 }
 

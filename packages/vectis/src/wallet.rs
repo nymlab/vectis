@@ -26,6 +26,7 @@ pub struct WalletInfo {
     pub is_frozen: bool,
     pub nonce: Nonce,
     pub multisig_address: Option<Addr>,
+    pub label: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

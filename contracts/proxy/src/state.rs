@@ -54,6 +54,7 @@ pub const MULTISIG_CODE_ID: Item<u64> = Item::new("multisig_code_id");
 pub const USER: Item<User> = Item::new("user");
 pub const GUARDIANS: Map<&[u8], ()> = Map::new("guardians");
 pub const RELAYERS: Map<&[u8], ()> = Map::new("relayers");
+pub const LABEL: Item<String> = Item::new("label");
 // An address of fixed multisig contract, used for guardians multisig support.
 pub const MULTISIG_ADDRESS: Item<Option<CanonicalAddr>> = Item::new("fixed_multisig_address");
 /// Chain address prefix
