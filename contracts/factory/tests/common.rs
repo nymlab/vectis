@@ -230,6 +230,7 @@ impl Suite {
             },
             relayers: vec![r],
             proxy_initial_funds: initial_fund,
+            label: "initial label".to_string(),
         };
 
         let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
@@ -271,6 +272,7 @@ impl Suite {
             },
             relayers: vec![r],
             proxy_initial_funds,
+            label: "initial label".to_string(),
         };
 
         let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };

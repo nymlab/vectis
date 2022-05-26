@@ -24,32 +24,22 @@ where
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender.
     /// Priviledge: User
-    Execute {
-        msgs: Vec<CosmosMsg<T>>,
-    },
+    Execute { msgs: Vec<CosmosMsg<T>> },
     /// Freeze will freeze the account in the scenario the user lose their key / device
     /// Priviledge: Guardian/Multisig
     RevertFreezeStatus {},
     /// Relay message contains the signature and the message to relay
     /// Priviledge: Relayer
-    Relay {
-        transaction: RelayTransaction,
-    },
-    // /// Rotating the User Key
-    // /// Priviledge: User, Guardian/Multisig
-    RotateUserKey {
-        new_user_address: String,
-    },
-    // /// Adding a new relayer
-    // /// Priviledge: User/Multisig
-    AddRelayer {
-        new_relayer_address: Addr,
-    },
-    // /// Removing relayer
-    // /// Priviledge: User/Multisig
-    RemoveRelayer {
-        relayer_address: Addr,
-    },
+    Relay { transaction: RelayTransaction },
+    /// Rotating the User Key
+    /// Priviledge: User, Guardian/Multisig
+    RotateUserKey { new_user_address: String },
+    /// Adding a new relayer
+    /// Priviledge: User/Multisig
+    AddRelayer { new_relayer_address: Addr },
+    /// Removing relayer
+    /// Priviledge: User/Multisig
+    RemoveRelayer { relayer_address: Addr },
     /// Message for updating current guardians set
     ///
     /// If the `Guardians.guardian_multisig` is given,
@@ -62,6 +52,8 @@ where
         guardians: Guardians,
         new_multisig_code_id: Option<u64>,
     },
+    /// Updates label by the user
+    UpdateLabel { new_label: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

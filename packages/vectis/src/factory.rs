@@ -16,6 +16,7 @@ pub struct CreateWalletMsg {
     /// A List of keys can act as relayer for
     pub relayers: Vec<String>,
     pub proxy_initial_funds: Vec<Coin>,
+    pub label: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
