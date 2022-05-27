@@ -96,6 +96,7 @@ describe("Factory Suite: ", () => {
                     },
                     relayers: [relayer1Addr!, relayer2Addr!],
                     proxy_initial_funds: [testWalletInitialFunds as Coin],
+                    label: "initial label",
                 },
             },
             defaultWalletCreationFee,

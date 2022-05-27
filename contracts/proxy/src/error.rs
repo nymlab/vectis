@@ -41,4 +41,6 @@ pub enum ContractError {
     InvalidReplyId {},
     #[error("Multisig cannot be instantiated")]
     MultisigInstantiationError {},
+    #[error("Same Label")]
+    SameLabel {},
 }
