@@ -244,10 +244,22 @@ fn update_code_id(
     ensure_is_admin(deps.as_ref(), info.sender.as_ref())?;
     match ty {
         CodeIdType::Proxy => {
-            PROXY_CODE_ID.save(deps.storage, &new_code_id)?;
+            PROXY_CODE_ID.update(deps.storage, |c| {
+                if c == new_code_id {
+                    Err(ContractError::SameProxyCodeId {})
+                } else {
+                    Ok(new_code_id)
+                }
+            })?;
         }
         CodeIdType::Multisig => {
-            PROXY_MULTISIG_CODE_ID.save(deps.storage, &new_code_id)?;
+            PROXY_MULTISIG_CODE_ID.update(deps.storage, |c| {
+                if c == new_code_id {
+                    Err(ContractError::SameProxyMultisigCodeId {})
+                } else {
+                    Ok(new_code_id)
+                }
+            })?;
         }
     }
     Ok(Response::new()

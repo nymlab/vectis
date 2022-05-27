@@ -419,7 +419,14 @@ pub fn execute_update_label(
         is_user?;
         is_contract?;
     }
-    LABEL.save(deps.storage, &new_label)?;
+
+    LABEL.update(deps.storage, |l| {
+        if l == new_label {
+            Err(ContractError::SameLabel {})
+        } else {
+            Ok(new_label.clone())
+        }
+    })?;
     Ok(Response::default()
         .add_attribute("action", "update label")
         .add_attribute("label", new_label))
