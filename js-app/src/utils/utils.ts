@@ -6,17 +6,12 @@ import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { rpcEndPoint } from "./env";
 import { RelayTransaction } from "../../types/ProxyContract";
 import { defaultGasPrice } from "./fee";
-import * as fs from "fs";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {
     broadcastPollIntervalMs: 300,
     broadcastTimeoutMs: 8_000,
     gasPrice: defaultGasPrice,
 };
-
-export function getContract(path: string): Uint8Array {
-    return fs.readFileSync(path);
-}
 
 /// Big endian
 export function longToByteArray(long: number): Uint8Array {

@@ -1,8 +1,8 @@
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { uploadContracts } from "./util/contracts";
-import { createSigningClient, delay } from "./util/utils";
-import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "./util/fee";
+import { uploadContracts } from "./utils/contracts";
+import { createSigningClient, delay } from "./utils/utils";
+import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "./utils/fee";
 import { GovecClient } from "../types/GovecContract";
 import {
     InstantiateMsg as Cw20SBVInstantiateMsg,
@@ -17,8 +17,10 @@ import {
 import { QueryMsg as DaoQueryMsg } from "@dao-dao/types/contracts/cw-core";
 import { QueryMsg as StakeQuery } from "@dao-dao/types/contracts/stake-cw20";
 import { InstantiateMsg as FactoryInstantiateMsg } from "../types/FactoryContract";
-import { adminAddr, addrPrefix, adminMnemonic } from "./util/env";
-import { instantiateGovec } from "./util/contracts";
+
+import { adminAddr, addrPrefix, adminMnemonic } from "./utils/env";
+
+import { instantiateGovec } from "./utils/contracts";
 import { CosmosMsg_for_Empty } from "types/ProxyContract";
 
 /**

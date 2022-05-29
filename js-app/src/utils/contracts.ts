@@ -1,11 +1,11 @@
-import { Addr } from "./../../types/FactoryContract";
+import { Addr } from "../../types/FactoryContract";
 import { StdFee } from "@cosmjs/amino";
 import { SigningCosmWasmClient, UploadResult } from "@cosmjs/cosmwasm-stargate";
-import { getContract } from "./utils";
 import { defaultInstantiateFee, defaultUploadFee, walletFee } from "./fee";
 import { coin } from "@cosmjs/stargate";
 import { InstantiateMsg as FactoryInstantiateMsg } from "../../types/FactoryContract";
 import { InstantiateMsg as GovecInstantiateMsg } from "../../types/GovecContract";
+import { getContract } from "./fs";
 
 import {
     factoryCodePath,
@@ -25,10 +25,10 @@ export async function uploadContract(
     client: SigningCosmWasmClient,
     codePath: string,
     senderAddress?: Addr,
-    uploadFee?: StdFee | number | "auto"
+    uploadFee: StdFee | number | "auto" = defaultUploadFee
 ): Promise<UploadResult> {
     const code = getContract(codePath);
-    return client.upload(senderAddress ?? adminAddr!, code, uploadFee ?? defaultUploadFee);
+    return client.upload(senderAddress ?? adminAddr, code, uploadFee);
 }
 
 export const FACTORY_INITIAL_FUND = coin(10000000, coinMinDenom!);
@@ -59,14 +59,14 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     proposalSingleRes: UploadResult;
 }> {
     // Upload required contracts
-    const factoryRes = await uploadContract(client, factoryCodePath!);
-    const proxyRes = await uploadContract(client, proxyCodePath!);
-    const multisigRes = await uploadContract(client, fixMultiSigCodePath!);
-    const govecRes = await uploadContract(client, govecCodePath!);
-    const stakingRes = await uploadContract(client, stakingCodePath!);
-    const daoRes = await uploadContract(client, daoCodePath!);
-    const voteRes = await uploadContract(client, voteCodePath!);
-    const proposalSingleRes = await uploadContract(client, proposalSingleCodePath!);
+    const factoryRes = await uploadContract(client, factoryCodePath);
+    const proxyRes = await uploadContract(client, proxyCodePath);
+    const multisigRes = await uploadContract(client, fixMultiSigCodePath);
+    const govecRes = await uploadContract(client, govecCodePath);
+    const stakingRes = await uploadContract(client, stakingCodePath);
+    const daoRes = await uploadContract(client, daoCodePath);
+    const voteRes = await uploadContract(client, voteCodePath);
+    const proposalSingleRes = await uploadContract(client, proposalSingleCodePath);
     // const voteRes = await uploadContract(client, voteCodePath!);
     // const proposalSingleRes = await uploadContract(client, proposalSingleCodePath!);
     // console.log(factoryRes, proxyRes, multisigRes, govecRes, stakingRes, daoRes, voteRes, proposalSingleRes);
@@ -107,6 +107,7 @@ export async function instantiateFactoryContract(
             funds: [FACTORY_INITIAL_FUND],
         }
     );
+
     console.log("Factory contract was deployed at the following address:", contractAddress);
 
     return {
