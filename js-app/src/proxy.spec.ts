@@ -5,12 +5,12 @@ import {
     defaultWalletCreationFee,
     defaultRelayFee,
     defaultSendFee,
-} from "./util/fee";
+} from "./utils/fee";
 import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { createRelayTransaction, createSigningClient, getContract, mnemonicToKeyPair } from "./util/utils";
-import { uploadContracts, instantiateFactoryContract, instantiateGovec } from "./util/contracts";
+import { createRelayTransaction, createSigningClient, mnemonicToKeyPair } from "./utils/utils";
+import { uploadContracts, instantiateFactoryContract, instantiateGovec } from "./utils/contracts";
 import { Addr, CosmosMsg_for_Empty as CosmosMsg, BankMsg, Coin, ProxyClient } from "../types/ProxyContract";
 import { FactoryClient } from "../types/FactoryContract";
 import { GovecClient } from "../types/GovecContract";
@@ -19,6 +19,7 @@ import {
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
+import { getContract } from "./utils/fs";
 
 import {
     addrPrefix,
@@ -37,7 +38,7 @@ import {
     testWalletInitialFunds,
     userAddr,
     userMnemonic,
-} from "./util/env";
+} from "./utils/env";
 
 /**
  * This suite tests Proxy contract methods
@@ -212,12 +213,12 @@ describe("Proxy Suite: ", () => {
         // Freeze
         await guardianProxyClient.revertFreezeStatus();
         is_frozen = (await proxyClient.info()).is_frozen;
-        expect(is_frozen).toBeTrue();
+        expect(is_frozen).toBeTruthy();
 
         // Unfreeze
         await guardianProxyClient.revertFreezeStatus();
         is_frozen = (await proxyClient.info()).is_frozen;
-        expect(is_frozen).toBeFalse();
+        expect(is_frozen).toBeFalsy();
     });
 
     it("Shouldn't be able to perform operations if a wallet is frozen", async () => {
@@ -243,7 +244,7 @@ describe("Proxy Suite: ", () => {
             });
 
             // Force test failure, function didn't throw :/
-            expect(false).toBeTrue();
+            expect(false).toBeTruthy();
         } catch (err) {
             const error: Error = err as any;
             expect(error).toBeTruthy();
@@ -287,7 +288,7 @@ describe("Proxy Suite: ", () => {
             });
 
             // Force test failure, function didn't throw :/
-            expect(false).toBeTrue();
+            expect(false).toBeTruthy();
         } catch (err) {
             const error: Error = err as any;
             expect(err).toBeTruthy();
@@ -430,7 +431,7 @@ describe("Proxy Suite: ", () => {
 
             // At this point, the wallet should be frozen
             const { is_frozen } = await msProxyClient.info();
-            expect(is_frozen).toBeTrue();
+            expect(is_frozen).toBeTruthy();
 
             // TODO: Write the exact same thing but for unfreezing
         } catch (err) {

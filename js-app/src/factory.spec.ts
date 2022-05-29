@@ -1,8 +1,8 @@
 import { assert } from "@cosmjs/utils";
 import { toBase64 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { uploadContracts, FACTORY_INITIAL_FUND, instantiateFactoryContract, instantiateGovec } from "./util/contracts";
-import { createSigningClient, mnemonicToKeyPair } from "./util/utils";
+import { uploadContracts, FACTORY_INITIAL_FUND, instantiateFactoryContract, instantiateGovec } from "./utils/contracts";
+import { createSigningClient, mnemonicToKeyPair } from "./utils/utils";
 import { Coin, FactoryClient, Addr } from "../types/FactoryContract";
 import { coin } from "@cosmjs/stargate";
 
@@ -19,8 +19,8 @@ import {
     testWalletInitialFunds,
     userAddr,
     userMnemonic,
-} from "./util/env";
-import { defaultWalletCreationFee } from "./util/fee";
+} from "./utils/env";
+import { defaultWalletCreationFee } from "./utils/fee";
 
 /**
  * This suite tests Factory contract methods

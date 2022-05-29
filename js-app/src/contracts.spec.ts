@@ -1,8 +1,9 @@
 import { sha256 } from "@cosmjs/crypto";
 import { toHex } from "@cosmjs/encoding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { uploadContracts } from "./util/contracts";
-import { createSigningClient, getContract } from "./util/utils";
+import { uploadContracts } from "./utils/contracts";
+import { createSigningClient } from "./utils/utils";
+import { getContract } from "./utils/fs";
 
 import {
     addrPrefix,
@@ -12,7 +13,7 @@ import {
     govecCodePath,
     proxyCodePath,
     stakingCodePath,
-} from "./util/env";
+} from "./utils/env";
 
 /**
  * This suite tests contracts upload and deploy
@@ -26,11 +27,11 @@ describe("Contracts Suite: ", () => {
 
     it("Should upload contracts", async () => {
         const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await uploadContracts(adminClient);
-        const factoryCode = getContract(factoryCodePath!);
-        const proxyCode = getContract(proxyCodePath!);
-        const multisigCode = getContract(fixMultiSigCodePath!);
-        const govecCode = getContract(govecCodePath!);
-        const stakingCode = getContract(stakingCodePath!);
+        const factoryCode = getContract(factoryCodePath);
+        const proxyCode = getContract(proxyCodePath);
+        const multisigCode = getContract(fixMultiSigCodePath);
+        const govecCode = getContract(govecCodePath);
+        const stakingCode = getContract(stakingCodePath);
 
         expect(factoryRes.originalChecksum).toEqual(toHex(sha256(factoryCode)));
         expect(factoryRes.compressedSize).toBeLessThan(factoryCode.length * 0.5);
