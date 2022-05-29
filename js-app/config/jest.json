@@ -1,0 +1,16 @@
+
+   
+{
+  "rootDir": "../",
+  "testRegex": "\\.spec\\.ts$",
+    "setupFiles": ["<rootDir>/config/jest.setup.ts"],
+    "testTimeout": 600000,
+    "moduleFileExtensions": ["ts", "js"],
+    "transform": {
+      ".ts": "ts-jest"
+    },
+    "collectCoverageFrom": ["**/src/**/*.ts", "!**/node_modules/**"],
+    "coverageDirectory": "coverage",
+    "coveragePathIgnorePatterns": ["node_modules"],
+    "verbose": true
+  }

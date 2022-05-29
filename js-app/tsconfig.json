@@ -5,7 +5,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "lib": ["es2017"],
+    "typeRoots": ["node_modules/@types"],
     "module": "commonjs",
+    "types": ["node", "jest"],
     "moduleResolution": "node",
     "newLine": "LF",
     "noEmitOnError": true,
@@ -20,6 +22,7 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es2017"
-  }
+    "target": "es2017",
+  },
+  "include": ["**/*.ts"]
 }
