@@ -12,6 +12,9 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    env: 
+      RUSTFLAGS: "-Cinstrument-coverage"
+      LLVM_PROFILE_FILE: "vectis-%p-%m.profraw"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -24,10 +27,21 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
 
+      - name: Install Coverage Dependencies
+        run: |
+          cargo install grcov
+          rustup component add llvm-tools-preview
+
       - name: Run contract tests
         run: cargo test --locked
         env:
           RUST_BACKTRACE: 1
+      
+      - name: Generate LCOV Report
+        run: grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing -o ./lcov.info
+
+      - name: Upload Coverage
+        run: bash <(curl -s https://codecov.io/bash) -f lcov.info
 
       - name: Compile WASM contract factory
         run: cargo wasm-factory --locked
