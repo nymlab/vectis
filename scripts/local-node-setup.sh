@@ -14,7 +14,7 @@ NODE_NETWORK=$NETWORK || "juno_local"
 
 echo "⚙️  Running ${NODE_NETWORK} node on Docker..."
 
-docker rm -f "${NODE_NETWORK}_node" > /dev/null
+docker rm -f `docker container ls --format="{{.ID}}\t{{.Ports}}" | grep 26656 | awk '{print $1}'` > /dev/null
 
 if [[ ${NODE_NETWORK} =~ "juno" ]]; then 
 docker run -d \
