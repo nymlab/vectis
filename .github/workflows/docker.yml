@@ -16,11 +16,31 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  docker:
+  contracts_build:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - name: Build vectis contracts
+        run: |
+          cd scripts
+          sh build.sh
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: contracts_build
+          path: artifacts
+  docker_build_and_push:
+    runs-on: ubuntu-latest
+    needs: contracts_build
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: contracts_build
+          path: artifacts
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -31,10 +51,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build vectis contracts
-        run: |
-          cd scripts
-          sh build.sh
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
