@@ -293,16 +293,16 @@ pub fn execute_rotate_user_key(
     info: MessageInfo,
     new_user_address: String,
 ) -> Result<Response, ContractError> {
-    // Ensure caller is guardian or multisig or user
-    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
-
-    // make sure guardians have not frozen the contract
-    if is_frozen(deps.as_ref())? {
+    // Allow guardians to rotate key when it is frozen
+    if is_frozen(deps.as_ref())?
+        && authorize_guardian_or_multisig(deps.as_ref(), &info.sender).is_err()
+    {
         return Err(ContractError::Frozen {});
-    }
+    } else {
+        authorize_user_or_guardians(deps.as_ref(), &info.sender)?
+    };
 
     let user = USER.load(deps.storage)?;
-
     let update_factory = WasmMsg::Execute {
         contract_addr: deps
             .api

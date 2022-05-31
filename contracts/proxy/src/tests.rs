@@ -134,15 +134,14 @@ fn frozen_contract_cannot_execute_user_tx() {
 }
 
 #[test]
-fn frozen_contract_user_cannot_rotate_guardians() {
+fn frozen_contract_user_cannot_rotate_guardians_or_user() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     let user_addr = do_instantiate(deps.as_mut());
 
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(response.attributes, [("action", "frozen")]);
+    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
     let info = mock_info(user_addr.as_str(), &[]);
     let env = mock_env();
@@ -158,6 +157,37 @@ fn frozen_contract_user_cannot_rotate_guardians() {
 
     let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
     assert_eq!(err, ContractError::Frozen {});
+
+    let msg = ExecuteMsg::RotateUserKey {
+        new_user_address: "new user".into(),
+    };
+
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::Frozen {});
+}
+
+#[test]
+fn frozen_contract_guardians_can_rotate_user_key() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    let info = mock_info(GUARD1, &[]);
+    let env = mock_env();
+    let msg = ExecuteMsg::RevertFreezeStatus {};
+    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert!(wallet_info.is_frozen);
+
+    let info = mock_info(GUARD1, &[]);
+    let env = mock_env();
+
+    let msg = ExecuteMsg::RotateUserKey {
+        new_user_address: "new user123".into(),
+    };
+
+    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert_ne!(wallet_info.user_addr, user_addr);
 }
 
 #[test]
