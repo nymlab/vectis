@@ -32,8 +32,8 @@ const wasmd_testnet: Network = {
     chainId: "testing",
     chainName: "Wasmd Testnet",
     addressPrefix: "wasm",
-    rpcUrl: "http://localhost:26657",
-    httpUrl: "http://localhost:1317",
+    rpcUrl: "https://rpc.cliffnet.cosmwasm.com/",
+    httpUrl: "https://lcd.cliffnet.cosmwasm.com/",
     feeToken: "upebble",
     stakingToken: "urock",
     coinMap: {
@@ -47,8 +47,8 @@ const wasmd_local: Network = {
     chainId: "cliffnet-1",
     chainName: "Wasmd Local",
     addressPrefix: "wasm",
-    rpcUrl: "https://rpc.cliffnet.cosmwasm.com/",
-    httpUrl: "https://lcd.cliffnet.cosmwasm.com/",
+    rpcUrl: "http://localhost:26657",
+    httpUrl: "http://localhost:1317",
     feeToken: "ucosm",
     stakingToken: "ustake",
     coinMap: {
