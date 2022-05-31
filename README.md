@@ -46,25 +46,27 @@ cd contracts
 cargo test
 ```
 
-### Local Node
+### Docker Local Node
 
-#### 1. Set up a node locally
+##### 1. Set env variable
 
-You can use either `juno` or `wasmd`
+You must create an .env file from example.env template and define NETWORK env variable, you can use either `juno` or `wasmd`
 
-##### For juno node
+##### 2. Run Script
 
-###### Option 1: Docker
-
-Simply run `./local-juno-setup.sh` which will spin up a Juno container and run the setup script to seed some accounts, then compile Rust contracts and run the E2E spec to deploy contracts and test functionalities. When everything is done, you can use the local node on your machine.
+In scripts folder there is a script called `./local-node-setup.sh` which will spin up a wasmd or juno container and run the setup script to seed some accounts, then compile Rust contracts and run the E2E spec to deploy contracts and test functionalities. When everything is done, you can use the local node on your machine.
 
 The script will check if you have both Docker and Rust installed. In case you haven't, a link will be shown to install said dependencies.
+
+#### Native Local Node
+
+##### Juno Option
 
 ###### Option 2: Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
 
 **Note:** this requires you to do a setup script to seed the accounts use for js-app test specified in the `.env.juno.local`
 
-##### For Wasmd
+##### Wasmd Option
 
 ```sh
 git clone https://github.com/CosmWasm/wasmd.git
@@ -83,15 +85,13 @@ wasmd version
 ##### Start the node
 
 ```sh
-./local-node-setup.sh
+./scripts/wasmd-node-setup.sh
 ```
 
 #### 3. Compile smart contracts
 
 ```sh
-# compile the contracts with suitable RUSTFLAGS for compact wasm code size
-RUSTFLAGS='-C link-arg=-s' cargo wasm-factory
-RUSTFLAGS='-C link-arg=-s' cargo wasm-proxy
+./scripts/build.sh
 ```
 
 ### Interact with the Local Node
