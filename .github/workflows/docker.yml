@@ -8,7 +8,6 @@ on:
     tags:
     branches:
       - 'main'
-  pull_request:
     
 
 env:
@@ -68,5 +67,5 @@ jobs:
         with:
           context: .
           platforms: linux/amd64
-          push: false
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
