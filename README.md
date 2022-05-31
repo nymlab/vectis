@@ -94,20 +94,22 @@ wasmd version
 ./scripts/build.sh
 ```
 
-### Interact with the Local Node
+### Interacting with the blockchain
 
-We are using [cosmJS](https://github.com/cosmos/cosmjs) to test the smart contracts with the local node.
-The testing framework used is [Jasmine](https://jasmine.github.io/)
+We are using [CosmJS](https://github.com/cosmos/cosmjs) to test the smart contracts.
+The testing framework used is [Jest](https://jestjs.io/)
 The JS app is in the `js-app` directory.
 
-Please ensure you have set up the `.env.juno.local` or `.env.dev` file according to the `example.env`.
+Please ensure you have set up the `.env` file according to the `example.env`.
+
+Supported networks are: `juno_local` `juno_testnet` `wasmd_local` `wasmd_testnet`
 
 > Note: _The tests include storing and instantiating the contracts_
 
 ```sh
 cd js-app
 npm i           # Install all dependencies
-export NODE_ENV=juno-local && npm test        # Run tests for juno local or use "dev"
+npm test        # Run tests for juno local or use "dev"
 ```
 
 ### Gitpod integration
