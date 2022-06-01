@@ -27,3 +27,4 @@
 ## js-app builds
 **/node_modules/
 **/build/
+**/factoryAddr.txt

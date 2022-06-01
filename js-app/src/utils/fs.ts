@@ -22,3 +22,7 @@ export function getDownloadContractsPath(basePath: string): any {
     const proposalSingleCodePath = path.join(basePath, "cw_proposal_single.wasm");
     return { fixMultiSigCodePath, cw20CodePath, daoCodePath, stakingCodePath, voteCodePath, proposalSingleCodePath };
 }
+
+export function writeInFile<T>(fileName: string, content: T, encoding: string = "utf8"): void {
+    fs.writeFileSync(path.join(__dirname, "..", "..", fileName), content, { encoding });
+}

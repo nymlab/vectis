@@ -5,7 +5,7 @@ import { defaultInstantiateFee, defaultUploadFee, walletFee } from "./fee";
 import { coin } from "@cosmjs/stargate";
 import { InstantiateMsg as FactoryInstantiateMsg } from "../../types/FactoryContract";
 import { InstantiateMsg as GovecInstantiateMsg } from "../../types/GovecContract";
-import { getContract } from "./fs";
+import { getContract, writeInFile } from "./fs";
 
 import {
     factoryCodePath,
@@ -109,6 +109,7 @@ export async function instantiateFactoryContract(
     );
 
     console.log("Factory contract was deployed at the following address:", contractAddress);
+    writeInFile<string>("factoryAddr.txt", contractAddress);
 
     return {
         factoryAddr: contractAddress,
