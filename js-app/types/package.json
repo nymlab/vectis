@@ -1,7 +1,11 @@
 {
     "name": "@vectis/types",
     "description": "Types for the Vectis SCW",
-    "authors": "Nymlab",
+    "authors": [
+        "bwty <whalelephant@users.noreply.github.com>",
+        "giovanni-orciuolo <giovanni@orciuolo.it>",
+        "j0nl1 <jonlitech@gmail.com>"
+    ],
     "version": "0.0.1",
     "main": "index.ts",
     "scripts": {
@@ -14,7 +18,7 @@
         "*.ts"
     ],
     "license": "Apache-2.0",
-    "homepage": "https://github.com/nymlab/vectis",
+    "homepage": "https://www.nymlab.it",
     "repository": {
         "type": "git",
         "url": "https://github.com/nymlab/vectis"
