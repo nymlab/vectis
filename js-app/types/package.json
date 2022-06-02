@@ -1,0 +1,20 @@
+{
+    "name": "@vectis/types",
+    "description": "Types for the Vectis SCW",
+    "authors": "Nymlab",
+    "version": "0.0.1",
+    "main": "index.ts",
+    "files": [
+        "*.ts"
+    ],
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/nymlab/vectis",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nymlab/vectis"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    }
+}
