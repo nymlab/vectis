@@ -4,6 +4,12 @@
     "authors": "Nymlab",
     "version": "0.0.1",
     "main": "index.ts",
+    "scripts": {
+        "generate": "npm run types:proxy && npm run types:factory && npm run types:govec && npm version patch",
+        "types:proxy": "../node_modules/.bin/cosmwasm-typescript-gen generate --schema ../../contracts/proxy/schema --out . --name Proxy",
+        "types:factory": "../node_modules/.bin/cosmwasm-typescript-gen generate --schema ../../contracts/factory/schema --out . --name Factory",
+        "types:govec": "../node_modules/.bin/cosmwasm-typescript-gen generate --schema ../../contracts/govec/schema --out . --name Govec"
+    },
     "files": [
         "*.ts"
     ],
