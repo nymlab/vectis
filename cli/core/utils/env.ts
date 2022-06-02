@@ -28,8 +28,8 @@ export const relayer1Addr = accounts.relayer_1.address;
 export const relayer2Mnemonic = accounts.relayer_2.mnemonic;
 export const relayer2Addr = accounts.relayer_2.address;
 
-export const { proxyCodePath, govecCodePath, factoryCodePath } = getVectisContractPaths(process.env.VECTIS_CW_PATH);
+export const { proxyCodePath, govecCodePath, factoryCodePath } = getVectisContractPaths(process.env.VECTIS_CW_PATH!);
 export const { fixMultiSigCodePath, cw20CodePath, daoCodePath, stakingCodePath, voteCodePath, proposalSingleCodePath } =
-    getDownloadContractsPath(process.env.DOWNLOADED_CW_PATH);
+    getDownloadContractsPath(process.env.DOWNLOADED_CW_PATH!);
 
 export const testWalletInitialFunds = coin(5_000_000, coinMinDenom!);

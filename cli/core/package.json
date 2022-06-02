@@ -1,0 +1,12 @@
+{
+    "name": "@vectis/core",
+    "scripts": {
+        "deploy": "ts-node contracts.ts"
+    },
+    "dependencies": {
+        "@cosmjs/amino": "^0.28.4",
+        "@cosmjs/cosmwasm-stargate": "^0.28.4",
+        "@cosmjs/stargate": "^0.28.4",
+        "ts-node": "^10.8.0"
+    }
+}

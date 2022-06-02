@@ -4,7 +4,7 @@ import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Cur
 import { makeCosmoshubPath } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { rpcEndPoint } from "./env";
-import { RelayTransaction } from "../../types/ProxyContract";
+import { RelayTransaction } from "@vectis/types/contracts/ProxyContract";
 import { defaultGasPrice } from "./fee";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {

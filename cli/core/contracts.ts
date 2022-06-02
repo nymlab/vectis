@@ -1,11 +1,11 @@
-import { Addr } from "../../types/FactoryContract";
+import { Addr } from "@vectis/types/contracts/FactoryContract";
 import { StdFee } from "@cosmjs/amino";
 import { SigningCosmWasmClient, UploadResult } from "@cosmjs/cosmwasm-stargate";
-import { defaultInstantiateFee, defaultUploadFee, walletFee } from "./fee";
+import { defaultInstantiateFee, defaultUploadFee, walletFee } from "./utils/fee";
 import { coin } from "@cosmjs/stargate";
-import { InstantiateMsg as FactoryInstantiateMsg } from "../../types/FactoryContract";
-import { InstantiateMsg as GovecInstantiateMsg } from "../../types/GovecContract";
-import { getContract, writeInFile } from "./fs";
+import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts/FactoryContract";
+import { InstantiateMsg as GovecInstantiateMsg } from "@vectis/types/contracts/GovecContract";
+import { getContract, writeInFile } from "./utils/fs";
 
 import {
     factoryCodePath,
@@ -19,7 +19,7 @@ import {
     proposalSingleCodePath,
     coinMinDenom,
     addrPrefix,
-} from "./env";
+} from "./utils/env";
 
 export async function uploadContract(
     client: SigningCosmWasmClient,
@@ -109,7 +109,7 @@ export async function instantiateFactoryContract(
     );
 
     console.log("Factory contract was deployed at the following address:", contractAddress);
-    writeInFile<string>("factoryAddr.txt", contractAddress);
+    writeInFile("factoryAddr.txt", contractAddress);
 
     return {
         factoryAddr: contractAddress,
