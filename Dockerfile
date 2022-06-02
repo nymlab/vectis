@@ -11,12 +11,12 @@ RUN ./setup_junod.sh ${ACCOUNTS}
 
 WORKDIR /app
 
-COPY ./artifacts /app/artifacts
-COPY ./js-app /app/js-app
+COPY ./artifacts ./artifacts
+COPY ./cli ./cli
 
 RUN apk add --update nodejs npm
 
-WORKDIR /app/js-app
+WORKDIR /app/cli
 
 RUN junod start --rpc.laddr tcp://0.0.0.0:26657 & sleep 5 && npm ci && npm test && killall -9 junod
 

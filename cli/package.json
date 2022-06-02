@@ -1,5 +1,5 @@
 {
-    "name": "js-app",
+    "name": "vectis-cli",
     "version": "1.0.0",
     "license": "Apache 2.0",
     "description": "CLI tool for Vectis smart contract wallet",
@@ -7,7 +7,7 @@
         "types"
     ],
     "scripts": {
-        "prepare": "cd .. && ./js-app/node_modules/.bin/husky install js-app/.husky",
+        "prepare": "cd .. && ./cli/node_modules/.bin/husky install cli/.husky",
         "prettier": "prettier --write **/*.ts",
         "generate:types": "npm run generate -w @vectis/types",
         "test": "jest --config config/jest.json --runInBand --collectCoverage"
@@ -35,6 +35,6 @@
         "typescript": "^4.4.4"
     },
     "lint-staged": {
-        "*.{ts}": "./js-app/node_modules/.bin/prettier --write"
+        "*.{ts}": "./cli/node_modules/.bin/prettier --write"
     }
 }

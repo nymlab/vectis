@@ -24,7 +24,7 @@
 # testnet
 **.testnet
 
-## js-app builds
+## cli builds
 **/node_modules/
 **/build/
 **/factoryAddr.txt
