@@ -23,6 +23,6 @@ export function getDownloadContractsPath(basePath: string): any {
     return { fixMultiSigCodePath, cw20CodePath, daoCodePath, stakingCodePath, voteCodePath, proposalSingleCodePath };
 }
 
-export function writeInFile<T>(fileName: string, content: T, encoding: string = "utf8"): void {
+export function writeInFile(fileName: string, content: string, encoding: BufferEncoding = "utf8"): void {
     fs.writeFileSync(path.join(__dirname, "..", "..", fileName), content, { encoding });
 }

@@ -1,6 +1,6 @@
 import { calculateFee, GasPrice } from "@cosmjs/stargate";
 import { coinMinDenom, gasPrice } from "./env";
-import { Coin } from "../../types/FactoryContract";
+import { Coin } from "@vectis/types/contracts/FactoryContract";
 
 export const defaultGasPrice = GasPrice.fromString(gasPrice!);
 export const defaultUploadFee = calculateFee(55_500_000, defaultGasPrice);

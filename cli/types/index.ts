@@ -1,5 +1,3 @@
-import * as FactoryContract from "./FactoryContract";
-import * as GovecContract from "./GovecContract";
-import * as ProxyContract from "./ProxyContract";
-
-export default { ...FactoryContract, ...GovecContract, ...ProxyContract };
+export * as FactoryContract from "./contracts/FactoryContract";
+export * as GovecContract from "./contracts/GovecContract";
+export * as ProxyContract from "./contracts/ProxyContract";

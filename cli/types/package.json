@@ -10,9 +10,9 @@
     "main": "index.ts",
     "scripts": {
         "generate": "npm run types:proxy && npm run types:factory && npm run types:govec && npm version patch",
-        "types:proxy": "../node_modules/.bin/cosmwasm-typescript-gen generate --schema ../../contracts/proxy/schema --out . --name Proxy",
-        "types:factory": "../node_modules/.bin/cosmwasm-typescript-gen generate --schema ../../contracts/factory/schema --out . --name Factory",
-        "types:govec": "../node_modules/.bin/cosmwasm-typescript-gen generate --schema ../../contracts/govec/schema --out . --name Govec"
+        "types:proxy": "cosmwasm-typescript-gen generate --schema ../../contracts/proxy/schema --out ./contracts --name Proxy",
+        "types:factory": "cosmwasm-typescript-gen generate --schema ../../contracts/factory/schema --out ./contracts --name Factory",
+        "types:govec": "cosmwasm-typescript-gen generate --schema ../../contracts/govec/schema --out ./contracts --name Govec"
     },
     "files": [
         "*.ts"
@@ -26,5 +26,8 @@
     "publishConfig": {
         "access": "public",
         "registry": "https://registry.npmjs.org"
+    },
+    "dependencies": {
+        "cosmwasm-typescript-gen": "^0.2.14"
     }
 }

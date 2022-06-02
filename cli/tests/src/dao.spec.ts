@@ -1,9 +1,9 @@
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { uploadContracts } from "./utils/contracts";
-import { createSigningClient, delay } from "./utils/utils";
-import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "./utils/fee";
-import { GovecClient } from "../types/GovecContract";
+import { uploadContracts } from "@vectis/core/contracts";
+import { createSigningClient, delay } from "@vectis/core/utils/utils";
+import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "@vectis/core/utils/fee";
+import { GovecClient } from "@vectis/types/contracts/GovecContract";
 import {
     InstantiateMsg as Cw20SBVInstantiateMsg,
     TokenInfo,
@@ -16,12 +16,12 @@ import {
 } from "@dao-dao/types/contracts/cw-proposal-single";
 import { QueryMsg as DaoQueryMsg } from "@dao-dao/types/contracts/cw-core";
 import { QueryMsg as StakeQuery } from "@dao-dao/types/contracts/stake-cw20";
-import { InstantiateMsg as FactoryInstantiateMsg } from "../types/FactoryContract";
+import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts/FactoryContract";
 
-import { adminAddr, addrPrefix, adminMnemonic } from "./utils/env";
+import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/env";
 
-import { instantiateGovec } from "./utils/contracts";
-import { CosmosMsg_for_Empty } from "types/ProxyContract";
+import { instantiateGovec } from "@vectis/core/contracts";
+import { CosmosMsg_for_Empty } from "types/contracts/ProxyContract";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO

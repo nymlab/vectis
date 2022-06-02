@@ -5,21 +5,27 @@ import {
     defaultWalletCreationFee,
     defaultRelayFee,
     defaultSendFee,
-} from "./utils/fee";
+} from "@vectis/core/utils/fee";
 import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { createRelayTransaction, createSigningClient, mnemonicToKeyPair } from "./utils/utils";
-import { uploadContracts, instantiateFactoryContract, instantiateGovec } from "./utils/contracts";
-import { Addr, CosmosMsg_for_Empty as CosmosMsg, BankMsg, Coin, ProxyClient } from "../types/ProxyContract";
-import { FactoryClient } from "../types/FactoryContract";
-import { GovecClient } from "../types/GovecContract";
+import { createRelayTransaction, createSigningClient, mnemonicToKeyPair } from "@vectis/core/utils/utils";
+import { uploadContracts, instantiateFactoryContract, instantiateGovec } from "@vectis/core/contracts";
+import {
+    Addr,
+    CosmosMsg_for_Empty as CosmosMsg,
+    BankMsg,
+    Coin,
+    ProxyClient,
+} from "@vectis/types/contracts/ProxyContract";
+import { FactoryClient } from "@vectis/types/contracts/FactoryContract";
+import { GovecClient } from "@vectis/types/contracts/GovecContract";
 import { coin } from "@cosmjs/stargate";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
-import { getContract } from "./utils/fs";
+import { getContract } from "@vectis/core/utils/fs";
 
 import {
     addrPrefix,
@@ -38,7 +44,7 @@ import {
     testWalletInitialFunds,
     userAddr,
     userMnemonic,
-} from "./utils/env";
+} from "@vectis/core/utils/env";
 
 /**
  * This suite tests Proxy contract methods

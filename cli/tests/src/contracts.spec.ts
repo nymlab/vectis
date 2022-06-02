@@ -1,9 +1,9 @@
 import { sha256 } from "@cosmjs/crypto";
 import { toHex } from "@cosmjs/encoding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { uploadContracts } from "./utils/contracts";
-import { createSigningClient } from "./utils/utils";
-import { getContract } from "./utils/fs";
+import { uploadContracts } from "@vectis/core/contracts";
+import { createSigningClient } from "@vectis/core/utils/utils";
+import { getContract } from "@vectis/core/utils/fs";
 
 import {
     addrPrefix,
@@ -13,7 +13,7 @@ import {
     govecCodePath,
     proxyCodePath,
     stakingCodePath,
-} from "./utils/env";
+} from "@vectis/core/utils/env";
 
 /**
  * This suite tests contracts upload and deploy
