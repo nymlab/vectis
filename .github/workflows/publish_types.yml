@@ -5,14 +5,14 @@ on:
     branches:
       - 'main'
     paths:
-      - 'js-app/types'
+      - 'cli/types/**'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: js-app/types
+        working-directory: cli/types
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3

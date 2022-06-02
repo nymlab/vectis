@@ -55,7 +55,7 @@ sh ./build.sh
 
 echo "📖️ Deploying Vectis contracts and running tests..."
 
-cd ../js-app
+cd ../cli
 
 npm ci
 npm test
