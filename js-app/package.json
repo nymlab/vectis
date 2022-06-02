@@ -1,40 +1,40 @@
 {
-  "name": "js-app",
-  "version": "1.0.0",
-  "license": "MIT",
-  "description": "Testing application for smart contract wallet",
-  "scripts": {
-    "prepare": "cd .. && ./js-app/node_modules/.bin/husky install js-app/.husky",
-    "prettier": "prettier --write **/*.ts",
-    "generate:types": "npm run types:proxy && npm run types:factory && npm run types:govec",
-    "types:proxy": "cosmwasm-typescript-gen generate --schema ../contracts/proxy/schema --out ./types --name Proxy",
-    "types:factory": "cosmwasm-typescript-gen generate --schema ../contracts/factory/schema --out ./types --name Factory",
-    "types:govec": "cosmwasm-typescript-gen generate --schema ../contracts/govec/schema --out ./types --name Govec",
-    "test": "jest --config config/jest.json --runInBand --collectCoverage"
-  },
-  "dependencies": {
-    "@cosmjs/amino": "^0.28.4",
-    "@cosmjs/cosmwasm-stargate": "^0.28.4",
-    "@cosmjs/crypto": "^0.28.4",
-    "@cosmjs/encoding": "^0.28.4",
-    "@cosmjs/proto-signing": "^0.28.4",
-    "@cosmjs/stargate": "^0.28.4"
-  },
-  "devDependencies": {
-    "@dao-dao/types": "^1.1.0",
-    "@types/dotenv": "^8.2.0",
-    "@types/jest": "^27.5.1",
-    "@types/node": "^13.13.52",
-    "cosmwasm-typescript-gen": "^0.2.9",
-    "dotenv": "^10.0.0",
-    "husky": ">=6",
-    "jest": "^28.1.0",
-    "lint-staged": ">=10",
-    "prettier": "^2.6.2",
-    "ts-jest": "^28.0.3",
-    "typescript": "^4.4.4"
-  },
-  "lint-staged": {
-    "*.{ts}": "./js-app/node_modules/.bin/prettier --write"
-  }
+    "name": "js-app",
+    "version": "1.0.0",
+    "license": "MIT",
+    "description": "Testing application for smart contract wallet",
+    "workspaces": [
+        "types"
+    ],
+    "scripts": {
+        "prepare": "cd .. && ./js-app/node_modules/.bin/husky install js-app/.husky",
+        "prettier": "prettier --write **/*.ts",
+        "generate:types": "npm run generate -w @vectis/types",
+        "test": "jest --config config/jest.json --runInBand --collectCoverage"
+    },
+    "dependencies": {
+        "@cosmjs/amino": "^0.28.4",
+        "@cosmjs/cosmwasm-stargate": "^0.28.4",
+        "@cosmjs/crypto": "^0.28.4",
+        "@cosmjs/encoding": "^0.28.4",
+        "@cosmjs/proto-signing": "^0.28.4",
+        "@cosmjs/stargate": "^0.28.4"
+    },
+    "devDependencies": {
+        "@dao-dao/types": "^1.1.0",
+        "@types/dotenv": "^8.2.0",
+        "@types/jest": "^27.5.1",
+        "@types/node": "^13.13.52",
+        "cosmwasm-typescript-gen": "^0.2.9",
+        "dotenv": "^10.0.0",
+        "husky": ">=6",
+        "jest": "^28.1.0",
+        "lint-staged": ">=10",
+        "prettier": "^2.6.2",
+        "ts-jest": "^28.0.3",
+        "typescript": "^4.4.4"
+    },
+    "lint-staged": {
+        "*.{ts}": "./js-app/node_modules/.bin/prettier --write"
+    }
 }
