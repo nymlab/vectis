@@ -6,17 +6,17 @@
         "giovanni-orciuolo <giovanni@orciuolo.it>",
         "j0nl1 <jonlitech@gmail.com>"
     ],
-    "version": "0.0.1",
-    "main": "index.ts",
+    "version": "0.0.3",
+    "main": "index.js",
     "scripts": {
+        "ci": "npm run generate && npm run publish:prod",
+        "publish:dev": "npx tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
+        "publish:prod": "npx tsc && cp package.json build/package.json && cd build && npm publish",
         "generate": "npm run types:proxy && npm run types:factory && npm run types:govec && npm version patch",
         "types:proxy": "cosmwasm-typescript-gen generate --schema ../../contracts/proxy/schema --out ./contracts --name Proxy",
         "types:factory": "cosmwasm-typescript-gen generate --schema ../../contracts/factory/schema --out ./contracts --name Factory",
         "types:govec": "cosmwasm-typescript-gen generate --schema ../../contracts/govec/schema --out ./contracts --name Govec"
     },
-    "files": [
-        "*.ts"
-    ],
     "license": "Apache-2.0",
     "homepage": "https://www.nymlab.it",
     "repository": {
