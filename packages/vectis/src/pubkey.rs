@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, DepsMut, StdError, StdResult};
+use cosmwasm_std::{Addr, Deps, StdError, StdResult};
 
 use bech32::{ToBase32, Variant};
 use primitive_types::H256;
@@ -7,7 +7,7 @@ use ripemd160::Ripemd160;
 use sha2::Sha256;
 
 /// Converts user pubkey into Addr
-pub fn pub_key_to_address(deps: &DepsMut, prefix: &str, pub_key: &[u8]) -> StdResult<Addr> {
+pub fn pub_key_to_address(deps: &Deps, prefix: &str, pub_key: &[u8]) -> StdResult<Addr> {
     let compressed_pub_key = to_compressed_pub_key(pub_key)?;
     let mut ripemd160_hasher = Ripemd160::new();
     ripemd160_hasher.update(Sha256::digest(&compressed_pub_key));

@@ -14,7 +14,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = { version = "1.0.0-beta" }
+cosmwasm-std = { version = "1.0.0" }
 cw-storage-plus = "0.13"
 cw-utils = "0.11"
 cw1 = "0.13"
@@ -29,4 +29,4 @@ stake-cw20 = {version = "0.2.6", features = ['library']}
 vectis-wallet = {path = "../../packages/vectis"}
 
 [dev-dependencies]
-cosmwasm-schema = { version = "1.0.0-beta" }
+cosmwasm-schema = { version = "1.0.0" }

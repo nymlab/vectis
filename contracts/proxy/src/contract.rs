@@ -49,6 +49,28 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    // Ensure no guardians are the same as a user
+    // https://github.com/nymlab/vectis/issues/43
+    //
+    // This returns the human address
+    let addr_human = pub_key_to_address(
+        &deps.as_ref(),
+        &msg.addr_prefix,
+        msg.create_wallet_msg.user_pubkey.as_slice(),
+    )?;
+    msg.create_wallet_msg
+        .guardians
+        .verify_guardians(&addr_human)?;
+
+    let addr = deps.api.addr_canonicalize(addr_human.as_str())?;
+    USER.save(
+        deps.storage,
+        &User {
+            addr: addr.clone(),
+            nonce: 0,
+        },
+    )?;
+
     FROZEN.save(deps.storage, &false)?;
     FACTORY.save(
         deps.storage,
@@ -58,23 +80,6 @@ pub fn instantiate(
     MULTISIG_CODE_ID.save(deps.storage, &msg.multisig_code_id)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     LABEL.save(deps.storage, &msg.create_wallet_msg.label)?;
-
-    // get user addr from it's pubkey
-    let addr_human = pub_key_to_address(
-        &deps,
-        &msg.addr_prefix,
-        &msg.create_wallet_msg.user_pubkey.0,
-    )?;
-
-    let addr = deps.api.addr_canonicalize(addr_human.as_str())?;
-
-    USER.save(
-        deps.storage,
-        &User {
-            addr: addr.clone(),
-            nonce: 0,
-        },
-    )?;
 
     let guardian_addresses = &msg.create_wallet_msg.guardians.addresses;
 
@@ -187,7 +192,7 @@ pub fn execute_relay(
 
     // Get user addr from it's pubkey
     let addr = pub_key_to_address(
-        &deps,
+        &deps.as_ref(),
         &ADDR_PREFIX.load(deps.storage)?,
         &transaction.user_pubkey.0,
     )?;
@@ -348,6 +353,8 @@ pub fn execute_update_guardians(
         is_user?;
         is_contract?;
     };
+
+    guardians.verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
 
     // make sure guardians have not frozen the contract
     if is_frozen(deps.as_ref())? {
