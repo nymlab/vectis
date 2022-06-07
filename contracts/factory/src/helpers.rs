@@ -100,7 +100,7 @@ pub fn ensure_is_valid_migration_msg(
                 // Ensure Signer of relayed message is the wallet user
                 if wallet_info.user_addr
                     != pub_key_to_address(
-                        deps,
+                        &deps.as_ref(),
                         &ADDR_PREFIX.load(deps.storage)?,
                         &tx.user_pubkey.0,
                     )?

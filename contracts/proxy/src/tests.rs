@@ -1,5 +1,5 @@
 use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
-use cosmwasm_std::{coins, to_binary, Addr, BankMsg, Binary, CosmosMsg, DepsMut};
+use cosmwasm_std::{coins, to_binary, Addr, BankMsg, Binary, CosmosMsg, DepsMut, StdError};
 
 use crate::contract::{execute, execute_relay, instantiate, query_info};
 use crate::error::ContractError;
@@ -68,9 +68,48 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     let info = mock_info("creator", &[]);
     let env = mock_env();
 
-    let address = pub_key_to_address(&deps, "wasm", &public_key_serialized).unwrap();
+    let address = pub_key_to_address(&deps.as_ref(), "wasm", &public_key_serialized).unwrap();
     instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
     address
+}
+
+#[test]
+fn user_cannot_be_a_guardian() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+
+    let secp = Secp256k1::new();
+    let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
+    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+    let public_key_serialized = Binary(public_key.serialize_uncompressed().to_vec());
+    let user_addr = pub_key_to_address(&deps.as_ref(), "wasm", &public_key_serialized).unwrap();
+    let guardians_with_user = Guardians {
+        addresses: vec![GUARD1.to_string(), user_addr.to_string()],
+        guardians_multisig: None,
+    };
+
+    let create_wallet_msg = CreateWalletMsg {
+        user_pubkey: public_key_serialized.clone(),
+        guardians: guardians_with_user,
+        relayers: vec![RELAYER1.into(), RELAYER2.into()],
+        proxy_initial_funds: vec![],
+        label: "initial label".to_string(),
+    };
+
+    let instantiate_msg = InstantiateMsg {
+        create_wallet_msg,
+        multisig_code_id: MULTISIG_CODE_ID,
+        code_id: 0,
+        addr_prefix: "wasm".to_string(),
+    };
+
+    let info = mock_info("creator", &[]);
+    let env = mock_env();
+
+    let err = instantiate(deps.as_mut().branch(), env, info, instantiate_msg).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::generic_err("user cannot be a guardian"))
+    );
 }
 
 #[test]
@@ -188,6 +227,35 @@ fn frozen_contract_guardians_can_rotate_user_key() {
     execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert_ne!(wallet_info.user_addr, user_addr);
+}
+
+#[test]
+fn user_cannot_update_guardians_to_include_self() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    // initially we have a wallet with 2 relayers
+    let wallet_info = query_info(deps.as_ref()).unwrap();
+    assert!(wallet_info.guardians.contains(&Addr::unchecked(GUARD2)));
+    assert!(!wallet_info.guardians.contains(&Addr::unchecked(GUARD3)));
+
+    let info = mock_info(user_addr.as_str(), &[]);
+    let env = mock_env();
+
+    let new_guardians = Guardians {
+        addresses: vec![user_addr.to_string(), GUARD3.to_string()],
+        guardians_multisig: None,
+    };
+    let msg = ExecuteMsg::UpdateGuardians {
+        guardians: new_guardians,
+        new_multisig_code_id: None,
+    };
+
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::generic_err("user cannot be a guardian"))
+    );
 }
 
 #[test]
