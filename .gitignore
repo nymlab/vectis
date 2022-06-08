@@ -24,7 +24,9 @@
 # testnet
 **.testnet
 
-## cli builds
+# cli builds
 **/node_modules/
 **/build/
-**/factoryAddr.txt
+
+# cache folders
+**/.cache

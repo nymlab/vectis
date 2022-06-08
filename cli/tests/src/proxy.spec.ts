@@ -39,6 +39,7 @@ import {
     relayer1Mnemonic,
     relayer2Addr,
     rpcEndPoint,
+    uploadReportPath,
     userAddr,
     userMnemonic,
 } from "@vectis/core/utils/constants";
@@ -61,7 +62,7 @@ describe("Proxy Suite: ", () => {
     let guardianProxyClient: ProxyClient;
 
     beforeAll(async () => {
-        const { factoryRes, govecRes, proxyRes, multisigRes } = await import("../../uploadInfo.json" as string);
+        const { factoryRes, govecRes, proxyRes, multisigRes } = await import(uploadReportPath);
 
         userClient = await createSigningClient(userMnemonic, addrPrefix);
         adminClient = await createSigningClient(adminMnemonic, addrPrefix);
