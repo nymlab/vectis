@@ -6,6 +6,7 @@ import wallets from "../config/accounts.json";
 import { NetworkOptions } from "../interfaces/network";
 
 const archSuffix = process.arch === "arm64" ? "-aarch64" : "";
+const cwPlusReleaseVer = "v0.13.4";
 
 const envPath = `${__dirname}/../../../.env`;
 dotenv.config({ path: envPath });
@@ -36,6 +37,7 @@ export const relayer2Addr = accounts.relayer_2.address;
 
 // Paths
 export const cachePath = path.join(__dirname, "..", "..", ".cache");
+export const downloadContractPath = path.join(cachePath, "/contracts");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
 
 export const vectisContractsPath = process.env.VECTIS_CW_PATH as string;
@@ -44,11 +46,15 @@ export const govecCodePath = path.join(vectisContractsPath, `vectis_govec${archS
 export const factoryCodePath = path.join(vectisContractsPath, `vectis_factory${archSuffix}.wasm`);
 
 export const wasmContractsPath = process.env.DOWNLOADED_CW_PATH as string;
-export const fixMultiSigCodePath = path.join(wasmContractsPath, "cw3_fixed_multisig.wasm");
-export const cw20CodePath = path.join(wasmContractsPath, "cw20_base.wasm");
+export const fixMultiSigCodePath = path.join(downloadContractPath, "cw3_fixed_multisig.wasm");
+export const cw20CodePath = path.join(downloadContractPath, "cw20_base.wasm");
 export const daoCodePath = path.join(wasmContractsPath, "cw_core.wasm");
 export const stakingCodePath = path.join(wasmContractsPath, "stake_cw20.wasm");
 export const voteCodePath = path.join(wasmContractsPath, "cw20_staked_balance_voting.wasm");
 export const proposalSingleCodePath = path.join(wasmContractsPath, "cw_proposal_single.wasm");
+
+// Contracts Links
+export const cw20BaseDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw20_base.wasm`;
+export const cw3FixedMulDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_fixed_multisig.wasm`;
 
 export const testWalletInitialFunds = coin(5_000_000, coinMinDenom!);

@@ -15,11 +15,13 @@ import {
     voteCodePath,
     proposalSingleCodePath,
     rpcEndPoint,
+    cw3FixedMulDownloadLink,
+    cw20BaseDownloadLink,
 } from "../utils/constants";
 import { longToByteArray } from "../utils/enconding";
 import { RelayTransaction } from "@vectis/types/contracts/ProxyContract";
 import { Addr } from "@vectis/types/contracts/FactoryContract";
-import { getContract } from "../utils/fs";
+import { downloadContract, getContract } from "../utils/fs";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {
     broadcastPollIntervalMs: 300,
@@ -113,7 +115,6 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     const daoRes = await uploadContract(client, daoCodePath);
     const voteRes = await uploadContract(client, voteCodePath);
     const proposalSingleRes = await uploadContract(client, proposalSingleCodePath);
-    // console.log(factoryRes, proxyRes, multisigRes, govecRes, stakingRes, daoRes, voteRes, proposalSingleRes);
 
     return {
         factoryRes,
@@ -125,4 +126,9 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
         voteRes,
         proposalSingleRes,
     };
+}
+
+export async function downloadContracts() {
+    await downloadContract(cw3FixedMulDownloadLink, "cw3_fixed_multisig.wasm");
+    await downloadContract(cw20BaseDownloadLink, "cw20_base.wasm");
 }
