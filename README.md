@@ -46,11 +46,19 @@ cd contracts
 cargo test
 ```
 
-### Docker Local Node
+### Runner Options
+
+#### Docker Vectis Image
+```bash
+docker run -d --name vectis_node -p 1317:1317 -p 26656:26656 -p 26657:26657 ghcr.io/nymlab/vectis:main
+```
+#### Docker Local Node
 
 ##### 1. Set env variable
 
-You must create an .env file from example.env template and define NETWORK env variable, you can use either `juno` or `wasmd`
+You must create an .env file from example.env template and define NETWORK env variable.
+
+Supported networks are: `juno_local` `juno_testnet` `wasmd_local` `wasmd_testnet`
 
 ##### 2. Run Script
 
@@ -62,9 +70,9 @@ The script will check if you have both Docker and Rust installed. In case you ha
 
 ##### Juno Option
 
-###### Option 2: Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
+###### Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
 
-**Note:** this requires you to do a setup script to seed the accounts use for cli test/utils folder specified in the `.env`
+> **Note:** this requires you to do a setup script to seed the accounts use for cli test/utils folder specified in the `.env`
 
 ##### Wasmd Option
 
@@ -82,13 +90,13 @@ wasmd version
 > **INFO:** `make install` will copy wasmd to `$HOME/go/bin` or the default directory for binaries from Go,
 > please make sure that is in your `PATH`.
 
-##### Start the node
+##### 1. Start the node
 
 ```sh
 ./scripts/wasmd-node-setup.sh
 ```
 
-#### 3. Compile smart contracts
+##### 2. Compile smart contracts
 
 ```sh
 ./scripts/build.sh
@@ -101,8 +109,6 @@ The testing framework used is [Jest](https://jestjs.io/)
 The CLI is in the `cli` directory.
 
 Please ensure you have set up the `.env` file according to the `example.env`.
-
-Supported networks are: `juno_local` `juno_testnet` `wasmd_local` `wasmd_testnet`
 
 > Note: _The tests include storing and instantiating the contracts_
 
