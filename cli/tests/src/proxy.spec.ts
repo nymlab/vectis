@@ -41,7 +41,7 @@ import {
     rpcEndPoint,
     userAddr,
     userMnemonic,
-} from "@vectis/core/utils/env";
+} from "@vectis/core/utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { instantiateFactoryContract, instantiateGovec } from "@vectis/core/contracts";
 

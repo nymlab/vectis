@@ -8,7 +8,7 @@ import {
     testWalletInitialFunds,
     userAddr,
     userMnemonic,
-} from "@vectis/core/utils/env";
+} from "@vectis/core/utils/constants";
 import { defaultWalletCreationFee } from "@vectis/core/utils/fee";
 import { mnemonicToKeyPair } from "@vectis/core/utils/utils";
 import { Addr, Coin, FactoryClient } from "@vectis/types/contracts/FactoryContract";
