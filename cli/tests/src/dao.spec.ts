@@ -1,27 +1,21 @@
-import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { uploadContracts } from "@vectis/core/contracts";
 import { createSigningClient, delay } from "@vectis/core/utils/utils";
 import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "@vectis/core/utils/fee";
 import { GovecClient } from "@vectis/types/contracts/GovecContract";
 import {
-    InstantiateMsg as Cw20SBVInstantiateMsg,
-    TokenInfo,
-    QueryMsg as Cw20SBVQueryMsg,
-} from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import {
-    InstantiateMsg as CwPropSingleInstantiateMsg,
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
-import { QueryMsg as DaoQueryMsg } from "@dao-dao/types/contracts/cw-core";
 import { QueryMsg as StakeQuery } from "@dao-dao/types/contracts/stake-cw20";
 import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts/FactoryContract";
 
 import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/env";
 
-import { instantiateGovec } from "@vectis/core/contracts";
 import { CosmosMsg_for_Empty } from "types/contracts/ProxyContract";
+import { createGovModInstInfo, createTokenInfo, createVoteModInstInfo } from "./mocks/info";
+import { createDaoInstMsg, createPropInstMsg, createVoteInstMsg } from "./mocks/messages";
+import { toCosmosMsg } from "@vectis/core/utils/cosmwasm";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { instantiateGovec } from "@vectis/core/contracts";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
@@ -32,140 +26,61 @@ describe("DAO Suite: ", () => {
     let factoryCodeId: number;
     let proxyCodeId: number;
     let multisigCodeId: number;
-    let govecCodeId: number;
-    let stakingCodeId: number;
-    let voteCodeId: number;
-    let daoCodeId: number;
-    let proposalSingleCodeId: number;
     let daoAddr: string;
-    let factoryAddr: string;
-    let voteAddr: string;
     let stakingAddr: string;
     let propAddrs: string[];
-    let goVecAddr: string;
     let proposalId: number;
 
     beforeAll(async () => {
-        adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes, voteRes, daoRes, proposalSingleRes } =
-            await uploadContracts(adminClient);
-        factoryCodeId = factoryRes.codeId;
+        const { factoryRes, proxyRes, multisigRes, stakingRes, voteRes, govecRes, daoRes, proposalSingleRes } =
+            await import("../../uploadInfo.json" as string);
+
+        adminClient = await createSigningClient(adminMnemonic, addrPrefix);
+        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, adminAddr);
+        govecClient = new GovecClient(adminClient, adminAddr, govecAddr);
+
         proxyCodeId = proxyRes.codeId;
+        factoryCodeId = factoryRes.codeId;
         multisigCodeId = multisigRes.codeId;
-        govecCodeId = govecRes.codeId;
-        stakingCodeId = stakingRes.codeId;
-        voteCodeId = voteRes.codeId;
-        daoCodeId = daoRes.codeId;
-        proposalSingleCodeId = proposalSingleRes.codeId;
 
-        // deploy Govec cw20 whitelist only contract first
-        const { govecAddr } = await instantiateGovec(adminClient, govecCodeId, adminAddr!);
-        goVecAddr = govecAddr;
+        const tokenInfo = createTokenInfo(govecAddr, stakingRes.codeId);
 
-        // cw20_staked_balance_voting instantiation msg
-        const tokenInfo: TokenInfo = {
-            existing: {
-                address: govecAddr,
-                staking_contract: {
-                    new: {
-                        staking_code_id: stakingCodeId,
-                        unstaking_duration: { time: 60 * 60 * 1 },
-                    },
-                },
-            },
-        };
-
-        const voteInstMsg: Cw20SBVInstantiateMsg = {
-            token_info: tokenInfo,
-        };
-
+        const voteInstMsg = createVoteInstMsg(tokenInfo);
         // cw-proposal-single instantiation msg
-        const propInstMsg: CwPropSingleInstantiateMsg = {
-            // deposit not required for creating proposal
-            deposit_info: null,
-            // time in seconds
-            max_voting_period: {
-                time: 60 * 60 * 24 * 14,
-            },
-            only_members_execute: false,
-            threshold: {
-                // details - https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
-                threshold_quorum: {
-                    quorum: {
-                        percent: "0.6",
-                    },
-                    threshold: {
-                        percent: "0.3",
-                    },
-                },
-            },
-        };
-
+        const propInstMsg = createPropInstMsg();
         // dao-core instantiation msg
         // TODO: the module types `ModuleInstantiateInfo` do not work with the @daodao/types,
-        //       therefore not using interfaces. There is versioning issues
-        const govModInstInfo = {
-            admin: {
-                core_contract: {},
-            },
-            code_id: proposalSingleCodeId,
-            label: "Vectis Proposal Module",
-            msg: toBase64(toUtf8(JSON.stringify(propInstMsg))),
-        };
+        // therefore not using interfaces. There is versioning issues
+        const govModInstInfo = createGovModInstInfo(proposalSingleRes.codeId, propInstMsg);
+        const voteModInstInfo = createVoteModInstInfo(voteRes.codeId, voteInstMsg);
+        const daoInstMsg = createDaoInstMsg(govModInstInfo, voteModInstInfo);
 
-        const voteModInstInfo = {
-            admin: {
-                core_contract: {},
-            },
-            code_id: voteCodeId,
-            label: "Vectis Vote Module",
-            msg: toBase64(toUtf8(JSON.stringify(voteInstMsg))),
-        };
-
-        const daoInstMsg = {
-            description: "Vectis: Smart Contract Wallet",
-            proposal_modules_instantiate_info: [govModInstInfo],
-            name: "VectisDAO",
-            voting_module_instantiate_info: voteModInstInfo,
-            automatically_add_cw20s: true,
-            automatically_add_cw721s: true,
-        };
-
-        // deploy dao
         const { contractAddress } = await adminClient.instantiate(
-            adminAddr!,
-            daoCodeId,
+            adminAddr,
+            daoRes.codeId,
             daoInstMsg,
             "VectisDAO",
             defaultInstantiateFee
         );
         daoAddr = contractAddress;
+        const voteAddr = await adminClient.queryContractSmart(daoAddr, { voting_module: {} });
+        propAddrs = await adminClient.queryContractSmart(daoAddr, { proposal_modules: {} });
+        stakingAddr = await adminClient.queryContractSmart(voteAddr, { staking_contract: {} });
     });
 
     it("Should let admin set staking addr on Govec", async () => {
-        // admin set staking addr on Govec
-        const queryVote: DaoQueryMsg = { voting_module: {} };
-        // TODO: incompatible @daodao/types
-        const queryProp = { proposal_modules: {} };
-        voteAddr = await adminClient.queryContractSmart(daoAddr, queryVote);
-        propAddrs = await adminClient.queryContractSmart(daoAddr, queryProp);
-
-        const queryStaking: Cw20SBVQueryMsg = { staking_contract: {} };
-        stakingAddr = await adminClient.queryContractSmart(voteAddr, queryStaking);
-
-        govecClient = new GovecClient(adminClient, adminAddr!, goVecAddr);
         await govecClient.updateStakingAddr({ newAddr: stakingAddr });
         const staking = await govecClient.staking();
         expect(stakingAddr).toBe(staking);
     });
 
     it("Should let admin mint for self and stake", async () => {
-        await govecClient.mint({ newWallet: adminAddr! });
+        await govecClient.mint({ newWallet: adminAddr });
         // todo: transfer govec admin to dao
 
         // admin stake to propose and vote to deploy factory contract
         const sendMsg = { stake: {} };
-        await govecClient.send({ amount: "1", contract: stakingAddr, msg: toBase64(toUtf8(JSON.stringify(sendMsg))) });
+        await govecClient.send({ amount: "1", contract: stakingAddr, msg: toCosmosMsg(sendMsg) });
 
         // need this for block to be mined
         await delay(5000);
@@ -190,7 +105,7 @@ describe("DAO Suite: ", () => {
                     code_id: factoryCodeId,
                     funds: [],
                     label: "Vectis Factory",
-                    msg: toBase64(toUtf8(JSON.stringify(factorInstMsg))),
+                    msg: toCosmosMsg(factorInstMsg),
                 },
             },
         };
@@ -220,7 +135,7 @@ describe("DAO Suite: ", () => {
                 vote: "yes",
             },
         };
-        await adminClient.execute(adminAddr!, propAddrs[0], vote, defaultExecuteFee);
+        await adminClient.execute(adminAddr, propAddrs[0], vote, defaultExecuteFee);
 
         const execute: CwPropSingleExecuteMsg = {
             execute: {
@@ -230,7 +145,6 @@ describe("DAO Suite: ", () => {
         const res = await adminClient.execute(adminAddr!, propAddrs[0], execute, defaultExecuteFee);
         expect(res.logs[0].events[1]["type"]).toBe("instantiate");
         expect(res.logs[0].events[1].attributes[1].value).toBe(String(factoryCodeId));
-        factoryAddr = res.logs[0].events[1].attributes[0].value;
     });
 
     afterAll(() => {

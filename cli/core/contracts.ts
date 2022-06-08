@@ -19,7 +19,9 @@ import {
     proposalSingleCodePath,
     coinMinDenom,
     addrPrefix,
+    adminMnemonic,
 } from "./utils/env";
+import { createSigningClient } from "./utils/utils";
 
 export async function uploadContract(
     client: SigningCosmWasmClient,
@@ -67,8 +69,6 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     const daoRes = await uploadContract(client, daoCodePath);
     const voteRes = await uploadContract(client, voteCodePath);
     const proposalSingleRes = await uploadContract(client, proposalSingleCodePath);
-    // const voteRes = await uploadContract(client, voteCodePath!);
-    // const proposalSingleRes = await uploadContract(client, proposalSingleCodePath!);
     // console.log(factoryRes, proxyRes, multisigRes, govecRes, stakingRes, daoRes, voteRes, proposalSingleRes);
 
     return {
@@ -108,9 +108,6 @@ export async function instantiateFactoryContract(
         }
     );
 
-    console.log("Factory contract was deployed at the following address:", contractAddress);
-    writeInFile("factoryAddr.txt", contractAddress);
-
     return {
         factoryAddr: contractAddress,
     };
@@ -142,4 +139,25 @@ export async function instantiateGovec(
     return {
         govecAddr: contractAddress,
     };
+}
+
+export async function deploy() {
+    const adminClient = await createSigningClient(adminMnemonic, addrPrefix);
+    const uploadRes = await uploadContracts(adminClient);
+
+    const { govecRes, factoryRes, proxyRes, multisigRes } = uploadRes;
+
+    const { factoryAddr } = await instantiateFactoryContract(
+        adminClient,
+        factoryRes.codeId,
+        proxyRes.codeId,
+        multisigRes.codeId
+    );
+    const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
+
+    console.log("Factory contract was instantiated at the following address:", factoryAddr);
+    writeInFile("factoryAddr.txt", factoryAddr);
+
+    const uploadInfo = Object.assign(uploadRes, { govecAddr, factoryAddr });
+    writeInFile("uploadInfo.json", JSON.stringify(uploadInfo, null, 2));
 }
