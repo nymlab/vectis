@@ -5,7 +5,7 @@ import { defaultInstantiateFee, defaultUploadFee, walletFee } from "./utils/fee"
 import { coin } from "@cosmjs/stargate";
 import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts/FactoryContract";
 import { InstantiateMsg as GovecInstantiateMsg } from "@vectis/types/contracts/GovecContract";
-import { getContract, writeInCacheFolder } from "./utils/fs";
+import { getContract } from "./utils/fs";
 
 import {
     factoryCodePath,
@@ -139,24 +139,4 @@ export async function instantiateGovec(
     return {
         govecAddr: contractAddress,
     };
-}
-
-export async function uploadAndInst() {
-    const adminClient = await createSigningClient(adminMnemonic, addrPrefix);
-    const uploadRes = await uploadContracts(adminClient);
-
-    const { govecRes, factoryRes, proxyRes, multisigRes } = uploadRes;
-
-    const { factoryAddr } = await instantiateFactoryContract(
-        adminClient,
-        factoryRes.codeId,
-        proxyRes.codeId,
-        multisigRes.codeId
-    );
-    const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
-
-    console.log("Factory contract was instantiated at the following address:", factoryAddr);
-
-    const uploadInfo = Object.assign(uploadRes, { govecAddr, factoryAddr });
-    writeInCacheFolder("uploadInfo.json", JSON.stringify(uploadInfo, null, 2));
 }
