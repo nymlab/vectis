@@ -1,8 +1,8 @@
 import { coin } from "@cosmjs/stargate";
 import { NetworkOptions } from "../interfaces/network";
 import { getVectisContractPaths, getDownloadContractsPath } from "./fs";
-import networks from "./networks";
-import wallets from "./accounts.json";
+import networks from "../configs/networks.json";
+import wallets from "../configs/accounts.json";
 import * as dotenv from "dotenv";
 
 const path = `${__dirname}/../../../.env`;
