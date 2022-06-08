@@ -8,7 +8,7 @@ import {
     govecCodePath,
     proxyCodePath,
     stakingCodePath,
-} from "@vectis/core/utils/env";
+} from "@vectis/core/utils/constants";
 
 /**
  * This suite tests contracts upload and deploy

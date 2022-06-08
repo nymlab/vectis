@@ -3,7 +3,7 @@ import { DirectSecp256k1Wallet, DirectSecp256k1HdWallet } from "@cosmjs/proto-si
 import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
 import { makeCosmoshubPath } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { rpcEndPoint } from "./env";
+import { rpcEndPoint } from "./constants";
 import { RelayTransaction } from "@vectis/types/contracts/ProxyContract";
 import { defaultGasPrice } from "./fee";
 

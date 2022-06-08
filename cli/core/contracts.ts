@@ -20,7 +20,7 @@ import {
     coinMinDenom,
     addrPrefix,
     adminMnemonic,
-} from "./utils/env";
+} from "./utils/constants";
 import { createSigningClient } from "./utils/utils";
 
 export async function uploadContract(

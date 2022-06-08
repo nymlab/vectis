@@ -18,7 +18,7 @@ import {
     testWalletInitialFunds,
     userAddr,
     userMnemonic,
-} from "@vectis/core/utils/env";
+} from "@vectis/core/utils/constants";
 import { defaultWalletCreationFee } from "@vectis/core/utils/fee";
 
 /**

@@ -8,7 +8,7 @@ import {
 import { QueryMsg as StakeQuery } from "@dao-dao/types/contracts/stake-cw20";
 import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts/FactoryContract";
 
-import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/env";
+import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/constants";
 
 import { CosmosMsg_for_Empty } from "types/contracts/ProxyContract";
 import { createGovModInstInfo, createTokenInfo, createVoteModInstInfo } from "./mocks/info";

@@ -1,5 +1,5 @@
 import { calculateFee, GasPrice } from "@cosmjs/stargate";
-import { coinMinDenom, gasPrice } from "./env";
+import { coinMinDenom, gasPrice } from "./constants";
 import { Coin } from "@vectis/types/contracts/FactoryContract";
 
 export const defaultGasPrice = GasPrice.fromString(gasPrice!);
