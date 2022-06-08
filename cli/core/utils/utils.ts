@@ -6,26 +6,13 @@ import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { rpcEndPoint } from "./constants";
 import { RelayTransaction } from "@vectis/types/contracts/ProxyContract";
 import { defaultGasPrice } from "./fee";
+import { longToByteArray } from "./enconding";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {
     broadcastPollIntervalMs: 300,
     broadcastTimeoutMs: 8_000,
     gasPrice: defaultGasPrice,
 };
-
-/// Big endian
-export function longToByteArray(long: number): Uint8Array {
-    // we want to represent the input as a 8-bytes array
-    var byteArray = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]);
-
-    for (var index = byteArray.length - 1; index >= 0; index--) {
-        var byte = long & 0xff;
-        byteArray[index] = byte;
-        long = (long - byte) / 256;
-    }
-
-    return byteArray;
-}
 
 export async function createSigningClient(mnemonic: string, addrPrefix: string): Promise<SigningCosmWasmClient> {
     const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
