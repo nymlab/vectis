@@ -1,7 +1,5 @@
 import { toBase64 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { FACTORY_INITIAL_FUND, instantiateFactoryContract, instantiateGovec } from "@vectis/core/contracts";
-import { createSigningClient, mnemonicToKeyPair } from "@vectis/core/utils/utils";
 import { Coin, FactoryClient, Addr } from "@vectis/types/contracts/FactoryContract";
 import { coin } from "@cosmjs/stargate";
 
@@ -21,6 +19,9 @@ import {
     userMnemonic,
 } from "@vectis/core/utils/constants";
 import { defaultWalletCreationFee } from "@vectis/core/utils/fee";
+import { createSigningClient, mnemonicToKeyPair } from "@vectis/core/services/cosmwasm";
+import { FACTORY_INITIAL_FUND, instantiateFactoryContract } from "@vectis/core/services/factory";
+import { instantiateGovec } from "@vectis/core/services/govec";
 
 /**
  * This suite tests Factory contract methods

@@ -8,7 +8,7 @@ import {
 import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { createRelayTransaction, createSigningClient, mnemonicToKeyPair } from "@vectis/core/utils/utils";
+
 import {
     Addr,
     CosmosMsg_for_Empty as CosmosMsg,
@@ -44,7 +44,9 @@ import {
     userMnemonic,
 } from "@vectis/core/utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
-import { instantiateFactoryContract, instantiateGovec } from "@vectis/core/contracts";
+import { createRelayTransaction, createSigningClient } from "@vectis/core/services/cosmwasm";
+import { instantiateFactoryContract } from "@vectis/core/services/factory";
+import { instantiateGovec } from "@vectis/core/services/govec";
 
 /**
  * This suite tests Proxy contract methods

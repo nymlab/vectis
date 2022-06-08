@@ -1,4 +1,4 @@
-import { createSigningClient, delay } from "@vectis/core/utils/utils";
+import { delay } from "@vectis/core/utils/promises";
 import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "@vectis/core/utils/fee";
 import { GovecClient } from "@vectis/types/contracts/GovecContract";
 import {
@@ -15,7 +15,8 @@ import { createGovModInstInfo, createTokenInfo, createVoteModInstInfo } from "./
 import { createDaoInstMsg, createPropInstMsg, createVoteInstMsg } from "./mocks/messages";
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { instantiateGovec } from "@vectis/core/contracts";
+import { createSigningClient } from "@vectis/core/services/cosmwasm";
+import { instantiateGovec } from "@vectis/core/services/govec";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO

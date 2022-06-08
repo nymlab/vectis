@@ -1,7 +1,8 @@
-import { instantiateFactoryContract, instantiateGovec, uploadContracts } from "./contracts";
+import { createSigningClient, uploadContracts } from "./services/cosmwasm";
+import { instantiateFactoryContract } from "./services/factory";
+import { instantiateGovec } from "./services/govec";
 import { addrPrefix, adminMnemonic } from "./utils/constants";
 import { writeInCacheFolder } from "./utils/fs";
-import { createSigningClient } from "./utils/utils";
 
 export async function uploadAndInst() {
     const adminClient = await createSigningClient(adminMnemonic, addrPrefix);
