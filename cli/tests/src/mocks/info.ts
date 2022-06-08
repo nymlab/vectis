@@ -2,7 +2,7 @@ import {
     TokenInfo,
     InstantiateMsg as Cw20SBVInstantiateMsg,
 } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import { toCosmosMsg } from "@vectis/core/utils/cosmwasm";
+import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { InstantiateMsg as CwPropSingleInstantiateMsg } from "@dao-dao/types/contracts/cw-proposal-single";
 
 export const createTokenInfo = (govecAddr: string, stakingCodeId: number): TokenInfo => {

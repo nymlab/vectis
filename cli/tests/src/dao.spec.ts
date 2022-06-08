@@ -13,7 +13,7 @@ import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/constan
 import { CosmosMsg_for_Empty } from "types/contracts/ProxyContract";
 import { createGovModInstInfo, createTokenInfo, createVoteModInstInfo } from "./mocks/info";
 import { createDaoInstMsg, createPropInstMsg, createVoteInstMsg } from "./mocks/messages";
-import { toCosmosMsg } from "@vectis/core/utils/cosmwasm";
+import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { instantiateGovec } from "@vectis/core/contracts";
 
