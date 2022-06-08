@@ -10,7 +10,7 @@ import {
     userMnemonic,
 } from "@vectis/core/utils/constants";
 import { defaultWalletCreationFee } from "@vectis/core/utils/fee";
-import { mnemonicToKeyPair } from "@vectis/core/utils/utils";
+import { mnemonicToKeyPair } from "@vectis/core/services/cosmwasm";
 import { Addr, Coin, FactoryClient } from "@vectis/types/contracts/FactoryContract";
 import { coin } from "@cosmjs/stargate";
 
