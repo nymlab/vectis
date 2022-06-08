@@ -1,7 +1,7 @@
 {
     "name": "@vectis/core",
     "scripts": {
-        "deploy": "ts-node -e \"require('./contracts').uploadAndInst()\""
+        "deploy": "ts-node deployer.ts"
     },
     "dependencies": {
         "@cosmjs/amino": "^0.28.4",
