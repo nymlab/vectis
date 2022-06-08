@@ -4,7 +4,7 @@ import { instantiateGovec } from "./services/govec";
 import { addrPrefix, adminMnemonic } from "./utils/constants";
 import { writeInCacheFolder } from "./utils/fs";
 
-export async function uploadAndInst() {
+async function main() {
     const adminClient = await createSigningClient(adminMnemonic, addrPrefix);
     const uploadRes = await uploadContracts(adminClient);
 
@@ -24,4 +24,4 @@ export async function uploadAndInst() {
     writeInCacheFolder("uploadInfo.json", JSON.stringify(uploadInfo, null, 2));
 }
 
-uploadAndInst();
+main();

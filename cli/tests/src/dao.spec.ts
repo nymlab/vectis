@@ -11,12 +11,19 @@ import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts
 import { adminAddr, addrPrefix, adminMnemonic, uploadReportPath } from "@vectis/core/utils/constants";
 
 import { CosmosMsg_for_Empty } from "types/contracts/ProxyContract";
-import { createGovModInstInfo, createTokenInfo, createVoteModInstInfo } from "./mocks/info";
-import { createDaoInstMsg, createPropInstMsg, createVoteInstMsg } from "./mocks/messages";
+
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createSigningClient } from "@vectis/core/services/cosmwasm";
 import { instantiateGovec } from "@vectis/core/services/govec";
+import { createTokenInfo } from "@vectis/core/services/cw20";
+import {
+    createDaoInstMsg,
+    createGovModInstInfo,
+    createPropInstMsg,
+    createVoteInstMsg,
+    createVoteModInstInfo,
+} from "@vectis/core/services/dao";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
