@@ -1,13 +1,29 @@
-import {
-    InstantiateMsg as Cw20SBVInstantiateMsg,
-    QueryMsg as Cw20SBVQueryMsg,
-    TokenInfo,
-} from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import {
-    InstantiateMsg as CwPropSingleInstantiateMsg,
-    ExecuteMsg as CwPropSingleExecuteMsg,
-    QueryMsg as ProposalQueryMsg,
-} from "@dao-dao/types/contracts/cw-proposal-single";
+import { InstantiateMsg as Cw20SBVInstantiateMsg } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
+import { InstantiateMsg as CwPropSingleInstantiateMsg } from "@dao-dao/types/contracts/cw-proposal-single";
+import { TokenInfo } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
+import { toCosmosMsg } from "@vectis/core/utils/enconding";
+
+export const createGovModInstInfo = (proposalCodeId: number, propInstMsg: CwPropSingleInstantiateMsg) => {
+    return {
+        admin: {
+            core_contract: {},
+        },
+        code_id: proposalCodeId,
+        label: "Vectis Proposal Module",
+        msg: toCosmosMsg<CwPropSingleInstantiateMsg>(propInstMsg),
+    };
+};
+
+export const createVoteModInstInfo = (voteCodeId: number, voteInstMsg: Cw20SBVInstantiateMsg) => {
+    return {
+        admin: {
+            core_contract: {},
+        },
+        code_id: voteCodeId,
+        label: "Vectis Vote Module",
+        msg: toCosmosMsg<Cw20SBVInstantiateMsg>(voteInstMsg),
+    };
+};
 
 export const createVoteInstMsg = (tokenInfo: TokenInfo): Cw20SBVInstantiateMsg => {
     return {
