@@ -8,6 +8,7 @@ import {
     govecCodePath,
     proxyCodePath,
     stakingCodePath,
+    uploadReportPath,
 } from "@vectis/core/utils/constants";
 
 /**
@@ -15,9 +16,7 @@ import {
  */
 describe("Contracts Suite: ", () => {
     it("Should upload contracts", async () => {
-        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await import(
-            "../../contractAddresses.json" as string
-        );
+        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await import(uploadReportPath);
 
         const factoryCode = getContract(factoryCodePath);
         const proxyCode = getContract(proxyCodePath);

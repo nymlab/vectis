@@ -1,18 +1,17 @@
-import { coin } from "@cosmjs/stargate";
-import { NetworkOptions } from "../interfaces/network";
-import { getVectisContractPaths, getDownloadContractsPath } from "./fs";
-import networks from "../configs/networks.json";
-import wallets from "../configs/accounts.json";
+import path from "path";
 import * as dotenv from "dotenv";
+import { coin } from "@cosmjs/stargate";
+import networks from "../config/networks.json";
+import wallets from "../config/accounts.json";
+import { NetworkOptions } from "../interfaces/network";
 
-const path = `${__dirname}/../../../.env`;
+const archSuffix = process.arch === "arm64" ? "-aarch64" : "";
 
-dotenv.config({ path });
+const envPath = `${__dirname}/../../../.env`;
+dotenv.config({ path: envPath });
 
+// Network
 const network = networks[process.env.NETWORK as NetworkOptions];
-
-const accounts = wallets[network.addressPrefix as "juno" | "wasm"];
-
 export const chainId = network.chainId;
 export const addrPrefix = network.addressPrefix;
 export const rpcEndPoint = network.rpcUrl;
@@ -20,6 +19,8 @@ export const gasPrice = network.gasPrice + network.feeToken;
 export const coinDenom = network.feeToken;
 export const coinMinDenom = network.feeToken;
 
+// Accounts
+const accounts = wallets[network.addressPrefix as "juno" | "wasm"];
 export const adminMnemonic = accounts.admin.mnemonic;
 export const adminAddr = accounts.admin.address;
 export const userMnemonic = accounts.user.mnemonic;
@@ -33,8 +34,21 @@ export const relayer1Addr = accounts.relayer_1.address;
 export const relayer2Mnemonic = accounts.relayer_2.mnemonic;
 export const relayer2Addr = accounts.relayer_2.address;
 
-export const { proxyCodePath, govecCodePath, factoryCodePath } = getVectisContractPaths(process.env.VECTIS_CW_PATH!);
-export const { fixMultiSigCodePath, cw20CodePath, daoCodePath, stakingCodePath, voteCodePath, proposalSingleCodePath } =
-    getDownloadContractsPath(process.env.DOWNLOADED_CW_PATH!);
+// Paths
+export const cachePath = path.join(__dirname, "..", "..", ".cache");
+export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
+
+export const vectisContractsPath = process.env.VECTIS_CW_PATH as string;
+export const proxyCodePath = path.join(vectisContractsPath, `vectis_proxy${archSuffix}.wasm`);
+export const govecCodePath = path.join(vectisContractsPath, `vectis_govec${archSuffix}.wasm`);
+export const factoryCodePath = path.join(vectisContractsPath, `vectis_factory${archSuffix}.wasm`);
+
+export const wasmContractsPath = process.env.DOWNLOADED_CW_PATH as string;
+export const fixMultiSigCodePath = path.join(wasmContractsPath, "cw3_fixed_multisig.wasm");
+export const cw20CodePath = path.join(wasmContractsPath, "cw20_base.wasm");
+export const daoCodePath = path.join(wasmContractsPath, "cw_core.wasm");
+export const stakingCodePath = path.join(wasmContractsPath, "stake_cw20.wasm");
+export const voteCodePath = path.join(wasmContractsPath, "cw20_staked_balance_voting.wasm");
+export const proposalSingleCodePath = path.join(wasmContractsPath, "cw_proposal_single.wasm");
 
 export const testWalletInitialFunds = coin(5_000_000, coinMinDenom!);

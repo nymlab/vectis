@@ -8,7 +8,7 @@ import {
 import { QueryMsg as StakeQuery } from "@dao-dao/types/contracts/stake-cw20";
 import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts/FactoryContract";
 
-import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/constants";
+import { adminAddr, addrPrefix, adminMnemonic, uploadReportPath } from "@vectis/core/utils/constants";
 
 import { CosmosMsg_for_Empty } from "types/contracts/ProxyContract";
 import { createGovModInstInfo, createTokenInfo, createVoteModInstInfo } from "./mocks/info";
@@ -33,7 +33,7 @@ describe("DAO Suite: ", () => {
 
     beforeAll(async () => {
         const { factoryRes, proxyRes, multisigRes, stakingRes, voteRes, govecRes, daoRes, proposalSingleRes } =
-            await import("../../uploadInfo.json" as string);
+            await import(uploadReportPath);
 
         adminClient = await createSigningClient(adminMnemonic, addrPrefix);
         const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, adminAddr);

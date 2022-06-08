@@ -16,6 +16,7 @@ import {
     relayer2Addr,
     rpcEndPoint,
     testWalletInitialFunds,
+    uploadReportPath,
     userAddr,
     userMnemonic,
 } from "@vectis/core/utils/constants";
@@ -33,7 +34,7 @@ describe("Factory Suite: ", () => {
     let proxyWalletAddress: Addr;
 
     beforeAll(async () => {
-        const { proxyRes, factoryRes, govecRes, multisigRes } = await import("../../uploadInfo.json" as string);
+        const { proxyRes, factoryRes, govecRes, multisigRes } = await import(uploadReportPath);
         proxyCodeId = proxyRes.codeId;
 
         adminClient = await createSigningClient(adminMnemonic, addrPrefix);
