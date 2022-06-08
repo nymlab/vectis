@@ -2,7 +2,6 @@ import {
     defaultExecuteFee,
     defaultInstantiateFee,
     defaultUploadFee,
-    defaultWalletCreationFee,
     defaultRelayFee,
     defaultSendFee,
 } from "@vectis/core/utils/fee";
@@ -10,7 +9,6 @@ import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createRelayTransaction, createSigningClient, mnemonicToKeyPair } from "@vectis/core/utils/utils";
-import { uploadContracts, instantiateFactoryContract, instantiateGovec } from "@vectis/core/contracts";
 import {
     Addr,
     CosmosMsg_for_Empty as CosmosMsg,
@@ -41,10 +39,11 @@ import {
     relayer1Mnemonic,
     relayer2Addr,
     rpcEndPoint,
-    testWalletInitialFunds,
     userAddr,
     userMnemonic,
 } from "@vectis/core/utils/env";
+import { createTestProxyWallets } from "./mocks/proxyWallet";
+import { instantiateFactoryContract, instantiateGovec } from "@vectis/core/contracts";
 
 /**
  * This suite tests Proxy contract methods
@@ -61,125 +60,65 @@ describe("Proxy Suite: ", () => {
     let proxyClient: ProxyClient;
     let guardianProxyClient: ProxyClient;
 
-    async function createTestProxyWallets(): Promise<Addr[]> {
-        assert(factoryClient, "factoryClient is not defined");
-        const userKeypair = await mnemonicToKeyPair(userMnemonic!);
-        const walletCreationFee = await factoryClient.fee();
-        const totalFee: Number = Number(walletCreationFee.amount) + Number(testWalletInitialFunds.amount);
-
-        await factoryClient.createWallet(
-            {
-                createWalletMsg: {
-                    user_pubkey: toBase64(userKeypair.pubkey),
-                    guardians: {
-                        addresses: [guardian1Addr!, guardian2Addr!],
-                    },
-                    relayers: [relayer1Addr!, relayer2Addr!],
-                    proxy_initial_funds: [testWalletInitialFunds as Coin],
-                    label: "initial label",
-                },
-            },
-            defaultWalletCreationFee,
-            undefined,
-            [coin(totalFee.toString(), coinMinDenom!) as Coin]
-        );
-        const [walletAddress] = (await factoryClient.walletsOf({ user: userAddr! })).wallets;
-
-        await factoryClient.createWallet(
-            {
-                createWalletMsg: {
-                    user_pubkey: toBase64(userKeypair.pubkey),
-                    guardians: {
-                        addresses: [guardian1Addr!, guardian2Addr!],
-                        guardians_multisig: {
-                            threshold_absolute_count: 2,
-                            multisig_initial_funds: [],
-                        },
-                    },
-                    relayers: [relayer1Addr!, relayer2Addr!],
-                    proxy_initial_funds: [testWalletInitialFunds as Coin],
-                    label: "initial label",
-                },
-            },
-            defaultWalletCreationFee,
-            undefined,
-            [coin(totalFee.toString(), coinMinDenom!) as Coin]
-        );
-
-        const walletMSAddress = (await factoryClient.walletsOf({ user: userAddr! })).wallets.find(
-            (w) => w !== walletAddress
-        );
-        return [walletAddress, walletMSAddress!];
-    }
-
     beforeAll(async () => {
-        try {
-            userClient = await createSigningClient(userMnemonic!, addrPrefix!);
-            adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-            guardianClient = await createSigningClient(guardian1Mnemonic!, addrPrefix!);
-            client = await CosmWasmClient.connect(rpcEndPoint!);
-            const { factoryRes, proxyRes, multisigRes, govecRes } = await uploadContracts(adminClient);
-            const { factoryAddr } = await instantiateFactoryContract(
-                adminClient,
-                factoryRes.codeId,
-                proxyRes.codeId,
-                multisigRes.codeId
-            );
+        const { factoryRes, govecRes, proxyRes, multisigRes } = await import("../../uploadInfo.json" as string);
 
-            factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
-            const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
-            const govecClient = new GovecClient(adminClient, adminAddr!, govecAddr);
+        userClient = await createSigningClient(userMnemonic, addrPrefix);
+        adminClient = await createSigningClient(adminMnemonic, addrPrefix);
+        guardianClient = await createSigningClient(guardian1Mnemonic, addrPrefix);
+        client = await CosmWasmClient.connect(rpcEndPoint);
 
-            const { minter } = await govecClient.minter();
-            expect(minter).toEqual(factoryAddr);
+        const { factoryAddr } = await instantiateFactoryContract(
+            adminClient,
+            factoryRes.codeId,
+            proxyRes.codeId,
+            multisigRes.codeId
+        );
 
-            await factoryClient.updateGovecAddr({ addr: govecAddr });
+        factoryClient = new FactoryClient(adminClient, adminAddr, factoryAddr);
 
-            let govec = await factoryClient.govecAddr();
-            expect(govec).toEqual(govecAddr);
+        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
 
-            const [walletAddr, walletMSAddr] = await createTestProxyWallets();
-            proxyWalletAddress = walletAddr;
-            proxyWalletMultisigAddress = walletMSAddr;
+        const govecClient = new GovecClient(adminClient, adminAddr, govecAddr);
 
-            proxyClient = new ProxyClient(userClient, userAddr!, proxyWalletAddress);
-            guardianProxyClient = new ProxyClient(guardianClient, guardian1Addr!, proxyWalletAddress);
-        } catch (err) {
-            console.error("Failed to load scenario!", err);
-        }
-    });
+        const { minter } = await govecClient.minter();
+        expect(minter).toEqual(factoryAddr);
 
-    beforeEach(() => {
-        assert(userClient, "userClient is not defined");
-        assert(adminClient, "adminClient is not defined");
-        assert(client, "client is not defined");
-        assert(proxyWalletAddress, "proxyWalletAddress is not defined");
-        assert(factoryClient, "factoryClient is not defined");
-        assert(proxyClient, "proxyClient is not defined");
+        await factoryClient.updateGovecAddr({ addr: govecAddr });
+
+        const govec = await factoryClient.govecAddr();
+        expect(govec).toEqual(govecAddr);
+
+        const [walletAddr, walletMSAddr] = await createTestProxyWallets(factoryClient);
+        proxyWalletAddress = walletAddr;
+        proxyWalletMultisigAddress = walletMSAddr;
+
+        proxyClient = new ProxyClient(userClient, userAddr, proxyWalletAddress);
+        guardianProxyClient = new ProxyClient(guardianClient, guardian1Addr, proxyWalletAddress);
     });
 
     it("Should get correct info from proxy wallet", async () => {
         const info = await proxyClient.info();
-        expect(info.guardians).toContain(guardian1Addr!);
-        expect(info.guardians).toContain(guardian2Addr!);
-        expect(info.relayers).toContain(relayer2Addr!);
-        expect(info.relayers).toContain(relayer1Addr!);
+        expect(info.guardians).toContain(guardian1Addr);
+        expect(info.guardians).toContain(guardian2Addr);
+        expect(info.relayers).toContain(relayer2Addr);
+        expect(info.relayers).toContain(relayer1Addr);
         expect(info.is_frozen).toEqual(false);
         expect(info.multisig_address).toBeFalsy();
         expect(info.nonce).toEqual(0);
     });
 
     it("Should be able to use wallet to send funds as user", async () => {
-        const sendAmount = coin(2, coinMinDenom!);
+        const sendAmount = coin(2, coinMinDenom);
         const sendMsg: BankMsg = {
             send: {
-                to_address: adminAddr!,
+                to_address: adminAddr,
                 amount: [sendAmount as Coin],
             },
         };
 
-        const walletBalanceBefore = await client.getBalance(proxyWalletAddress, coinMinDenom!);
-        const adminBalanceBefore = await client.getBalance(adminAddr!, coinMinDenom!);
+        const walletBalanceBefore = await client.getBalance(proxyWalletAddress, coinMinDenom);
+        const adminBalanceBefore = await client.getBalance(adminAddr!, coinMinDenom);
         await proxyClient.execute({
             msgs: [
                 {
@@ -187,8 +126,8 @@ describe("Proxy Suite: ", () => {
                 },
             ],
         });
-        const walletBalanceAfter = await client.getBalance(proxyWalletAddress, coinMinDenom!);
-        const adminBalanceAfter = await client.getBalance(adminAddr!, coinMinDenom!);
+        const walletBalanceAfter = await client.getBalance(proxyWalletAddress, coinMinDenom);
+        const adminBalanceAfter = await client.getBalance(adminAddr, coinMinDenom);
 
         const walletDiff = Number(walletBalanceBefore.amount) - Number(walletBalanceAfter.amount);
         const adminDiff = Number(adminBalanceBefore.amount) - Number(adminBalanceAfter.amount);
@@ -198,12 +137,12 @@ describe("Proxy Suite: ", () => {
     });
 
     it("Should be able to send funds to wallet as user", async () => {
-        const sendAmount = coin(10_000, coinMinDenom!);
+        const sendAmount = coin(10_000, coinMinDenom);
         const userBalanceBefore = await client.getBalance(userAddr!, coinMinDenom!);
-        const walletBalanceBefore = await client.getBalance(proxyWalletAddress, coinMinDenom!);
-        await userClient.sendTokens(userAddr!, proxyWalletAddress, [sendAmount], defaultSendFee);
-        const userBalanceAfter = await client.getBalance(userAddr!, coinMinDenom!);
-        const walletBalanceAfter = await client.getBalance(proxyWalletAddress, coinMinDenom!);
+        const walletBalanceBefore = await client.getBalance(proxyWalletAddress, coinMinDenom);
+        await userClient.sendTokens(userAddr, proxyWalletAddress, [sendAmount], defaultSendFee);
+        const userBalanceAfter = await client.getBalance(userAddr!, coinMinDenom);
+        const walletBalanceAfter = await client.getBalance(proxyWalletAddress, coinMinDenom);
 
         const userDiff = Number(userBalanceBefore.amount) - Number(userBalanceAfter.amount);
         const walletDiff = Number(walletBalanceBefore.amount) - Number(walletBalanceAfter.amount);
@@ -252,9 +191,8 @@ describe("Proxy Suite: ", () => {
             // Force test failure, function didn't throw :/
             expect(false).toBeTruthy();
         } catch (err) {
-            const error: Error = err as any;
-            expect(error).toBeTruthy();
-            expect(error.message).toContain("Frozen");
+            expect(err).toBeInstanceOf(Error);
+            expect((err as Error).message).toContain("Frozen");
         }
 
         // Unfreeze
@@ -266,7 +204,7 @@ describe("Proxy Suite: ", () => {
 
         // New owner is admin
         await guardianProxyClient.rotateUserKey({
-            newUserAddress: adminAddr!,
+            newUserAddress: adminAddr,
         });
 
         // User (old wallet owner) shouldn't have the wallet anymore
@@ -296,9 +234,8 @@ describe("Proxy Suite: ", () => {
             // Force test failure, function didn't throw :/
             expect(false).toBeTruthy();
         } catch (err) {
-            const error: Error = err as any;
-            expect(err).toBeTruthy();
-            expect(error.message).toContain("IsNotUser");
+            expect(err).toBeInstanceOf(Error);
+            expect((err as Error).message).toContain("IsNotUser");
         }
 
         // Return wallet to the user
@@ -308,8 +245,8 @@ describe("Proxy Suite: ", () => {
     });
 
     it("Should be able to rotate key of multisig wallet", async () => {
-        const clientG1 = await createSigningClient(guardian1Mnemonic!, addrPrefix!);
-        const clientG2 = await createSigningClient(guardian2Mnemonic!, addrPrefix!);
+        const clientG1 = await createSigningClient(guardian1Mnemonic, addrPrefix);
+        const clientG2 = await createSigningClient(guardian2Mnemonic, addrPrefix);
 
         try {
             const msProxyClient = new ProxyClient(userClient, userAddr!, proxyWalletMultisigAddress);

@@ -1,13 +1,8 @@
 import { sha256 } from "@cosmjs/crypto";
 import { toHex } from "@cosmjs/encoding";
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { uploadContracts } from "@vectis/core/contracts";
-import { createSigningClient } from "@vectis/core/utils/utils";
 import { getContract } from "@vectis/core/utils/fs";
 
 import {
-    addrPrefix,
-    adminMnemonic,
     factoryCodePath,
     fixMultiSigCodePath,
     govecCodePath,
@@ -19,14 +14,11 @@ import {
  * This suite tests contracts upload and deploy
  */
 describe("Contracts Suite: ", () => {
-    let adminClient: SigningCosmWasmClient;
-
-    beforeAll(async () => {
-        adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-    });
-
     it("Should upload contracts", async () => {
-        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await uploadContracts(adminClient);
+        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await import(
+            "../../contractAddresses.json" as string
+        );
+
         const factoryCode = getContract(factoryCodePath);
         const proxyCode = getContract(proxyCodePath);
         const multisigCode = getContract(fixMultiSigCodePath);
@@ -48,9 +40,5 @@ describe("Contracts Suite: ", () => {
         expect(stakingRes.originalChecksum).toEqual(toHex(sha256(stakingCode)));
         expect(stakingRes.compressedSize).toBeLessThan(stakingCode.length * 0.5);
         expect(stakingRes.codeId).toBeGreaterThanOrEqual(1);
-    });
-
-    afterAll(() => {
-        adminClient?.disconnect();
     });
 });

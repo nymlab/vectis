@@ -1,12 +1,6 @@
-import { assert } from "@cosmjs/utils";
 import { toBase64 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import {
-    uploadContracts,
-    FACTORY_INITIAL_FUND,
-    instantiateFactoryContract,
-    instantiateGovec,
-} from "@vectis/core/contracts";
+import { FACTORY_INITIAL_FUND, instantiateFactoryContract, instantiateGovec } from "@vectis/core/contracts";
 import { createSigningClient, mnemonicToKeyPair } from "@vectis/core/utils/utils";
 import { Coin, FactoryClient, Addr } from "@vectis/types/contracts/FactoryContract";
 import { coin } from "@cosmjs/stargate";
@@ -34,41 +28,31 @@ describe("Factory Suite: ", () => {
     let adminClient: SigningCosmWasmClient;
     let client: CosmWasmClient;
     let proxyCodeId: number;
-    let multisigCodeId: number;
 
     let factoryClient: FactoryClient;
     let proxyWalletAddress: Addr;
 
     beforeAll(async () => {
-        try {
-            adminClient = await createSigningClient(adminMnemonic!, addrPrefix!);
-            client = await CosmWasmClient.connect(rpcEndPoint!);
-            const { factoryRes, proxyRes, multisigRes, govecRes } = await uploadContracts(adminClient);
-            proxyCodeId = proxyRes.codeId;
-            multisigCodeId = multisigRes.codeId;
+        const { proxyRes, factoryRes, govecRes, multisigRes } = await import("../../uploadInfo.json" as string);
+        proxyCodeId = proxyRes.codeId;
 
-            const { factoryAddr } = await instantiateFactoryContract(
-                adminClient,
-                factoryRes.codeId,
-                proxyCodeId,
-                multisigCodeId
-            );
-            factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
+        adminClient = await createSigningClient(adminMnemonic, addrPrefix);
+        client = await CosmWasmClient.connect(rpcEndPoint);
 
-            const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
+        const { factoryAddr } = await instantiateFactoryContract(
+            adminClient,
+            factoryRes.codeId,
+            proxyCodeId,
+            multisigRes.codeId
+        );
+        factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
 
-            await factoryClient.updateGovecAddr({ addr: govecAddr });
-            let govec = await factoryClient.govecAddr();
-            expect(govec).toEqual(govecAddr);
-        } catch (err) {
-            console.error("Failed to load scenario!", err);
-        }
-    });
+        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
 
-    beforeEach(() => {
-        assert(adminClient, "adminClient is not defined");
-        assert(client, "client is not defined");
-        assert(factoryClient, "factoryClient is not defined");
+        await factoryClient.updateGovecAddr({ addr: govecAddr });
+        const govec = await factoryClient.govecAddr();
+
+        expect(govec).toEqual(govecAddr);
     });
 
     it("Should have correct funds in Factory contract", async () => {

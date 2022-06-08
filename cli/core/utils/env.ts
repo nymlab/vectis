@@ -3,6 +3,11 @@ import { NetworkOptions } from "../interfaces/network";
 import { getVectisContractPaths, getDownloadContractsPath } from "./fs";
 import networks from "./networks";
 import wallets from "./accounts.json";
+import * as dotenv from "dotenv";
+
+const path = `${__dirname}/../../../.env`;
+
+dotenv.config({ path });
 
 const network = networks[process.env.NETWORK as NetworkOptions];
 
