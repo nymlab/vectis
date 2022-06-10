@@ -13,4 +13,4 @@
     "coverageDirectory": "coverage",
     "coveragePathIgnorePatterns": ["node_modules", "utils"],
     "verbose": true
-  }
+ }

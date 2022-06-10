@@ -12,7 +12,7 @@ rustup target add wasm32-unknown-unknown
 
 NODE_NETWORK=$NETWORK || "juno_local"
 
-CW_CONTAINER=`docker ps --format="{{.ID}}\t{{.Ports}}" | grep 26656 | awk '{print $1}'`
+CW_CONTAINER=`docker ps -a --format="{{.ID}}\t{{.Ports}}" | grep 26656 | awk '{print $1}'`
 
 if [[ "$CW_CONTAINER" != "" ]]; then
 echo "Removing docker container ${CW_CONTAINER}"
