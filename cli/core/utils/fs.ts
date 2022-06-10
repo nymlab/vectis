@@ -25,6 +25,7 @@ export async function downloadFile(url: string, fileName: string): Promise<void>
 }
 
 export async function downloadContract(url: string, fileName: string): Promise<void> {
+    if (!fs.existsSync(cachePath)) fs.mkdirSync(cachePath);
     if (!fs.existsSync(downloadContractPath)) fs.mkdirSync(downloadContractPath);
     await downloadFile(url, `contracts/${fileName}`);
 }
