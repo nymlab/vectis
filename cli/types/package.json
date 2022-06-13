@@ -6,10 +6,9 @@
         "giovanni-orciuolo <giovanni@orciuolo.it>",
         "j0nl1 <jonlitech@gmail.com>"
     ],
-    "version": "0.0.3",
+    "version": "0.0.4",
     "main": "index.js",
     "scripts": {
-        "ci": "npm run generate && npm run publish:prod",
         "publish:dev": "npx tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
         "publish:prod": "npx tsc && cp package.json build/package.json && cd build && npm publish",
         "generate": "npm run types:proxy && npm run types:factory && npm run types:govec && npm version patch",
