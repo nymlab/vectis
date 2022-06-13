@@ -28,6 +28,7 @@
         "registry": "https://registry.npmjs.org"
     },
     "dependencies": {
-        "cosmwasm-typescript-gen": "^0.2.14"
+        "cosmwasm-typescript-gen": "^0.2.14",
+        "typescript": "^4.7.3"
     }
 }
