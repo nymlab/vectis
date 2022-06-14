@@ -1,0 +1,9 @@
+{
+    "juno_testnet": {
+		"dao": {"id": 1, "checksum": ""},
+		"vote":{"id": 1, "checksum": ""},
+		"staking":{"id": 1, "checksum": ""},
+		"proposalSingle":{"id": 1, "checksum": ""}
+    }
+}
+

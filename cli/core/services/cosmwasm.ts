@@ -1,4 +1,11 @@
-import { SigningCosmWasmClient, SigningCosmWasmClientOptions, UploadResult } from "@cosmjs/cosmwasm-stargate";
+import {
+    SigningCosmWasmClient,
+    SigningCosmWasmClientOptions,
+    UploadResult,
+    CosmWasmClient,
+    Code,
+    CodeDetails,
+} from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1Wallet, DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
@@ -22,6 +29,8 @@ import { longToByteArray } from "../utils/enconding";
 import { RelayTransaction } from "@vectis/types/contracts/ProxyContract";
 import { Addr } from "@vectis/types/contracts/FactoryContract";
 import { downloadContract, getContract } from "../utils/fs";
+import { DaoDaoContracts } from "core/interfaces/dao";
+import codes from "../config/onchain-codes.json";
 
 export const defaultSigningClientOptions: SigningCosmWasmClientOptions = {
     broadcastPollIntervalMs: 300,
@@ -82,15 +91,17 @@ export async function uploadContract(
 }
 
 /**
- * Uploads contracts needed for e2e tests
+ * Uploads contracts needed for e2e tests on local nodes
  *  - factory
  *  - proxy
  *  - cw3 fixed mulitisig
  *  - govec token contract
- *  - dao-contracts: stake_cw20
- *  - dao-contracts: cw20_staked_balance_voting
  *  - dao-contracts: core
+ *  - dao-contracts: cw20_stake
+ *  - dao-contracts: cw20_staked_balance_voting
  *  - dao-contracts: proposal-single
+ *
+ *  Note: dao-contracts do not need to be uploaded on juno-testnet / juno-mainnet
  *
  *  Current version of DAO contracts: 6831b7f706b16989b3cfac00cab1c2545d1b524 (on mainnet)
  *
@@ -101,34 +112,70 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     proxyRes: UploadResult;
     multisigRes: UploadResult;
     govecRes: UploadResult;
-    stakingRes: UploadResult;
-    daoRes: UploadResult;
-    voteRes: UploadResult;
-    proposalSingleRes: UploadResult;
+    stakingRes: Code;
+    daoRes: Code;
+    voteRes: Code;
+    proposalSingleRes: Code;
 }> {
     // Upload required contracts
     const factoryRes = await uploadContract(client, factoryCodePath);
     const proxyRes = await uploadContract(client, proxyCodePath);
     const multisigRes = await uploadContract(client, fixMultiSigCodePath);
     const govecRes = await uploadContract(client, govecCodePath);
-    const stakingRes = await uploadContract(client, stakingCodePath);
-    const daoRes = await uploadContract(client, daoCodePath);
-    const voteRes = await uploadContract(client, voteCodePath);
-    const proposalSingleRes = await uploadContract(client, proposalSingleCodePath);
+
+    const codesObj: { [key: string]: DaoDaoContracts } = codes;
+
+    const network = Object.keys(codesObj).find((ele) => ele == process.env.NETWORK);
+
+    let codeDetails = {} as DaoDaoContracts;
+    let codeRes = {} as DaoDaoContracts;
+
+    if (network) {
+        Object.keys(codesObj[network]).forEach(async (v) => {
+            const res = await getOnchainContracts(client, codesObj[network][v].id);
+            codeRes[v] = res;
+        });
+    } else {
+        console.log("uploading new contracts");
+        codeDetails["staking"] = await uploadContract(client, stakingCodePath);
+        codeDetails["dao"] = await uploadContract(client, daoCodePath);
+        codeDetails["vote"] = await uploadContract(client, voteCodePath);
+        codeDetails["proposalSingle"] = await uploadContract(client, proposalSingleCodePath);
+
+        Object.keys(codeDetails).forEach(async (v) => {
+            codeRes[v] = {
+                id: codeDetails[v].codeId,
+                creator: "",
+                checksum: codeDetails[v].originalChecksum,
+            } as Code;
+            console.log("contract:", v);
+            console.log("code:", codeRes[v].id);
+        });
+    }
 
     return {
         factoryRes,
         proxyRes,
         multisigRes,
         govecRes,
-        stakingRes,
-        daoRes,
-        voteRes,
-        proposalSingleRes,
+        stakingRes: codeRes.staking,
+        daoRes: codeRes.dao,
+        voteRes: codeRes.vote,
+        proposalSingleRes: codeRes.proposalSingle,
+    };
+}
+
+export async function getOnchainContracts(client: SigningCosmWasmClient, codeId: number): Promise<Code> {
+    const res = await client.getCodeDetails(codeId);
+    return {
+        id: res.id,
+        creator: res.creator,
+        checksum: res.checksum,
     };
 }
 
 export async function downloadContracts() {
+    //TODO: add downloads for dao-contract v1
     await downloadContract(cw3FixedMulDownloadLink, "cw3_fixed_multisig.wasm");
     await downloadContract(cw20BaseDownloadLink, "cw20_base.wasm");
 }

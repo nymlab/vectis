@@ -7,22 +7,20 @@ import {
     fixMultiSigCodePath,
     govecCodePath,
     proxyCodePath,
-    stakingCodePath,
     uploadReportPath,
 } from "@vectis/core/utils/constants";
 
 /**
- * This suite tests contracts upload and deploy
+ * This suite tests contracts upload
  */
-describe("Contracts Suite: ", () => {
+xdescribe("Contracts Suite: ", () => {
     it("Should upload contracts", async () => {
-        const { factoryRes, proxyRes, multisigRes, govecRes, stakingRes } = await import(uploadReportPath);
+        const { factoryRes, proxyRes, multisigRes, govecRes } = await import(uploadReportPath);
 
         const factoryCode = getContract(factoryCodePath);
         const proxyCode = getContract(proxyCodePath);
         const multisigCode = getContract(fixMultiSigCodePath);
         const govecCode = getContract(govecCodePath);
-        const stakingCode = getContract(stakingCodePath);
 
         expect(factoryRes.originalChecksum).toEqual(toHex(sha256(factoryCode)));
         expect(factoryRes.compressedSize).toBeLessThan(factoryCode.length * 0.5);
@@ -36,8 +34,8 @@ describe("Contracts Suite: ", () => {
         expect(govecRes.originalChecksum).toEqual(toHex(sha256(govecCode)));
         expect(govecRes.compressedSize).toBeLessThan(govecCode.length * 0.5);
         expect(govecRes.codeId).toBeGreaterThanOrEqual(1);
-        expect(stakingRes.originalChecksum).toEqual(toHex(sha256(stakingCode)));
-        expect(stakingRes.compressedSize).toBeLessThan(stakingCode.length * 0.5);
-        expect(stakingRes.codeId).toBeGreaterThanOrEqual(1);
     });
+
+    // TODO
+    it("Should have have the correct checksums for onchain contracts", async () => {});
 });

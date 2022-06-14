@@ -90,6 +90,7 @@ pub fn execute(
         ExecuteMsg::Mint { new_wallet } => execute_mint(deps, env, info, new_wallet),
         ExecuteMsg::UpdateStakingAddr { new_addr } => execute_update_staking(deps, info, new_addr),
         ExecuteMsg::UpdateMintData { new_mint } => execute_update_mint_data(deps, info, new_mint),
+        ExecuteMsg::UpdateDaoAddr { new_addr } => execute_update_dao(deps, info, new_addr),
     }
 }
 
@@ -277,6 +278,22 @@ pub fn execute_update_mint_data(
         .add_attribute("action", "update_minter_data")
         .add_attribute("new_minter", m.minter)
         .add_attribute("cap", m.cap.unwrap_or_default());
+
+    Ok(res)
+}
+
+pub fn execute_update_dao(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_addr: String,
+) -> Result<Response, ContractError> {
+    ensure_is_dao(deps.as_ref(), info.sender)?;
+
+    DAO_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&new_addr)?)?;
+
+    let res = Response::new()
+        .add_attribute("action", "update_dao_address")
+        .add_attribute("new_addr", new_addr);
 
     Ok(res)
 }

@@ -162,7 +162,7 @@ fn dao_can_update_staking_addr() {
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        MINTER_ADDR,
+        DAO_ADDR,
         Some(limit),
     );
 
@@ -185,6 +185,40 @@ fn dao_can_update_staking_addr() {
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(query_staking(deps.as_ref()).unwrap(), new_staking);
+}
+
+#[test]
+fn dao_can_update_dao_addr() {
+    let mut deps = mock_dependencies();
+    let genesis = String::from("genesis");
+    let amount = Uint128::new(0);
+    let limit = Uint128::new(12);
+
+    let new_dao = String::from("new_dao");
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![genesis.as_str()],
+        vec![amount],
+        MINTER_ADDR,
+        Some(limit),
+    );
+
+    let msg = ExecuteMsg::UpdateDaoAddr {
+        new_addr: new_dao.clone(),
+    };
+
+    // only dao can update staking
+    let info = mock_info(MINTER_ADDR, &[]);
+    let env = mock_env();
+    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    let info = mock_info(DAO_ADDR, &[]);
+    let env = mock_env();
+    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+    assert_eq!(query_dao(deps.as_ref()).unwrap(), new_dao);
 }
 
 #[test]

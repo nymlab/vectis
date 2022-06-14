@@ -12,7 +12,7 @@ const envPath = `${__dirname}/../../../.env`;
 dotenv.config({ path: envPath });
 
 // Network
-const network = networks[process.env.NETWORK as NetworkOptions];
+export const network = networks[process.env.NETWORK as NetworkOptions];
 export const chainId = network.chainId;
 export const addrPrefix = network.addressPrefix;
 export const rpcEndPoint = network.rpcUrl;

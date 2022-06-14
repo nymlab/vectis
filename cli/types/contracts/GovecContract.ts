@@ -174,6 +174,16 @@ export interface GovecInterface extends GovecReadOnlyInterface {
         memo?: string,
         funds?: readonly Coin[]
     ) => Promise<ExecuteResult>;
+    updateDaoAddr: (
+        {
+            newAddr,
+        }: {
+            newAddr: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ) => Promise<ExecuteResult>;
 }
 export class GovecClient extends GovecQueryClient implements GovecInterface {
     override client: SigningCosmWasmClient;
@@ -191,6 +201,7 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
         this.mint = this.mint.bind(this);
         this.updateStakingAddr = this.updateStakingAddr.bind(this);
         this.updateMintData = this.updateMintData.bind(this);
+        this.updateDaoAddr = this.updateDaoAddr.bind(this);
     }
 
     transfer = async (
@@ -326,6 +337,29 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
             {
                 update_mint_data: {
                     new_mint: newMint,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateDaoAddr = async (
+        {
+            newAddr,
+        }: {
+            newAddr: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_dao_addr: {
+                    new_addr: newAddr,
                 },
             },
             fee,

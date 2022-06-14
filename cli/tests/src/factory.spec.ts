@@ -26,7 +26,7 @@ import { instantiateGovec } from "@vectis/core/services/govec";
 /**
  * This suite tests Factory contract methods
  */
-describe("Factory Suite: ", () => {
+xdescribe("Factory Suite: ", () => {
     let adminClient: SigningCosmWasmClient;
     let client: CosmWasmClient;
     let proxyCodeId: number;
@@ -45,11 +45,12 @@ describe("Factory Suite: ", () => {
             adminClient,
             factoryRes.codeId,
             proxyCodeId,
-            multisigRes.codeId
+            multisigRes.codeId,
+            [FACTORY_INITIAL_FUND]
         );
         factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
 
-        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, factoryAddr);
+        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, [], factoryAddr, factoryAddr);
 
         await factoryClient.updateGovecAddr({ addr: govecAddr });
         const govec = await factoryClient.govecAddr();

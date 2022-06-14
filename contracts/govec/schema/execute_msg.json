@@ -112,6 +112,7 @@
       "additionalProperties": false
     },
     {
+      "description": "Updates the minter contract address.Authorized by the DAO",
       "type": "object",
       "required": [
         "update_mint_data"
@@ -129,6 +130,27 @@
                   "type": "null"
                 }
               ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Updates the DAO address for this governance token",
+      "type": "object",
+      "required": [
+        "update_dao_addr"
+      ],
+      "properties": {
+        "update_dao_addr": {
+          "type": "object",
+          "required": [
+            "new_addr"
+          ],
+          "properties": {
+            "new_addr": {
+              "type": "string"
             }
           }
         }

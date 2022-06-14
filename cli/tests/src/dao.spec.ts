@@ -1,5 +1,6 @@
 import { delay } from "@vectis/core/utils/promises";
-import { defaultExecuteFee, defaultInstantiateFee, walletFee } from "@vectis/core/utils/fee";
+import { defaultExecuteFee, defaultInstantiateFee } from "@vectis/core/utils/fee";
+import { walletFee } from "@vectis/core/utils/dao-params";
 import { GovecClient } from "@vectis/types/contracts/GovecContract";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,
@@ -10,13 +11,14 @@ import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts
 
 import { adminAddr, addrPrefix, adminMnemonic, uploadReportPath } from "@vectis/core/utils/constants";
 
-import { CosmosMsg_for_Empty } from "types/contracts/ProxyContract";
+import { CosmosMsg_for_Empty } from "@vectis/types/contracts/ProxyContract";
 
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createSigningClient } from "@vectis/core/services/cosmwasm";
 import { instantiateGovec } from "@vectis/core/services/govec";
-import { createTokenInfo } from "@vectis/core/services/cw20";
+import { createTokenInfo } from "@vectis/core/services/staking";
+import { createFactoryInstMsg } from "@vectis/core/services/factory";
 import {
     createDaoInstMsg,
     createGovModInstInfo,
@@ -24,6 +26,8 @@ import {
     createVoteInstMsg,
     createVoteModInstInfo,
 } from "@vectis/core/services/dao";
+import { deploy } from "@vectis/core/utils/dao-deploy";
+import { VectisDaoContractsAddrs } from "@vectis/core/interfaces/dao";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
@@ -31,128 +35,46 @@ import {
 describe("DAO Suite: ", () => {
     let adminClient: SigningCosmWasmClient;
     let govecClient: GovecClient;
-    let factoryCodeId: number;
-    let proxyCodeId: number;
-    let multisigCodeId: number;
-    let daoAddr: string;
-    let stakingAddr: string;
-    let propAddrs: string[];
-    let proposalId: number;
+    let addrs: VectisDaoContractsAddrs;
 
     beforeAll(async () => {
-        const { factoryRes, proxyRes, multisigRes, stakingRes, voteRes, govecRes, daoRes, proposalSingleRes } =
-            await import(uploadReportPath);
-
+        addrs = await deploy();
         adminClient = await createSigningClient(adminMnemonic, addrPrefix);
-        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, adminAddr);
-        govecClient = new GovecClient(adminClient, adminAddr, govecAddr);
-
-        proxyCodeId = proxyRes.codeId;
-        factoryCodeId = factoryRes.codeId;
-        multisigCodeId = multisigRes.codeId;
-
-        const tokenInfo = createTokenInfo(govecAddr, stakingRes.codeId);
-
-        const voteInstMsg = createVoteInstMsg(tokenInfo);
-        // cw-proposal-single instantiation msg
-        const propInstMsg = createPropInstMsg();
-        // dao-core instantiation msg
-        // TODO: the module types `ModuleInstantiateInfo` do not work with the @daodao/types,
-        // therefore not using interfaces. There is versioning issues
-        const govModInstInfo = createGovModInstInfo(proposalSingleRes.codeId, propInstMsg);
-        const voteModInstInfo = createVoteModInstInfo(voteRes.codeId, voteInstMsg);
-        const daoInstMsg = createDaoInstMsg(govModInstInfo, voteModInstInfo);
-
-        const { contractAddress } = await adminClient.instantiate(
-            adminAddr,
-            daoRes.codeId,
-            daoInstMsg,
-            "VectisDAO",
-            defaultInstantiateFee
-        );
-        daoAddr = contractAddress;
-        const voteAddr = await adminClient.queryContractSmart(daoAddr, { voting_module: {} });
-        propAddrs = await adminClient.queryContractSmart(daoAddr, { proposal_modules: {} });
-        stakingAddr = await adminClient.queryContractSmart(voteAddr, { staking_contract: {} });
+        govecClient = new GovecClient(adminClient, adminAddr, addrs.govecAddr);
     });
 
-    it("Should let admin set staking addr on Govec", async () => {
-        await govecClient.updateStakingAddr({ newAddr: stakingAddr });
+    it("Admin should have no govec tokens", async () => {
+        expect(await govecClient.balance({ address: adminAddr })).toThrowError();
+        const tokenInfo = await govecClient.tokenInfo();
+        expect(tokenInfo.total_supply).toEqual("0");
+    });
+
+    it("Factory, Govec, cw20_stake, cw20_stake_balance_voting, Proposal Contracts should have DAO as admin", async () => {
+        let contract = await adminClient.getContract(addrs.factoryAddr);
+        expect(contract.admin).toEqual(addrs.daoAddr);
+        contract = await adminClient.getContract(addrs.govecAddr);
+        expect(contract.admin).toEqual(addrs.daoAddr);
+        contract = await adminClient.getContract(addrs.stakingAddr);
+        expect(contract.admin).toEqual(addrs.daoAddr);
+        contract = await adminClient.getContract(addrs.voteAddr);
+        expect(contract.admin).toEqual(addrs.daoAddr);
+        contract = await adminClient.getContract(addrs.proposalAddr);
+        expect(contract.admin).toEqual(addrs.daoAddr);
+    });
+
+    it("Govec should have factoryAddr as the minter", async () => {
+        const m = await govecClient.minter();
+        expect(m.minter).toEqual(addrs.factoryAddr);
+    });
+
+    it("Govec should have daoAddr as the dao", async () => {
+        const dao = await govecClient.dao();
+        expect(dao).toEqual(addrs.daoAddr);
+    });
+
+    it("Govec should have stakingAddr as the stakingAddr", async () => {
         const staking = await govecClient.staking();
-        expect(stakingAddr).toBe(staking);
-    });
-
-    it("Should let admin mint for self and stake", async () => {
-        await govecClient.mint({ newWallet: adminAddr });
-        // todo: transfer govec admin to dao
-
-        // admin stake to propose and vote to deploy factory contract
-        const sendMsg = { stake: {} };
-        await govecClient.send({ amount: "1", contract: stakingAddr, msg: toCosmosMsg(sendMsg) });
-
-        // need this for block to be mined
-        await delay(5000);
-
-        const stakeQuery: StakeQuery = { staked_balance_at_height: { address: adminAddr! } };
-        const stakingPower = await adminClient.queryContractSmart(stakingAddr, stakeQuery);
-        expect(stakingPower.balance).toBe("1");
-    });
-
-    it("Should propose to deploy Factory contract as admin", async () => {
-        const factorInstMsg: FactoryInstantiateMsg = {
-            proxy_code_id: proxyCodeId,
-            proxy_multisig_code_id: multisigCodeId,
-            addr_prefix: addrPrefix!,
-            wallet_fee: walletFee,
-        };
-
-        const deployFactoryMsg: CosmosMsg_for_Empty = {
-            wasm: {
-                instantiate: {
-                    admin: daoAddr,
-                    code_id: factoryCodeId,
-                    funds: [],
-                    label: "Vectis Factory",
-                    msg: toCosmosMsg(factorInstMsg),
-                },
-            },
-        };
-
-        const proposalTitle = "Deploy Vectis Factory";
-        const proposal: CwPropSingleExecuteMsg = {
-            propose: {
-                description: "Deploy Vectis Factory",
-                latest: null,
-                msgs: [deployFactoryMsg],
-                title: "Deploy Vectis Factory",
-            },
-        };
-
-        // propose
-        await adminClient.execute(adminAddr!, propAddrs[0], proposal, defaultExecuteFee);
-        const propQuery: ProposalQueryMsg = { list_proposals: {} };
-        const props = await adminClient.queryContractSmart(propAddrs[0], propQuery);
-        proposalId = props.proposals[0].id;
-        expect(props.proposals[0].proposal.title).toBe(proposalTitle);
-    });
-
-    it("Should vote and execute Factory contract deployment as admin", async () => {
-        const vote: CwPropSingleExecuteMsg = {
-            vote: {
-                proposal_id: proposalId,
-                vote: "yes",
-            },
-        };
-        await adminClient.execute(adminAddr, propAddrs[0], vote, defaultExecuteFee);
-
-        const execute: CwPropSingleExecuteMsg = {
-            execute: {
-                proposal_id: proposalId,
-            },
-        };
-        const res = await adminClient.execute(adminAddr!, propAddrs[0], execute, defaultExecuteFee);
-        expect(res.logs[0].events[1]["type"]).toBe("instantiate");
-        expect(res.logs[0].events[1].attributes[1].value).toBe(String(factoryCodeId));
+        expect(staking).toEqual(addrs.stakingAddr);
     });
 
     afterAll(() => {

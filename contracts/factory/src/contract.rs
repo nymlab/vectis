@@ -38,7 +38,7 @@ const DEFAULT_LIMIT: u32 = 10;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -55,7 +55,7 @@ pub fn instantiate(
         GOVEC.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
     }
 
-    Ok(Response::new().add_attribute("method", "instantiate"))
+    Ok(Response::new().add_attribute("Vectis Factory instantiated", env.contract.address))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

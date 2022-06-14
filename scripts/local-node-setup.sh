@@ -12,11 +12,18 @@ rustup target add wasm32-unknown-unknown
 
 NODE_NETWORK=$NETWORK || "juno_local"
 
-CW_CONTAINER=`docker ps -a --format="{{.ID}}\t{{.Ports}}" | grep 26656 | awk '{print $1}'`
+CW_CONTAINER=`docker ps -a --format="{{.Names}}" | grep "$NODE_NETWORK"_node| awk '{print $1}'`
 
 if [[ "$CW_CONTAINER" != "" ]]; then
-echo "Removing docker container ${CW_CONTAINER}"
+echo "Removing existing node container ${CW_CONTAINER}"
 docker rm -f ${CW_CONTAINER} > /dev/null;
+fi
+
+OTHER_CONTAINER=`docker ps -a --format="{{.ID}}\t{{.Ports}}" | grep "$NODE_NETWORK"_node| awk '{print $1}'`
+
+if [[ "$OTHER_CONTAINER" != "" ]]; then
+echo " Please remove container ${OTHER_CONTAINER} to allow port binding"
+exit 1
 fi
 
 echo "⚙️  Running ${NODE_NETWORK} node on Docker..."
@@ -57,7 +64,6 @@ echo "📖️ Deploying Vectis contracts and running tests..."
 
 cd ../cli
 
-npm ci
-npm test
+npm run test:ci 
 
 echo "✅️ All done, have fun!"
