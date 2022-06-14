@@ -6,7 +6,7 @@
         "giovanni-orciuolo <giovanni@orciuolo.it>",
         "j0nl1 <jonlitech@gmail.com>"
     ],
-    "version": "0.0.4",
+    "version": "0.0.5",
     "main": "index.js",
     "scripts": {
         "publish:dev": "npx tsc && cp package.json build/package.json && cd build && npm publish --dry-run",

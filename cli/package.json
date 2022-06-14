@@ -9,9 +9,9 @@
         "core"
     ],
     "scripts": {
-        "deploy": "npm run deploy -w @vectis/core",
+        "upload": "npm run upload -w @vectis/core",
         "test": "npm test -w @vectis/tests",
-        "test:ci": "npm run deploy && npm test",
+        "test:ci": "npm run upload && npm test",
         "generate:types": "npm run generate -w @vectis/types",
         "prepare": "cd .. && ./cli/node_modules/.bin/husky install cli/.husky"
     },

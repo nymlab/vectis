@@ -1,12 +1,14 @@
 import { Addr } from "@vectis/types/contracts/FactoryContract";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { defaultInstantiateFee } from "../utils/fee";
-import { InstantiateMsg as GovecInstantiateMsg } from "@vectis/types/contracts/GovecContract";
+import { InstantiateMsg as GovecInstantiateMsg, Cw20Coin } from "@vectis/types/contracts/GovecContract";
 import { adminAddr } from "../utils/constants";
 
 export async function instantiateGovec(
     client: SigningCosmWasmClient,
     govecCodeId: number,
+    initial_balances: Cw20Coin[],
+    admin: string,
     minter?: string,
     minterCap?: string
 ): Promise<{
@@ -16,7 +18,8 @@ export async function instantiateGovec(
     const instantiate: GovecInstantiateMsg = {
         name: "Govec",
         symbol: "GOVEC",
-        initial_balances: [],
+        // TODO: give admin initial balance
+        initial_balances: initial_balances,
         minter: m,
     };
     const { contractAddress } = await client.instantiate(
@@ -24,7 +27,10 @@ export async function instantiateGovec(
         govecCodeId,
         instantiate,
         "Govec",
-        defaultInstantiateFee
+        defaultInstantiateFee,
+        {
+            admin: admin,
+        }
     );
 
     return {

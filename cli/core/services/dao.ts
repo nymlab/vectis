@@ -1,5 +1,10 @@
 import { InstantiateMsg as Cw20SBVInstantiateMsg } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import { InstantiateMsg as CwPropSingleInstantiateMsg } from "@dao-dao/types/contracts/cw-proposal-single";
+import {
+    InstantiateMsg as CwPropSingleInstantiateMsg,
+    DepositInfo,
+    Duration,
+    Threshold,
+} from "@dao-dao/types/contracts/cw-proposal-single";
 import { TokenInfo } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 
@@ -42,25 +47,29 @@ export const createDaoInstMsg = (govModInstInfo: unknown, voteModInstInfo: unkno
     };
 };
 
-export const createPropInstMsg = (): CwPropSingleInstantiateMsg => {
+export const createPropInstMsg = (
+    depositInfo: DepositInfo | null,
+    maxVotingPeriod: Duration,
+    threshold: Threshold
+): CwPropSingleInstantiateMsg => {
     return {
-        // deposit not required for creating proposal
-        deposit_info: null,
+        // deposit required for creating proposal
+        deposit_info: depositInfo,
         // time in seconds
-        max_voting_period: {
-            time: 60 * 60 * 24 * 14,
-        },
+        // {
+        //     time: 60 * 60 * 24 * 14,
+        // }
+        max_voting_period: maxVotingPeriod,
         only_members_execute: false,
-        threshold: {
-            // details - https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
-            threshold_quorum: {
-                quorum: {
-                    percent: "0.6",
-                },
-                threshold: {
-                    percent: "0.3",
-                },
-            },
-        },
+        // details - https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
+        // threshold_quorum: {
+        //     quorum: {
+        //         percent: "0.6",
+        //     },
+        //     threshold: {
+        //         percent: "0.3",
+        //     },
+        // },
+        threshold: threshold,
     };
 };

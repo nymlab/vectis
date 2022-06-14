@@ -1,7 +1,8 @@
 {
     "name": "@vectis/core",
     "scripts": {
-        "deploy": "ts-node deployer.ts"
+        "upload": "ts-node upload.ts",
+        "dao-deploy": "ts-node dao-deployer.ts"
     },
     "dependencies": {
         "@cosmjs/amino": "^0.28.4",
