@@ -11,6 +11,7 @@ import {
     createVoteModInstInfo,
 } from "@vectis/core/services/dao";
 import { defaultExecuteFee, defaultInstantiateFee } from "@vectis/core/utils/fee";
+import { delay } from "@vectis/core/utils/promises";
 import { threshold, depositInfo, maxVotingPeriod, unstakeDuration, walletFee } from "@vectis/core/utils/dao-params";
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { createFactoryInstMsg } from "../services/factory";
@@ -152,11 +153,15 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
     console.log("\n\nUpdated Govec Contract Admin to DAO\n", JSON.stringify(res));
 
     res = await adminClient.execute(adminAddr!, stakingAddr, { unstake: { amount: "1" } }, defaultExecuteFee);
-    res = await adminClient.execute(adminAddr!, stakingAddr, { claim: {} }, defaultExecuteFee);
     console.log("\n\nAdmin unstakes \n", JSON.stringify(res));
 
+    //// Below is only needed if theres is an unstake period
+    // delay(5000);
+    // res = await adminClient.execute(adminAddr!, stakingAddr, { claim: {} }, defaultExecuteFee);
+    // console.log("\n\nAdmin claim \n", JSON.stringify(res));
+
     res = await adminClient.execute(adminAddr!, govecAddr, { burn: {} }, defaultExecuteFee);
-    console.log("\n\nAdmin unstakes and burn its govec\n", JSON.stringify(res));
+    console.log("\n\nAdmin burns the one govec\n", JSON.stringify(res));
 
     return {
         daoAddr: daoAddr,

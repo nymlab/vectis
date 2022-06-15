@@ -26,7 +26,7 @@ import { instantiateGovec } from "@vectis/core/services/govec";
 /**
  * This suite tests Factory contract methods
  */
-xdescribe("Factory Suite: ", () => {
+describe("Factory Suite: ", () => {
     let adminClient: SigningCosmWasmClient;
     let client: CosmWasmClient;
     let proxyCodeId: number;

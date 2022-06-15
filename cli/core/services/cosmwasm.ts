@@ -136,7 +136,6 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
             codeRes[v] = res;
         });
     } else {
-        console.log("uploading new contracts");
         codeDetails["staking"] = await uploadContract(client, stakingCodePath);
         codeDetails["dao"] = await uploadContract(client, daoCodePath);
         codeDetails["vote"] = await uploadContract(client, voteCodePath);
@@ -148,8 +147,6 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
                 creator: "",
                 checksum: codeDetails[v].originalChecksum,
             } as Code;
-            console.log("contract:", v);
-            console.log("code:", codeRes[v].id);
         });
     }
 
