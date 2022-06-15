@@ -1,31 +1,7 @@
-import { delay } from "@vectis/core/utils/promises";
-import { defaultExecuteFee, defaultInstantiateFee } from "@vectis/core/utils/fee";
-import { walletFee } from "@vectis/core/utils/dao-params";
 import { GovecClient } from "@vectis/types/contracts/GovecContract";
-import {
-    ExecuteMsg as CwPropSingleExecuteMsg,
-    QueryMsg as ProposalQueryMsg,
-} from "@dao-dao/types/contracts/cw-proposal-single";
-import { QueryMsg as StakeQuery } from "@dao-dao/types/contracts/stake-cw20";
-import { InstantiateMsg as FactoryInstantiateMsg } from "@vectis/types/contracts/FactoryContract";
-
-import { adminAddr, addrPrefix, adminMnemonic, uploadReportPath } from "@vectis/core/utils/constants";
-
-import { CosmosMsg_for_Empty } from "@vectis/types/contracts/ProxyContract";
-
-import { toCosmosMsg } from "@vectis/core/utils/enconding";
+import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/constants";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createSigningClient } from "@vectis/core/services/cosmwasm";
-import { instantiateGovec } from "@vectis/core/services/govec";
-import { createTokenInfo } from "@vectis/core/services/staking";
-import { createFactoryInstMsg } from "@vectis/core/services/factory";
-import {
-    createDaoInstMsg,
-    createGovModInstInfo,
-    createPropInstMsg,
-    createVoteInstMsg,
-    createVoteModInstInfo,
-} from "@vectis/core/services/dao";
 import { deploy } from "@vectis/core/utils/dao-deploy";
 import { VectisDaoContractsAddrs } from "@vectis/core/interfaces/dao";
 
@@ -44,7 +20,12 @@ describe("DAO Suite: ", () => {
     });
 
     it("Admin should have no govec tokens", async () => {
-        expect(await govecClient.balance({ address: adminAddr })).toThrowError();
+        try {
+            await govecClient.balance({ address: adminAddr });
+            expect(false).toBeTruthy;
+        } catch (error) {
+            expect(error).toBeInstanceOf(Error);
+        }
         const tokenInfo = await govecClient.tokenInfo();
         expect(tokenInfo.total_supply).toEqual("0");
     });

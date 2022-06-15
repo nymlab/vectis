@@ -13,7 +13,7 @@ import {
 /**
  * This suite tests contracts upload
  */
-xdescribe("Contracts Suite: ", () => {
+describe("Contracts Suite: ", () => {
     it("Should upload contracts", async () => {
         const { factoryRes, proxyRes, multisigRes, govecRes } = await import(uploadReportPath);
 
