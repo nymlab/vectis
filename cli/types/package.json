@@ -9,8 +9,8 @@
     "version": "0.0.5",
     "main": "index.js",
     "scripts": {
-        "publish:dev": "npx tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
-        "publish:prod": "npx tsc && cp package.json build/package.json && cd build && npm publish",
+        "publish:dev": "tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
+        "publish:prod": "tsc && cp package.json build/package.json && cd build && npm publish",
         "generate": "npm run types:proxy && npm run types:factory && npm run types:govec && npm version patch",
         "types:proxy": "cosmwasm-typescript-gen generate --schema ../../contracts/proxy/schema --out ./contracts --name Proxy",
         "types:factory": "cosmwasm-typescript-gen generate --schema ../../contracts/factory/schema --out ./contracts --name Factory",
@@ -27,6 +27,8 @@
         "registry": "https://registry.npmjs.org"
     },
     "dependencies": {
+        "@cosmjs/amino": "^0.28.7",
+        "@cosmjs/cosmwasm-stargate": "^0.28.7",
         "cosmwasm-typescript-gen": "^0.2.14",
         "typescript": "^4.7.3"
     }
