@@ -1,6 +1,10 @@
 # Vectis - Smart Contract Wallet
 
 [![Cosmowasm 0.20.0](https://img.shields.io/badge/CosmWasm-0.20.0-green)](https://github.com/CosmWasm/wasmd/releases)
+[![codecov_img](https://img.shields.io/codecov/c/github/nymlab/vectis)](https://img.shields.io/codecov/c/github/nymlab/vectis)
+
+- [Website](https://vectis.nymlab.it/)
+- [Discord](https://discord.gg/xp3vFSAMgS)
 
 ## Overview
 
