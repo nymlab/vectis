@@ -64,6 +64,7 @@ echo "📖️ Deploying Vectis contracts and running tests..."
 
 cd ../cli
 
+npm ci
 npm run test:ci 
 
 echo "✅️ All done, have fun!"
