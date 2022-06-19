@@ -103,7 +103,7 @@ export async function uploadContract(
  *
  *  Note: dao-contracts do not need to be uploaded on juno-testnet / juno-mainnet
  *
- *  Current version of DAO contracts: 6831b7f706b16989b3cfac00cab1c2545d1b524 (on mainnet)
+ *  Current version of DAO contracts: 60b710df2f3abb8ca275ad16a86ce3b0c265a339 (on testnet)
  *
  * @param client Signing client
  */
@@ -131,10 +131,10 @@ export async function uploadContracts(client: SigningCosmWasmClient): Promise<{
     let codeRes = {} as DaoDaoContracts;
 
     if (network) {
-        Object.keys(codesObj[network]).forEach(async (v) => {
-            const res = await getOnchainContracts(client, codesObj[network][v].id);
-            codeRes[v] = res;
-        });
+        codeRes["staking"] = await getOnchainContracts(client, codesObj[network]["staking"].id);
+        codeRes["dao"] = await getOnchainContracts(client, codesObj[network]["dao"].id);
+        codeRes["vote"] = await getOnchainContracts(client, codesObj[network]["vote"].id);
+        codeRes["proposalSingle"] = await getOnchainContracts(client, codesObj[network]["proposalSingle"].id);
     } else {
         codeDetails["staking"] = await uploadContract(client, stakingCodePath);
         codeDetails["dao"] = await uploadContract(client, daoCodePath);

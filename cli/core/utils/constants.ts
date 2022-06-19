@@ -49,7 +49,7 @@ export const wasmContractsPath = process.env.DOWNLOADED_CW_PATH as string;
 export const fixMultiSigCodePath = path.join(downloadContractPath, "cw3_fixed_multisig.wasm");
 export const cw20CodePath = path.join(downloadContractPath, "cw20_base.wasm");
 export const daoCodePath = path.join(wasmContractsPath, "cw_core.wasm");
-export const stakingCodePath = path.join(wasmContractsPath, "stake_cw20.wasm");
+export const stakingCodePath = path.join(wasmContractsPath, "cw20_stake.wasm");
 export const voteCodePath = path.join(wasmContractsPath, "cw20_staked_balance_voting.wasm");
 export const proposalSingleCodePath = path.join(wasmContractsPath, "cw_proposal_single.wasm");
 
