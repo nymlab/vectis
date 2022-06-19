@@ -11,8 +11,16 @@ import {
     createVoteModInstInfo,
 } from "@vectis/core/services/dao";
 import { defaultExecuteFee, defaultInstantiateFee } from "@vectis/core/utils/fee";
-import { delay } from "@vectis/core/utils/promises";
-import { threshold, depositInfo, maxVotingPeriod, unstakeDuration, walletFee } from "@vectis/core/utils/dao-params";
+// import { delay } from "@vectis/core/utils/promises";
+import {
+    threshold,
+    depositInfo,
+    maxVotingPeriod,
+    minVotingPeriod,
+    allowRevote,
+    unstakeDuration,
+    walletFee,
+} from "@vectis/core/utils/dao-params";
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { createFactoryInstMsg } from "../services/factory";
 import { CosmosMsg_for_Empty } from "@vectis/types/contracts/ProxyContract";
@@ -57,10 +65,11 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
     const tokenInfo = createTokenInfo(govecAddr, stakingRes.id, unstakeDuration);
     const voteInstMsg = createVoteInstMsg(tokenInfo);
     // cw-proposal-single instantiation msg
-    const propInstMsg = createPropInstMsg(depositInfo, maxVotingPeriod, threshold);
+    const propInstMsg = createPropInstMsg(depositInfo, maxVotingPeriod, minVotingPeriod, threshold, allowRevote);
     // dao-core instantiation msg
     // TODO: the module types `ModuleInstantiateInfo` do not work with the @daodao/types,
     // therefore not using interfaces. There is versioning issues
+    // https://github.com/DA0-DA0/dao-contracts/pull/347#pullrequestreview-1011556931
     const govModInstInfo = createGovModInstInfo(proposalSingleRes.id, propInstMsg);
     const voteModInstInfo = createVoteModInstInfo(voteRes.id, voteInstMsg);
     const daoInstMsg = createDaoInstMsg(govModInstInfo, voteModInstInfo);
@@ -124,7 +133,8 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
             vote: "yes",
         },
     };
-    await adminClient.execute(adminAddr, propAddrs[0], vote, defaultExecuteFee);
+    res = await adminClient.execute(adminAddr, propAddrs[0], vote, defaultExecuteFee);
+    console.log("\n\nVote to deploy Factory Contract\n", JSON.stringify(res));
 
     const execute: CwPropSingleExecuteMsg = {
         execute: {

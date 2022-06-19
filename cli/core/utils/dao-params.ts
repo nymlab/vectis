@@ -3,16 +3,26 @@ import { Coin } from "@vectis/types/contracts/FactoryContract";
 import { Duration as StakeDuration } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
 import { DepositInfo, Duration, Threshold } from "@dao-dao/types/contracts/cw-proposal-single";
 
+// Factory
+//
 // Next verion: Minter Cap (does Factory have a mint cap for Govec?)
 // Fee for wallet creation
 export const walletFee: Coin = { amount: "10000", denom: coinMinDenom! };
+
+// Proposal
+//
 // Cool down period for unstaking, time in seconds
 // if it is not null, dao-deploy will need to wait for unstaked and claim
 export const unstakeDuration: StakeDuration | null = null;
 // Deposit required for creating proposal
 export const depositInfo: DepositInfo | null = null;
 // Length of  , Time in seconds
-export const maxVotingPeriod: Duration = { time: 60 * 60 * 24 * 14 };
+export const maxVotingPeriod: Duration | null = { time: 60 * 60 * 24 * 14 };
+// Length of  , Time in seconds
+export const minVotingPeriod: Duration | null = null;
+// Can members change their votes before expiry
+// It is easier for it to be false for deployment
+export const allowRevote: Boolean = false;
 // Details - https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
 export const threshold: Threshold = {
     threshold_quorum: {

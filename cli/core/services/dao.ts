@@ -49,9 +49,11 @@ export const createDaoInstMsg = (govModInstInfo: unknown, voteModInstInfo: unkno
 
 export const createPropInstMsg = (
     depositInfo: DepositInfo | null,
-    maxVotingPeriod: Duration,
-    threshold: Threshold
-): CwPropSingleInstantiateMsg => {
+    maxVotingPeriod: Duration | null,
+    minVotingPeriod: Duration | null,
+    threshold: Threshold,
+    allow_revoting: Boolean
+): any => {
     return {
         // deposit required for creating proposal
         deposit_info: depositInfo,
@@ -71,5 +73,16 @@ export const createPropInstMsg = (
         //     },
         // },
         threshold: threshold,
+        /// The minimum amount of time a proposal must be open before
+        /// passing. A proposal may fail before this amount of time has
+        /// elapsed, but it will not pass. This can be useful for
+        /// preventing governance attacks wherein an attacker aquires a
+        /// large number of tokens and forces a proposal through.
+        min_voting_period: minVotingPeriod,
+        /// Allows changing votes before the proposal expires. If this is
+        /// enabled proposals will not be able to complete early as final
+        /// vote information is not known until the time of proposal
+        /// expiration.
+        allow_revoting: allow_revoting,
     };
 };
