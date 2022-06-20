@@ -140,6 +140,7 @@ impl Suite {
                     initial_balances: vec![],
                     staking_addr: None,
                     minter: None,
+                    marketing: None,
                 },
                 &[],
                 "govec",                 // label: human readible name for contract

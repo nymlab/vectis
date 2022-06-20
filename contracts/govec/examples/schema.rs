@@ -6,7 +6,7 @@ use cosmwasm_std::{Addr, Binary};
 use cw20::{AllAccountsResponse, BalanceResponse, TokenInfoResponse};
 use vectis_govec::{
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::MinterData,
+    state::{MinterData, MarketingInfo},
 };
 
 fn main() {
@@ -20,8 +20,10 @@ fn main() {
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema(&schema_for!(BalanceResponse), &out_dir);
     export_schema(&schema_for!(TokenInfoResponse), &out_dir);
+    export_schema(&schema_for!(TokenInfoResponse), &out_dir);
     export_schema(&schema_for!(AllAccountsResponse), &out_dir);
     export_schema(&schema_for!(MinterData), &out_dir);
+    export_schema(&schema_for!(MarketingInfo), &out_dir);
     export_schema(&schema_for!(Binary), &out_dir);
     export_schema_with_title(&schema_for!(MinterData), &out_dir, "MinterResponse");
     export_schema_with_title(&schema_for!(Addr), &out_dir, "StakingResponse");
