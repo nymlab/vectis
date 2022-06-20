@@ -348,7 +348,7 @@ fn instantiate_multiple_accounts() {
         ],
         minter: None,
         staking_addr: None,
-        marketing: None
+        marketing: None,
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();

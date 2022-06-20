@@ -12,7 +12,7 @@ pub struct InstantiateMsg {
     pub initial_balances: Vec<Cw20Coin>,
     pub staking_addr: Option<String>,
     pub minter: Option<MinterData>,
-    pub marketing: Option<MarketingInfo>
+    pub marketing: Option<MarketingInfo>,
 }
 
 impl InstantiateMsg {

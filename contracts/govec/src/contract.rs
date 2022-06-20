@@ -44,7 +44,7 @@ pub fn instantiate(
         decimals: 0,
         total_supply,
         mint: msg.minter,
-        marketing: msg.marketing
+        marketing: msg.marketing,
     };
     TOKEN_INFO.save(deps.storage, &data)?;
 

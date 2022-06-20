@@ -1,6 +1,6 @@
+use cw20::Logo;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cw20::Logo;
 
 use cosmwasm_std::{Addr, CanonicalAddr, Uint128};
 use cw_storage_plus::{Item, Map};
