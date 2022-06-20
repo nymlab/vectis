@@ -42,9 +42,9 @@ vectis-wallet = {path = "../../packages/vectis"}
 anyhow = "1"
 cosmwasm-schema = { version = "1.0.0-beta" }
 assert_matches = "1"
-cw-multi-test = "0.13"
+cw-multi-test = { version = "0.13.2" }
 secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}
 cw3 = "0.13"
 cw3-fixed-multisig = { version = "0.13", features = ["library"] }
-stake-cw20 = "0.2.6"
+cw20-stake = { git = "https://github.com/DA0-DA0/dao-contracts.git", rev = "60b710df2f3abb8ca275ad16a86ce3b0c265a339", features = ['library'] }
 vectis-proxy = { path = "../proxy", features = ["migration", "library"]}

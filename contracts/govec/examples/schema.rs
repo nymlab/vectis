@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 use cosmwasm_std::{Addr, Binary};
-use cw20::{AllAccountsResponse, BalanceResponse, TokenInfoResponse, DownloadLogoResponse};
+use cw20::{AllAccountsResponse, BalanceResponse, DownloadLogoResponse, TokenInfoResponse};
 use vectis_govec::{
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
     state::MinterData,
