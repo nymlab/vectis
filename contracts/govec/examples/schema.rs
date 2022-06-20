@@ -6,7 +6,7 @@ use cosmwasm_std::{Addr, Binary};
 use cw20::{AllAccountsResponse, BalanceResponse, TokenInfoResponse};
 use vectis_govec::{
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::{MinterData, MarketingInfo},
+    state::{MarketingInfo, MinterData},
 };
 
 fn main() {
