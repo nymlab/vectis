@@ -50,7 +50,13 @@ describe("Factory Suite: ", () => {
         );
         factoryClient = new FactoryClient(adminClient, adminAddr!, factoryAddr);
 
-        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, [], factoryAddr, factoryAddr);
+        const { govecAddr } = await instantiateGovec({
+            client: adminClient,
+            initial_balances: [],
+            govecCodeId: govecRes.codeId as number,
+            admin: factoryAddr,
+            minter: factoryAddr,
+        });
 
         await factoryClient.updateGovecAddr({ addr: govecAddr });
         const govec = await factoryClient.govecAddr();

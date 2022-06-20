@@ -1,5 +1,5 @@
 import { createSigningClient } from "../services/cosmwasm";
-import { instantiateGovec } from "../services/govec";
+import { createVectisMarketingInfo, instantiateGovec } from "../services/govec";
 import { addrPrefix, adminAddr, adminMnemonic, uploadReportPath } from "./constants";
 import { GovecClient, Cw20Coin } from "@vectis/types/contracts/GovecContract";
 import { createTokenInfo } from "@vectis/core/services/staking";
@@ -57,7 +57,14 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
     ];
 
     // Instantiate Govec
-    const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, initial_balances, adminAddr);
+    const { govecAddr } = await instantiateGovec({
+        client: adminClient,
+        initial_balances,
+        govecCodeId: govecRes.codeId as number,
+        admin: adminAddr,
+        marketing: createVectisMarketingInfo(adminAddr),
+    });
+
     const govecClient = new GovecClient(adminClient, adminAddr, govecAddr);
     console.log("Instantiated Govec at: ", govecAddr);
 
@@ -75,20 +82,20 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
     const daoInstMsg = createDaoInstMsg(govModInstInfo, voteModInstInfo);
 
     console.log("dao code id: ", daoRes.id);
-    const { contractAddress } = await adminClient.instantiate(
+    const { contractAddress: daoAddr } = await adminClient.instantiate(
         adminAddr,
         daoRes.id,
         daoInstMsg,
         "VectisDAO",
         defaultInstantiateFee
     );
-    const daoAddr = contractAddress;
+
     const voteAddr = await adminClient.queryContractSmart(daoAddr, { voting_module: {} });
-    const propAddrs = await adminClient.queryContractSmart(daoAddr, { proposal_modules: {} });
+    const [proposalAddr] = await adminClient.queryContractSmart(daoAddr, { proposal_modules: {} });
     const stakingAddr = await adminClient.queryContractSmart(voteAddr, { staking_contract: {} });
     console.log("Instantiated DAO at: ", daoAddr);
     console.log("Instantiated Vote at: ", voteAddr);
-    console.log("Instantiated proposal at: ", propAddrs[0]);
+    console.log("Instantiated proposal at: ", proposalAddr);
     console.log("Instantiated staking at: ", stakingAddr);
 
     // Admin stake initial balance to prepare for proposal
@@ -120,9 +127,9 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
     };
 
     // Propose
-    let res = await adminClient.execute(adminAddr!, propAddrs[0], proposal, defaultExecuteFee);
+    let res = await adminClient.execute(adminAddr!, proposalAddr, proposal, defaultExecuteFee);
     const propQuery: ProposalQueryMsg = { list_proposals: {} };
-    const props = await adminClient.queryContractSmart(propAddrs[0], propQuery);
+    const props = await adminClient.queryContractSmart(proposalAddr, propQuery);
     const proposalId = props.proposals[0].id;
     console.log("\n\nProposed to deploy Factory Contract\n", JSON.stringify(res));
 
@@ -133,7 +140,7 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
             vote: "yes",
         },
     };
-    res = await adminClient.execute(adminAddr, propAddrs[0], vote, defaultExecuteFee);
+    res = await adminClient.execute(adminAddr, proposalAddr, vote, defaultExecuteFee);
     console.log("\n\nVote to deploy Factory Contract\n", JSON.stringify(res));
 
     const execute: CwPropSingleExecuteMsg = {
@@ -141,11 +148,15 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
             proposal_id: proposalId,
         },
     };
-    res = await adminClient.execute(adminAddr!, propAddrs[0], execute, defaultExecuteFee);
+    res = await adminClient.execute(adminAddr!, proposalAddr, execute, defaultExecuteFee);
     const events = res.logs[0].events; // Wasm event is always the last
     const attributes = events[events.length - 1].attributes;
     const factoryEvent = attributes.find((ele) => ele.key == "Vectis Factory instantiated");
     console.log("\n\nExecuted Proposal to deploy Factory\n", JSON.stringify(res));
+
+    // Update marketing address on Govec
+    res = await govecClient.updateMarketing({ marketing: daoAddr });
+    console.log("\n\nUpdated Marketing Address on Govec\n", JSON.stringify(res));
 
     // Update staking address on Govec
     res = await govecClient.updateStakingAddr({ newAddr: stakingAddr });
@@ -178,7 +189,7 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
         govecAddr: govecAddr,
         factoryAddr: factoryEvent!.value,
         stakingAddr: stakingAddr,
-        proposalAddr: propAddrs[0],
+        proposalAddr: proposalAddr,
         voteAddr: voteAddr,
     };
 }

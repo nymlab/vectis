@@ -80,8 +80,13 @@ describe("Proxy Suite: ", () => {
         );
 
         factoryClient = new FactoryClient(adminClient, adminAddr, factoryAddr);
-
-        const { govecAddr } = await instantiateGovec(adminClient, govecRes.codeId, [], factoryAddr, factoryAddr);
+        const { govecAddr } = await instantiateGovec({
+            client: adminClient,
+            initial_balances: [],
+            govecCodeId: govecRes.codeId as number,
+            admin: factoryAddr,
+            minter: factoryAddr,
+        });
 
         const govecClient = new GovecClient(adminClient, adminAddr, govecAddr);
 
