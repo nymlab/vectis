@@ -17,8 +17,23 @@ export interface BalanceResponse {
 }
 export type Binary = string;
 export type DaoResponse = string;
+export type Logo =
+    | {
+          url: string;
+      }
+    | {
+          embedded: EmbeddedLogo;
+      };
+export type EmbeddedLogo =
+    | {
+          svg: Binary;
+      }
+    | {
+          png: Binary;
+      };
 export interface InstantiateMsg {
     initial_balances: Cw20Coin[];
+    marketing?: MarketingInfo | null;
     minter?: MinterData | null;
     name: string;
     staking_addr?: string | null;
@@ -28,6 +43,13 @@ export interface InstantiateMsg {
 export interface Cw20Coin {
     address: string;
     amount: Uint128;
+    [k: string]: unknown;
+}
+export interface MarketingInfo {
+    description?: string | null;
+    logo?: Logo | null;
+    marketing?: string | null;
+    project?: string | null;
     [k: string]: unknown;
 }
 export interface MinterData {
