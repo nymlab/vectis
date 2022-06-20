@@ -3,6 +3,9 @@ use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, CosmosMsg, Empty, QueryRequest, StdError, Uint128,
     WasmQuery,
 };
+use cw20_stake::contract::{
+    execute as stake_execute, instantiate as stake_instantiate, query as stake_query,
+};
 use cw3::VoterListResponse;
 use cw3_fixed_multisig::contract::{
     execute as fixed_multisig_execute, instantiate as fixed_multisig_instantiate,
@@ -13,9 +16,6 @@ use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
 use derivative::Derivative;
 use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 use serde::de::DeserializeOwned;
-use stake_cw20::contract::{
-    execute as stake_execute, instantiate as stake_instantiate, query as stake_query,
-};
 use vectis_factory::{
     contract::{
         execute as factory_execute, instantiate as factory_instantiate, query as factory_query,

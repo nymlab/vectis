@@ -73,9 +73,8 @@ describe("DAO Suite: ", () => {
         expect(marketingInfo.description).toEqual(marketingDescription);
     });
 
-    it("download logo shouldn't return anything", async () => {
-        const { data } = await govecClient.downloadLogo();
-        expect(data.length).toBe(0);
+    it("download logo shouldn't return an error logo not found", async () => {
+        await govecClient.downloadLogo().catch((err) => expect(err).toBeInstanceOf(Error));
     });
 
     afterAll(() => {

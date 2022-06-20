@@ -6,12 +6,17 @@ use cosmwasm_std::{
 };
 
 use cw2::set_contract_version;
-use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
+use cw20::{
+    BalanceResponse, Cw20Coin, Cw20ReceiveMsg, Logo, MarketingInfoResponse, TokenInfoResponse,
+};
 
 use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
+
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{MinterData, TokenInfo, BALANCES, DAO_ADDR, STAKING_ADDR, TOKEN_INFO};
+use crate::state::{
+    MinterData, TokenInfo, BALANCES, DAO_ADDR, MARKETING_INFO, STAKING_ADDR, TOKEN_INFO,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
@@ -44,9 +49,22 @@ pub fn instantiate(
         decimals: 0,
         total_supply,
         mint: msg.minter,
-        marketing: msg.marketing,
     };
     TOKEN_INFO.save(deps.storage, &data)?;
+
+    // store marketing info
+    if let Some(marketing) = msg.marketing {
+        let marketing_info = MarketingInfoResponse {
+            project: marketing.project,
+            description: marketing.description,
+            marketing: marketing
+                .marketing
+                .map(|addr| deps.api.addr_validate(addr.as_str()))
+                .transpose()?,
+            logo: None,
+        };
+        MARKETING_INFO.save(deps.storage, &marketing_info)?;
+    }
 
     // store DAO contract addr
     DAO_ADDR.save(
@@ -92,6 +110,12 @@ pub fn execute(
         ExecuteMsg::UpdateStakingAddr { new_addr } => execute_update_staking(deps, info, new_addr),
         ExecuteMsg::UpdateMintData { new_mint } => execute_update_mint_data(deps, info, new_mint),
         ExecuteMsg::UpdateDaoAddr { new_addr } => execute_update_dao(deps, info, new_addr),
+        ExecuteMsg::UpdateMarketing {
+            project,
+            description,
+            marketing,
+        } => execute_update_marketing(deps, env, info, project, description, marketing),
+        ExecuteMsg::UploadLogo(logo) => execute_upload_logo(deps, env, info, logo),
     }
 }
 
@@ -299,6 +323,43 @@ pub fn execute_update_dao(
     Ok(res)
 }
 
+pub fn execute_update_marketing(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    project: Option<String>,
+    description: Option<String>,
+    marketing: Option<String>,
+) -> Result<Response, ContractError> {
+    match cw20_stake::contract::execute_update_marketing(
+        deps,
+        env,
+        info,
+        project,
+        description,
+        marketing,
+    ) {
+        Ok(res) => Ok(res),
+        Err(res) => Err(ContractError::StakeCw20(
+            cw20_stake::ContractError::Cw20Error(res),
+        )),
+    }
+}
+
+pub fn execute_upload_logo(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    logo: Logo,
+) -> Result<Response, ContractError> {
+    match cw20_stake::contract::execute_upload_logo(deps, env, info, logo) {
+        Ok(res) => Ok(res),
+        Err(err) => Err(ContractError::StakeCw20(
+            cw20_stake::ContractError::Cw20Error(err),
+        )),
+    }
+}
+
 fn ensure_is_dao(deps: Deps, sender: Addr) -> Result<(), ContractError> {
     let dao = DAO_ADDR.load(deps.storage)?;
     if dao != deps.api.addr_canonicalize(sender.as_str())? {
@@ -332,6 +393,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AllAccounts { start_after, limit } => {
             to_binary(&query_all_accounts(deps, start_after, limit)?)
         }
+        QueryMsg::MarketingInfo {} => to_binary(&cw20_stake::contract::query_marketing_info(deps)?),
+        QueryMsg::DownloadLogo {} => to_binary(&cw20_stake::contract::query_download_logo(deps)?),
     }
 }
 

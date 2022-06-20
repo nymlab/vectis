@@ -1,4 +1,4 @@
-use crate::state::{MinterData};
+use crate::state::MinterData;
 use cosmwasm_std::{Binary, StdError, StdResult, Uint128};
 pub use cw20::{Cw20Coin, Logo, MarketingInfoResponse};
 use schemars::JsonSchema;
