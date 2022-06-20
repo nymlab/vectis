@@ -17,7 +17,7 @@
     "marketing": {
       "anyOf": [
         {
-          "$ref": "#/definitions/MarketingInfo"
+          "$ref": "#/definitions/MarketingInfoResponse"
         },
         {
           "type": "null"
@@ -48,8 +48,8 @@
     }
   },
   "definitions": {
-    "Binary": {
-      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>",
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
       "type": "string"
     },
     "Cw20Coin": {
@@ -67,40 +67,15 @@
         }
       }
     },
-    "EmbeddedLogo": {
-      "description": "This is used to store the logo on the blockchain in an accepted format. Enforce maximum size of 5KB on all variants.",
+    "LogoInfo": {
+      "description": "This is used to display logo info, provide a link or inform there is one that can be downloaded from the blockchain itself",
       "oneOf": [
         {
-          "description": "Store the Logo as an SVG file. The content must conform to the spec at https://en.wikipedia.org/wiki/Scalable_Vector_Graphics (The contract should do some light-weight sanity-check validation)",
-          "type": "object",
-          "required": [
-            "svg"
-          ],
-          "properties": {
-            "svg": {
-              "$ref": "#/definitions/Binary"
-            }
-          },
-          "additionalProperties": false
+          "type": "string",
+          "enum": [
+            "embedded"
+          ]
         },
-        {
-          "description": "Store the Logo as a PNG file. This will likely only support up to 64x64 or so within the 5KB limit.",
-          "type": "object",
-          "required": [
-            "png"
-          ],
-          "properties": {
-            "png": {
-              "$ref": "#/definitions/Binary"
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
-    },
-    "Logo": {
-      "description": "This is used for uploading logo data, or setting it in InstantiateData",
-      "oneOf": [
         {
           "description": "A reference to an externally hosted logo. Must be a valid HTTP or HTTPS URL.",
           "type": "object",
@@ -113,35 +88,24 @@
             }
           },
           "additionalProperties": false
-        },
-        {
-          "description": "Logo content stored on the blockchain. Enforce maximum size of 5KB on all variants",
-          "type": "object",
-          "required": [
-            "embedded"
-          ],
-          "properties": {
-            "embedded": {
-              "$ref": "#/definitions/EmbeddedLogo"
-            }
-          },
-          "additionalProperties": false
         }
       ]
     },
-    "MarketingInfo": {
+    "MarketingInfoResponse": {
       "type": "object",
       "properties": {
         "description": {
+          "description": "A longer description of the token and it's utility. Designed for tooltips or such",
           "type": [
             "string",
             "null"
           ]
         },
         "logo": {
+          "description": "A link to the logo, or a comment there is an on-chain logo stored",
           "anyOf": [
             {
-              "$ref": "#/definitions/Logo"
+              "$ref": "#/definitions/LogoInfo"
             },
             {
               "type": "null"
@@ -149,12 +113,18 @@
           ]
         },
         "marketing": {
-          "type": [
-            "string",
-            "null"
+          "description": "The address (if any) who can update this data structure",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Addr"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "project": {
+          "description": "A URL pointing to the project behind this token.",
           "type": [
             "string",
             "null"
