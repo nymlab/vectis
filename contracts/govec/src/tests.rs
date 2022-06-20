@@ -48,6 +48,7 @@ fn do_instantiate(
         initial_balances: coins,
         staking_addr: None,
         minter: Some(mint.clone()),
+        marketing: None,
     };
 
     let info = mock_info(DAO_ADDR, &[]);
@@ -93,6 +94,7 @@ fn mintable() {
             cap: Some(limit),
         }),
         staking_addr: None,
+        marketing: None,
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -139,6 +141,7 @@ fn cannot_mint_over_cap() {
             cap: Some(limit),
         }),
         staking_addr: None,
+        marketing: None,
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -345,6 +348,7 @@ fn instantiate_multiple_accounts() {
         ],
         minter: None,
         staking_addr: None,
+        marketing: None
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();

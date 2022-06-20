@@ -1,5 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use cw20::Logo;
 
 use cosmwasm_std::{Addr, CanonicalAddr, Uint128};
 use cw_storage_plus::{Item, Map};
@@ -12,6 +13,13 @@ pub struct TokenInfo {
     pub decimals: u8,
     pub total_supply: Uint128,
     pub mint: Option<MinterData>,
+    pub marketing: Option<MarketingInfo>,
+}
+
+impl TokenInfo {
+    pub fn get_cap(&self) -> Option<Uint128> {
+        self.mint.as_ref().and_then(|v| v.cap)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
@@ -20,10 +28,12 @@ pub struct MinterData {
     pub cap: Option<Uint128>,
 }
 
-impl TokenInfo {
-    pub fn get_cap(&self) -> Option<Uint128> {
-        self.mint.as_ref().and_then(|v| v.cap)
-    }
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct MarketingInfo {
+    pub project: Option<String>,
+    pub description: Option<String>,
+    pub marketing: Option<String>,
+    pub logo: Option<Logo>,
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
