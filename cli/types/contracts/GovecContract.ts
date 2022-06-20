@@ -17,23 +17,20 @@ export interface BalanceResponse {
 }
 export type Binary = string;
 export type DaoResponse = string;
-export type Logo =
+export interface DownloadLogoResponse {
+    data: Binary;
+    mime_type: string;
+    [k: string]: unknown;
+}
+export type LogoInfo =
+    | "embedded"
     | {
           url: string;
-      }
-    | {
-          embedded: EmbeddedLogo;
       };
-export type EmbeddedLogo =
-    | {
-          svg: Binary;
-      }
-    | {
-          png: Binary;
-      };
+export type Addr = string;
 export interface InstantiateMsg {
     initial_balances: Cw20Coin[];
-    marketing?: MarketingInfo | null;
+    marketing?: MarketingInfoResponse | null;
     minter?: MinterData | null;
     name: string;
     staking_addr?: string | null;
@@ -45,10 +42,10 @@ export interface Cw20Coin {
     amount: Uint128;
     [k: string]: unknown;
 }
-export interface MarketingInfo {
+export interface MarketingInfoResponse {
     description?: string | null;
-    logo?: Logo | null;
-    marketing?: string | null;
+    logo?: LogoInfo | null;
+    marketing?: Addr | null;
     project?: string | null;
     [k: string]: unknown;
 }
@@ -78,6 +75,8 @@ export interface GovecReadOnlyInterface {
     staking: () => Promise<StakingResponse>;
     dao: () => Promise<DaoResponse>;
     allAccounts: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<AllAccountsResponse>;
+    marketingInfo: () => Promise<MarketingInfoResponse>;
+    downloadLogo: () => Promise<DownloadLogoResponse>;
 }
 export class GovecQueryClient implements GovecReadOnlyInterface {
     client: CosmWasmClient;
@@ -92,6 +91,8 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
         this.staking = this.staking.bind(this);
         this.dao = this.dao.bind(this);
         this.allAccounts = this.allAccounts.bind(this);
+        this.marketingInfo = this.marketingInfo.bind(this);
+        this.downloadLogo = this.downloadLogo.bind(this);
     }
 
     balance = async ({ address }: { address: string }): Promise<BalanceResponse> => {
@@ -133,6 +134,16 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
                 limit,
                 start_after: startAfter,
             },
+        });
+    };
+    marketingInfo = async (): Promise<MarketingInfoResponse> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            marketing_info: {},
+        });
+    };
+    downloadLogo = async (): Promise<DownloadLogoResponse> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            download_logo: {},
         });
     };
 }
@@ -206,6 +217,21 @@ export interface GovecInterface extends GovecReadOnlyInterface {
         memo?: string,
         funds?: readonly Coin[]
     ) => Promise<ExecuteResult>;
+    updateMarketing: (
+        {
+            description,
+            marketing,
+            project,
+        }: {
+            description?: string;
+            marketing?: string;
+            project?: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ) => Promise<ExecuteResult>;
+    uploadLogo: (fee?: number | StdFee | "auto", memo?: string, funds?: readonly Coin[]) => Promise<ExecuteResult>;
 }
 export class GovecClient extends GovecQueryClient implements GovecInterface {
     override client: SigningCosmWasmClient;
@@ -224,6 +250,8 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
         this.updateStakingAddr = this.updateStakingAddr.bind(this);
         this.updateMintData = this.updateMintData.bind(this);
         this.updateDaoAddr = this.updateDaoAddr.bind(this);
+        this.updateMarketing = this.updateMarketing.bind(this);
+        this.uploadLogo = this.uploadLogo.bind(this);
     }
 
     transfer = async (
@@ -383,6 +411,51 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
                 update_dao_addr: {
                     new_addr: newAddr,
                 },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateMarketing = async (
+        {
+            description,
+            marketing,
+            project,
+        }: {
+            description?: string;
+            marketing?: string;
+            project?: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_marketing: {
+                    description,
+                    marketing,
+                    project,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    uploadLogo = async (
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: readonly Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                upload_logo: {},
             },
             fee,
             memo,

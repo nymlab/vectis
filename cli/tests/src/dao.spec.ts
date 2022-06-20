@@ -5,6 +5,7 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createSigningClient } from "@vectis/core/services/cosmwasm";
 import { deploy } from "@vectis/core/utils/dao-deploy";
 import { VectisDaoContractsAddrs } from "@vectis/core/interfaces/dao";
+import { marketingDescription, marketingProject } from "@vectis/core/services/govec";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
@@ -64,6 +65,17 @@ describe("DAO Suite: ", () => {
     it("Govec should be set on the factory", async () => {
         const g = await factoryClient.govecAddr();
         expect(g).toEqual(addrs.govecAddr);
+    });
+
+    it("Govec should have have vectis project and description", async () => {
+        const marketingInfo = await govecClient.marketingInfo();
+        expect(marketingInfo.project).toEqual(marketingProject);
+        expect(marketingInfo.description).toEqual(marketingDescription);
+    });
+
+    it("download logo shouldn't return anything", async () => {
+        const { data } = await govecClient.downloadLogo();
+        expect(data.length).toBe(0);
     });
 
     afterAll(() => {
