@@ -1,4 +1,5 @@
 import { GovecClient } from "@vectis/types/contracts/GovecContract";
+import { FactoryClient } from "@vectis/types/contracts/FactoryContract";
 import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/constants";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createSigningClient } from "@vectis/core/services/cosmwasm";
@@ -11,12 +12,14 @@ import { VectisDaoContractsAddrs } from "@vectis/core/interfaces/dao";
 describe("DAO Suite: ", () => {
     let adminClient: SigningCosmWasmClient;
     let govecClient: GovecClient;
+    let factoryClient: FactoryClient;
     let addrs: VectisDaoContractsAddrs;
 
     beforeAll(async () => {
         addrs = await deploy();
         adminClient = await createSigningClient(adminMnemonic, addrPrefix);
         govecClient = new GovecClient(adminClient, adminAddr, addrs.govecAddr);
+        factoryClient = new FactoryClient(adminClient, adminAddr, addrs.factoryAddr);
     });
 
     it("Admin should have no govec tokens", async () => {
@@ -56,6 +59,11 @@ describe("DAO Suite: ", () => {
     it("Govec should have stakingAddr as the stakingAddr", async () => {
         const staking = await govecClient.staking();
         expect(staking).toEqual(addrs.stakingAddr);
+    });
+
+    it("Govec should be set on the factory", async () => {
+        const g = await factoryClient.govecAddr();
+        expect(g).toEqual(addrs.govecAddr);
     });
 
     afterAll(() => {
