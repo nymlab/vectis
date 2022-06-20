@@ -97,7 +97,7 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
     await govecClient.send({ amount: "1", contract: stakingAddr, msg: toCosmosMsg(sendMsg) });
 
     // Admin propose and execute dao deploy factory
-    const factoryInstMsg = createFactoryInstMsg(proxyRes.codeId, multisigRes.codeId, addrPrefix, walletFee);
+    const factoryInstMsg = createFactoryInstMsg(proxyRes.codeId, multisigRes.codeId, addrPrefix, walletFee, govecAddr);
     const deployFactoryMsg: CosmosMsg_for_Empty = {
         wasm: {
             instantiate: {

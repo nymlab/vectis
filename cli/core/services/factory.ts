@@ -46,12 +46,14 @@ export function createFactoryInstMsg(
     proxyCodeId: number,
     multisigCodeId: number,
     addrPrefix: string,
-    walletFee: FactoryCoin
+    walletFee: FactoryCoin,
+    govec?: string
 ): FactoryInstantiateMsg {
     return {
         proxy_code_id: proxyCodeId,
         proxy_multisig_code_id: multisigCodeId,
         addr_prefix: addrPrefix,
         wallet_fee: walletFee,
+        govec: govec,
     };
 }
