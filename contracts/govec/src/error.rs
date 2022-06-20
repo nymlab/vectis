@@ -6,6 +6,9 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("{0}")]
+    StakeCw20(#[from] stake_cw20::ContractError),
+
     #[error("Unauthorized")]
     Unauthorized {},
 

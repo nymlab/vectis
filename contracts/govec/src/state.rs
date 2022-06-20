@@ -1,4 +1,4 @@
-use cw20::Logo;
+use cw20::{Logo, MarketingInfoResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,6 @@ pub struct TokenInfo {
     pub decimals: u8,
     pub total_supply: Uint128,
     pub mint: Option<MinterData>,
-    pub marketing: Option<MarketingInfo>,
 }
 
 impl TokenInfo {
@@ -28,15 +27,9 @@ pub struct MinterData {
     pub cap: Option<Uint128>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct MarketingInfo {
-    pub project: Option<String>,
-    pub description: Option<String>,
-    pub marketing: Option<String>,
-    pub logo: Option<Logo>,
-}
-
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
+pub const MARKETING_INFO: Item<MarketingInfoResponse> = Item::new("marketing_info");
+pub const LOGO: Item<Logo> = Item::new("logo");
 pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
 pub const STAKING_ADDR: Item<CanonicalAddr> = Item::new("staking_addr");
 pub const DAO_ADDR: Item<CanonicalAddr> = Item::new("DAO_addr");

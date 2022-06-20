@@ -1,6 +1,6 @@
-use crate::state::{MarketingInfo, MinterData};
+use crate::state::{MinterData};
 use cosmwasm_std::{Binary, StdError, StdResult, Uint128};
-pub use cw20::Cw20Coin;
+pub use cw20::{Cw20Coin, Logo, MarketingInfoResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 pub use vectis_wallet::StakingOptions;
@@ -12,7 +12,7 @@ pub struct InstantiateMsg {
     pub initial_balances: Vec<Cw20Coin>,
     pub staking_addr: Option<String>,
     pub minter: Option<MinterData>,
-    pub marketing: Option<MarketingInfo>,
+    pub marketing: Option<MarketingInfoResponse>,
 }
 
 impl InstantiateMsg {
@@ -80,6 +80,19 @@ pub enum ExecuteMsg {
     UpdateMintData { new_mint: Option<MinterData> },
     /// Updates the DAO address for this governance token
     UpdateDaoAddr { new_addr: String },
+    /// Only with the "marketing" extension. If authorized, updates marketing metadata.
+    /// Setting None/null for any of these will leave it unchanged.
+    /// Setting Some("") will clear this field on the contract storage
+    UpdateMarketing {
+        /// A URL pointing to the project behind this token.
+        project: Option<String>,
+        /// A longer description of the token and it's utility. Designed for tooltips or such
+        description: Option<String>,
+        /// The address (if any) who can update this data structure
+        marketing: Option<String>,
+    },
+    /// If set as the "marketing" role on the contract, upload a new URL, SVG, or PNG for the token
+    UploadLogo(Logo),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -105,4 +118,14 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    /// Only with "marketing" extension
+    /// Returns more metadata on the contract to display in the client:
+    /// - description, logo, project url, etc.
+    /// Return type: MarketingInfoResponse
+    MarketingInfo {},
+    /// Only with "marketing" extension
+    /// Downloads the embedded logo data (if stored on chain). Errors if no logo data is stored for this
+    /// contract.
+    /// Return type: DownloadLogoResponse.
+    DownloadLogo {},
 }
