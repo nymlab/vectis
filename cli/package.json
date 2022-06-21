@@ -12,6 +12,8 @@
         "upload": "npm run upload -w @vectis/core",
         "test": "npm test -w @vectis/tests",
         "test:ci": "npm run upload && npm test",
+        "deploy:dao": "npm run deploy:dao -w @vectis/core",
+        "build:docker": "npm run upload && npm run deploy:dao",
         "generate:types": "npm run generate -w @vectis/types",
         "prepare": "cd .. && ./cli/node_modules/.bin/husky install cli/.husky"
     },
