@@ -2,7 +2,7 @@ use cosmwasm_std::testing::{
     mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info,
 };
 use cosmwasm_std::{
-    coins, from_binary, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg, Uint128, WasmMsg,
+    coins, from_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg, Uint128, WasmMsg,
 };
 
 use crate::contract::*;
@@ -11,7 +11,8 @@ use crate::error::*;
 use crate::msg::*;
 use crate::state::MinterData;
 
-use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
+use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MarketingInfoResponse, TokenInfoResponse};
+use cw20_stake::contract::{query_download_logo, query_marketing_info};
 
 fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
     query_balance(deps, address.into()).unwrap().balance
@@ -28,6 +29,7 @@ fn do_instantiate(
     amount: Vec<Uint128>,
     minter: &str,
     cap: Option<Uint128>,
+    marketing: Option<MarketingInfoResponse>,
 ) -> TokenInfoResponse {
     let mut coins: Vec<Cw20Coin> = Vec::new();
     let mut total_supply = Uint128::zero();
@@ -48,7 +50,7 @@ fn do_instantiate(
         initial_balances: coins,
         staking_addr: None,
         minter: Some(mint.clone()),
-        marketing: None,
+        marketing,
     };
 
     let info = mock_info(DAO_ADDR, &[]);
@@ -167,6 +169,7 @@ fn dao_can_update_staking_addr() {
         vec![amount],
         DAO_ADDR,
         Some(limit),
+        None,
     );
 
     let msg = ExecuteMsg::UpdateStakingAddr {
@@ -205,6 +208,7 @@ fn dao_can_update_dao_addr() {
         vec![amount],
         MINTER_ADDR,
         Some(limit),
+        None,
     );
 
     let msg = ExecuteMsg::UpdateDaoAddr {
@@ -237,6 +241,7 @@ fn dao_can_update_mint_data() {
         vec![amount],
         MINTER_ADDR,
         Some(limit),
+        None,
     );
 
     let msg = ExecuteMsg::UpdateMintData { new_mint: None };
@@ -283,6 +288,7 @@ fn can_mint_by_minter() {
         vec![amount],
         &minter,
         Some(limit),
+        None,
     );
 
     // minter can mint coins to some winner
@@ -314,6 +320,7 @@ fn others_cannot_mint() {
         vec!["genesis"],
         vec![Uint128::new(1234)],
         MINTER_ADDR,
+        None,
         None,
     );
 
@@ -380,6 +387,7 @@ fn queries_work() {
         vec![amount1],
         MINTER_ADDR,
         None,
+        None,
     );
 
     // check meta query
@@ -424,6 +432,7 @@ fn transfer() {
         vec![addr1.as_str(), addr2.as_str()],
         vec![amount1, Uint128::zero()],
         MINTER_ADDR,
+        None,
         None,
     );
 
@@ -514,6 +523,7 @@ fn burn() {
         vec![right_amount, too_little, too_much],
         MINTER_ADDR,
         None,
+        None,
     );
 
     let initial_total_supply = query_token_info(deps.as_ref()).unwrap().total_supply;
@@ -591,6 +601,7 @@ fn send() {
         vec![addr1.as_str(), addr2.as_str()],
         vec![amount1, Uint128::new(0)],
         MINTER_ADDR,
+        None,
         None,
     );
 
@@ -702,6 +713,7 @@ fn query_all_accounts_works() {
         ],
         MINTER_ADDR,
         None,
+        None,
     );
 
     // make sure we get the proper results
@@ -734,8 +746,136 @@ fn query_minter_works() {
         vec![Uint128::new(1)],
         MINTER_ADDR,
         None,
+        None,
     );
 
     let minter = query_minter(deps.as_ref()).unwrap();
     assert_eq!(minter.unwrap().minter, MINTER_ADDR);
+}
+
+#[test]
+fn query_marketing_info_works() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+
+    let project = "website".to_string();
+    let description = "description".to_string();
+
+    let marketing_msg = MarketingInfoResponse {
+        project: Some(project.clone()),
+        description: Some(description.clone()),
+        marketing: Some(Addr::unchecked(MINTER_ADDR)),
+        logo: None,
+    };
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![],
+        vec![],
+        MINTER_ADDR,
+        None,
+        Some(marketing_msg),
+    );
+
+    let marketing_info = query_marketing_info(deps.as_ref()).unwrap();
+    assert_eq!(marketing_info.project.unwrap(), project);
+    assert_eq!(marketing_info.description.unwrap(), description);
+}
+
+#[test]
+fn query_download_logo_works() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+
+    do_instantiate(deps.as_mut(), vec![], vec![], MINTER_ADDR, None, None);
+
+    let logo = query_download_logo(deps.as_ref()).expect_err("NotFound");
+
+    assert_eq!(logo.to_string(), "cw20::logo::Logo not found");
+}
+
+#[test]
+fn execute_update_marketing_works() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let info = mock_info(MINTER_ADDR, &[]);
+    let env = mock_env();
+
+    let project = "website".to_string();
+    let description = "description".to_string();
+
+    let marketing_msg = MarketingInfoResponse {
+        project: Some(project.clone()),
+        description: Some(description.clone()),
+        marketing: Some(Addr::unchecked(MINTER_ADDR)),
+        logo: None,
+    };
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![],
+        vec![],
+        MINTER_ADDR,
+        None,
+        Some(marketing_msg),
+    );
+
+    let marketing_info = query_marketing_info(deps.as_ref()).unwrap();
+    assert_eq!(marketing_info.project.unwrap(), project);
+    assert_eq!(marketing_info.description.unwrap(), description);
+
+    let project = "new-website".to_string();
+    let description = "new-description".to_string();
+
+    let res = execute_update_marketing(
+        deps.as_mut(),
+        env,
+        info,
+        Some(project.clone()),
+        Some(description.clone()),
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(res.attributes, [("action", "update_marketing")]);
+
+    let marketing_info = query_marketing_info(deps.as_ref()).unwrap();
+
+    assert_eq!(marketing_info.project.unwrap(), project);
+    assert_eq!(marketing_info.description.unwrap(), description);
+}
+
+#[test]
+fn execute_update_logo_works() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let info = mock_info(MINTER_ADDR, &[]);
+    let env = mock_env();
+
+    let project = "website".to_string();
+    let description = "description".to_string();
+
+    let marketing_msg = MarketingInfoResponse {
+        project: Some(project.clone()),
+        description: Some(description.clone()),
+        marketing: Some(Addr::unchecked(MINTER_ADDR)),
+        logo: None,
+    };
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![],
+        vec![],
+        MINTER_ADDR,
+        None,
+        Some(marketing_msg),
+    );
+
+    let marketing_info = query_marketing_info(deps.as_ref()).unwrap();
+    assert_eq!(marketing_info.logo.is_none(), true);
+
+    let logo = Logo::Url("website".to_string());
+
+    let res = execute_upload_logo(deps.as_mut(), env, info, logo).unwrap();
+
+    assert_eq!(res.attributes, [("action", "upload_logo")]);
+
+    let marketing_info = query_marketing_info(deps.as_ref()).unwrap();
+    assert_eq!(marketing_info.logo.is_some(), true);
 }
