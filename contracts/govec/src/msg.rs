@@ -80,7 +80,7 @@ pub enum ExecuteMsg {
     UpdateMintData { new_mint: Option<MinterData> },
     /// Updates the DAO address for this governance token
     UpdateDaoAddr { new_addr: String },
-    /// Only with the "marketing" extension. If authorized, updates marketing metadata.
+    /// If authorized, updates marketing metadata.
     /// Setting None/null for any of these will leave it unchanged.
     /// Setting Some("") will clear this field on the contract storage
     UpdateMarketing {
@@ -118,12 +118,10 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    /// Only with "marketing" extension
     /// Returns more metadata on the contract to display in the client:
     /// - description, logo, project url, etc.
     /// Return type: MarketingInfoResponse
     MarketingInfo {},
-    /// Only with "marketing" extension
     /// Downloads the embedded logo data (if stored on chain). Errors if no logo data is stored for this
     /// contract.
     /// Return type: DownloadLogoResponse.

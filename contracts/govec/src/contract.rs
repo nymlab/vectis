@@ -340,7 +340,7 @@ pub fn execute_update_marketing(
         marketing,
     ) {
         Ok(res) => Ok(res),
-        Err(res) => Err(ContractError::StakeCw20(
+        Err(res) => Err(ContractError::Cw20Stake(
             cw20_stake::ContractError::Cw20Error(res),
         )),
     }
@@ -354,7 +354,7 @@ pub fn execute_upload_logo(
 ) -> Result<Response, ContractError> {
     match cw20_stake::contract::execute_upload_logo(deps, env, info, logo) {
         Ok(res) => Ok(res),
-        Err(err) => Err(ContractError::StakeCw20(
+        Err(err) => Err(ContractError::Cw20Stake(
             cw20_stake::ContractError::Cw20Error(err),
         )),
     }
