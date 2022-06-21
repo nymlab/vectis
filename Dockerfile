@@ -18,7 +18,7 @@ RUN apk add --update nodejs npm
 
 WORKDIR /app/cli
 
-RUN junod start --rpc.laddr tcp://0.0.0.0:26657 & sleep 5 && npm ci && npm run test:ci && killall -9 junod
+RUN junod start --rpc.laddr tcp://0.0.0.0:26657 & sleep 5 && npm ci && npm run build:docker && killall -9 junod
 
 EXPOSE 1317
 EXPOSE 26656
