@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import { cachePath, downloadContractPath } from "./constants";
+import { cachePath, downloadContractPath, contractsFileNames } from "./constants";
 
 export function getContract(path: string): Uint8Array {
     return fs.readFileSync(path);
@@ -31,5 +31,6 @@ export async function downloadContract(url: string, fileName: string): Promise<v
 
 export function areContractsDownloaded(): boolean {
     if (!fs.existsSync(downloadContractPath)) return false;
-    return !!fs.readdirSync(downloadContractPath).length;
+    const downloadContractPathFiles = fs.readdirSync(downloadContractPath);
+    return Object.values(contractsFileNames).every((fileName) => downloadContractPathFiles.includes(fileName));
 }

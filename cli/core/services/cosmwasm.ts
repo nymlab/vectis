@@ -24,6 +24,11 @@ import {
     rpcEndPoint,
     cw3FixedMulDownloadLink,
     cw20BaseDownloadLink,
+    cwDaoDownloadLink,
+    cw20StakingDownloadLink,
+    cw20VotingDownloadLink,
+    cw20ProposalSingleDownloadLink,
+    contractsFileNames,
 } from "../utils/constants";
 import { longToByteArray } from "../utils/enconding";
 import { RelayTransaction } from "@vectis/types/contracts/ProxyContract";
@@ -172,7 +177,12 @@ export async function getOnchainContracts(client: SigningCosmWasmClient, codeId:
 }
 
 export async function downloadContracts() {
-    //TODO: add downloads for dao-contract v1
-    await downloadContract(cw3FixedMulDownloadLink, "cw3_fixed_multisig.wasm");
-    await downloadContract(cw20BaseDownloadLink, "cw20_base.wasm");
+    // Download CwPlus Contracts
+    await downloadContract(cw3FixedMulDownloadLink, contractsFileNames.cw3_mutltisig);
+    await downloadContract(cw20BaseDownloadLink, contractsFileNames.cw20_base);
+    // Download DAODAO Contracts
+    await downloadContract(cwDaoDownloadLink, contractsFileNames.cw_dao);
+    await downloadContract(cw20StakingDownloadLink, contractsFileNames.cw20_staking);
+    await downloadContract(cw20VotingDownloadLink, contractsFileNames.cw20_voting);
+    await downloadContract(cw20ProposalSingleDownloadLink, contractsFileNames.cw_proposal_single);
 }

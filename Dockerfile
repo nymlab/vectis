@@ -5,7 +5,6 @@ ENV NETWORK=juno_local
 ENV STAKE_TOKEN=ujunox
 ENV UNSAFE_CORS=true
 ENV VECTIS_CW_PATH=/app/artifacts
-ENV DOWNLOADED_CW_PATH=/app/cli/core/contracts
 
 RUN ./setup_junod.sh ${ACCOUNTS}
 
