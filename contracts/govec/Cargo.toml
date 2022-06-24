@@ -25,7 +25,7 @@ serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.26" }
 derivative = "2"
 hex = "0.4"
-cw20-stake = { git = "https://github.com/DA0-DA0/dao-contracts.git", rev = "60b710df2f3abb8ca275ad16a86ce3b0c265a339", features = ['library'] }
+cw20-stake = { git = "https://github.com/DA0-DA0/dao-contracts.git", release = "1.0.0", features = ['library'] }
 vectis-wallet = {path = "../../packages/vectis"}
 
 [dev-dependencies]

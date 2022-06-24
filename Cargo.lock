@@ -314,7 +314,7 @@ dependencies = [
 [[package]]
 name = "cw20-stake"
 version = "0.2.6"
-source = "git+https://github.com/DA0-DA0/dao-contracts.git?rev=60b710df2f3abb8ca275ad16a86ce3b0c265a339#60b710df2f3abb8ca275ad16a86ce3b0c265a339"
+source = "git+https://github.com/DA0-DA0/dao-contracts.git#f38e1f306edeba77c6a3ee6bd53bb68cf95bf870"
 dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
