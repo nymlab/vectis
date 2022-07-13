@@ -155,6 +155,44 @@ fn cannot_mint_over_cap() {
 }
 
 #[test]
+fn query_joined_works() {
+    let mut deps = mock_dependencies();
+    let genesis = String::from("genesis");
+    let not_genesis = String::from("not_genesis");
+    let amount = Uint128::new(10);
+    let limit = Uint128::new(12);
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![genesis.as_str()],
+        vec![amount],
+        DAO_ADDR,
+        Some(limit),
+        None,
+    );
+
+    assert_eq!(
+        query_balance(deps.as_ref(), genesis.clone())
+            .unwrap()
+            .balance,
+        amount
+    );
+    assert_eq!(
+        query_balance(deps.as_ref(), not_genesis.clone())
+            .unwrap()
+            .balance,
+        Uint128::zero()
+    );
+
+    assert!(query_balance_joined(deps.as_ref(), genesis)
+        .unwrap()
+        .is_some());
+    assert!(query_balance_joined(deps.as_ref(), not_genesis)
+        .unwrap()
+        .is_none());
+}
+
+#[test]
 fn dao_can_update_staking_addr() {
     let mut deps = mock_dependencies();
     let genesis = String::from("genesis");
