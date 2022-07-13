@@ -75,14 +75,19 @@ pub enum ExecuteMsg {
     /// If authorized, creates 1 new vote token and adds to the new wallets .
     Mint { new_wallet: String },
     /// Updates the staking contract address.Authorized by the DAO
+    /// permission: executed by dao only
     UpdateStakingAddr { new_addr: String },
     /// Updates the minter contract address.Authorized by the DAO
+    /// permission: executed by dao only
     UpdateMintData { new_mint: Option<MinterData> },
     /// Updates the DAO address for this governance token
+    /// All balance from old DAO will go to the new DAO
+    /// permission: executed by dao only
     UpdateDaoAddr { new_addr: String },
     /// If authorized, updates marketing metadata.
     /// Setting None/null for any of these will leave it unchanged.
     /// Setting Some("") will clear this field on the contract storage
+    /// permission: executed by dao only
     UpdateMarketing {
         /// A URL pointing to the project behind this token.
         project: Option<String>,
@@ -101,6 +106,10 @@ pub enum QueryMsg {
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.
     Balance { address: String },
+    /// Returns Some(balance) if address has ever been issued a token,
+    /// If the current balance is 0, returns Some(0)
+    /// IF address has never been issued a token, None is returned
+    Joined { address: String },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},

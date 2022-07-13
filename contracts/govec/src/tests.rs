@@ -194,28 +194,33 @@ fn dao_can_update_staking_addr() {
 }
 
 #[test]
-fn dao_can_update_dao_addr() {
+fn dao_can_update_dao_addr_and_transfer_tokens() {
     let mut deps = mock_dependencies();
-    let genesis = String::from("genesis");
-    let amount = Uint128::new(0);
+    let dao_balance = Uint128::new(5);
     let limit = Uint128::new(12);
 
     let new_dao = String::from("new_dao");
 
     do_instantiate(
         deps.as_mut(),
-        vec![genesis.as_str()],
-        vec![amount],
+        vec![DAO_ADDR],
+        vec![dao_balance],
         MINTER_ADDR,
         Some(limit),
         None,
     );
 
+    assert_eq!(
+        query_balance(deps.as_ref(), DAO_ADDR.to_string())
+            .unwrap()
+            .balance,
+        Uint128::new(5)
+    );
     let msg = ExecuteMsg::UpdateDaoAddr {
         new_addr: new_dao.clone(),
     };
 
-    // only dao can update staking
+    // only dao can update DAO
     let info = mock_info(MINTER_ADDR, &[]);
     let env = mock_env();
     let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
@@ -226,6 +231,18 @@ fn dao_can_update_dao_addr() {
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(query_dao(deps.as_ref()).unwrap(), new_dao);
+    assert_eq!(
+        query_balance(deps.as_ref(), DAO_ADDR.to_string())
+            .unwrap()
+            .balance,
+        Uint128::new(0)
+    );
+    assert_eq!(
+        query_balance(deps.as_ref(), new_dao.to_string())
+            .unwrap()
+            .balance,
+        Uint128::new(5)
+    );
 }
 
 #[test]
@@ -379,7 +396,7 @@ fn instantiate_multiple_accounts() {
 fn queries_work() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     let addr1 = String::from("addr0001");
-    let amount1 = Uint128::from(12340000u128);
+    let amount1 = Uint128::new(12340000);
 
     let expected = do_instantiate(
         deps.as_mut(),
@@ -409,12 +426,26 @@ fn queries_work() {
     // check balance query (empty)
     let data = query(
         deps.as_ref(),
-        env,
+        env.clone(),
         QueryMsg::Balance {
             address: String::from("addr0002-not-a-wallet"),
         },
-    );
-    assert!(data.is_err());
+    )
+    .unwrap();
+    let loaded: BalanceResponse = from_binary(&data).unwrap();
+    assert_eq!(loaded.balance, Uint128::new(0));
+
+    // check balance query (empty)
+    let data = query(
+        deps.as_ref(),
+        env,
+        QueryMsg::Joined {
+            address: String::from("addr0002-not-a-wallet"),
+        },
+    )
+    .unwrap();
+    let loaded: Option<BalanceResponse> = from_binary(&data).unwrap();
+    assert_eq!(loaded, None);
 }
 
 #[test]
@@ -540,14 +571,16 @@ fn burn() {
         query_token_info(deps.as_ref()).unwrap().total_supply,
         remainder
     );
-    assert!(query(
+    let data = query(
         deps.as_ref(),
         env,
         QueryMsg::Balance {
             address: addr1.clone(),
         },
     )
-    .is_err());
+    .unwrap();
+    let balance: BalanceResponse = from_binary(&data).unwrap();
+    assert_eq!(balance.balance, Uint128::new(0));
 
     // cannot transfer to burnt wallet
     let info = mock_info(addr3.as_ref(), &[]);
