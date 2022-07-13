@@ -16,9 +16,9 @@ export const walletFee: Coin = { amount: "10000", denom: coinMinDenom! };
 export const unstakeDuration: StakeDuration | null = null;
 // Deposit required for creating proposal
 export const depositInfo: DepositInfo | null = null;
-// Length of  , Time in seconds
+// Length of  max Voting Period, Time in seconds
 export const maxVotingPeriod: Duration | null = { time: 60 * 60 * 24 * 14 };
-// Length of  , Time in seconds
+// Length of  min Voting Period , Time in seconds
 export const minVotingPeriod: Duration | null = null;
 // Can members change their votes before expiry
 // It is easier for it to be false for deployment

@@ -143,7 +143,9 @@ pub fn execute_transfer(
     BALANCES.update(
         deps.storage,
         &rcpt_addr,
-        |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_add(amount)?)
+        },
     )?;
 
     let res = Response::new()
@@ -165,25 +167,29 @@ pub fn execute_burn(
 ) -> Result<Response, ContractError> {
     let to_burn = Uint128::from(1u8);
     // Ensure only have voting power of exactly 1
-    let balance = query_balance(deps.as_ref(), info.sender.to_string())?;
-    if balance.balance != to_burn {
-        return Err(ContractError::IncorrectBalance(balance.balance));
-    };
+    let balance_option = query_balance_joined(deps.as_ref(), info.sender.to_string())?;
+    if let Some(balance) = balance_option {
+        if balance.balance != to_burn {
+            return Err(ContractError::IncorrectBalance(balance.balance));
+        };
 
-    // remove key from the map as they exit the DAO
-    BALANCES.remove(deps.storage, &info.sender);
+        // remove key from the map as they exit the DAO
+        BALANCES.remove(deps.storage, &info.sender);
 
-    // reduce total_supply
-    TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
-        info.total_supply = info.total_supply.checked_sub(to_burn)?;
-        Ok(info)
-    })?;
+        // reduce total_supply
+        TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
+            info.total_supply = info.total_supply.checked_sub(to_burn)?;
+            Ok(info)
+        })?;
 
-    let res = Response::new()
-        .add_attribute("action", "burn")
-        .add_attribute("from", info.sender)
-        .add_attribute("amount", to_burn);
-    Ok(res)
+        let res = Response::new()
+            .add_attribute("action", "burn")
+            .add_attribute("from", info.sender)
+            .add_attribute("amount", to_burn);
+        Ok(res)
+    } else {
+        Err(ContractError::NotFound {})
+    }
 }
 
 pub fn execute_mint(
@@ -312,12 +318,33 @@ pub fn execute_update_dao(
     info: MessageInfo,
     new_addr: String,
 ) -> Result<Response, ContractError> {
-    ensure_is_dao(deps.as_ref(), info.sender)?;
+    let dao = ensure_is_dao(deps.as_ref(), info.sender)?;
+    let new_dao = deps.api.addr_validate(&new_addr)?;
 
     DAO_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&new_addr)?)?;
 
+    // transfer all balance from existing DAO to the new DAO
+    let existing_dao_balance = BALANCES.may_load(deps.storage, &dao)?;
+    let new_dao_balance = BALANCES.may_load(deps.storage, &new_dao)?;
+
+    if let Some(amount) = existing_dao_balance {
+        if new_dao_balance.is_some() {
+            BALANCES.update(
+                deps.storage,
+                &new_dao,
+                |balance: Option<Uint128>| -> StdResult<_> {
+                    Ok(balance.unwrap_or_default().checked_add(amount)?)
+                },
+            )?;
+        } else {
+            BALANCES.save(deps.storage, &new_dao, &amount)?;
+        }
+
+        BALANCES.save(deps.storage, &dao, &Uint128::zero())?;
+    };
+
     let res = Response::new()
-        .add_attribute("action", "update_dao_address")
+        .add_attribute("action", "update_dao")
         .add_attribute("new_addr", new_addr);
 
     Ok(res)
@@ -360,12 +387,12 @@ pub fn execute_upload_logo(
     }
 }
 
-fn ensure_is_dao(deps: Deps, sender: Addr) -> Result<(), ContractError> {
+fn ensure_is_dao(deps: Deps, sender: Addr) -> Result<Addr, ContractError> {
     let dao = DAO_ADDR.load(deps.storage)?;
     if dao != deps.api.addr_canonicalize(sender.as_str())? {
         return Err(ContractError::Unauthorized {});
     }
-    Ok(())
+    Ok(sender)
 }
 
 fn ensure_is_staking_or_wallet(deps: Deps, contract: &Addr) -> Result<(), ContractError> {
@@ -386,6 +413,7 @@ fn ensure_is_staking_or_wallet(deps: Deps, contract: &Addr) -> Result<(), Contra
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
+        QueryMsg::Joined { address } => to_binary(&query_balance_joined(deps, address)?),
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Minter {} => to_binary(&query_minter(deps)?),
         QueryMsg::Staking {} => to_binary(&query_staking(deps)?),
@@ -398,14 +426,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-pub fn query_balance(deps: Deps, address: String) -> StdResult<BalanceResponse> {
+pub fn query_balance_joined(deps: Deps, address: String) -> StdResult<Option<BalanceResponse>> {
     let address = deps.api.addr_validate(&address)?;
-    let balance = BALANCES
-        .may_load(deps.storage, &address)?
-        .ok_or(StdError::GenericErr {
-            msg: ContractError::NotFound {}.to_string(),
-        })?;
-    Ok(BalanceResponse { balance })
+    Ok(BALANCES
+        .load(deps.storage, &address)
+        .map(|balance| BalanceResponse { balance })
+        .ok())
+}
+
+pub fn query_balance(deps: Deps, address: String) -> StdResult<BalanceResponse> {
+    let balance = query_balance_joined(deps, address).unwrap_or(None);
+    Ok(balance.unwrap_or(BalanceResponse {
+        balance: Uint128::new(0),
+    }))
 }
 
 pub fn query_token_info(deps: Deps) -> StdResult<TokenInfoResponse> {
