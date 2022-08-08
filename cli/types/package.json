@@ -6,7 +6,7 @@
         "giovanni-orciuolo <giovanni@orciuolo.it>",
         "j0nl1 <jonlitech@gmail.com>"
     ],
-    "version": "0.0.7",
+    "version": "0.0.8",
     "main": "index.js",
     "scripts": {
         "publish:dev": "tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
@@ -29,7 +29,7 @@
     "dependencies": {
         "@cosmjs/amino": "^0.28.7",
         "@cosmjs/cosmwasm-stargate": "^0.28.7",
-        "@cosmwasm/ts-codegen": "^0.7.3",
+        "@cosmwasm/ts-codegen": "^0.7.4",
         "typescript": "^4.7.3"
     }
 }
