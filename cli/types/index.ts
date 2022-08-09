@@ -1,3 +1,4 @@
-export * as FactoryContract from "./contracts/FactoryContract";
-export * as GovecContract from "./contracts/GovecContract";
-export * as ProxyContract from "./contracts/ProxyContract";
+export * as FactoryContract from "./contracts/Factory.client";
+export * as GovecContract from "./contracts/Govec.client";
+export * as ProxyContract from "./contracts/Proxy.client";
+export * from './contracts';
