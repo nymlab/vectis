@@ -11,8 +11,7 @@
     "scripts": {
         "publish:dev": "tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
         "publish:prod": "tsc && cp package.json build/package.json && cd build && npm publish",
-        "generate": "npm run types:proxy && npm run types:factory && npm run types:govec && npm version patch",
-        "types": "node ./scripts/gen-contracts.js"
+        "generate": "node ./scripts/gen-contracts.js"
     },
     "license": "Apache-2.0",
     "homepage": "https://www.nymlab.it",
