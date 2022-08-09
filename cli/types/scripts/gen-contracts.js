@@ -20,8 +20,7 @@ codegen({
   outPath: join( __dirname, '../contracts'),
   options: {
     bundle: {
-      bundleFile: 'index.ts',
-      scope: 'contracts'
+      enabled: false,
     }
   }
 }).then(() => {
