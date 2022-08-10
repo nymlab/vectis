@@ -49,9 +49,11 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
     let public_key_serialized = Binary(public_key.serialize_uncompressed().to_vec());
+    let user_addr =
+        pub_key_to_address(&deps.as_ref(), "wasm", &public_key.serialize_uncompressed()).unwrap();
 
     let create_wallet_msg = CreateWalletMsg {
-        user_pubkey: public_key_serialized.clone(),
+        user_addr: user_addr.to_string(),
         guardians: get_guardians(),
         relayers: vec![RELAYER1.into(), RELAYER2.into()],
         proxy_initial_funds: vec![],
@@ -88,7 +90,7 @@ fn user_cannot_be_a_guardian() {
     };
 
     let create_wallet_msg = CreateWalletMsg {
-        user_pubkey: public_key_serialized.clone(),
+        user_addr: user_addr.to_string(),
         guardians: guardians_with_user,
         relayers: vec![RELAYER1.into(), RELAYER2.into()],
         proxy_initial_funds: vec![],

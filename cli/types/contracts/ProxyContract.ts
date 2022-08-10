@@ -223,7 +223,7 @@ export interface CreateWalletMsg {
     label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
-    user_pubkey: Binary;
+    user_addr: string;
     [k: string]: unknown;
 }
 export type QueryMsg =

@@ -10,13 +10,12 @@ export type AdminAddrResponse = string;
 export type CodeIdResponse = number;
 export type CodeIdType = "Proxy" | "Multisig";
 export type Uint128 = string;
-export type Binary = string;
 export interface CreateWalletMsg {
     guardians: Guardians;
     label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
-    user_pubkey: Binary;
+    user_addr: string;
     [k: string]: unknown;
 }
 export interface Guardians {
@@ -159,9 +158,18 @@ export type QueryMsg =
               [k: string]: unknown;
           };
       };
+<<<<<<< HEAD
 export interface WalletQueryPrefix {
     user_addr: string;
     wallet_addr: string;
+=======
+export type Binary = string;
+export interface RelayTransaction {
+    message: Binary;
+    nonce: number;
+    signature: Binary;
+    user_pubkey: Binary;
+>>>>>>> 44204b1 (feat: use user address when creating wallet)
     [k: string]: unknown;
 }
 export type Duration =

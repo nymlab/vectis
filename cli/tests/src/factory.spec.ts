@@ -77,14 +77,13 @@ describe("Factory Suite: ", () => {
     });
 
     it("Should create a new proxy wallet with multisig", async () => {
-        const userKeypair = await mnemonicToKeyPair(userMnemonic!);
         const walletCreationFee = await factoryClient.fee();
         const totalFee: Number = Number(walletCreationFee.amount) + Number(testWalletInitialFunds.amount);
 
         const newWalletRes = await factoryClient.createWallet(
             {
                 createWalletMsg: {
-                    user_pubkey: toBase64(userKeypair.pubkey),
+                    user_addr: userAddr,
                     guardians: {
                         addresses: [guardian1Addr!, guardian2Addr!],
                         guardians_multisig: {
