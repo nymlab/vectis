@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use cosmwasm_std::testing::mock_dependencies;
 use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, CosmosMsg, Empty, QueryRequest, StdError, Uint128,
     WasmQuery,
@@ -39,8 +40,8 @@ use vectis_proxy::{
     msg::QueryMsg as ProxyQueryMsg,
 };
 use vectis_wallet::{
-    CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction, ThresholdAbsoluteCount,
-    WalletQueryPrefix,
+    pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction,
+    ThresholdAbsoluteCount, WalletQueryPrefix,
 };
 
 pub const WALLET_FEE: u128 = 10u128;
@@ -222,9 +223,13 @@ impl Suite {
 
         let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
         let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+        let deps = mock_dependencies();
 
+        let user_addr =
+            pub_key_to_address(&deps.as_ref(), "wasm", &public_key.serialize_uncompressed())
+                .unwrap();
         let create_wallet_msg = CreateWalletMsg {
-            user_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
+            user_addr: user_addr.to_string(),
             guardians: Guardians {
                 addresses: vec![],
                 guardians_multisig,
@@ -248,7 +253,7 @@ impl Suite {
 
     pub fn create_new_proxy(
         &mut self,
-        payer: Addr,
+        user: Addr,
         factory: Addr,
         proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
@@ -260,13 +265,9 @@ impl Suite {
         let g2 = GUARD2.to_owned();
 
         let r = "relayer".to_owned();
-        let secp = Secp256k1::new();
-
-        let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
-        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
         let create_wallet_msg = CreateWalletMsg {
-            user_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
+            user_addr: user.to_string(),
             guardians: Guardians {
                 addresses: vec![g1, g2],
                 guardians_multisig,
@@ -280,7 +281,7 @@ impl Suite {
 
         self.app
             .execute_contract(
-                payer,
+                user,
                 factory,
                 &execute,
                 &[coin(native_tokens_amount, "ucosm")],

@@ -51,13 +51,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     // Ensure no guardians are the same as a user
     // https://github.com/nymlab/vectis/issues/43
-    //
-    // This returns the human address
-    let addr_human = pub_key_to_address(
-        &deps.as_ref(),
-        &msg.addr_prefix,
-        msg.create_wallet_msg.user_pubkey.as_slice(),
-    )?;
+    let addr_human = deps.api.addr_validate(&msg.create_wallet_msg.user_addr)?;
     msg.create_wallet_msg
         .guardians
         .verify_guardians(&addr_human)?;
