@@ -1,5 +1,4 @@
-import { GovecClient } from "@vectis/types/contracts/GovecContract";
-import { FactoryClient } from "@vectis/types/contracts/FactoryContract";
+import { FactoryClient, GovecClient } from "@vectis/types";
 import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/constants";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { createSigningClient } from "@vectis/core/services/cosmwasm";

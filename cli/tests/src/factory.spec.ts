@@ -1,6 +1,6 @@
 import { toBase64 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { Coin, FactoryClient, Addr } from "@vectis/types/contracts/FactoryContract";
+import { FactoryClient, FactoryT } from "@vectis/types";
 import { coin } from "@cosmjs/stargate";
 
 import {
@@ -32,7 +32,7 @@ describe("Factory Suite: ", () => {
     let proxyCodeId: number;
 
     let factoryClient: FactoryClient;
-    let proxyWalletAddress: Addr;
+    let proxyWalletAddress: FactoryT.Addr;
 
     beforeAll(async () => {
         const { proxyRes, factoryRes, govecRes, multisigRes } = await import(uploadReportPath);
@@ -92,13 +92,13 @@ describe("Factory Suite: ", () => {
                         },
                     },
                     relayers: [relayer1Addr!, relayer2Addr!],
-                    proxy_initial_funds: [testWalletInitialFunds as Coin],
+                    proxy_initial_funds: [testWalletInitialFunds as FactoryT.Coin],
                     label: "initial label",
                 },
             },
             defaultWalletCreationFee,
             undefined,
-            [coin(totalFee.toString(), coinMinDenom!) as Coin]
+            [coin(totalFee.toString(), coinMinDenom!) as FactoryT.Coin]
         );
 
         const wasmEvent = newWalletRes.logs[0].events.length;

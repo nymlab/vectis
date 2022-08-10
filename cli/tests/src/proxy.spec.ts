@@ -9,15 +9,8 @@ import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
-import {
-    Addr,
-    CosmosMsg_for_Empty as CosmosMsg,
-    BankMsg,
-    Coin,
-    ProxyClient,
-} from "@vectis/types/contracts/ProxyContract";
-import { FactoryClient } from "@vectis/types/contracts/FactoryContract";
-import { GovecClient } from "@vectis/types/contracts/GovecContract";
+import { Addr, CosmosMsgForEmpty as CosmosMsg, BankMsg, Coin } from "@vectis/types/contracts/Proxy.types";
+import { FactoryClient, GovecClient, ProxyClient } from "@vectis/types";
 import { coin } from "@cosmjs/stargate";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,

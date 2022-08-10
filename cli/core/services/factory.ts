@@ -1,11 +1,7 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { defaultInstantiateFee } from "../utils/fee";
 import { coin, Coin } from "@cosmjs/stargate";
-import {
-    InstantiateMsg as FactoryInstantiateMsg,
-    Coin as FactoryCoin,
-    Addr,
-} from "@vectis/types/contracts/FactoryContract";
+import { FactoryT } from "@vectis/types";
 import { addrPrefix, adminAddr, coinMinDenom } from "@vectis/core/utils/constants";
 import { walletFee } from "@vectis/core/utils/dao-params";
 
@@ -18,9 +14,9 @@ export async function instantiateFactoryContract(
     multisigCodeId: number,
     initialFunds: Coin[]
 ): Promise<{
-    factoryAddr: Addr;
+    factoryAddr: FactoryT.Addr;
 }> {
-    const instantiate: FactoryInstantiateMsg = {
+    const instantiate: FactoryT.InstantiateMsg = {
         proxy_code_id: proxyCodeId,
         proxy_multisig_code_id: multisigCodeId,
         addr_prefix: addrPrefix,
@@ -46,9 +42,9 @@ export function createFactoryInstMsg(
     proxyCodeId: number,
     multisigCodeId: number,
     addrPrefix: string,
-    walletFee: FactoryCoin,
+    walletFee: FactoryT.Coin,
     govec?: string
-): FactoryInstantiateMsg {
+): FactoryT.InstantiateMsg {
     return {
         proxy_code_id: proxyCodeId,
         proxy_multisig_code_id: multisigCodeId,
