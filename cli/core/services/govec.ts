@@ -1,11 +1,6 @@
-import { Addr } from "@vectis/types/contracts/FactoryContract";
+import { FactoryT, GovecT } from "@vectis/types";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { defaultInstantiateFee } from "../utils/fee";
-import {
-    InstantiateMsg as GovecInstantiateMsg,
-    Cw20Coin,
-    MarketingInfoResponse,
-} from "@vectis/types/contracts/GovecContract";
 import { adminAddr } from "../utils/constants";
 
 export const marketingProject = "https://vectis.nymlab.it";
@@ -15,10 +10,10 @@ interface InstantiateGovec {
     client: SigningCosmWasmClient;
     govecCodeId: number;
     admin: string;
-    initial_balances: Cw20Coin[];
+    initial_balances: GovecT.Cw20Coin[];
     minter?: string;
     minterCap?: string;
-    marketing?: MarketingInfoResponse;
+    marketing?: GovecT.MarketingInfoResponse;
 }
 
 export async function instantiateGovec({
@@ -30,10 +25,10 @@ export async function instantiateGovec({
     minterCap,
     marketing,
 }: InstantiateGovec): Promise<{
-    govecAddr: Addr;
+    govecAddr: GovecT.Addr;
 }> {
     const m = minter ? { minter: minter!, cap: minterCap } : null;
-    const instantiate: GovecInstantiateMsg = {
+    const instantiate: GovecT.InstantiateMsg = {
         name: "Govec",
         symbol: "GOVEC",
         // TODO: give admin initial balance
@@ -57,7 +52,7 @@ export async function instantiateGovec({
     };
 }
 
-export const createVectisMarketingInfo = (marketing?: string): MarketingInfoResponse => {
+export const createVectisMarketingInfo = (marketing?: string): GovecT.MarketingInfoResponse => {
     return {
         project: marketingProject,
         description: marketingDescription,

@@ -31,8 +31,7 @@ import {
     contractsFileNames,
 } from "../utils/constants";
 import { longToByteArray } from "../utils/enconding";
-import { RelayTransaction } from "@vectis/types/contracts/ProxyContract";
-import { Addr } from "@vectis/types/contracts/FactoryContract";
+import { ProxyT, FactoryT } from "@vectis/types";
 import { downloadContract, getContract } from "../utils/fs";
 import { DaoDaoContracts } from "core/interfaces/dao";
 import codes from "../config/onchain-codes.json";
@@ -72,7 +71,7 @@ export async function createRelayTransaction(
     mnemonic: string,
     nonce: number,
     jsonMsg: string
-): Promise<RelayTransaction> {
+): Promise<ProxyT.RelayTransaction> {
     const keypair = await mnemonicToKeyPair(mnemonic);
     const messageNonceBytes = new Uint8Array([...toUtf8(jsonMsg), ...longToByteArray(nonce)]);
     const messageHash = sha256(messageNonceBytes);
@@ -88,7 +87,7 @@ export async function createRelayTransaction(
 export async function uploadContract(
     client: SigningCosmWasmClient,
     codePath: string,
-    senderAddress?: Addr,
+    senderAddress?: FactoryT.Addr,
     uploadFee: StdFee | number | "auto" = defaultUploadFee
 ): Promise<UploadResult> {
     const code = getContract(codePath);

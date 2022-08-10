@@ -1,5 +1,5 @@
 import { coinMinDenom } from "./constants";
-import { Coin } from "@vectis/types/contracts/FactoryContract";
+import { FactoryT } from "@vectis/types";
 import { Duration as StakeDuration } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
 import { DepositInfo, Duration, Threshold } from "@dao-dao/types/contracts/cw-proposal-single";
 
@@ -7,7 +7,7 @@ import { DepositInfo, Duration, Threshold } from "@dao-dao/types/contracts/cw-pr
 //
 // Next verion: Minter Cap (does Factory have a mint cap for Govec?)
 // Fee for wallet creation
-export const walletFee: Coin = { amount: "10000", denom: coinMinDenom! };
+export const walletFee: FactoryT.Coin = { amount: "10000", denom: coinMinDenom! };
 
 // Proposal
 //

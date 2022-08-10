@@ -1,7 +1,7 @@
 import { createSigningClient } from "../services/cosmwasm";
 import { createVectisMarketingInfo, instantiateGovec } from "../services/govec";
 import { addrPrefix, adminAddr, adminMnemonic, uploadReportPath } from "./constants";
-import { GovecClient, Cw20Coin } from "@vectis/types/contracts/GovecContract";
+import { GovecClient, GovecT, ProxyT } from "@vectis/types";
 import { createTokenInfo } from "@vectis/core/services/staking";
 import {
     createDaoInstMsg,
@@ -23,7 +23,6 @@ import {
 } from "@vectis/core/utils/dao-params";
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { createFactoryInstMsg } from "../services/factory";
-import { CosmosMsg_for_Empty } from "@vectis/types/contracts/ProxyContract";
 import { VectisDaoContractsAddrs } from "../interfaces/dao";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,
@@ -49,7 +48,7 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
         await import(uploadReportPath);
 
     const adminClient = await createSigningClient(adminMnemonic, addrPrefix);
-    const initial_balances: Cw20Coin[] = [
+    const initial_balances: GovecT.Cw20Coin[] = [
         {
             address: adminAddr,
             amount: "1",
@@ -105,7 +104,7 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
 
     // Admin propose and execute dao deploy factory
     const factoryInstMsg = createFactoryInstMsg(proxyRes.codeId, multisigRes.codeId, addrPrefix, walletFee, govecAddr);
-    const deployFactoryMsg: CosmosMsg_for_Empty = {
+    const deployFactoryMsg: ProxyT.CosmosMsgForEmpty = {
         wasm: {
             instantiate: {
                 admin: daoAddr,

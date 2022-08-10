@@ -11,10 +11,10 @@ import {
 } from "@vectis/core/utils/constants";
 import { defaultWalletCreationFee } from "@vectis/core/utils/fee";
 import { mnemonicToKeyPair } from "@vectis/core/services/cosmwasm";
-import { Addr, Coin, FactoryClient } from "@vectis/types/contracts/FactoryContract";
+import { FactoryT, FactoryClient } from "@vectis/types/";
 import { coin } from "@cosmjs/stargate";
 
-export async function createTestProxyWallets(factoryClient: FactoryClient): Promise<Addr[]> {
+export async function createTestProxyWallets(factoryClient: FactoryClient): Promise<FactoryT.Addr[]> {
     const walletCreationFee = await factoryClient.fee();
     const totalFee: Number = Number(walletCreationFee.amount) + Number(testWalletInitialFunds.amount);
 
@@ -26,13 +26,13 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                     addresses: [guardian1Addr, guardian2Addr],
                 },
                 relayers: [relayer1Addr, relayer2Addr],
-                proxy_initial_funds: [testWalletInitialFunds as Coin],
+                proxy_initial_funds: [testWalletInitialFunds as FactoryT.Coin],
                 label: "initial label",
             },
         },
         defaultWalletCreationFee,
         undefined,
-        [coin(totalFee.toString(), coinMinDenom) as Coin]
+        [coin(totalFee.toString(), coinMinDenom) as FactoryT.Coin]
     );
 
     const [walletAddress] = (await factoryClient.walletsOf({ user: userAddr! })).wallets;
@@ -49,13 +49,13 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                     },
                 },
                 relayers: [relayer1Addr, relayer2Addr],
-                proxy_initial_funds: [testWalletInitialFunds as Coin],
+                proxy_initial_funds: [testWalletInitialFunds as FactoryT.Coin],
                 label: "initial label",
             },
         },
         defaultWalletCreationFee,
         undefined,
-        [coin(totalFee.toString(), coinMinDenom) as Coin]
+        [coin(totalFee.toString(), coinMinDenom) as FactoryT.Coin]
     );
 
     const walletMSAddress = (await factoryClient.walletsOf({ user: userAddr })).wallets.find(
