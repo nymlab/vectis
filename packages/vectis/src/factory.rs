@@ -11,7 +11,7 @@ pub type ThresholdAbsoluteCount = u64;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateWalletMsg {
-    pub user_pubkey: Binary,
+    pub user_addr: String,
     pub guardians: Guardians,
     /// A List of keys can act as relayer for
     pub relayers: Vec<String>,
