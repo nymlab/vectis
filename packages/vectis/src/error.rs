@@ -29,3 +29,12 @@ pub enum MigrationMsgError {
     #[error("IsNotAMultisigMsg")]
     IsNotAMultisigMsg,
 }
+
+#[derive(Error, Debug, PartialEq)]
+pub enum IbcError {
+    #[error("Only supports unordered channels")]
+    InvalidChannelOrder,
+
+    #[error("Counterparty version must be '{0}'")]
+    InvalidChannelVersion(&'static str),
+}
