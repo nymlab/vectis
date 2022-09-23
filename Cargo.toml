@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/proxy", "contracts/factory", "contracts/govec"]
+members = ["packages/*", "contracts/*"]
 exclude = ["contracts/tests","packages/images"]
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html

@@ -55,5 +55,5 @@ wasmd collect-gentxs --home ${APP_HOME}
 wasmd validate-genesis --home ${APP_HOME}
 
 # run the node
-wasmd start --home ${APP_HOME}
+wasmd start --home ${APP_HOME} --wasm.query_gas_limit 9000000
 
