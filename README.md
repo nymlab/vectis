@@ -11,6 +11,20 @@
 Smart Contract Wallet allows user to interact with DAPPs on the blockchain with the same amount of autonomy of a classic non-custodial solution, but with more flexibility by providing functionalities designed to serve the user.
 SCW also provide functions that allow businesses to satisfy regulatory requirements regarding support of users, transparency, separation of control duties and verifiability.
 
+VectisDAO is the organisation that provides governance to the this infrastructure.
+Every wallet has a Govec token that is minted during wallet creation and can be staked to vote.
+VectisDAO lives on [Juno Network] and leverages the [DAO DAO] stack.
+
+Thanks to [IBC], Vectis wallets can also be deployed on other chains.
+From the perspective of DAO participation,
+there is no difference between a wallet on [Juno Network] or others.
+Staking and voting will be done via IBC calls from the wallet.
+Please see [IBC Architecture] for details.
+
+[Juno Network]:
+[DAO DAO]:
+[IBC Architecture]:
+
 ### Design
 
 SCW is designed to provide the user with confidence whilst interacting with the DApps by providing the most amount of control yet allowing recoverability.
@@ -30,6 +44,35 @@ There are 3 roles in a SCW:
 1. [_user:_](/contracts/README.md#User) the address that this wallet services, they have full control over the roles assignment and wallet operations
 1. [_guardians:_](/contracts/README.md#Guardians) the addresses appointed by the user to protect the user (via key recovery and / or account freezing)
 1. [_relayers_](/contracts/README.md#Relayers) the addresses appointed by the user to allow for user's off-chain transaction signatures be committed on-chain with gas.
+
+#### IBC Architecture
+
+##### Juno Network Components
+
+- DAODAO contracts: [cw-core], [cw-proposal-single], [cw20-staked-balance-voting], [cw20-stake]
+- [Factory]
+- [Proxy]
+- [Govec]: This allows balance of Govec token for proxy addresses of different chains
+- [IBC Host]: This is inspire by the `simple-ica-host` provided in the [Confio demo],
+  it stores, in its states, of the acceptable [`connection-id`] and [`port-id`] of a Vectis [`IBC Remote`] contract as voted in by the VectisDAO,
+  it will effectively communitcate to the Govec contract for new voting tokens and their votes etc
+
+##### Remote Network Components
+
+- [Factory Remote]: Same as [Factory] with the addition of messages for the [IBC Remote] contract
+- [Proxy Remote]: Same as [Proxy] with the addition of [Govec] operations,
+  this is to minimise each proxy having to create their own channel
+- [IBC Remote]: This is inspired by the `simple-ica-remote` provided in the [Confio demo],
+  its main job is to route IBC messages to the [IBC Host] for minting new Govec tokens and other Govec operations
+
+[factory]: https://github.com/nymlab/vectis/tree/main/contracts/factory
+[proxy]: https://github.com/nymlab/vectis/tree/main/contracts/proxy
+[govec]: https://github.com/nymlab/vectis/tree/main/contracts/govec
+[cw-core]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw-core
+[cw-proposal-single]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw-proposal-single
+[cw20-staked-balance-voting]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw-staked-balance-voting
+[cw20-stake]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw20-stake
+[confio demo]: https://github.com/confio/cw-ibc-demo
 
 ### Note on Relayer gas fees
 
@@ -53,9 +96,11 @@ cargo test
 ### Runner Options
 
 #### Docker Vectis Image
+
 ```bash
 docker run -d --name vectis_node -p 1317:1317 -p 26656:26656 -p 26657:26657 ghcr.io/nymlab/vectis:main
 ```
+
 #### Docker Local Node
 
 ##### 1. Set env variable
