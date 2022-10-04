@@ -60,4 +60,6 @@ pub enum QueryMsg {
     /// If CanExecuteRelay returns true then a call to `ExecuteRelay`,
     /// before any further state changes, should also succeed.
     CanExecuteRelay { sender: String },
+    /// Return the current guardian update request.
+    GuardiansUpdateRequest {}
 }

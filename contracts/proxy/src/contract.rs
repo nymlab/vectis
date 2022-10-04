@@ -366,6 +366,8 @@ pub fn execute_update_guardians(
                 GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
             }
 
+            GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?;
+
             if let Some(multisig_settings) = guardians.guardians_multisig {
                 let instantiation_code_id = if let Some(id) = new_multisig_code_id {
                     id
@@ -493,6 +495,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Info {} => to_binary(&query_info(deps)?),
         QueryMsg::CanExecuteRelay { sender } => to_binary(&query_can_execute_relay(deps, sender)?),
+        QueryMsg::GuardiansUpdateRequest { } => to_binary(&query_guardian_update_request(deps)?),
     }
 }
 
@@ -527,6 +530,13 @@ pub fn query_can_execute_relay(deps: Deps, sender: String) -> StdResult<CanExecu
     Ok(CanExecuteResponse {
         can_execute: is_relayer(deps, &sender_canonical)?,
     })
+}
+
+pub fn query_guardian_update_request(deps: Deps) -> StdResult<Option<GuardiansUpdateRequest>> {
+    match GUARDIANS_UPDATE_REQUEST.may_load(deps.storage)? {
+        Some(r) => Ok(r),
+        None => Ok(None)
+    }
 }
 
 #[cfg(feature = "migration")]
