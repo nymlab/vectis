@@ -1,6 +1,7 @@
+use crate::guardians::Guardians;
 use crate::wallet::{RelayTransaction, WalletAddr};
 use crate::MigrationMsgError;
-use cosmwasm_std::{Addr, Binary, Coin, StdError, StdResult};
+use cosmwasm_std::{Addr, Binary, Coin};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -17,25 +18,6 @@ pub struct CreateWalletMsg {
     pub relayers: Vec<String>,
     pub proxy_initial_funds: Vec<Coin>,
     pub label: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Guardians {
-    /// A List of keys can act as guardian for
-    pub addresses: Vec<String>,
-    /// Whether multisig option for guardians is enabled
-    pub guardians_multisig: Option<MultiSig>,
-}
-
-impl Guardians {
-    pub fn verify_guardians(&self, user: &Addr) -> StdResult<()> {
-        for g in &self.addresses {
-            if g == user.as_str() {
-                return Err(StdError::generic_err("user cannot be a guardian"));
-            }
-        }
-        Ok(())
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]

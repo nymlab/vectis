@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, CosmosMsg, Empty};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use vectis_wallet::{CreateWalletMsg, Guardians, RelayTransaction};
+use vectis_wallet::{CreateWalletMsg, GuardiansUpdateMsg, RelayTransaction};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -40,18 +40,13 @@ where
     /// Removing relayer
     /// Priviledge: User/Multisig
     RemoveRelayer { relayer_address: Addr },
-    /// Message for updating current guardians set
-    ///
-    /// If the `Guardians.guardian_multisig` is given,
-    /// we will instantiate a new multisig contract.
-    /// This contract can be an instance of 3 code ids.
-    /// - 1: exisiting stored `MULTISIG_CODE_ID` if `new_multisig_code_id == None`
-    /// - 2: the `new_multisig_code_id` if given
-    /// - 3: if 1 nor 2 are available, the supported multisig from the FACTORY will be used.
-    UpdateGuardians {
-        guardians: Guardians,
-        new_multisig_code_id: Option<u64>,
+    /// It create a request for update guardians and it has a delay of one day after that
+    /// is possible to update the guardians using UpdateGuardiansMsg
+    RequestUpdateGuardians {
+        request: Option<GuardiansUpdateMsg>
     },
+    /// Once the request passed the waiting time, it is possible to update the guardians.
+    UpdateGuardians {},
     /// Updates label by the user
     UpdateLabel { new_label: String },
 }

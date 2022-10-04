@@ -104,6 +104,17 @@ pub fn ensure_is_user(deps: Deps, sender: &str) -> Result<User, ContractError> {
     }
 }
 
+/// Ensure sender is the wallet user or relayer
+pub fn ensure_is_relayer_or_user(deps: Deps, env: &Env, sender: &Addr) -> Result<(), ContractError> {
+    let is_user = ensure_is_user(deps, sender.as_ref());
+    let is_contract = ensure_is_contract_self(&env, sender);
+    if is_user.is_err() && is_contract.is_err() {
+        is_user?;
+        is_contract?;
+    };
+    Ok(())
+}
+
 /// Checks if the sender is a guardian
 pub fn is_guardian(deps: Deps, sender: &CanonicalAddr) -> StdResult<bool> {
     GUARDIANS

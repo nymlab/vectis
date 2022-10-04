@@ -9,20 +9,21 @@ use cw2::set_contract_version;
 use schemars::JsonSchema;
 use std::fmt;
 use vectis_wallet::{
-    pub_key_to_address, query_verify_cosmos, CodeIdType, Guardians, RelayTransaction, RelayTxError,
-    WalletFactoryExecuteMsg, WalletFactoryQueryMsg, WalletInfo,
+    pub_key_to_address, query_verify_cosmos, CodeIdType, GuardiansUpdateMsg,
+    GuardiansUpdateRequest, RelayTransaction, RelayTxError, WalletFactoryExecuteMsg,
+    WalletFactoryQueryMsg, WalletInfo,
 };
 
 use crate::error::ContractError;
 use crate::helpers::{
     addresses_to_voters, authorize_guardian_or_multisig, authorize_user_or_guardians,
-    ensure_is_contract_self, ensure_is_relayer, ensure_is_user, is_frozen, is_relayer,
-    load_addresses, load_canonical_addresses,
+    ensure_is_contract_self, ensure_is_relayer, ensure_is_relayer_or_user, ensure_is_user,
+    is_frozen, is_relayer, load_addresses, load_canonical_addresses,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
-    MULTISIG_CODE_ID, RELAYERS, USER,
+    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, GUARDIANS_UPDATE_REQUEST, LABEL,
+    MULTISIG_ADDRESS, MULTISIG_CODE_ID, RELAYERS, USER,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
@@ -138,10 +139,10 @@ pub fn execute(
         ExecuteMsg::RemoveRelayer { relayer_address } => {
             execute_remove_relayer(deps, info, relayer_address)
         }
-        ExecuteMsg::UpdateGuardians {
-            guardians,
-            new_multisig_code_id,
-        } => execute_update_guardians(deps, env, info, guardians, new_multisig_code_id),
+        ExecuteMsg::RequestUpdateGuardians { request } => {
+            execute_request_update_guardians(deps, info, env, request)
+        }
+        ExecuteMsg::UpdateGuardians {} => execute_update_guardians(deps, env, info),
         ExecuteMsg::UpdateLabel { new_label } => execute_update_label(deps, info, env, new_label),
     }
 }
@@ -335,76 +336,107 @@ pub fn execute_update_guardians(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    guardians: Guardians,
-    new_multisig_code_id: Option<u64>,
 ) -> Result<Response, ContractError> {
-    // ensure this is either a direct message from the user
-    // or
-    // ensure this is relayed by a relayer from this proxy
-    let is_user = ensure_is_user(deps.as_ref(), info.sender.as_ref());
-    let is_contract = ensure_is_contract_self(&env, &info.sender);
-    if is_user.is_err() && is_contract.is_err() {
-        is_user?;
-        is_contract?;
-    };
+    match GUARDIANS_UPDATE_REQUEST.may_load(deps.storage)? {
+        Some(Some(request)) => {
+            request.ensure_delay_passed(&env.block)?;
+            let GuardiansUpdateRequest {
+                guardians,
+                new_multisig_code_id,
+                ..
+            } = request;
+            // ensure this is either a direct message from the user
+            // or
+            // ensure this is relayed by a relayer from this proxy
+            ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
 
-    guardians.verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
+            guardians.verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
 
-    // make sure guardians have not frozen the contract
-    if is_frozen(deps.as_ref())? {
-        return Err(ContractError::Frozen {});
-    }
-
-    // Replace the entire locally stored guardians list
-    let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS)?;
-    for guardian in guardians_to_remove {
-        GUARDIANS.remove(deps.storage, &guardian);
-    }
-    for guardian in &guardians.addresses {
-        GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
-    }
-
-    if let Some(multisig_settings) = guardians.guardians_multisig {
-        let instantiation_code_id = if let Some(id) = new_multisig_code_id {
-            id
-        } else {
-            match MULTISIG_CODE_ID.may_load(deps.storage)? {
-                Some(id) => id,
-                None => deps.querier.query_wasm_smart(
-                    deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
-                    &{
-                        WalletFactoryQueryMsg::CodeId {
-                            ty: CodeIdType::Multisig,
-                        }
-                    },
-                )?,
+            // make sure guardians have not frozen the contract
+            if is_frozen(deps.as_ref())? {
+                return Err(ContractError::Frozen {});
             }
-        };
-        MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;
-        let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
-            voters: addresses_to_voters(&guardians.addresses),
-            threshold: Threshold::AbsoluteCount {
-                weight: multisig_settings.threshold_absolute_count,
-            },
-            max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
-        };
 
-        let instantiate_msg = WasmMsg::Instantiate {
-            admin: Some(env.contract.address.to_string()),
-            code_id: instantiation_code_id,
-            msg: to_binary(&multisig_instantiate_msg)?,
-            funds: multisig_settings.multisig_initial_funds,
-            label: "Wallet-Multisig".into(),
-        };
-        let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
+            // Replace the entire locally stored guardians list
+            let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS)?;
+            for guardian in guardians_to_remove {
+                GUARDIANS.remove(deps.storage, &guardian);
+            }
+            for guardian in &guardians.addresses {
+                GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
+            }
 
-        Ok(Response::new()
-            .add_submessage(msg)
-            .add_attribute("action", "Updated wallet guardians: Multisig"))
-    } else {
-        MULTISIG_ADDRESS.save(deps.storage, &None)?;
-        Ok(Response::new().add_attribute("action", "Updated wallet guardians: Non-Multisig"))
+            if let Some(multisig_settings) = guardians.guardians_multisig {
+                let instantiation_code_id = if let Some(id) = new_multisig_code_id {
+                    id
+                } else {
+                    match MULTISIG_CODE_ID.may_load(deps.storage)? {
+                        Some(id) => id,
+                        None => deps.querier.query_wasm_smart(
+                            deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
+                            &{
+                                WalletFactoryQueryMsg::CodeId {
+                                    ty: CodeIdType::Multisig,
+                                }
+                            },
+                        )?,
+                    }
+                };
+                MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;
+                let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
+                    voters: addresses_to_voters(&guardians.addresses),
+                    threshold: Threshold::AbsoluteCount {
+                        weight: multisig_settings.threshold_absolute_count,
+                    },
+                    max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
+                };
+
+                let instantiate_msg = WasmMsg::Instantiate {
+                    admin: Some(env.contract.address.to_string()),
+                    code_id: instantiation_code_id,
+                    msg: to_binary(&multisig_instantiate_msg)?,
+                    funds: multisig_settings.multisig_initial_funds,
+                    label: "Wallet-Multisig".into(),
+                };
+                let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
+
+                Ok(Response::new()
+                    .add_submessage(msg)
+                    .add_attribute("action", "Updated wallet guardians: Multisig"))
+            } else {
+                MULTISIG_ADDRESS.save(deps.storage, &None)?;
+                Ok(Response::new()
+                    .add_attribute("action", "Updated wallet guardians: Non-Multisig"))
+            }
+        }
+        _ => Err(ContractError::GuardianRequestNotFound {}),
     }
+}
+
+pub fn execute_request_update_guardians(
+    deps: DepsMut,
+    info: MessageInfo,
+    env: Env,
+    request: Option<GuardiansUpdateMsg>,
+) -> Result<Response, ContractError> {
+    match request {
+        Some(r) => {
+            ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
+            r.guardians
+                .verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
+
+            let guardians_request = GuardiansUpdateRequest {
+                guardians: r.guardians,
+                new_multisig_code_id: r.new_multisig_code_id,
+                created_at: env.block.time.seconds(),
+            };
+
+            GUARDIANS_UPDATE_REQUEST.save(deps.storage, &Some(guardians_request))?;
+        }
+        _ => GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?,
+    }
+
+    Ok(Response::new().add_attribute("action", "Update guardians request created"))
 }
 
 /// Update label by user
