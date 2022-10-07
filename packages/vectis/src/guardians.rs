@@ -1,13 +1,14 @@
 use std::ops::Add;
 
+use cosmwasm_std::{Addr, BlockInfo, StdError, StdResult, Timestamp};
+use cw_utils::{Duration, Expiration, DAY};
 use schemars::JsonSchema;
-use cosmwasm_std::{Addr, StdError, StdResult, BlockInfo};
 use serde::{Deserialize, Serialize};
 
 use crate::MultiSig;
 
-/// Min delay time is set to >= 24 hours
-const MIN_DELAY_TIME: u64 = 60 * 60 * 24;
+/// Min delay time is set to 1 day
+pub const GUARDIAN_REQUEST_ACTIVATION_TIME: Duration = DAY;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Guardians {
@@ -32,17 +33,27 @@ impl Guardians {
 pub struct GuardiansUpdateRequest {
     pub guardians: Guardians,
     pub new_multisig_code_id: Option<u64>,
-    /// Creation time in seconds
-    pub created_at: u64,
+    pub created_at: Timestamp,
+    pub activate_at: Expiration,
 }
 
 impl GuardiansUpdateRequest {
-    pub fn ensure_delay_passed(&self, block: &BlockInfo) -> StdResult<()> {
-        let delay = self.created_at.add(MIN_DELAY_TIME);
-        if delay <= block.time.seconds() {
-            return Err(StdError::generic_err("it is necessary to wait for this execution"))
+    pub fn new(
+        guardians: Guardians,
+        new_multisig_code_id: Option<u64>,
+        block: &BlockInfo,
+    ) -> GuardiansUpdateRequest {
+        let created_at = block.time;
+        let activate_at = Expiration::AtTime(block.time)
+            .add(GUARDIAN_REQUEST_ACTIVATION_TIME)
+            .expect("error defining activate_at");
+
+        GuardiansUpdateRequest {
+            guardians,
+            new_multisig_code_id,
+            created_at,
+            activate_at,
         }
-        Ok(())
     }
 }
 

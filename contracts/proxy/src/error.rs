@@ -43,6 +43,8 @@ pub enum ContractError {
     MultisigInstantiationError {},
     #[error("Same Label")]
     SameLabel {},
-    #[error("No request found")]
-    GuardianRequestNotFound{},
+    #[error("No guardian request found")]
+    GuardianRequestNotFound {},
+    #[error("Guardian update request cannot be executed yet")]
+    GuardianRequestNotExecutable {},
 }
