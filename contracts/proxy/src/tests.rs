@@ -1,14 +1,20 @@
 use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
-use cosmwasm_std::{coins, to_binary, Addr, BankMsg, Binary, CosmosMsg, DepsMut, StdError};
+use cosmwasm_std::{
+    coins, to_binary, Addr, BankMsg, Binary, BlockInfo, CosmosMsg, DepsMut, StdError, Timestamp,
+};
 
-use crate::contract::{execute, execute_relay, instantiate, query_info};
+use crate::contract::{
+    execute, execute_relay, instantiate, query_guardian_update_request, query_info,
+};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::state::GUARDIANS_UPDATE_REQUEST;
 
 use secp256k1::bitcoin_hashes::sha256;
 use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
 use vectis_wallet::{
-    pub_key_to_address, CreateWalletMsg, Guardians, RelayTransaction, RelayTxError,
+    pub_key_to_address, CreateWalletMsg, Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest,
+    RelayTransaction, RelayTxError,
 };
 
 const GUARD1: &str = "guardian1";
@@ -187,14 +193,7 @@ fn frozen_contract_user_cannot_rotate_guardians_or_user() {
     let info = mock_info(user_addr.as_str(), &[]);
     let env = mock_env();
 
-    let new_guardians = Guardians {
-        addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
-        guardians_multisig: None,
-    };
-    let msg = ExecuteMsg::UpdateGuardians {
-        guardians: new_guardians,
-        new_multisig_code_id: None,
-    };
+    let msg = ExecuteMsg::UpdateGuardians {};
 
     let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
     assert_eq!(err, ContractError::Frozen {});
@@ -232,7 +231,36 @@ fn frozen_contract_guardians_can_rotate_user_key() {
 }
 
 #[test]
-fn user_cannot_update_guardians_to_include_self() {
+fn frozen_contract_cannot_create_update_guardians_request() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    let info = mock_info(GUARD1, &[]);
+    let env = mock_env();
+    let msg = ExecuteMsg::RevertFreezeStatus {};
+    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+    let info = mock_info(user_addr.as_str(), &[]);
+    let env = mock_env();
+
+    let request = GuardiansUpdateMsg {
+        guardians: Guardians {
+            addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
+            guardians_multisig: None,
+        },
+        new_multisig_code_id: None,
+    };
+
+    let msg = ExecuteMsg::RequestUpdateGuardians {
+        request: Some(request.clone()),
+    };
+
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::Frozen {});
+}
+
+#[test]
+fn user_cannot_create_update_guardians_request_to_include_self() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     let user_addr = do_instantiate(deps.as_mut());
 
@@ -248,9 +276,14 @@ fn user_cannot_update_guardians_to_include_self() {
         addresses: vec![user_addr.to_string(), GUARD3.to_string()],
         guardians_multisig: None,
     };
-    let msg = ExecuteMsg::UpdateGuardians {
+
+    let request = GuardiansUpdateMsg {
         guardians: new_guardians,
         new_multisig_code_id: None,
+    };
+
+    let msg = ExecuteMsg::RequestUpdateGuardians {
+        request: Some(request),
     };
 
     let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
@@ -261,36 +294,107 @@ fn user_cannot_update_guardians_to_include_self() {
 }
 
 #[test]
-fn user_can_update_non_multisig_guardian() {
+fn user_cannot_execute_not_active_request() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     let user_addr = do_instantiate(deps.as_mut());
-
-    // initially we have a wallet with 2 relayers
-    let wallet_info = query_info(deps.as_ref()).unwrap();
-    assert!(wallet_info.guardians.contains(&Addr::unchecked(GUARD2)));
-    assert!(!wallet_info.guardians.contains(&Addr::unchecked(GUARD3)));
 
     let info = mock_info(user_addr.as_str(), &[]);
     let env = mock_env();
 
-    let new_guardians = Guardians {
-        addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
+    let guardians = Guardians {
+        addresses: vec![user_addr.to_string(), GUARD3.to_string()],
         guardians_multisig: None,
     };
-    let msg = ExecuteMsg::UpdateGuardians {
-        guardians: new_guardians,
-        new_multisig_code_id: None,
+
+    let request = GuardiansUpdateRequest::new(guardians, None, &env.block);
+    GUARDIANS_UPDATE_REQUEST
+        .save(deps.as_mut().storage, &Some(request))
+        .unwrap();
+
+    let msg = ExecuteMsg::UpdateGuardians {};
+
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::GuardianRequestNotExecutable {});
+}
+
+#[test]
+fn user_cannot_execute_update_guardian_when_no_request() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    let info = mock_info(user_addr.as_str(), &[]);
+    let env = mock_env();
+
+    let msg = ExecuteMsg::UpdateGuardians {};
+
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::GuardianRequestNotFound {});
+}
+
+#[test]
+fn user_can_execute_active_guardian_request() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    let info = mock_info(user_addr.as_str(), &[]);
+    let env = mock_env();
+
+    let guardians = Guardians {
+        addresses: vec![user_addr.to_string(), GUARD3.to_string()],
+        guardians_multisig: None,
     };
+
+    let mock_block = BlockInfo {
+        height: 12_345,
+        time: Timestamp::from_nanos(571_797_419_879_305_533),
+        chain_id: "cosmos-testnet-14002".to_string(),
+    };
+
+    let request = GuardiansUpdateRequest::new(guardians, None, &mock_block);
+    GUARDIANS_UPDATE_REQUEST
+        .save(deps.as_mut().storage, &Some(request))
+        .unwrap();
+
+    let msg = ExecuteMsg::UpdateGuardians {};
 
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
         response.attributes,
         [("action", "Updated wallet guardians: Non-Multisig")]
     );
+}
 
-    let new_wallet_info = query_info(deps.as_ref()).unwrap();
-    assert!(!new_wallet_info.guardians.contains(&Addr::unchecked(GUARD2)));
-    assert!(new_wallet_info.guardians.contains(&Addr::unchecked(GUARD3)));
+#[test]
+fn user_can_create_update_guardians_request() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    let info = mock_info(user_addr.as_str(), &[]);
+    let env = mock_env();
+
+    let request = GuardiansUpdateMsg {
+        guardians: Guardians {
+            addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
+            guardians_multisig: None,
+        },
+        new_multisig_code_id: None,
+    };
+
+    let msg = ExecuteMsg::RequestUpdateGuardians {
+        request: Some(request.clone()),
+    };
+
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(
+        response.attributes,
+        [("action", "Update guardians request created")]
+    );
+
+    let query_request = query_guardian_update_request(deps.as_ref())
+        .unwrap()
+        .unwrap();
+
+    assert_eq!(query_request.guardians, request.guardians)
 }
 
 #[test]
