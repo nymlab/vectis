@@ -337,25 +337,27 @@ pub fn execute_update_guardians(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    match GUARDIANS_UPDATE_REQUEST.may_load(deps.storage)? {
-        Some(Some(request)) => {
-            request.ensure_delay_passed(&env.block)?;
+    ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
+
+    // make sure guardians have not frozen the contract
+    if is_frozen(deps.as_ref())? {
+        return Err(ContractError::Frozen {});
+    }
+
+    match GUARDIANS_UPDATE_REQUEST
+        .may_load(deps.storage)?
+        .ok_or(ContractError::GuardianRequestNotFound {})?
+    {
+        Some(request) => {
+            if !request.activate_at.is_expired(&env.block) {
+                return Err(ContractError::GuardianRequestNotExecutable {});
+            }
+
             let GuardiansUpdateRequest {
                 guardians,
                 new_multisig_code_id,
                 ..
             } = request;
-            // ensure this is either a direct message from the user
-            // or
-            // ensure this is relayed by a relayer from this proxy
-            ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
-
-            guardians.verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
-
-            // make sure guardians have not frozen the contract
-            if is_frozen(deps.as_ref())? {
-                return Err(ContractError::Frozen {});
-            }
 
             // Replace the entire locally stored guardians list
             let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS)?;
@@ -365,8 +367,6 @@ pub fn execute_update_guardians(
             for guardian in &guardians.addresses {
                 GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
             }
-
-            GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?;
 
             if let Some(multisig_settings) = guardians.guardians_multisig {
                 let instantiation_code_id = if let Some(id) = new_multisig_code_id {
@@ -402,16 +402,19 @@ pub fn execute_update_guardians(
                 };
                 let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
 
+                GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?;
+
                 Ok(Response::new()
                     .add_submessage(msg)
                     .add_attribute("action", "Updated wallet guardians: Multisig"))
             } else {
                 MULTISIG_ADDRESS.save(deps.storage, &None)?;
+                GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?;
                 Ok(Response::new()
                     .add_attribute("action", "Updated wallet guardians: Non-Multisig"))
             }
         }
-        _ => Err(ContractError::GuardianRequestNotFound {}),
+        None => Err(ContractError::GuardianRequestNotFound {})?,
     }
 }
 
@@ -421,21 +424,27 @@ pub fn execute_request_update_guardians(
     env: Env,
     request: Option<GuardiansUpdateMsg>,
 ) -> Result<Response, ContractError> {
+    ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
+
+    if is_frozen(deps.as_ref())? {
+        return Err(ContractError::Frozen {});
+    }
+
     match request {
         Some(r) => {
-            ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
             r.guardians
                 .verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
 
-            let guardians_request = GuardiansUpdateRequest {
-                guardians: r.guardians,
-                new_multisig_code_id: r.new_multisig_code_id,
-                created_at: env.block.time.seconds(),
-            };
-
-            GUARDIANS_UPDATE_REQUEST.save(deps.storage, &Some(guardians_request))?;
+            GUARDIANS_UPDATE_REQUEST.save(
+                deps.storage,
+                &Some(GuardiansUpdateRequest::new(
+                    r.guardians,
+                    r.new_multisig_code_id,
+                    &env.block,
+                )),
+            )?;
         }
-        _ => GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?,
+        None => GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?,
     }
 
     Ok(Response::new().add_attribute("action", "Update guardians request created"))
@@ -495,7 +504,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Info {} => to_binary(&query_info(deps)?),
         QueryMsg::CanExecuteRelay { sender } => to_binary(&query_can_execute_relay(deps, sender)?),
-        QueryMsg::GuardiansUpdateRequest { } => to_binary(&query_guardian_update_request(deps)?),
+        QueryMsg::GuardiansUpdateRequest {} => to_binary(&query_guardian_update_request(deps)?),
     }
 }
 
@@ -535,7 +544,7 @@ pub fn query_can_execute_relay(deps: Deps, sender: String) -> StdResult<CanExecu
 pub fn query_guardian_update_request(deps: Deps) -> StdResult<Option<GuardiansUpdateRequest>> {
     match GUARDIANS_UPDATE_REQUEST.may_load(deps.storage)? {
         Some(r) => Ok(r),
-        None => Ok(None)
+        None => Ok(None),
     }
 }
 

@@ -42,9 +42,7 @@ where
     RemoveRelayer { relayer_address: Addr },
     /// It create a request for update guardians and it has a delay of one day after that
     /// is possible to update the guardians using UpdateGuardiansMsg
-    RequestUpdateGuardians {
-        request: Option<GuardiansUpdateMsg>
-    },
+    RequestUpdateGuardians { request: Option<GuardiansUpdateMsg> },
     /// Once the request passed the waiting time, it is possible to update the guardians.
     UpdateGuardians {},
     /// Updates label by the user
@@ -61,5 +59,5 @@ pub enum QueryMsg {
     /// before any further state changes, should also succeed.
     CanExecuteRelay { sender: String },
     /// Return the current guardian update request.
-    GuardiansUpdateRequest {}
+    GuardiansUpdateRequest {},
 }
