@@ -414,7 +414,7 @@ pub fn execute_update_guardians(
                     .add_attribute("action", "Updated wallet guardians: Non-Multisig"))
             }
         }
-        None => Err(ContractError::GuardianRequestNotFound {})?,
+        None => Err(ContractError::GuardianRequestNotFound {}),
     }
 }
 

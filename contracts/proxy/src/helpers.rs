@@ -112,7 +112,7 @@ pub fn ensure_is_relayer_or_user(
     sender: &Addr,
 ) -> Result<(), ContractError> {
     let is_user = ensure_is_user(deps, sender.as_ref());
-    let is_contract = ensure_is_contract_self(&env, sender);
+    let is_contract = ensure_is_contract_self(env, sender);
     if is_user.is_err() && is_contract.is_err() {
         is_user?;
         is_contract?;
