@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Result};
 use cosmwasm_std::testing::mock_dependencies;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Coin, CosmosMsg, Empty, QueryRequest, StdError, Uint128,
-    WasmQuery,
+    coin, to_binary, Addr, Binary, BlockInfo, Coin, CosmosMsg, Empty, QueryRequest, StdError,
+    Uint128, WasmQuery,
 };
 use cw20_stake::contract::{
     execute as stake_execute, instantiate as stake_instantiate, query as stake_query,
@@ -37,11 +37,12 @@ use vectis_proxy::{
         execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
         query as proxy_query, reply as proxy_reply,
     },
+    msg::ExecuteMsg as ProxyExecuteMsg,
     msg::QueryMsg as ProxyQueryMsg,
 };
 use vectis_wallet::{
-    pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, MultiSig, RelayTransaction,
-    ThresholdAbsoluteCount, WalletQueryPrefix,
+    pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
+    GuardiansUpdateRequest, MultiSig, RelayTransaction, ThresholdAbsoluteCount, WalletQueryPrefix,
 };
 
 pub const WALLET_FEE: u128 = 10u128;
@@ -350,6 +351,57 @@ impl Suite {
             .map_err(|err| anyhow!(err))
     }
 
+    pub fn create_guardians_request_and_update_guardians(
+        &mut self,
+        sender: &Addr,
+        wallet_address: &Addr,
+        guardians: Guardians,
+        new_multisig_code_id: Option<u64>,
+    ) -> Result<AppResponse> {
+        let request = GuardiansUpdateMsg {
+            guardians,
+            new_multisig_code_id,
+        };
+
+        let request_update_guardians_message: ProxyExecuteMsg =
+            ProxyExecuteMsg::RequestUpdateGuardians {
+                request: Some(request),
+            };
+
+        self.app
+            .execute_contract(
+                sender.clone(),
+                wallet_address.clone(),
+                &request_update_guardians_message,
+                &[],
+            )
+            .unwrap();
+
+        let block = self.app.block_info();
+
+        let mock_block = BlockInfo {
+            height: block.height,
+            chain_id: block.chain_id,
+            time: block.time.plus_seconds(90000),
+        };
+
+        self.app.set_block(mock_block);
+
+        let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {};
+
+        let r = self
+            .app
+            .execute_contract(
+                sender.clone(),
+                wallet_address.clone(),
+                &update_guardians_message,
+                &[],
+            )
+            .unwrap();
+
+        Ok(r)
+    }
+
     pub fn query_all_wallet_addresses(
         &self,
         contract_addr: &Addr,
@@ -397,6 +449,16 @@ impl Suite {
         self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&ProxyQueryMsg::Info {}).unwrap(),
+        }))
+    }
+
+    pub fn query_guardians_request(
+        &self,
+        contract_addr: &Addr,
+    ) -> Result<Option<GuardiansUpdateRequest>, StdError> {
+        self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&ProxyQueryMsg::GuardiansUpdateRequest {}).unwrap(),
         }))
     }
 

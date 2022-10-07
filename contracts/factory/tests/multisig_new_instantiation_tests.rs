@@ -3,7 +3,7 @@ use cw3::VoterDetail;
 use cw_multi_test::Executor;
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_proxy::ContractError;
-use vectis_wallet::{Guardians, MultiSig, WalletInfo};
+use vectis_wallet::{Guardians, GuardiansUpdateMsg, MultiSig, WalletInfo};
 
 pub mod common;
 use common::*;
@@ -47,24 +47,15 @@ fn user_can_update_proxy_multisig_with_direct_message() {
     let user = w.user_addr;
     let old_multisig_addr = w.multisig_address;
 
-    // User update their proxy related multisig contract to the new guardian set
-    // This reinstantiates a new contract and changes the stored multisig contract addr
-    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {
-        guardians: Guardians {
-            addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
-            guardians_multisig: Some(multisig),
-        },
-        new_multisig_code_id: None,
+    let new_guardians = Guardians {
+        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        guardians_multisig: Some(multisig),
     };
 
+    // User update their proxy related multisig contract to the new guardian set
+    // This reinstantiates a new contract and changes the stored multisig contract addr
     suite
-        .app
-        .execute_contract(
-            user.clone(),
-            wallet_address.clone(),
-            &update_guardians_message,
-            &[],
-        )
+        .create_guardians_request_and_update_guardians(&user, &wallet_address, new_guardians, None)
         .unwrap();
 
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -120,25 +111,21 @@ fn user_without_multisig_can_instantiate_with_direct_message() {
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert_eq!(w.multisig_address, None);
 
-    // User update their proxy guardian to multisig with factory stored code id
-    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {
-        guardians: Guardians {
-            addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
-            guardians_multisig: Some(MultiSig {
-                threshold_absolute_count: MULTISIG_THRESHOLD,
-                multisig_initial_funds: vec![],
-            }),
-        },
-        new_multisig_code_id: None,
+    let guardians = Guardians {
+        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        guardians_multisig: Some(MultiSig {
+            threshold_absolute_count: MULTISIG_THRESHOLD,
+            multisig_initial_funds: vec![],
+        }),
     };
 
+    // User update their proxy guardian to multisig with factory stored code id
     suite
-        .app
-        .execute_contract(
-            w.user_addr,
-            wallet_address.clone(),
-            &update_guardians_message,
-            &[],
+        .create_guardians_request_and_update_guardians(
+            &Addr::unchecked(USER_ADDR),
+            &wallet_address,
+            guardians,
+            None,
         )
         .unwrap();
 
@@ -185,21 +172,17 @@ fn user_can_remove_multisig_for_guardians() {
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert!(w.multisig_address.is_some());
 
-    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {
-        guardians: Guardians {
-            addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
-            guardians_multisig: None,
-        },
-        new_multisig_code_id: None,
+    let guardians = Guardians {
+        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        guardians_multisig: None,
     };
 
     suite
-        .app
-        .execute_contract(
-            Addr::unchecked(USER_ADDR),
-            wallet_address.clone(),
-            &update_guardians_message,
-            &[],
+        .create_guardians_request_and_update_guardians(
+            &Addr::unchecked(USER_ADDR),
+            &wallet_address,
+            guardians,
+            None,
         )
         .unwrap();
 
@@ -251,12 +234,18 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
     let r = suite.update_proxy_multisig_code_id(new_multisig_code_id, factory.clone());
     assert!(r.is_ok());
 
-    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {
-        guardians: Guardians {
-            addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
-            guardians_multisig: Some(multisig),
-        },
+    let new_guardians = Guardians {
+        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        guardians_multisig: Some(multisig),
+    };
+
+    let request = GuardiansUpdateMsg {
+        guardians: new_guardians,
         new_multisig_code_id: Some(new_multisig_code_id),
+    };
+
+    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::RequestUpdateGuardians {
+        request: Some(request),
     };
 
     let relay_transaction = suite.create_relay_transaction(
@@ -279,9 +268,14 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
             .execute_contract(relayer, wallet_address.clone(), &relay_msg, &[]);
     assert!(execute_msg_resp.is_ok());
 
-    let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    assert_eq!(new_w.multisig_code_id, new_multisig_code_id);
-    assert_ne!(new_multisig_code_id, old_multisig_code_id);
+    let query_request = suite
+        .query_guardians_request(&wallet_address)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        query_request.new_multisig_code_id.unwrap(),
+        new_multisig_code_id
+    );
 }
 
 #[test]
@@ -314,13 +308,7 @@ fn non_user_update_proxy_multisig_with_direct_message_fails() {
         .pop()
         .unwrap();
 
-    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {
-        guardians: Guardians {
-            addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
-            guardians_multisig: None,
-        },
-        new_multisig_code_id: None,
-    };
+    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {};
 
     let execute_msg_err: ContractError = suite
         .app
@@ -366,13 +354,7 @@ fn relayer_update_proxy_multisig_with_non_user_fails() {
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();
 
-    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {
-        guardians: Guardians {
-            addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
-            guardians_multisig: None,
-        },
-        new_multisig_code_id: None,
-    };
+    let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {};
 
     let relay_transaction = suite.create_relay_transaction(
         NON_USER_PRIV,
