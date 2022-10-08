@@ -8,7 +8,7 @@ use crate::contract::{
 };
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::GUARDIANS_UPDATE_REQUEST;
+use crate::state::PENDING_GUARDIAN_ROTATION;
 
 use secp256k1::bitcoin_hashes::sha256;
 use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
@@ -307,8 +307,8 @@ fn user_cannot_execute_not_active_request() {
     };
 
     let request = GuardiansUpdateRequest::new(guardians, None, &env.block);
-    GUARDIANS_UPDATE_REQUEST
-        .save(deps.as_mut().storage, &Some(request))
+    PENDING_GUARDIAN_ROTATION
+        .save(deps.as_mut().storage, &request)
         .unwrap();
 
     let msg = ExecuteMsg::UpdateGuardians {};
@@ -351,8 +351,8 @@ fn user_can_execute_active_guardian_request() {
     };
 
     let request = GuardiansUpdateRequest::new(guardians, None, &mock_block);
-    GUARDIANS_UPDATE_REQUEST
-        .save(deps.as_mut().storage, &Some(request))
+    PENDING_GUARDIAN_ROTATION
+        .save(deps.as_mut().storage, &request)
         .unwrap();
 
     let msg = ExecuteMsg::UpdateGuardians {};
