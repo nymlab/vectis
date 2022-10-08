@@ -53,8 +53,8 @@ pub const CODE_ID: Item<u64> = Item::new("code_id");
 pub const MULTISIG_CODE_ID: Item<u64> = Item::new("multisig_code_id");
 pub const USER: Item<User> = Item::new("user");
 pub const GUARDIANS: Map<&[u8], ()> = Map::new("guardians");
-pub const GUARDIANS_UPDATE_REQUEST: Item<Option<GuardiansUpdateRequest>> =
-    Item::new("guardians_update_request");
+pub const PENDING_GUARDIAN_ROTATION: Item<GuardiansUpdateRequest> =
+    Item::new("pending_guardian_rotation");
 pub const RELAYERS: Map<&[u8], ()> = Map::new("relayers");
 pub const LABEL: Item<String> = Item::new("label");
 // An address of fixed multisig contract, used for guardians multisig support.

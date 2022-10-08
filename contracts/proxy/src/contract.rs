@@ -22,8 +22,8 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, GUARDIANS_UPDATE_REQUEST, LABEL,
-    MULTISIG_ADDRESS, MULTISIG_CODE_ID, RELAYERS, USER,
+    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
+    MULTISIG_CODE_ID, PENDING_GUARDIAN_ROTATION, RELAYERS, USER,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
@@ -344,10 +344,7 @@ pub fn execute_update_guardians(
         return Err(ContractError::Frozen {});
     }
 
-    match GUARDIANS_UPDATE_REQUEST
-        .may_load(deps.storage)?
-        .ok_or(ContractError::GuardianRequestNotFound {})?
-    {
+    match PENDING_GUARDIAN_ROTATION.may_load(deps.storage)? {
         Some(request) => {
             if !request.activate_at.is_expired(&env.block) {
                 return Err(ContractError::GuardianRequestNotExecutable {});
@@ -402,14 +399,14 @@ pub fn execute_update_guardians(
                 };
                 let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
 
-                GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?;
+                PENDING_GUARDIAN_ROTATION.remove(deps.storage);
 
                 Ok(Response::new()
                     .add_submessage(msg)
                     .add_attribute("action", "Updated wallet guardians: Multisig"))
             } else {
                 MULTISIG_ADDRESS.save(deps.storage, &None)?;
-                GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?;
+                PENDING_GUARDIAN_ROTATION.remove(deps.storage);
                 Ok(Response::new()
                     .add_attribute("action", "Updated wallet guardians: Non-Multisig"))
             }
@@ -435,16 +432,12 @@ pub fn execute_request_update_guardians(
             r.guardians
                 .verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
 
-            GUARDIANS_UPDATE_REQUEST.save(
+            PENDING_GUARDIAN_ROTATION.save(
                 deps.storage,
-                &Some(GuardiansUpdateRequest::new(
-                    r.guardians,
-                    r.new_multisig_code_id,
-                    &env.block,
-                )),
+                &GuardiansUpdateRequest::new(r.guardians, r.new_multisig_code_id, &env.block),
             )?;
         }
-        None => GUARDIANS_UPDATE_REQUEST.save(deps.storage, &None)?,
+        None => PENDING_GUARDIAN_ROTATION.remove(deps.storage),
     }
 
     Ok(Response::new().add_attribute("action", "Update guardians request created"))
@@ -542,10 +535,7 @@ pub fn query_can_execute_relay(deps: Deps, sender: String) -> StdResult<CanExecu
 }
 
 pub fn query_guardian_update_request(deps: Deps) -> StdResult<Option<GuardiansUpdateRequest>> {
-    match GUARDIANS_UPDATE_REQUEST.may_load(deps.storage)? {
-        Some(r) => Ok(r),
-        None => Ok(None),
-    }
+    PENDING_GUARDIAN_ROTATION.may_load(deps.storage)
 }
 
 #[cfg(feature = "migration")]
