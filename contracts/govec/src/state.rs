@@ -23,7 +23,7 @@ impl TokenInfo {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
 pub struct MinterData {
-    pub minter: String,
+    pub minters: Vec<String>,
     pub cap: Option<Uint128>,
 }
 

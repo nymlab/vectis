@@ -205,7 +205,7 @@ impl DaoChainSuite {
 
         let execute = GovecExecuteMsg::UpdateMintData {
             new_mint: Some(MinterData {
-                minter: factory_addr.to_string(),
+                minters: vec![factory_addr.to_string()],
                 cap: Some(Uint128::new(MINTER_CAP)),
             }),
         };
