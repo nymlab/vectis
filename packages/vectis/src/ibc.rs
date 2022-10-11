@@ -1,9 +1,6 @@
 use crate::error::IbcError;
 pub use crate::{APP_ORDER, IBC_APP_VERSION};
-use cosmwasm_std::{
-    from_slice, to_binary, Binary, Coin, CosmosMsg, IbcOrder, IbcPacketAckMsg, StdResult, WasmMsg,
-    WasmQuery,
-};
+use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder};
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
