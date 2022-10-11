@@ -22,6 +22,7 @@ import {
     InstantiateMsg,
     Cw20Coin,
     MarketingInfoResponse,
+    JoinedResponse,
     MinterResponse,
     QueryMsg,
     StakingResponse,
@@ -30,6 +31,7 @@ import {
 export interface GovecReadOnlyInterface {
     contractAddress: string;
     balance: ({ address }: { address: string }) => Promise<BalanceResponse>;
+    joined: ({ address }: { address: string }) => Promise<JoinedResponse>;
     tokenInfo: () => Promise<TokenInfoResponse>;
     minter: () => Promise<MinterResponse>;
     staking: () => Promise<StakingResponse>;
@@ -46,6 +48,7 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.balance = this.balance.bind(this);
+        this.joined = this.joined.bind(this);
         this.tokenInfo = this.tokenInfo.bind(this);
         this.minter = this.minter.bind(this);
         this.staking = this.staking.bind(this);
@@ -58,6 +61,13 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
     balance = async ({ address }: { address: string }): Promise<BalanceResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             balance: {
+                address,
+            },
+        });
+    };
+    joined = async ({ address }: { address: string }): Promise<JoinedResponse> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            joined: {
                 address,
             },
         });
