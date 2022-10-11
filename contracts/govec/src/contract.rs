@@ -199,7 +199,7 @@ pub fn execute_mint(
     new_wallet: String,
 ) -> Result<Response, ContractError> {
     let mut config = TOKEN_INFO.load(deps.storage)?;
-    if config.mint.is_none() || config.mint.as_ref().unwrap().minter != info.sender {
+    if config.mint.is_none() || !config.mint.as_ref().unwrap().minters.contains(&info.sender.to_string()) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -307,7 +307,7 @@ pub fn execute_update_mint_data(
     let m = new_mint.unwrap_or_default();
     let res = Response::new()
         .add_attribute("action", "update_minter_data")
-        .add_attribute("new_minter", m.minter)
+        .add_attribute("new_minters", m.minters.join(" "))
         .add_attribute("cap", m.cap.unwrap_or_default());
 
     Ok(res)
