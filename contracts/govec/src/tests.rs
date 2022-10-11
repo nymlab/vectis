@@ -21,13 +21,14 @@ fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
 const STAKE_ADDR: &str = "staker";
 const MINTER_ADDR: &str = "factory";
 const DAO_ADDR: &str = "dao";
+const MINTERS: &'static [&'static str] = &[MINTER_ADDR];
 
 // this will set up the instantiation for other tests
 fn do_instantiate(
     mut deps: DepsMut,
     addr: Vec<&str>,
     amount: Vec<Uint128>,
-    minter: &str,
+    minters: Vec<&str>,
     cap: Option<Uint128>,
     marketing: Option<MarketingInfoResponse>,
 ) -> TokenInfoResponse {
@@ -41,7 +42,7 @@ fn do_instantiate(
         total_supply = amount[i] + total_supply;
     }
     let mint = MinterData {
-        minter: minter.to_string(),
+        minters: minters.iter().map(|s| s.to_string()).collect(),
         cap,
     };
     let instantiate_msg = InstantiateMsg {
@@ -69,10 +70,7 @@ fn do_instantiate(
     );
     assert_eq!(
         query_minter(deps.as_ref()).unwrap(),
-        Some(MinterData {
-            minter: mint.minter,
-            cap: mint.cap
-        })
+        Some(mint)
     );
     assert_eq!(query_dao(deps.as_ref()).unwrap(), DAO_ADDR);
     meta
@@ -82,8 +80,12 @@ fn do_instantiate(
 fn mintable() {
     let mut deps = mock_dependencies();
     let amount = Uint128::new(11223344);
-    let minter = String::from("asmodat");
+    let minters = vec![String::from("asmodat")];
     let limit = Uint128::new(511223344);
+    let minter = Some(MinterData {
+        minters: minters.clone(),
+        cap: Some(limit),
+    });
     let instantiate_msg = InstantiateMsg {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
@@ -91,10 +93,7 @@ fn mintable() {
             address: "addr0000".into(),
             amount,
         }],
-        minter: Some(MinterData {
-            minter: minter.clone(),
-            cap: Some(limit),
-        }),
+        minter: minter.clone(),
         staking_addr: None,
         marketing: None,
     };
@@ -118,10 +117,7 @@ fn mintable() {
     );
     assert_eq!(
         query_minter(deps.as_ref()).unwrap(),
-        Some(MinterData {
-            minter,
-            cap: Some(limit),
-        }),
+        minter,
     );
 }
 
@@ -129,7 +125,7 @@ fn mintable() {
 fn cannot_mint_over_cap() {
     let mut deps = mock_dependencies();
     let amount = Uint128::new(11223344);
-    let minter = String::from("asmodat");
+    let minters = vec![String::from("asmodat")];
     let limit = Uint128::new(11223300);
     let instantiate_msg = InstantiateMsg {
         name: "Cash Token".to_string(),
@@ -139,7 +135,7 @@ fn cannot_mint_over_cap() {
             amount,
         }],
         minter: Some(MinterData {
-            minter,
+            minters,
             cap: Some(limit),
         }),
         staking_addr: None,
@@ -166,7 +162,7 @@ fn query_joined_works() {
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        DAO_ADDR,
+        vec![DAO_ADDR],
         Some(limit),
         None,
     );
@@ -205,7 +201,7 @@ fn dao_can_update_staking_addr() {
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        DAO_ADDR,
+        vec![DAO_ADDR],
         Some(limit),
         None,
     );
@@ -243,7 +239,7 @@ fn dao_can_update_dao_addr_and_transfer_tokens() {
         deps.as_mut(),
         vec![DAO_ADDR],
         vec![dao_balance],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         Some(limit),
         None,
     );
@@ -294,7 +290,7 @@ fn dao_can_update_mint_data() {
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         Some(limit),
         None,
     );
@@ -308,7 +304,7 @@ fn dao_can_update_mint_data() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     let new_mint = MinterData {
-        minter: "new_minter".to_string(),
+        minters: vec!["new_minter".to_string()],
         cap: Some(Uint128::new(200)),
     };
     // dao can update mint data
@@ -320,8 +316,8 @@ fn dao_can_update_mint_data() {
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(
-        query_minter(deps.as_ref()).unwrap().unwrap().minter,
-        new_mint.minter
+        query_minter(deps.as_ref()).unwrap().unwrap().minters,
+        new_mint.minters
     );
     assert_eq!(
         query_minter(deps.as_ref()).unwrap().unwrap().cap,
@@ -335,13 +331,12 @@ fn can_mint_by_minter() {
 
     let genesis = String::from("genesis");
     let amount = Uint128::new(0);
-    let minter = String::from("asmodat");
     let limit = Uint128::new(1);
     do_instantiate(
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        &minter,
+        MINTERS.to_vec(),
         Some(limit),
         None,
     );
@@ -352,7 +347,7 @@ fn can_mint_by_minter() {
         new_wallet: winner.clone(),
     };
 
-    let info = mock_info(minter.as_ref(), &[]);
+    let info = mock_info(MINTER_ADDR, &[]);
     let env = mock_env();
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(0, res.messages.len());
@@ -361,7 +356,7 @@ fn can_mint_by_minter() {
 
     // but if it exceeds cap, it fails cap is enforced
     let msg = ExecuteMsg::Mint { new_wallet: winner };
-    let info = mock_info(minter.as_ref(), &[]);
+    let info = mock_info(MINTER_ADDR, &[]);
     let env = mock_env();
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::CannotExceedCap {});
@@ -374,7 +369,7 @@ fn others_cannot_mint() {
         deps.as_mut(),
         vec!["genesis"],
         vec![Uint128::new(1234)],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         None,
     );
@@ -440,7 +435,7 @@ fn queries_work() {
         deps.as_mut(),
         vec![addr1.as_str()],
         vec![amount1],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         None,
     );
@@ -500,7 +495,7 @@ fn transfer() {
         deps.as_mut(),
         vec![addr1.as_str(), addr2.as_str()],
         vec![amount1, Uint128::zero()],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         None,
     );
@@ -590,7 +585,7 @@ fn burn() {
         deps.as_mut(),
         vec![addr1.as_str(), addr2.as_str(), addr3.as_str()],
         vec![right_amount, too_little, too_much],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         None,
     );
@@ -671,7 +666,7 @@ fn send() {
         deps.as_mut(),
         vec![addr1.as_str(), addr2.as_str()],
         vec![amount1, Uint128::new(0)],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         None,
     );
@@ -782,7 +777,7 @@ fn query_all_accounts_works() {
             Uint128::new(1),
             Uint128::new(1),
         ],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         None,
     );
@@ -815,13 +810,13 @@ fn query_minter_works() {
         deps.as_mut(),
         vec![acct1.as_str()],
         vec![Uint128::new(1)],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         None,
     );
 
     let minter = query_minter(deps.as_ref()).unwrap();
-    assert_eq!(minter.unwrap().minter, MINTER_ADDR);
+    assert_eq!(minter.unwrap().minters, MINTERS);
 }
 
 #[test]
@@ -842,7 +837,7 @@ fn query_marketing_info_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         Some(marketing_msg),
     );
@@ -856,7 +851,7 @@ fn query_marketing_info_works() {
 fn query_download_logo_works() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
-    do_instantiate(deps.as_mut(), vec![], vec![], MINTER_ADDR, None, None);
+    do_instantiate(deps.as_mut(), vec![], vec![], MINTERS.to_vec(), None, None);
 
     let logo = query_download_logo(deps.as_ref()).expect_err("NotFound");
 
@@ -883,7 +878,7 @@ fn execute_update_marketing_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         Some(marketing_msg),
     );
@@ -933,7 +928,7 @@ fn execute_update_logo_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        MINTER_ADDR,
+        MINTERS.to_vec(),
         None,
         Some(marketing_msg),
     );
