@@ -344,74 +344,72 @@ pub fn execute_update_guardians(
         return Err(ContractError::Frozen {});
     }
 
-    match PENDING_GUARDIAN_ROTATION.may_load(deps.storage)? {
-        Some(request) => {
-            if !request.activate_at.is_expired(&env.block) {
-                return Err(ContractError::GuardianRequestNotExecutable {});
-            }
+    let request = PENDING_GUARDIAN_ROTATION
+        .may_load(deps.storage)?
+        .ok_or_else(|| ContractError::GuardianRequestNotFound {})?;
 
-            let GuardiansUpdateRequest {
-                guardians,
-                new_multisig_code_id,
-                ..
-            } = request;
+    if !request.activate_at.is_expired(&env.block) {
+        return Err(ContractError::GuardianRequestNotExecutable {});
+    }
 
-            // Replace the entire locally stored guardians list
-            let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS)?;
-            for guardian in guardians_to_remove {
-                GUARDIANS.remove(deps.storage, &guardian);
-            }
-            for guardian in &guardians.addresses {
-                GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
-            }
+    let GuardiansUpdateRequest {
+        guardians,
+        new_multisig_code_id,
+        ..
+    } = request;
 
-            if let Some(multisig_settings) = guardians.guardians_multisig {
-                let instantiation_code_id = if let Some(id) = new_multisig_code_id {
-                    id
-                } else {
-                    match MULTISIG_CODE_ID.may_load(deps.storage)? {
-                        Some(id) => id,
-                        None => deps.querier.query_wasm_smart(
-                            deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
-                            &{
-                                WalletFactoryQueryMsg::CodeId {
-                                    ty: CodeIdType::Multisig,
-                                }
-                            },
-                        )?,
-                    }
-                };
-                MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;
-                let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
-                    voters: addresses_to_voters(&guardians.addresses),
-                    threshold: Threshold::AbsoluteCount {
-                        weight: multisig_settings.threshold_absolute_count,
+    // Replace the entire locally stored guardians list
+    let guardians_to_remove = load_canonical_addresses(&deps.as_ref(), GUARDIANS)?;
+    for guardian in guardians_to_remove {
+        GUARDIANS.remove(deps.storage, &guardian);
+    }
+    for guardian in &guardians.addresses {
+        GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
+    }
+
+    if let Some(multisig_settings) = guardians.guardians_multisig {
+        let instantiation_code_id = if let Some(id) = new_multisig_code_id {
+            id
+        } else {
+            match MULTISIG_CODE_ID.may_load(deps.storage)? {
+                Some(id) => id,
+                None => deps.querier.query_wasm_smart(
+                    deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
+                    &{
+                        WalletFactoryQueryMsg::CodeId {
+                            ty: CodeIdType::Multisig,
+                        }
                     },
-                    max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
-                };
-
-                let instantiate_msg = WasmMsg::Instantiate {
-                    admin: Some(env.contract.address.to_string()),
-                    code_id: instantiation_code_id,
-                    msg: to_binary(&multisig_instantiate_msg)?,
-                    funds: multisig_settings.multisig_initial_funds,
-                    label: "Wallet-Multisig".into(),
-                };
-                let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
-
-                PENDING_GUARDIAN_ROTATION.remove(deps.storage);
-
-                Ok(Response::new()
-                    .add_submessage(msg)
-                    .add_attribute("action", "Updated wallet guardians: Multisig"))
-            } else {
-                MULTISIG_ADDRESS.save(deps.storage, &None)?;
-                PENDING_GUARDIAN_ROTATION.remove(deps.storage);
-                Ok(Response::new()
-                    .add_attribute("action", "Updated wallet guardians: Non-Multisig"))
+                )?,
             }
-        }
-        None => Err(ContractError::GuardianRequestNotFound {}),
+        };
+        MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;
+        let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
+            voters: addresses_to_voters(&guardians.addresses),
+            threshold: Threshold::AbsoluteCount {
+                weight: multisig_settings.threshold_absolute_count,
+            },
+            max_voting_period: MAX_MULTISIG_VOTING_PERIOD,
+        };
+
+        let instantiate_msg = WasmMsg::Instantiate {
+            admin: Some(env.contract.address.to_string()),
+            code_id: instantiation_code_id,
+            msg: to_binary(&multisig_instantiate_msg)?,
+            funds: multisig_settings.multisig_initial_funds,
+            label: "Wallet-Multisig".into(),
+        };
+        let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
+
+        PENDING_GUARDIAN_ROTATION.remove(deps.storage);
+
+        Ok(Response::new()
+            .add_submessage(msg)
+            .add_attribute("action", "Updated wallet guardians: Multisig"))
+    } else {
+        MULTISIG_ADDRESS.save(deps.storage, &None)?;
+        PENDING_GUARDIAN_ROTATION.remove(deps.storage);
+        Ok(Response::new().add_attribute("action", "Updated wallet guardians: Non-Multisig"))
     }
 }
 
@@ -436,11 +434,14 @@ pub fn execute_request_update_guardians(
                 deps.storage,
                 &GuardiansUpdateRequest::new(r.guardians, r.new_multisig_code_id, &env.block),
             )?;
-        }
-        None => PENDING_GUARDIAN_ROTATION.remove(deps.storage),
-    }
 
-    Ok(Response::new().add_attribute("action", "Update guardians request created"))
+            Ok(Response::new().add_attribute("action", "Request to update guardians created"))
+        }
+        None => {
+            PENDING_GUARDIAN_ROTATION.remove(deps.storage);
+            Ok(Response::new().add_attribute("action", "Removed request to update guardians"))
+        }
+    }
 }
 
 /// Update label by user

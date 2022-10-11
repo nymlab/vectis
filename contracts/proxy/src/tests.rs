@@ -387,7 +387,7 @@ fn user_can_create_update_guardians_request() {
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
         response.attributes,
-        [("action", "Update guardians request created")]
+        [("action", "Request to update guardians created")]
     );
 
     let query_request = query_guardian_update_request(deps.as_ref())
@@ -395,6 +395,27 @@ fn user_can_create_update_guardians_request() {
         .unwrap();
 
     assert_eq!(query_request.guardians, request.guardians)
+}
+
+#[test]
+fn user_can_remove_update_guardians_request() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    let user_addr = do_instantiate(deps.as_mut());
+
+    let info = mock_info(user_addr.as_str(), &[]);
+    let env = mock_env();
+
+    let msg = ExecuteMsg::RequestUpdateGuardians { request: None };
+
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(
+        response.attributes,
+        [("action", "Removed request to update guardians")]
+    );
+
+    let query_request = query_guardian_update_request(deps.as_ref()).unwrap();
+
+    assert!(query_request.is_none())
 }
 
 #[test]
