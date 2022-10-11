@@ -30,18 +30,26 @@ import {
 } from "@dao-dao/types/contracts/cw-proposal-single";
 
 // Deployment
-// The deployment of the DAO has the following steps:
+// The deployment of the DAO on the host chain has the following steps:
 //
-// 1. Upload all required contracts (in ./upload.ts)
+// 1. Upload all required contracts (in ./upload.ts) to host chain + remote chains
+// 		- Host: Factory, Govec, Proxy, Ibc-host
+// 		- Remote: Factory-remote, Proxy-remote, Ibc-remote
 // 2. Instantiate Govec contract (with admin having initial balance for proposing for DAO to deploy Factory)
 // 3. Instantiate dao-core contract (which will instantiate proposal(s) and vote contracts)
 //    note: vote contracts also instantiates a new staking contract
-// 4. Admin propose and execute on DAO to deploy factory contract
+// 4. Admin propose and execute on DAO to deploy factory and ibc-host contracts
 // 5. Admin updates Govec staking address to the staking contract in step 3.
-// 5. Admin updates Govec minter address to the factory contract addr in step 4.
+// 5. Admin updates Govec minter address to the factory contract addr and ibc-host addr in step 4.
 // 6. Admin updates Govec contract DAO_ADDR as DAO
 // 7. Admin updates Govec contract admin as DAO (for future upgrades)
-// 8. Admin unstakes and burn its govec
+//
+//    (Somehow DAO gets ICA on other chains?)
+//
+// 8. Admin propose and execute on DAO to deploy factory-remote and Ibc-remote contracts with DAO ICA
+// 9. Create channels between Ibc-host<> Ibc-remote_1; Ibc-host <> Ibc-remote_2; with known connection ids?
+// 10. Admin propose and execute to add <connection-id, portid> to ibc-host for each channel in step 9
+// 11. Admin unstakes and burn its govec (exits system)
 //
 export async function deploy(): Promise<VectisDaoContractsAddrs> {
     const { factoryRes, proxyRes, multisigRes, stakingRes, voteRes, govecRes, daoRes, proposalSingleRes } =

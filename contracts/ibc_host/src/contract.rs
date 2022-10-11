@@ -136,21 +136,33 @@ pub fn ibc_packet_receive(
     let caller_channel_id = packet.src.channel_id;
     let caller_port_id = packet.src.port_id;
 
-    // Check to make sure the caller contract is an approved controller
+    is_authorised_controller(deps.as_ref(), caller_channel_id, caller_port_id)?;
+    match from_slice(&packet.data)? {
+        PacketMsg::Dispatch {
+            msgs,
+            sender,
+            callback_id,
+        } => receive_dispatch(deps, msgs, sender, callback_id),
+        _ => Err(ContractError::InvalidDispatch {}),
+    }
+}
+
+/// Makes sure that the incoming connection is from a smart contract that the DAO has approved
+fn is_authorised_controller(
+    deps: Deps,
+    caller_channel_id: String,
+    caller_port_id: String,
+) -> Result<(), ContractError> {
     let connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
         channel_id: caller_channel_id,
         port_id: Some(caller_port_id.clone()),
     }))?;
 
-    if let Some(_) = IBC_CONTROLLERS.may_load(deps.storage, (connection_id, caller_port_id))? {
-        let msg: PacketMsg = from_slice(&packet.data)?;
-        match msg {
-            PacketMsg::Dispatch {
-                msgs,
-                sender,
-                callback_id,
-            } => receive_dispatch(deps, msgs, sender, callback_id),
-        }
+    if IBC_CONTROLLERS
+        .may_load(deps.storage, (connection_id, caller_port_id))?
+        .is_some()
+    {
+        Ok(())
     } else {
         Err(ContractError::InvalidController {})
     }
