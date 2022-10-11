@@ -3,7 +3,7 @@
   "title": "MinterData",
   "type": "object",
   "required": [
-    "minter"
+    "minters"
   ],
   "properties": {
     "cap": {
@@ -16,8 +16,11 @@
         }
       ]
     },
-    "minter": {
-      "type": "string"
+    "minters": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "definitions": {

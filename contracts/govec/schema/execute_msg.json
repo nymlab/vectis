@@ -91,7 +91,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Updates the staking contract address.Authorized by the DAO",
+      "description": "Updates the staking contract address.Authorized by the DAO permission: executed by dao only",
       "type": "object",
       "required": [
         "update_staking_addr"
@@ -112,7 +112,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Updates the minter contract address.Authorized by the DAO",
+      "description": "Updates the minter contract address.Authorized by the DAO permission: executed by dao only",
       "type": "object",
       "required": [
         "update_mint_data"
@@ -137,7 +137,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Updates the DAO address for this governance token",
+      "description": "Updates the DAO address for this governance token All balance from old DAO will go to the new DAO permission: executed by dao only",
       "type": "object",
       "required": [
         "update_dao_addr"
@@ -158,7 +158,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Only with the \"marketing\" extension. If authorized, updates marketing metadata. Setting None/null for any of these will leave it unchanged. Setting Some(\"\") will clear this field on the contract storage",
+      "description": "If authorized, updates marketing metadata. Setting None/null for any of these will leave it unchanged. Setting Some(\"\") will clear this field on the contract storage permission: executed by dao only",
       "type": "object",
       "required": [
         "update_marketing"
@@ -277,7 +277,7 @@
     "MinterData": {
       "type": "object",
       "required": [
-        "minter"
+        "minters"
       ],
       "properties": {
         "cap": {
@@ -290,8 +290,11 @@
             }
           ]
         },
-        "minter": {
-          "type": "string"
+        "minters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
