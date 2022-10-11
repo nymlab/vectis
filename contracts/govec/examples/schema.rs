@@ -25,6 +25,7 @@ fn main() {
     export_schema(&schema_for!(MinterData), &out_dir);
     export_schema(&schema_for!(Binary), &out_dir);
     export_schema_with_title(&schema_for!(MinterData), &out_dir, "MinterResponse");
-    export_schema_with_title(&schema_for!(Addr), &out_dir, "StakingResponse");
+    export_schema_with_title(&schema_for!(BalanceResponse), &out_dir, "StakingResponse");
+    export_schema_with_title(&schema_for!(Addr), &out_dir, "JoinedResponse");
     export_schema_with_title(&schema_for!(Addr), &out_dir, "DaoResponse");
 }
