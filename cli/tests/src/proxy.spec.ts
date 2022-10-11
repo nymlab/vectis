@@ -78,13 +78,13 @@ describe("Proxy Suite: ", () => {
             initial_balances: [],
             govecCodeId: govecRes.codeId as number,
             admin: factoryAddr,
-            minter: factoryAddr,
+            minters: [factoryAddr],
         });
 
         const govecClient = new GovecClient(adminClient, adminAddr, govecAddr);
 
-        const { minter } = await govecClient.minter();
-        expect(minter).toEqual(factoryAddr);
+        const { minters } = await govecClient.minter();
+        expect(minters).toEqual([factoryAddr]);
 
         await factoryClient.updateGovecAddr({ addr: govecAddr });
 

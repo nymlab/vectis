@@ -170,7 +170,7 @@ export async function deploy(): Promise<VectisDaoContractsAddrs> {
     console.log("\n\nUpdated Staking Address on Govec\n", JSON.stringify(res));
 
     // Update minter address on Govec to Factory
-    res = await govecClient.updateMintData({ newMint: { minter: factoryEvent!.value } });
+    res = await govecClient.updateMintData({ newMint: { minters: [factoryEvent!.value] } });
     console.log("\n\nUpdated Minter Address on Govec\n", JSON.stringify(res));
 
     // Update DAO address on Govec
