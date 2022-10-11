@@ -68,10 +68,7 @@ fn do_instantiate(
             total_supply
         }
     );
-    assert_eq!(
-        query_minter(deps.as_ref()).unwrap(),
-        Some(mint)
-    );
+    assert_eq!(query_minter(deps.as_ref()).unwrap(), Some(mint));
     assert_eq!(query_dao(deps.as_ref()).unwrap(), DAO_ADDR);
     meta
 }
@@ -115,10 +112,7 @@ fn mintable() {
         get_balance(deps.as_ref(), "addr0000"),
         Uint128::new(11223344)
     );
-    assert_eq!(
-        query_minter(deps.as_ref()).unwrap(),
-        minter,
-    );
+    assert_eq!(query_minter(deps.as_ref()).unwrap(), minter,);
 }
 
 #[test]

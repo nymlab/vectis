@@ -199,7 +199,14 @@ pub fn execute_mint(
     new_wallet: String,
 ) -> Result<Response, ContractError> {
     let mut config = TOKEN_INFO.load(deps.storage)?;
-    if config.mint.is_none() || !config.mint.as_ref().unwrap().minters.contains(&info.sender.to_string()) {
+    if config.mint.is_none()
+        || !config
+            .mint
+            .as_ref()
+            .unwrap()
+            .minters
+            .contains(&info.sender.to_string())
+    {
         return Err(ContractError::Unauthorized {});
     }
 
