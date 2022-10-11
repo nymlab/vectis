@@ -46,9 +46,9 @@ describe("DAO Suite: ", () => {
         expect(contract.admin).toEqual(addrs.daoAddr);
     });
 
-    it("Govec should have factoryAddr as the minter", async () => {
+    it("Govec should have factoryAddr as one the minters", async () => {
         const m = await govecClient.minter();
-        expect(m.minter).toEqual(addrs.factoryAddr);
+        expect(m.minters).toEqual([addrs.factoryAddr]);
     });
 
     it("Govec should have daoAddr as the dao", async () => {

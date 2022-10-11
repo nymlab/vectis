@@ -11,7 +11,7 @@ interface InstantiateGovec {
     govecCodeId: number;
     admin: string;
     initial_balances: GovecT.Cw20Coin[];
-    minter?: string;
+    minters?: string[];
     minterCap?: string;
     marketing?: GovecT.MarketingInfoResponse;
 }
@@ -21,19 +21,19 @@ export async function instantiateGovec({
     govecCodeId,
     initial_balances,
     admin,
-    minter,
+    minters,
     minterCap,
     marketing,
 }: InstantiateGovec): Promise<{
     govecAddr: GovecT.Addr;
 }> {
-    const m = minter ? { minter: minter!, cap: minterCap } : null;
+    const minterData = minters ? { minters, cap: minterCap } : null;
     const instantiate: GovecT.InstantiateMsg = {
         name: "Govec",
         symbol: "GOVEC",
         // TODO: give admin initial balance
         initial_balances: initial_balances,
-        minter: m,
+        minter: minterData,
         marketing,
     };
     const { contractAddress } = await client.instantiate(

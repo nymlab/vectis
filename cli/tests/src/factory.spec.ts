@@ -55,7 +55,7 @@ describe("Factory Suite: ", () => {
             initial_balances: [],
             govecCodeId: govecRes.codeId as number,
             admin: factoryAddr,
-            minter: factoryAddr,
+            minters: [factoryAddr],
         });
 
         await factoryClient.updateGovecAddr({ addr: govecAddr });
