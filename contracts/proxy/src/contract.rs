@@ -193,7 +193,7 @@ pub fn execute_relay(
     )?;
 
     // Ensure address derived from pub message is the address of existing user
-    let user = ensure_is_user(deps.as_ref(), &addr.to_string())?;
+    let user = ensure_is_user(deps.as_ref(), addr.as_ref())?;
 
     // Ensure relayer provided nonce is correct
     user.ensure_nonces_are_equal(&transaction.nonce)?;
@@ -346,7 +346,7 @@ pub fn execute_update_guardians(
 
     let request = PENDING_GUARDIAN_ROTATION
         .may_load(deps.storage)?
-        .ok_or_else(|| ContractError::GuardianRequestNotFound {})?;
+        .ok_or(ContractError::GuardianRequestNotFound {})?;
 
     if !request.activate_at.is_expired(&env.block) {
         return Err(ContractError::GuardianRequestNotExecutable {});
