@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use cosmwasm_std::{Addr, BlockInfo, StdError, StdResult, Timestamp};
+use cosmwasm_std::{Addr, BlockInfo, StdError, StdResult};
 use cw_utils::{Duration, Expiration, DAY};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -33,7 +33,6 @@ impl Guardians {
 pub struct GuardiansUpdateRequest {
     pub guardians: Guardians,
     pub new_multisig_code_id: Option<u64>,
-    pub created_at: Timestamp,
     pub activate_at: Expiration,
 }
 
@@ -43,7 +42,6 @@ impl GuardiansUpdateRequest {
         new_multisig_code_id: Option<u64>,
         block: &BlockInfo,
     ) -> GuardiansUpdateRequest {
-        let created_at = block.time;
         let activate_at = Expiration::AtTime(block.time)
             .add(GUARDIAN_REQUEST_ACTIVATION_TIME)
             .expect("error defining activate_at");
@@ -51,7 +49,6 @@ impl GuardiansUpdateRequest {
         GuardiansUpdateRequest {
             guardians,
             new_multisig_code_id,
-            created_at,
             activate_at,
         }
     }
