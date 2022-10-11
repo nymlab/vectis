@@ -12,4 +12,7 @@ pub enum ContractError {
 
     #[error("Invalid controller")]
     InvalidController {},
+
+    #[error("Invalid Dispatch")]
+    InvalidDispatch {},
 }
