@@ -1,5 +1,5 @@
 [package]
-name = "vectis-ibc-host"
+name = "vectis-dao-tunnel"
 version = "0.1.0"
 authors = ["bwty <whalelephant@users.noreply.github.com>"]
 edition = "2021"

@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, WasmMsg};
+use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, Uint128, WasmMsg};
 use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
 use cw_multi_test::Executor;
@@ -7,21 +7,13 @@ use vectis_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{MultiSig, WalletInfo, WalletQueryPrefix};
 
-pub mod common;
-use common::*;
+use crate::common::*;
 
 #[test]
 fn create_new_proxy() {
-    let init_factory_fund: Coin = coin(1000, "ucosm");
     let init_wallet_fund: Coin = coin(100, "ucosm");
 
-    let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![init_factory_fund.clone()],
-        WALLET_FEE,
-    );
+    let mut suite = DaoChainSuite::init().unwrap();
 
     let init_user_fund = suite
         .query_balance(&Addr::unchecked(USER_ADDR), "ucosm".into())
@@ -30,7 +22,7 @@ fn create_new_proxy() {
 
     let rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
-        factory.clone(),
+        suite.factory_addr.clone(),
         vec![init_wallet_fund.clone()],
         None,
         WALLET_FEE + init_wallet_fund.amount.u128(),
@@ -38,10 +30,10 @@ fn create_new_proxy() {
     assert_matches!(rsp, Ok(_));
 
     let mut r_user = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
         .unwrap();
     let r_all = suite
-        .query_all_wallet_addresses(&factory, None, None)
+        .query_all_wallet_addresses(&suite.factory_addr, None, None)
         .unwrap();
     assert_eq!(r_user.wallets[0], r_all.wallets[0]);
     assert_eq!(r_user.wallets.len(), 1);
@@ -50,7 +42,9 @@ fn create_new_proxy() {
     let wallet_addr = r_user.wallets.pop().unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
 
-    let factory_fund = suite.query_balance(&factory, "ucosm".into()).unwrap();
+    let factory_fund = suite
+        .query_balance(&suite.factory_addr, "ucosm".into())
+        .unwrap();
     let wallet_fund = suite.query_balance(&wallet_addr, "ucosm".into()).unwrap();
     let post_user_fund = suite
         .query_balance(&Addr::unchecked(USER_ADDR), "ucosm".into())
@@ -58,7 +52,7 @@ fn create_new_proxy() {
     let post_dao_fund = suite.query_balance(&suite.owner, "ucosm".into()).unwrap();
 
     // factory fund does not change
-    assert_eq!(init_factory_fund.amount, factory_fund.amount,);
+    assert_eq!(Uint128::zero(), factory_fund.amount,);
     // wallet fund should be what is specified
     assert_eq!(wallet_fund.amount, init_wallet_fund.amount,);
     // user funds should be wallet_fee + init wallet fund less
@@ -81,17 +75,10 @@ fn create_new_proxy() {
 fn cannot_create_new_proxy_without_payment() {
     let no_wallet_fee = 0u128;
 
-    let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        WALLET_FEE,
-    );
-
+    let mut suite = DaoChainSuite::init().unwrap();
     let rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
-        factory.clone(),
+        suite.factory_addr.clone(),
         vec![],
         None,
         no_wallet_fee,
@@ -101,17 +88,10 @@ fn cannot_create_new_proxy_without_payment() {
 
 #[test]
 fn create_new_proxy_without_guardians() {
-    let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        10,
-    );
-
+    let mut suite = DaoChainSuite::init().unwrap();
     let rsp = suite.create_new_proxy_without_guardians(
         Addr::unchecked(USER_ADDR),
-        factory.clone(),
+        suite.factory_addr.clone(),
         vec![],
         None,
         WALLET_FEE,
@@ -121,17 +101,11 @@ fn create_new_proxy_without_guardians() {
 
 #[test]
 fn user_rotate_keys_updates_factory() {
-    let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        10,
-    );
+    let mut suite = DaoChainSuite::init().unwrap();
 
     let rsp = suite.create_new_proxy_without_guardians(
         Addr::unchecked(USER_ADDR),
-        factory.clone(),
+        suite.factory_addr.clone(),
         vec![],
         None,
         WALLET_FEE,
@@ -139,7 +113,7 @@ fn user_rotate_keys_updates_factory() {
     assert!(rsp.is_ok());
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -162,7 +136,7 @@ fn user_rotate_keys_updates_factory() {
     assert_eq!(w.user_addr.as_str(), new_address);
 
     let origin_user_wallets = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop();
@@ -170,7 +144,7 @@ fn user_rotate_keys_updates_factory() {
     assert!(origin_user_wallets.is_none());
 
     let new_user_wallet_addr = suite
-        .query_user_wallet_addresses(&factory, new_address, None, None)
+        .query_user_wallet_addresses(&suite.factory_addr, new_address, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -181,17 +155,10 @@ fn user_rotate_keys_updates_factory() {
 
 #[test]
 fn non_wallet_cannot_update_factory() {
-    let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        10,
-    );
-
+    let mut suite = DaoChainSuite::init().unwrap();
     let rsp = suite.create_new_proxy_without_guardians(
         Addr::unchecked(USER_ADDR),
-        factory.clone(),
+        suite.factory_addr.clone(),
         vec![],
         None,
         WALLET_FEE,
@@ -203,7 +170,7 @@ fn non_wallet_cannot_update_factory() {
         .app
         .execute_contract(
             Addr::unchecked(USER_ADDR),
-            factory,
+            suite.factory_addr,
             &FactoryExecuteMsg::UpdateProxyUser {
                 new_user: Addr::unchecked(new_address.to_string()),
                 old_user: Addr::unchecked(USER_ADDR),
@@ -216,14 +183,7 @@ fn non_wallet_cannot_update_factory() {
 }
 #[test]
 fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
-    let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        10,
-    );
-
+    let mut suite = DaoChainSuite::init().unwrap();
     let multisig = MultiSig {
         threshold_absolute_count: 0,
         multisig_initial_funds: vec![],
@@ -232,7 +192,7 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let rsp: ContractError = suite
         .create_new_proxy_without_guardians(
             Addr::unchecked(USER_ADDR),
-            factory.clone(),
+            suite.factory_addr.clone(),
             vec![],
             Some(multisig),
             10,
@@ -249,17 +209,11 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
 
 #[test]
 fn user_can_execute_messages() {
-    let mut suite = Suite::init().unwrap();
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        WALLET_FEE,
-    );
+    let mut suite = DaoChainSuite::init().unwrap();
     let init_wallet_fund: Coin = coin(100, "ucosm");
     let create_proxy_rsp = suite.create_new_proxy(
         Addr::unchecked(USER_ADDR),
-        factory.clone(),
+        suite.factory_addr.clone(),
         vec![init_wallet_fund.clone()],
         None,
         WALLET_FEE + init_wallet_fund.amount.u128(),
@@ -267,7 +221,7 @@ fn user_can_execute_messages() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
         .unwrap()
         .wallets
         .pop()
@@ -278,7 +232,7 @@ fn user_can_execute_messages() {
     // Can execute Bank msgs
     let send_amount: Coin = coin(10, "ucosm");
     let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
-        to_address: factory.to_string(),
+        to_address: suite.factory_addr.to_string(),
         amount: vec![send_amount.clone()],
     });
 
@@ -286,7 +240,7 @@ fn user_can_execute_messages() {
         user,
         wallet_address.clone(),
         &ProxyExecuteMsg::Execute {
-            msgs: vec![msg.clone(), msg.clone()],
+            msgs: vec![msg.clone()],
         },
         &[],
     );
@@ -297,26 +251,19 @@ fn user_can_execute_messages() {
         .unwrap();
 
     assert_eq!(
-        init_wallet_fund.amount - send_amount.amount - send_amount.amount,
+        init_wallet_fund.amount - send_amount.amount,
         wallet_fund.amount
     );
 }
 
 #[test]
 fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
-    let mut suite = Suite::init().unwrap();
-
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        WALLET_FEE,
-    );
+    let mut suite = DaoChainSuite::init().unwrap();
 
     suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            factory.clone(),
+            suite.factory_addr.clone(),
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -327,7 +274,7 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
         .unwrap();
 
     let mut r = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
         .unwrap();
     let wallet_addr = r.wallets.pop().unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
@@ -398,15 +345,7 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 
 #[test]
 fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
-    let mut suite = Suite::init().unwrap();
-
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![],
-        WALLET_FEE,
-    );
-
+    let mut suite = DaoChainSuite::init().unwrap();
     let init_multisig_fund: Coin = coin(200, "ucosm");
     let init_proxy_fund: Coin = coin(100, "ucosm");
     let init_user_balance = suite.query_balance(&Addr::unchecked(USER_ADDR), "ucosm".to_string());
@@ -414,7 +353,7 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
     suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            factory.clone(),
+            suite.factory_addr.clone(),
             vec![init_proxy_fund.clone()],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -425,7 +364,7 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
         .unwrap();
 
     let mut r = suite
-        .query_user_wallet_addresses(&factory, USER_ADDR, None, None)
+        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
         .unwrap();
     let proxy_addr = r.wallets.pop().unwrap();
 
@@ -446,22 +385,13 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
 
 #[test]
 fn query_all_wallets() {
-    let mut suite = Suite::init().unwrap();
-    let wallet_fee = 10u128;
-
-    let init_factory_fund: Coin = coin(1000, "ucosm");
-    let factory = suite.instantiate_factory(
-        suite.sc_proxy_id,
-        suite.sc_proxy_multisig_code_id,
-        vec![init_factory_fund.clone()],
-        wallet_fee,
-    );
+    let mut suite = DaoChainSuite::init().unwrap();
 
     // Create a few wallets
     suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            factory.clone(),
+            suite.factory_addr.clone(),
             vec![],
             None,
             WALLET_FEE,
@@ -471,7 +401,7 @@ fn query_all_wallets() {
     suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            factory.clone(),
+            suite.factory_addr.clone(),
             vec![],
             None,
             WALLET_FEE,
@@ -481,7 +411,7 @@ fn query_all_wallets() {
     suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            factory.clone(),
+            suite.factory_addr.clone(),
             vec![],
             None,
             WALLET_FEE,
@@ -489,12 +419,12 @@ fn query_all_wallets() {
         .unwrap();
 
     let all = suite
-        .query_all_wallet_addresses(&factory, None, None)
+        .query_all_wallet_addresses(&suite.factory_addr, None, None)
         .unwrap();
     let wallet_info: WalletInfo = suite.query_wallet_info(&all.wallets[0]).unwrap();
     let pagination_second = suite
         .query_all_wallet_addresses(
-            &factory,
+            &suite.factory_addr,
             Some(WalletQueryPrefix {
                 user_addr: wallet_info.user_addr.to_string(),
                 wallet_addr: all.wallets[0].to_string(),

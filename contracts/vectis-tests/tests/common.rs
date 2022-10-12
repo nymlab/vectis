@@ -17,6 +17,17 @@ use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
 use derivative::Derivative;
 use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 use serde::de::DeserializeOwned;
+
+use vectis_dao_tunnel::{
+    contract::{
+        execute as dtunnel_execute, instantiate as dtunnel_instantiate, query as dtunnel_query,
+        reply as dtunnel_reply,
+    },
+    msg::ExecuteMsg as DTunnelExecuteMsg,
+    msg::InstantiateMsg as DTunnelInstanstiateMsg,
+    msg::QueryMsg as DTunnelQueryMsg,
+};
+
 use vectis_factory::{
     contract::{
         execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
@@ -40,12 +51,14 @@ use vectis_proxy::{
     msg::ExecuteMsg as ProxyExecuteMsg,
     msg::QueryMsg as ProxyQueryMsg,
 };
+
 use vectis_wallet::{
     pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
     GuardiansUpdateRequest, MultiSig, RelayTransaction, ThresholdAbsoluteCount, WalletQueryPrefix,
 };
 
 pub const WALLET_FEE: u128 = 10u128;
+pub const MINTER_CAP: u128 = 10000;
 pub const USER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
     185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 26,
@@ -91,9 +104,19 @@ pub fn contract_multisig() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
+pub fn contract_dao_tunnel() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(dtunnel_execute, dtunnel_instantiate, dtunnel_query)
+        .with_reply(dtunnel_reply);
+    Box::new(contract)
+}
+
+/// DaoChainSuite
+///
+/// This is initialised with factory, dao_tunnel and govec contracts
+/// Its represents the initial states on the dao-chain (minus the dao-contracts)
 #[derive(Derivative)]
 #[derivative(Debug)]
-pub struct Suite {
+pub struct DaoChainSuite {
     #[derivative(Debug = "ignore")]
     pub app: App,
     /// Admin Addr
@@ -108,12 +131,22 @@ pub struct Suite {
     pub govec_id: u64,
     // ID of stored code for staking
     pub stake_id: u64,
+    // ID of dao_tunnel contract
+    pub dao_tunnel_id: u64,
     // govec address
-    pub govec_addr: String,
+    pub govec_addr: Addr,
+    // factory address
+    pub factory_addr: Addr,
+    // dao_tunnel address
+    pub dao_tunnel_addr: Addr,
 }
 
-impl Suite {
-    pub fn init() -> Result<Suite> {
+impl DaoChainSuite {
+    /// Instantiate factory contract with
+    /// - no initial funds on the factory
+    /// - default WALLET_FEE
+    /// - code ids from DaoChainSuite
+    pub fn init() -> Result<DaoChainSuite> {
         let genesis_funds = vec![coin(100000, "ucosm")];
         let owner = Addr::unchecked("owner");
         let user = Addr::unchecked(USER_ADDR);
@@ -131,6 +164,7 @@ impl Suite {
         let sc_proxy_multisig_code_id = app.store_code(contract_multisig());
         let govec_id = app.store_code(contract_govec());
         let stake_id = app.store_code(contract_stake());
+        let dao_tunnel_id = app.store_code(contract_dao_tunnel());
 
         let govec_addr = app
             .instantiate_contract(
@@ -145,12 +179,54 @@ impl Suite {
                     marketing: None,
                 },
                 &[],
-                "govec",                 // label: human readible name for contract
+                "govec",
+                Some(owner.to_string()),
+            )
+            .unwrap();
+
+        let factory_addr = app
+            .instantiate_contract(
+                sc_factory_id,
+                owner.clone(),
+                &InstantiateMsg {
+                    proxy_code_id: sc_proxy_id,
+                    proxy_multisig_code_id: sc_proxy_multisig_code_id,
+                    addr_prefix: "wasm".to_string(),
+                    wallet_fee: Coin {
+                        denom: "ucosm".to_string(),
+                        amount: Uint128::new(WALLET_FEE),
+                    },
+                    govec: Some(govec_addr.to_string()),
+                },
+                &[],
+                "wallet-factory",        // label: human readible name for contract
                 Some(owner.to_string()), // admin: Option<String>, will need this for upgrading
             )
             .unwrap();
 
-        Ok(Suite {
+        let execute = GovecExecuteMsg::UpdateMintData {
+            new_mint: Some(MinterData {
+                minter: factory_addr.to_string(),
+                cap: Some(Uint128::new(MINTER_CAP)),
+            }),
+        };
+
+        app.execute_contract(owner.clone(), govec_addr.clone(), &execute, &[])
+            .map_err(|err| anyhow!(err))
+            .unwrap();
+
+        let dao_tunnel_addr = app
+            .instantiate_contract(
+                dao_tunnel_id,
+                owner.clone(),
+                &DTunnelInstanstiateMsg {},
+                &[],
+                "dao-tunnel",            // label: human readible name for contract
+                Some(owner.to_string()), // admin: Option<String>, will need this for upgrading
+            )
+            .unwrap();
+
+        Ok(DaoChainSuite {
             app,
             owner,
             sc_factory_id,
@@ -158,55 +234,11 @@ impl Suite {
             sc_proxy_multisig_code_id,
             govec_id,
             stake_id,
-            govec_addr: govec_addr.to_string(),
+            dao_tunnel_id,
+            govec_addr,
+            factory_addr,
+            dao_tunnel_addr,
         })
-    }
-
-    pub fn instantiate_factory(
-        &mut self,
-        proxy_code_id: u64,
-        proxy_multisig_code_id: u64,
-        init_funds: Vec<Coin>,
-        wallet_fee: u128,
-    ) -> Addr {
-        let addr = self
-            .app
-            .instantiate_contract(
-                self.sc_factory_id,
-                self.owner.clone(),
-                &InstantiateMsg {
-                    proxy_code_id,
-                    proxy_multisig_code_id,
-                    addr_prefix: "wasm".to_string(),
-                    wallet_fee: Coin {
-                        denom: "ucosm".to_string(),
-                        amount: Uint128::new(wallet_fee),
-                    },
-                    govec: Some(self.govec_addr.clone()),
-                },
-                &init_funds,
-                "wallet-factory", // label: human readible name for contract
-                Some(self.owner.to_string()), // admin: Option<String>, will need this for upgrading
-            )
-            .unwrap();
-
-        let execute = GovecExecuteMsg::UpdateMintData {
-            new_mint: Some(MinterData {
-                minter: addr.to_string(),
-                cap: Some(Uint128::new(1000)),
-            }),
-        };
-
-        self.app
-            .execute_contract(
-                self.owner.clone(),
-                Addr::unchecked(self.govec_addr.clone()),
-                &execute,
-                &[],
-            )
-            .map_err(|err| anyhow!(err))
-            .unwrap();
-        addr
     }
 
     pub fn create_new_proxy_without_guardians(

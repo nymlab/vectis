@@ -884,6 +884,53 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 
 [[package]]
+name = "vectis-contract-tests"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "assert_matches",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils 0.13.4",
+ "cw1",
+ "cw2",
+ "cw20-stake",
+ "cw3",
+ "cw3-fixed-multisig",
+ "derivative",
+ "hex",
+ "schemars",
+ "secp256k1",
+ "serde",
+ "sha2",
+ "thiserror",
+ "vectis-dao-tunnel",
+ "vectis-factory",
+ "vectis-govec",
+ "vectis-proxy",
+ "vectis-wallet",
+]
+
+[[package]]
+name = "vectis-dao-tunnel"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw-utils 0.13.4",
+ "cw2",
+ "hex",
+ "schemars",
+ "serde",
+ "sha2",
+ "thiserror",
+ "vectis-wallet",
+]
+
+[[package]]
 name = "vectis-factory"
 version = "0.1.0"
 dependencies = [
@@ -927,23 +974,6 @@ dependencies = [
  "hex",
  "schemars",
  "serde",
- "thiserror",
- "vectis-wallet",
-]
-
-[[package]]
-name = "vectis-ibc-host"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw-utils 0.13.4",
- "cw2",
- "hex",
- "schemars",
- "serde",
- "sha2",
  "thiserror",
  "vectis-wallet",
 ]
