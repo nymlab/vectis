@@ -25,7 +25,6 @@ use vectis_dao_tunnel::{
     },
     msg::ExecuteMsg as DTunnelExecuteMsg,
     msg::InstantiateMsg as DTunnelInstanstiateMsg,
-    msg::QueryMsg as DTunnelQueryMsg,
 };
 
 use vectis_factory::{
