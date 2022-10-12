@@ -1,6 +1,6 @@
 [workspace]
 members = ["packages/*", "contracts/*"]
-exclude = ["contracts/tests","packages/images"]
+exclude = ["packages/images"]
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
 [profile.release.package.vectis-factory]

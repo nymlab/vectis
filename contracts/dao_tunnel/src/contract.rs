@@ -1,13 +1,13 @@
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, wasm_execute, BankMsg, CosmosMsg, Deps, DepsMut, Empty,
-    Env, Event, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannelCloseMsg,
+    entry_point, from_slice, to_binary, wasm_execute, BankMsg, Binary, CosmosMsg, Deps, DepsMut,
+    Empty, Env, Event, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannelCloseMsg,
     IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcPacketAckMsg,
     IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcQuery, IbcReceiveResponse, MessageInfo, Order,
     QueryRequest, QueryResponse, Reply, Response, StdResult, SubMsg, WasmMsg, WasmQuery,
 };
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{ADMIN, IBC_CONTROLLERS};
 use cw2::set_contract_version;
 use vectis_wallet::{check_order, check_version, PacketMsg, StdAck, IBC_APP_VERSION};
@@ -27,7 +27,7 @@ pub fn instantiate(
     Ok(Response::new())
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     _env: Env,
@@ -42,6 +42,11 @@ pub fn execute(
     }
 }
 
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn query(deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
+    unimplemented!()
+}
+
 fn execute_add_approved_controller(
     deps: DepsMut,
     info: MessageInfo,
@@ -53,7 +58,7 @@ fn execute_add_approved_controller(
     unimplemented!();
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering and versioing constraints
 /// note: anyone can create a channel but only the DAO approved (connection_id, port) will be able
 /// to reflect calls
@@ -77,7 +82,7 @@ pub fn ibc_channel_open(
     }))
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 /// note: anyone can create a channel but only the DAO approved (connection_id, port) will be able
 /// to reflect calls
 pub fn ibc_channel_connect(
@@ -98,7 +103,7 @@ pub fn ibc_channel_connect(
         .add_event(Event::new("ibc").add_attribute("channel", "connect")))
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 /// On closed channel, we take all tokens from reflect contract to this contract.
 /// We also delete the channel entry from accounts.
 pub fn ibc_channel_close(
@@ -118,12 +123,12 @@ pub fn ibc_channel_close(
         .add_attribute("connection_id", connection_id))
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 /// we look for a the proper reflect contract to relay to and send the message
 /// We cannot return any meaningful response value as we do not know the response value
 /// of execution. We just return ok if we dispatched, error if we failed to dispatch
@@ -177,7 +182,7 @@ fn receive_dispatch(
     Ok(IbcReceiveResponse::new().add_attribute("action", "receive_dispatch"))
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 /// never should be called as we do not send packets
 pub fn ibc_packet_ack(
     _deps: DepsMut,
@@ -187,7 +192,7 @@ pub fn ibc_packet_ack(
     Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack"))
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 /// never should be called as we do not send packets
 pub fn ibc_packet_timeout(
     _deps: DepsMut,
