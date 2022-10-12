@@ -14,3 +14,6 @@ pub enum ExecuteMsg {
         port_id: String,
     },
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct QueryMsg {}
