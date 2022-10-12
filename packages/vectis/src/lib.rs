@@ -5,7 +5,7 @@ pub use crate::factory::{
 };
 pub use crate::govec::StakingOptions;
 pub use crate::guardians::*;
-pub use crate::ibc::{check_order, check_version, PacketMsg, StdAck};
+pub use crate::ibc::{check_order, check_version, check_connection, check_port, receive_dispatch,PacketMsg, StdAck, ReceiveIcaResponseMsg};
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;
 pub use crate::wallet::{Nonce, RelayTransaction, WalletAddr, WalletInfo};
@@ -21,3 +21,5 @@ use cosmwasm_std::IbcOrder;
 
 pub const IBC_APP_VERSION: &str = "vectis-v1";
 pub const APP_ORDER: IbcOrder = IbcOrder::Unordered;
+pub const PACKET_LIFETIME: u64 = 60 * 60;
+pub const RECEIVE_DISPATCH_ID: u64 = 1234;

@@ -34,7 +34,10 @@ pub enum MigrationMsgError {
 pub enum IbcError {
     #[error("Only supports unordered channels")]
     InvalidChannelOrder,
-
     #[error("Counterparty version must be '{0}'")]
     InvalidChannelVersion(&'static str),
+    #[error("Connection id must be = '{0}'")]
+    InvalidConnectionId(String),
+    #[error("Port id must be = '{0}'")]
+    InvalidPortId(String)
 }
