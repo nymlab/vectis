@@ -3,7 +3,6 @@ use cosmwasm_std::{Binary, StdError, StdResult, Uint128};
 pub use cw20::{Cw20Coin, Logo, MarketingInfoResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-pub use vectis_wallet::StakingOptions;
 
 #[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 pub struct InstantiateMsg {

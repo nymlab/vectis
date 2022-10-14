@@ -303,19 +303,6 @@ pub fn execute_rotate_user_key(
     };
 
     let user = USER.load(deps.storage)?;
-    let update_factory = WasmMsg::Execute {
-        contract_addr: deps
-            .api
-            .addr_humanize(&FACTORY.load(deps.storage)?)?
-            .to_string(),
-        /// msg is the json-encoded ExecuteMsg struct (as raw Binary)
-        msg: to_binary(&WalletFactoryExecuteMsg::UpdateProxyUser {
-            old_user: deps.api.addr_humanize(&user.addr)?,
-            new_user: deps.api.addr_validate(&new_user_address)?,
-        })?,
-        funds: vec![],
-    };
-    let msg = SubMsg::<Empty>::new(update_factory);
 
     // Ensure provided address is different from current
     let new_user_address = deps.api.addr_canonicalize(new_user_address.as_ref())?;
@@ -327,9 +314,7 @@ pub fn execute_rotate_user_key(
         Ok(user)
     })?;
 
-    Ok(Response::new()
-        .add_submessage(msg)
-        .add_attribute("action", "execute_rotate_user_key"))
+    Ok(Response::new().add_attribute("action", "execute_rotate_user_key"))
 }
 
 pub fn execute_update_guardians(
