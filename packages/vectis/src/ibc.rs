@@ -1,14 +1,11 @@
-use cosmwasm_std::{
-    from_slice, to_binary, wasm_execute, Binary, CosmosMsg, IbcOrder, IbcReceiveResponse,
-    StdResult, SubMsg, WasmMsg,
-};
+use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder, StdResult, WasmMsg};
 
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::WalletFactoryInstantiateMsg;
 use crate::error::IbcError;
+use crate::WalletFactoryInstantiateMsg;
 pub use crate::{APP_ORDER, IBC_APP_VERSION, RECEIVE_DISPATCH_ID};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -17,13 +14,12 @@ pub enum PacketMsg {
     UpdateChannel,
     InstantiateFactory {
         code_id: u64,
-        msg: WalletFactoryInstantiateMsg
+        msg: WalletFactoryInstantiateMsg,
     },
     Dispatch {
-        msg: CosmosMsg,
+        msgs: Vec<CosmosMsg>,
         sender: String,
-        contract_addr: String,
-        callback_id: Option<String>,
+        job_id: Option<String>,
     },
     MintGovec {
         wallet_addr: String,
@@ -58,19 +54,6 @@ pub fn check_port(host_port: &str, remote_port: &str) -> Result<(), IbcError> {
         return Err(IbcError::InvalidPortId(host_port.to_string()));
     }
     Ok(())
-}
-
-pub fn receive_dispatch(contract_addr: String, msg: CosmosMsg) -> StdResult<IbcReceiveResponse> {
-    let acknowledgement = StdAck::success(&());
-
-    let wasm_msg = wasm_execute(contract_addr, &msg, vec![])?;
-
-    let msg = SubMsg::reply_on_success(wasm_msg, RECEIVE_DISPATCH_ID);
-
-    Ok(IbcReceiveResponse::new()
-        .set_ack(acknowledgement)
-        .add_submessage(msg)
-        .add_attribute("action", "vectis_tunnel_remote_receive_dispatch"))
 }
 
 /// This is a generic ICS acknowledgement format.
@@ -121,16 +104,16 @@ impl StdAck {
 /// ReceiveIbcResponseMsg should be de/serialized under `Receive()` variant in a ExecuteMsg
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct ReceiveIcaResponseMsg {
-    /// The ID chosen by the caller in the `callback_id`
+pub struct ReceiveIbcResponseMsg {
+    /// The ID chosen by the caller in the `job_id`
     pub id: String,
     pub msg: StdAck,
 }
 
-impl ReceiveIcaResponseMsg {
+impl ReceiveIbcResponseMsg {
     /// serializes the message
     pub fn into_binary(self) -> StdResult<Binary> {
-        let msg = SimpleIcaReceiverExecuteMsg::ReceiveIcaResponse(self);
+        let msg = SimpleIbcReceiverExecuteMsg::ReceiveIcaResponse(self);
         to_binary(&msg)
     }
 
@@ -153,6 +136,12 @@ impl ReceiveIcaResponseMsg {
 /// The actual receiver should include this variant in the larger ExecuteMsg enum
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
-enum SimpleIcaReceiverExecuteMsg {
-    ReceiveIcaResponse(ReceiveIcaResponseMsg),
+enum SimpleIbcReceiverExecuteMsg {
+    ReceiveIcaResponse(ReceiveIbcResponseMsg),
+}
+
+/// Return the data field for each message
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DispatchResponse {
+    pub results: Vec<Binary>,
 }
