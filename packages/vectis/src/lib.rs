@@ -1,11 +1,15 @@
 pub use crate::error::{IbcError, MigrationMsgError, RelayTxError};
 pub use crate::factory::{
     CodeIdType, CreateWalletMsg, MultiSig, ProxyMigrateMsg, ProxyMigrationTxMsg,
-    ThresholdAbsoluteCount, WalletFactoryExecuteMsg, WalletFactoryQueryMsg, WalletQueryPrefix,
+    ThresholdAbsoluteCount, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg,
+    WalletFactoryQueryMsg, WalletQueryPrefix,
 };
 pub use crate::govec::StakingOptions;
 pub use crate::guardians::*;
-pub use crate::ibc::{check_order, check_version, check_connection, check_port, receive_dispatch,PacketMsg, StdAck, ReceiveIcaResponseMsg};
+pub use crate::ibc::{
+    check_connection, check_order, check_port, check_version, receive_dispatch, PacketMsg,
+    ReceiveIcaResponseMsg, StdAck,
+};
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;
 pub use crate::wallet::{Nonce, RelayTransaction, WalletAddr, WalletInfo};

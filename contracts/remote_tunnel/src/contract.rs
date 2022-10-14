@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response, StdResult,
+    to_binary, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response, StdResult, Addr,
 };
 
 use cw_utils::parse_reply_instantiate_data;
@@ -72,8 +72,18 @@ pub fn execute_mint_govec(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
-    match msg {}
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
+    match msg {
+        QueryMsg::Factory => to_binary(&query_factory(deps)?)
+    }
+}
+
+pub fn query_factory(deps: Deps) -> StdResult<Option<Addr>>  {
+    let addr = match FACTORY.may_load(deps.storage)? {
+        Some(c) => Some(deps.api.addr_humanize(&c)?),
+        _ => None,
+    };
+    Ok(addr)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

@@ -1,14 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse,
-    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
+    from_slice, to_binary, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
+    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
     IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
 };
 
 use vectis_wallet::{
-    check_connection, check_order, check_port, check_version, receive_dispatch, PacketMsg, StdAck,
-    IBC_APP_VERSION, ReceiveIcaResponseMsg,
+    check_connection, check_order, check_port, check_version, receive_dispatch, PacketMsg,
+    ReceiveIcaResponseMsg, StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
+    IBC_APP_VERSION,
 };
 
 use crate::state::{CHANNEL, CONFIG};
@@ -42,7 +43,7 @@ pub fn ibc_packet_ack(
     deps: DepsMut,
     env: Env,
     msg: IbcPacketAckMsg,
-) ->  Result<IbcBasicResponse, ContractError> {
+) -> Result<IbcBasicResponse, ContractError> {
     // we need to parse the ack based on our request
     let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
     match original_packet {
@@ -51,7 +52,7 @@ pub fn ibc_packet_ack(
             sender,
             ..
         } => acknowledge_dispatch(deps, env, callback_id, sender, msg),
-        _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack"))
+        _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack")),
     }
 }
 
@@ -104,7 +105,7 @@ pub fn ibc_packet_receive(
 pub fn receive_instantiate(
     _deps: DepsMut,
     code_id: u64,
-    msg: Option<CosmosMsg>,
+    msg: FactoryInstantiateMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let acknowledgement = StdAck::success(&());
 
@@ -120,7 +121,7 @@ pub fn receive_instantiate(
     Ok(IbcReceiveResponse::new()
         .set_ack(acknowledgement)
         .add_submessage(msg)
-        .add_attribute("action", "receive_dispatch"))
+        .add_attribute("action", "receive_instantiate"))
 }
 
 pub fn receive_update_channel(
