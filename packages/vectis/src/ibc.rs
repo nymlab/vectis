@@ -7,6 +7,7 @@ use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::WalletFactoryInstantiateMsg;
 use crate::error::IbcError;
 pub use crate::{APP_ORDER, IBC_APP_VERSION, RECEIVE_DISPATCH_ID};
 
@@ -16,7 +17,7 @@ pub enum PacketMsg {
     UpdateChannel,
     InstantiateFactory {
         code_id: u64,
-        msg: Option<CosmosMsg>
+        msg: WalletFactoryInstantiateMsg
     },
     Dispatch {
         msg: CosmosMsg,
