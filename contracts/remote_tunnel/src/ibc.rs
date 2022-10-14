@@ -1,18 +1,18 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_slice, to_binary, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
+    from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
+    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg, Binary,
 };
 
 use vectis_wallet::{
-    check_connection, check_order, check_port, check_version, receive_dispatch, PacketMsg,
-    ReceiveIcaResponseMsg, StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
-    IBC_APP_VERSION,
+    check_connection, check_order, check_port, check_version, DispatchResponse, PacketMsg,
+    ReceiveIbcResponseMsg, StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
+    IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
 };
 
-use crate::state::{CHANNEL, CONFIG};
+use crate::state::{CHANNEL, CONFIG, FACTORY, RESULTS};
 use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -47,11 +47,9 @@ pub fn ibc_packet_ack(
     // we need to parse the ack based on our request
     let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
     match original_packet {
-        PacketMsg::Dispatch {
-            callback_id,
-            sender,
-            ..
-        } => acknowledge_dispatch(deps, env, callback_id, sender, msg),
+        PacketMsg::Dispatch { job_id, sender, .. } => {
+            acknowledge_dispatch(deps, env, job_id, sender, msg)
+        }
         _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack")),
     }
 }
@@ -59,18 +57,18 @@ pub fn ibc_packet_ack(
 fn acknowledge_dispatch(
     _deps: DepsMut,
     _env: Env,
-    callback_id: Option<String>,
+    job_id: Option<String>,
     sender: String,
     ack: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     let res = IbcBasicResponse::new().add_attribute("action", "acknowledge_dispatch");
-    match callback_id {
+    match job_id {
         Some(id) => {
             let msg: StdAck = from_slice(&ack.acknowledgement.data)?;
             // Send IBC packet ack message to another contract
             let res = res
-                .add_attribute("callback_id", &id)
-                .add_message(ReceiveIcaResponseMsg { id, msg }.into_cosmos_msg(sender)?);
+                .add_attribute("job_id", &id)
+                .add_message(ReceiveIbcResponseMsg { id: id, msg }.into_cosmos_msg(sender)?);
             Ok(res)
         }
         None => Ok(res),
@@ -86,20 +84,47 @@ pub fn ibc_packet_receive(
     let packet_msg: PacketMsg = from_slice(&msg.packet.data)?;
     let channel_id = msg.packet.dest.channel_id;
     match packet_msg {
+        PacketMsg::UpdateChannel => receive_update_channel(deps, channel_id),
+        PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
         PacketMsg::InstantiateFactory { code_id, msg, .. } => {
             receive_instantiate(deps, code_id, msg)
         }
-        PacketMsg::UpdateChannel => receive_update_channel(deps, channel_id),
-        PacketMsg::Dispatch {
-            contract_addr, msg, ..
-        } => match receive_dispatch(contract_addr, msg) {
-            Ok(res) => Ok(res),
-            Err(err) => Err(ContractError::Std(err)),
-        },
-        _ => Ok(IbcReceiveResponse::new()
-            .set_ack(b"{}")
-            .add_attribute("action", "ibc_packet_ack")),
+        PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
     }
+}
+
+pub fn receive_update_channel(
+    deps: DepsMut,
+    channel_id: String,
+) -> Result<IbcReceiveResponse, ContractError> {
+    let acknowledgement = StdAck::success(&());
+
+    CHANNEL.save(deps.storage, &channel_id)?;
+
+    Ok(IbcReceiveResponse::new()
+        .set_ack(acknowledgement)
+        .add_attribute("action", "receive_update_channel"))
+}
+
+pub fn receive_dispatch(
+    deps: DepsMut,
+    msgs: Vec<CosmosMsg>,
+) -> Result<IbcReceiveResponse, ContractError> {
+    let response = DispatchResponse { results: vec![] };
+    let acknowledgement = StdAck::success(&response);
+
+    let sub_msgs: Vec<SubMsg> = msgs
+        .iter()
+        .map(|m| SubMsg::reply_on_success(m.clone(), RECEIVE_DISPATCH_ID))
+        .collect();
+
+    // reset the data field
+    RESULTS.save(deps.storage, &vec![])?;
+
+    Ok(IbcReceiveResponse::new()
+        .set_ack(acknowledgement)
+        .add_submessages(sub_msgs)
+        .add_attribute("action", "vectis_tunnel_remote_receive_dispatch"))
 }
 
 pub fn receive_instantiate(
@@ -124,17 +149,25 @@ pub fn receive_instantiate(
         .add_attribute("action", "receive_instantiate"))
 }
 
-pub fn receive_update_channel(
+pub fn receive_mint_govec(
     deps: DepsMut,
-    channel_id: String,
+    _wallet_addr: String,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let acknowledgement = StdAck::success(&());
 
-    CHANNEL.save(deps.storage, &channel_id)?;
+    let factory_addr = FACTORY.load(deps.storage)?;
+
+    // TODO: We need the factory msg to let it know we already mint the govec token.
+    let msg = WasmMsg::Execute {
+        contract_addr: deps.api.addr_humanize(&factory_addr)?.to_string(),
+        msg: Binary::from(vec![]),
+        funds: vec![],
+    };
 
     Ok(IbcReceiveResponse::new()
         .set_ack(acknowledgement)
-        .add_attribute("action", "receive_update_channel"))
+        .add_message(msg)
+        .add_attribute("action", "receive_mint_govec"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

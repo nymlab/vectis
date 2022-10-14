@@ -7,8 +7,8 @@ pub use crate::factory::{
 pub use crate::govec::StakingOptions;
 pub use crate::guardians::*;
 pub use crate::ibc::{
-    check_connection, check_order, check_port, check_version, receive_dispatch, PacketMsg,
-    ReceiveIcaResponseMsg, StdAck,
+    check_connection, check_order, check_port, check_version, DispatchResponse, PacketMsg,
+    ReceiveIbcResponseMsg, StdAck,
 };
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;

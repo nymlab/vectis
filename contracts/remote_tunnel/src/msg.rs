@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr};
+use cosmwasm_std::{Addr, CosmosMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -9,18 +9,15 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    /// Only factory_remote can mint govec tokens
-    MintGovec {
-        wallet_addr: String
-    },
-    // StakeGovec {}
-    // UnstakeGovec {}
-    // Vote
+    MintGovec { wallet_addr: String },
+    Dispatch { msgs: Vec<CosmosMsg>, job_id: Option<String> },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(Option<Addr>)]
-    Factory
+    Factory,
+    #[returns(Option<String>)]
+    Channel,
 }
