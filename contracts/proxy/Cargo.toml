@@ -21,6 +21,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
 migration = []
+remote = []
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0", features = ["staking"] }

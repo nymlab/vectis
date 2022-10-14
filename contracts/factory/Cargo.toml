@@ -20,6 +20,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
+remote = ["vectis-proxy/remote"]
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0" }
@@ -32,7 +33,7 @@ serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.26" }
 derivative = "2"
 hex = "0.4"
-cw-utils = "0.11" # required lower version due to stake-cw20
+cw-utils = "0.13" # required lower version due to stake-cw20
 # Vectis libs
 vectis-proxy = { path = "../proxy", features = ["library"]}
 vectis-govec = { path = "../govec", features = ["library"]}

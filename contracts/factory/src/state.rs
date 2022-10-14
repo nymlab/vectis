@@ -1,5 +1,6 @@
 use cosmwasm_std::{CanonicalAddr, Coin};
 use cw_storage_plus::{Item, Map};
+use cw_utils::Expiration;
 pub use vectis_wallet::WalletInfo;
 
 /// The total number of wallets successfully created by the factory
@@ -12,8 +13,8 @@ pub const ADMIN: Item<CanonicalAddr> = Item::new("admin");
 pub const PROXY_CODE_ID: Item<u64> = Item::new("proxy_code_id");
 /// The latest default `multisig` code id stored onchain for the proxy
 pub const PROXY_MULTISIG_CODE_ID: Item<u64> = Item::new("proxy_multisig_code_id");
-/// All user with wallets by user CanonicalAddr and wallet CanonicalAddr
-pub const WALLETS_OF: Map<(Vec<u8>, Vec<u8>), ()> = Map::new("wallets_of");
+/// All proxy wallets that have yet to claim their govec tokens
+pub const GOVEC_CLAIM_LIST: Map<Vec<u8>, Expiration> = Map::new("govec-claim-list");
 /// Chain address prefix
 pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
 /// Fee for DAO when a wallet is created
