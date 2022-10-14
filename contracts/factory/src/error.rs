@@ -36,6 +36,8 @@ pub enum ContractError {
     GovecNotSet {},
     #[error("Proxy cannot be instantiated")]
     ProxyInstantiationError {},
+    #[error("ClaimExpired")]
+    ClaimExpired {},
 }
 
 impl From<MigrationMsgError> for ContractError {

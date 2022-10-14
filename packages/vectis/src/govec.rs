@@ -1,9 +1,5 @@
-use cw_utils::Duration;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cw_utils::{Duration, DAY};
+use std::ops::Mul;
 
-#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
-pub struct StakingOptions {
-    pub duration: Option<Duration>,
-    pub code_id: u64,
-}
+/// Time allowed for user to claim their Govec
+pub const GOVEC_CLAIM_DURATION_DAY_MUL: u64 = 90;

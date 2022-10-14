@@ -1,12 +1,12 @@
 use crate::error::ContractError;
 use crate::helpers::{
     ensure_enough_native_funds, ensure_has_govec, ensure_is_admin, ensure_is_valid_migration_msg,
-    ensure_is_valid_threshold, ensure_is_wallet,
+    ensure_is_valid_threshold,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
 use crate::state::{
-    ADDR_PREFIX, ADMIN, FEE, GOVEC, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
-    WALLETS_OF,
+    ADDR_PREFIX, ADMIN, FEE, GOVEC, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
+    TOTAL_CREATED,
 };
 
 #[cfg(not(feature = "library"))]
@@ -17,14 +17,15 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
-use cw_utils::parse_reply_instantiate_data;
+use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
 use vectis_govec::msg::ExecuteMsg::Mint;
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
-    StakingOptions, WalletAddr, WalletInfo, WalletQueryPrefix,
+    WalletAddr, WalletInfo, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 // use stake_cw20::msg::InstantiateMsg as StakingInstantiateMsg;
+use std::ops::{Add, Mul};
 use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
 // version info for migration info
@@ -32,8 +33,8 @@ const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // settings for pagination for wallet list
-const MAX_LIMIT: u32 = 100;
-const DEFAULT_LIMIT: u32 = 10;
+const MAX_LIMIT: u32 = 1000;
+const DEFAULT_LIMIT: u32 = 50;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -69,9 +70,6 @@ pub fn execute(
         ExecuteMsg::CreateWallet { create_wallet_msg } => {
             create_wallet(deps, info, env, create_wallet_msg)
         }
-        ExecuteMsg::UpdateProxyUser { new_user, old_user } => {
-            update_proxy_user(deps, info, new_user, old_user)
-        }
         ExecuteMsg::MigrateWallet {
             wallet_address,
             migration_msg,
@@ -79,7 +77,11 @@ pub fn execute(
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => update_code_id(deps, info, ty, new_code_id),
         ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
-        ExecuteMsg::UpdateAdmin { addr } => update_admin_addr(deps, info, addr),
+        ExecuteMsg::UpdateDao { addr } => update_admin_addr(deps, info, addr),
+        ExecuteMsg::ClaimGovec {} => claim_govec(deps, env, info),
+        ExecuteMsg::PurgeExpiredClaims { start_after, limit } => {
+            purge_expired_claims(deps, env, start_after, limit)
+        }
     }
 }
 
@@ -144,37 +146,6 @@ fn create_wallet(
     } else {
         Err(ContractError::OverFlow {})
     }
-}
-
-/// Update wallet
-
-fn update_proxy_user(
-    deps: DepsMut,
-    info: MessageInfo,
-    new_user: Addr,
-    old_user: Addr,
-) -> Result<Response, ContractError> {
-    let old_owner = deps.api.addr_canonicalize(old_user.as_ref())?;
-    let proxy = deps.api.addr_canonicalize(info.sender.as_str())?;
-    ensure_is_wallet(deps.as_ref(), &old_owner, &proxy)?;
-
-    let proxy_storage_key = proxy.to_vec();
-    WALLETS_OF.remove(
-        deps.storage,
-        (old_owner.to_vec(), proxy_storage_key.clone()),
-    );
-    WALLETS_OF.save(
-        deps.storage,
-        (
-            deps.api.addr_canonicalize(new_user.as_str())?.to_vec(),
-            proxy_storage_key,
-        ),
-        &(),
-    )?;
-    Ok(Response::new()
-        .add_attribute("action", "wallet updated")
-        .add_attribute("wallet", info.sender)
-        .add_attribute("user", new_user))
 }
 
 /// Migrates the instantiated `wallet_proxy` instance to a new code id
@@ -304,9 +275,68 @@ fn update_admin_addr(
         .add_attribute("New Admin", addr))
 }
 
+fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    let claiming_user = deps.api.addr_canonicalize(info.sender.as_str())?.to_vec();
+    if GOVEC_CLAIM_LIST
+        .load(deps.storage, claiming_user.clone())?
+        .is_expired(&env.block)
+    {
+        GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user);
+        return Err(ContractError::ClaimExpired {});
+    } else {
+        let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
+            contract_addr: deps
+                .api
+                .addr_humanize(&GOVEC.load(deps.storage)?)?
+                .to_string(),
+            msg: to_binary(&Mint {
+                new_wallet: info.sender.to_string(),
+            })?,
+            funds: vec![],
+        });
+
+        let res = Response::new()
+            .add_submessage(mint_msg)
+            .add_attribute("action", "Claimed Govec")
+            .add_attribute("proxy_address", info.sender);
+        Ok(res)
+    }
+}
+
+fn purge_expired_claims(
+    deps: DepsMut,
+    env: Env,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> Result<Response, ContractError> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = match start_after {
+        Some(s) => {
+            let wallet_addr = deps.api.addr_canonicalize(&s)?.to_vec();
+            Some(Bound::exclusive(wallet_addr))
+        }
+        None => None,
+    };
+
+    let wallets: StdResult<Vec<(Vec<u8>, Expiration)>> = GOVEC_CLAIM_LIST
+        .prefix(())
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|w| -> StdResult<(Vec<u8>, Expiration)> { w })
+        .collect();
+
+    for w in wallets? {
+        if w.1.is_expired(&env.block) {
+            GOVEC_CLAIM_LIST.remove(deps.storage, w.0)
+        }
+    }
+
+    Ok(Response::default())
+}
+
 /// reply hooks handles replies from proxy wallet instantiation
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
     // NOTE: Error returned in `reply` is equivalent to contract error, all states revert,
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
 
@@ -315,23 +345,14 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
         if let Ok(res) = parse_reply_instantiate_data(reply) {
             let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&res.contract_address)?;
             let addr_bin = res.data.ok_or(ContractError::ProxyInstantiationError {})?;
-            WALLETS_OF.save(deps.storage, (addr_bin.to_vec(), wallet_addr.to_vec()), &())?;
+            let expiration = Expiration::AtTime(env.block.time)
+                .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
+                .expect("error defining activate_at");
 
-            // Mint Govec Vote for the newly created proxy wallet
-            let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
-                contract_addr: deps
-                    .api
-                    .addr_humanize(&GOVEC.load(deps.storage)?)?
-                    .to_string(),
-                msg: to_binary(&Mint {
-                    new_wallet: res.contract_address.clone(),
-                })?,
-                funds: vec![],
-            });
+            GOVEC_CLAIM_LIST.save(deps.storage, wallet_addr.to_vec(), &expiration)?;
 
             let res = Response::new()
-                .add_submessage(mint_msg)
-                .add_attribute("action", "Wallet Proxy Stored")
+                .add_attribute("action", "Govec claim list updated")
                 .add_attribute("proxy_address", res.contract_address);
             Ok(res)
         } else {
@@ -343,20 +364,19 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Wallets { start_after, limit } => {
-            to_binary(&query_wallet_list(deps, start_after, limit)?)
+        QueryMsg::UnclaimedGovecWallets { start_after, limit } => {
+            to_binary(&query_unclaim_wallet_list(deps, env, start_after, limit)?)
         }
-        QueryMsg::WalletsOf {
-            user,
-            start_after,
-            limit,
-        } => to_binary(&query_wallets_of(deps, user, start_after, limit)?),
+        QueryMsg::ClaimExpiration { wallet } => {
+            to_binary(&query_wallet_claim_expiration(deps, wallet)?)
+        }
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
         QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
-        QueryMsg::AdminAddr {} => to_binary(&query_admin_addr(deps)?),
+        QueryMsg::DaoAddr {} => to_binary(&query_admin_addr(deps)?),
+        QueryMsg::TotalCreated {} => to_binary(&query_total(deps)?),
     }
 }
 
@@ -366,55 +386,32 @@ pub fn query_fee(deps: Deps) -> StdResult<Coin> {
 }
 
 /// Returns wallets created with limit
-pub fn query_wallet_list(
+pub fn query_unclaim_wallet_list(
     deps: Deps,
-    start_after: Option<WalletQueryPrefix>,
-    limit: Option<u32>,
-) -> StdResult<WalletListResponse> {
-    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start = match start_after {
-        Some(s) => {
-            let user_addr = deps.api.addr_canonicalize(s.user_addr.as_str())?.to_vec();
-            let wallet_addr = deps.api.addr_canonicalize(s.wallet_addr.as_str())?.to_vec();
-            Some(Bound::exclusive((user_addr, wallet_addr)))
-        }
-        None => None,
-    };
-    let wallets: Result<Vec<_>, _> = WALLETS_OF
-        .sub_prefix(())
-        .range(deps.storage, start, None, Order::Ascending)
-        .take(limit)
-        .map(|w| -> StdResult<Addr> { deps.api.addr_humanize(&CanonicalAddr::from(w?.0 .1)) })
-        .collect();
-
-    Ok(WalletListResponse { wallets: wallets? })
-}
-/// Returns wallets of user
-pub fn query_wallets_of(
-    deps: Deps,
-    user: String,
+    env: Env,
     start_after: Option<String>,
     limit: Option<u32>,
 ) -> StdResult<WalletListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = match start_after {
         Some(s) => {
-            let addr = deps.api.addr_canonicalize(&s)?;
-            Some(Bound::ExclusiveRaw(addr.into()))
+            let wallet_addr = deps.api.addr_canonicalize(&s)?.to_vec();
+            Some(Bound::exclusive(wallet_addr))
         }
         None => None,
     };
-    let user_addr = deps.api.addr_validate(&user)?;
-    let user_addr = deps.api.addr_canonicalize(user_addr.as_str())?;
-
-    let wallets: Result<Vec<_>, _> = WALLETS_OF
-        .prefix(user_addr.to_vec())
+    let wallets: StdResult<Vec<_>> = GOVEC_CLAIM_LIST
+        .prefix(())
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
-        .map(|key| deps.api.addr_humanize(&CanonicalAddr::from(key?.0)))
+        .map(|w| -> StdResult<Addr> { deps.api.addr_humanize(&CanonicalAddr::from(w?.0)) })
         .collect();
 
     Ok(WalletListResponse { wallets: wallets? })
+}
+/// Returns wallets of user
+pub fn query_wallet_claim_expiration(deps: Deps, wallet: String) -> StdResult<Expiration> {
+    GOVEC_CLAIM_LIST.load(deps.storage, deps.api.addr_canonicalize(&wallet)?.to_vec())
 }
 
 /// Returns the current supported code Id:
@@ -435,4 +432,8 @@ pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
 /// Returns admin address
 pub fn query_admin_addr(deps: Deps) -> StdResult<Addr> {
     deps.api.addr_humanize(&ADMIN.load(deps.storage)?)
+}
+
+pub fn query_total(deps: Deps) -> StdResult<u64> {
+    TOTAL_CREATED.load(deps.storage)
 }

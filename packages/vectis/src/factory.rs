@@ -59,12 +59,6 @@ impl ProxyMigrateMsg {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct WalletQueryPrefix {
-    pub user_addr: String,
-    pub wallet_addr: String,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct WalletFactoryInstantiateMsg {
     /// Smart contract wallet contract code id
@@ -77,7 +71,7 @@ pub struct WalletFactoryInstantiateMsg {
     /// Fee in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
     /// Governance Token, Govec, address
-    pub govec: Option<String>,
+    pub govec_minter: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -85,10 +79,6 @@ pub struct WalletFactoryInstantiateMsg {
 pub enum WalletFactoryExecuteMsg {
     CreateWallet {
         create_wallet_msg: CreateWalletMsg,
-    },
-    UpdateProxyUser {
-        old_user: Addr,
-        new_user: Addr,
     },
     MigrateWallet {
         wallet_address: WalletAddr,
@@ -104,29 +94,35 @@ pub enum WalletFactoryExecuteMsg {
     UpdateGovecAddr {
         addr: String,
     },
-    UpdateAdmin {
+    UpdateDao {
         addr: String,
+    },
+    ClaimGovec {},
+    PurgeExpiredClaims {
+        // Address string to start after
+        start_after: Option<String>,
+        // Max is 30 and default is 10
+        limit: Option<u32>,
     },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum WalletFactoryQueryMsg {
-    /// Shows proxy wallet address
+    /// Shows proxy wallet address of unclaimed wallets which has not expired
     /// Returns WalletListResponse
-    Wallets {
-        // Address string to start after
-        start_after: Option<WalletQueryPrefix>,
-        // Max is 30 and default is 10
-        limit: Option<u32>,
-    },
-    WalletsOf {
-        user: String,
+    UnclaimedGovecWallets {
         // Address string to start after
         start_after: Option<String>,
-        // Max is 30 and default is 10
+        // Max is 100 and default is 50
         limit: Option<u32>,
     },
+    /// Returns the expiration date for claiming Govec if not yet claimed or expired
+    ClaimExpiration {
+        wallet: String,
+    },
+    /// Total wallets created in this contract
+    TotalCreated {},
     CodeId {
         ty: CodeIdType,
     },
@@ -135,6 +131,6 @@ pub enum WalletFactoryQueryMsg {
     Fee {},
     /// Returns the address of the Govec Voting Tokens Contract
     GovecAddr {},
-    /// Returns the address of the Admin of this contract
-    AdminAddr {},
+    /// Returns the address of the DAO which holds the admin role of this contract
+    DaoAddr {},
 }
