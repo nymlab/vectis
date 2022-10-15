@@ -4,17 +4,18 @@ use cosmwasm_std::testing::{
 };
 use cosmwasm_std::{
     from_binary, from_slice, Addr, Binary, Coin, DepsMut, IbcChannelOpenMsg, IbcOrder, OwnedDeps,
-    Reply, SubMsgResponse, SubMsgResult, Uint128,
+    Reply, SubMsgResponse, SubMsgResult, Uint128, CosmosMsg, BankMsg, StdResult,
 };
 
 use vectis_wallet::{
     IbcError, PacketMsg, StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER,
-    IBC_APP_VERSION,
+    IBC_APP_VERSION, RECEIVE_DISPATCH_ID
 };
 
 use crate::contract::{instantiate, query, reply};
 use crate::ibc::{ibc_channel_connect, ibc_channel_open, ibc_packet_receive};
 use crate::msg::{InstantiateMsg, QueryMsg};
+use crate::state::RESULTS;
 use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 const CONNECTION_ID: &str = "connection-1";
@@ -187,4 +188,50 @@ fn handle_factory_packet() {
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Factory).unwrap()).unwrap();
 
     assert_eq!(contract_address.to_string(), res.unwrap());
+}
+
+#[test]
+fn handle_dispatch_packet() {
+    let mut deps = do_instantiate();
+    let channel_id = "channel-123";
+
+    // let info = mock_info("sender", &vec![]);
+
+    let dispatch_msg = CosmosMsg::Bank(BankMsg::Send { to_address: "test".to_string(), amount: vec![] });
+
+    let msgs = vec![dispatch_msg];
+
+    let ibc_msg = PacketMsg::Dispatch { msgs: msgs.clone(), sender: "sender".to_string(), job_id: Some("my_job_id".to_string()) };
+
+    // register the channel
+    connect(deps.as_mut(), channel_id);
+
+    let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+
+    // assert app-level success
+    let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
+    ack.unwrap();
+
+    assert_eq!(msgs.len(), res.messages.len());
+
+    assert_eq!(RECEIVE_DISPATCH_ID, res.messages[0].id.clone());
+
+    let data = "string";
+
+    let mut encoded = vec![0x0a, data.len() as u8];
+    encoded.extend(data.as_bytes());
+
+    let response = Reply {
+        id: res.messages[0].id,
+        result: SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: Some(Binary::from(encoded.clone())),
+        }),
+    };
+
+    let res = reply(deps.as_mut(), mock_env(), response).unwrap();
+    let binary = res.data.unwrap();
+    
+    // assert_eq!(contract_address.to_string(), res.unwrap());
 }
