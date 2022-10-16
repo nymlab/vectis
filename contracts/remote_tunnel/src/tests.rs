@@ -3,8 +3,9 @@ use cosmwasm_std::testing::{
     mock_ibc_packet_recv, mock_info, MockApi, MockQuerier, MockStorage,
 };
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut,
-    IbcChannelOpenMsg, IbcOrder, OwnedDeps, Reply, SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
+    from_binary, from_slice, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg,
+    DepsMut, IbcChannelOpenMsg, IbcOrder, OwnedDeps, Reply, SubMsgResponse, SubMsgResult, Uint128,
+    WasmMsg,
 };
 
 use vectis_wallet::{
@@ -16,7 +17,7 @@ use vectis_wallet::{
 use crate::contract::{instantiate, query, reply};
 use crate::ibc::{ibc_channel_connect, ibc_channel_open, ibc_packet_receive};
 use crate::msg::{InstantiateMsg, QueryMsg};
-use crate::state::RESULTS;
+use crate::state::{RESULTS};
 use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 const CONNECTION_ID: &str = "connection-1";
@@ -278,4 +279,47 @@ fn handle_update_packet() {
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel).unwrap()).unwrap();
 
     assert_eq!(channel_id.to_string(), res.unwrap());
+}
+
+#[test]
+fn handle_mint_govec_packet() {
+    let mut deps = do_instantiate();
+    let channel_id = "channel-123";
+    let factory_addr = "fake_addr";
+    let wallet_addr = "user_address";
+
+    let mut encoded = vec![0x0a, factory_addr.len() as u8];
+    encoded.extend(factory_addr.as_bytes());
+
+    let response = Reply {
+        id: FACTORY_CALLBACK_ID,
+        result: SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: Some(Binary::from(encoded)),
+        }),
+    };
+
+    reply(deps.as_mut(), mock_env(), response).unwrap();
+
+    let ibc_msg = PacketMsg::MintGovec {
+        wallet_addr: wallet_addr.to_string(),
+    };
+
+    connect(deps.as_mut(), channel_id);
+
+    let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+
+    // assert app-level success
+    let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
+    ack.unwrap();
+
+    assert_eq!(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: factory_addr.to_string(),
+            msg: Binary::from(vec![]),
+            funds: vec![],
+        }),
+        res.messages[0].msg
+    )
 }
