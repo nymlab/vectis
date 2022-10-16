@@ -3,13 +3,14 @@ use cosmwasm_std::testing::{
     mock_ibc_packet_recv, mock_info, MockApi, MockQuerier, MockStorage,
 };
 use cosmwasm_std::{
-    from_binary, from_slice, Addr, Binary, Coin, DepsMut, IbcChannelOpenMsg, IbcOrder, OwnedDeps,
-    Reply, SubMsgResponse, SubMsgResult, Uint128, CosmosMsg, BankMsg, StdResult,
+    from_binary, from_slice, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut,
+    IbcChannelOpenMsg, IbcOrder, OwnedDeps, Reply, SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
 };
 
 use vectis_wallet::{
-    IbcError, PacketMsg, StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER,
-    IBC_APP_VERSION, RECEIVE_DISPATCH_ID
+    DispatchResponse, IbcError, PacketMsg, StdAck,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
+    RECEIVE_DISPATCH_ID,
 };
 
 use crate::contract::{instantiate, query, reply};
@@ -155,7 +156,6 @@ fn handle_factory_packet() {
 
     let ibc_msg = PacketMsg::InstantiateFactory { code_id: 13, msg };
 
-    // register the channel
     connect(deps.as_mut(), channel_id);
 
     let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
@@ -195,13 +195,18 @@ fn handle_dispatch_packet() {
     let mut deps = do_instantiate();
     let channel_id = "channel-123";
 
-    // let info = mock_info("sender", &vec![]);
-
-    let dispatch_msg = CosmosMsg::Bank(BankMsg::Send { to_address: "test".to_string(), amount: vec![] });
+    let dispatch_msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: "test".to_string(),
+        amount: vec![],
+    });
 
     let msgs = vec![dispatch_msg];
 
-    let ibc_msg = PacketMsg::Dispatch { msgs: msgs.clone(), sender: "sender".to_string(), job_id: Some("my_job_id".to_string()) };
+    let ibc_msg = PacketMsg::Dispatch {
+        msgs: msgs.clone(),
+        sender: "sender".to_string(),
+        job_id: Some("my_job_id".to_string()),
+    };
 
     // register the channel
     connect(deps.as_mut(), channel_id);
@@ -222,16 +227,55 @@ fn handle_dispatch_packet() {
     let mut encoded = vec![0x0a, data.len() as u8];
     encoded.extend(data.as_bytes());
 
+    let msg = WasmMsg::Execute {
+        contract_addr: "address".to_string(),
+        msg: to_binary(&()).unwrap(),
+        funds: vec![],
+    };
+
     let response = Reply {
         id: res.messages[0].id,
         result: SubMsgResult::Ok(SubMsgResponse {
             events: vec![],
-            data: Some(Binary::from(encoded.clone())),
+            data: Some(to_binary(&msg).unwrap()),
         }),
     };
 
     let res = reply(deps.as_mut(), mock_env(), response).unwrap();
-    let binary = res.data.unwrap();
-    
-    // assert_eq!(contract_address.to_string(), res.unwrap());
+    let ack: StdAck = from_binary(&res.data.unwrap()).unwrap();
+    let response: DispatchResponse = from_binary(&ack.unwrap()).unwrap();
+
+    let result: WasmMsg = from_binary(&response.results[0]).unwrap();
+
+    let state = RESULTS.load(&deps.storage).unwrap();
+    let storage_result: WasmMsg = from_binary(&state[0]).unwrap();
+
+    assert_eq!(storage_result, result);
+}
+
+#[test]
+fn handle_update_packet() {
+    let mut deps = do_instantiate();
+    let channel_id = "channel-123";
+
+    let ibc_msg = PacketMsg::UpdateChannel;
+
+    connect(deps.as_mut(), channel_id);
+
+    let res: Option<String> =
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel).unwrap()).unwrap();
+
+    assert!(res.is_none());
+
+    let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+
+    // assert app-level success
+    let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
+    ack.unwrap();
+
+    let res: Option<String> =
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel).unwrap()).unwrap();
+
+    assert_eq!(channel_id.to_string(), res.unwrap());
 }
