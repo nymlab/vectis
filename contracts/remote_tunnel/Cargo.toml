@@ -20,6 +20,6 @@ cosmwasm-schema = { version = "1.1.4" }
 cw-storage-plus = { version = "0.14.0" }
 cw-utils = { version = "0.14.0" }
 thiserror = { version = "1.0.37" }
-vectis-wallet = {path = "../../packages/vectis"}
+vectis-wallet = {path = "../../packages/vectis", features = ["remote"]}
 
 [dev-dependencies]
