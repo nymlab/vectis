@@ -1010,13 +1010,9 @@ version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus 0.13.4",
- "cw-utils 0.13.4",
+ "cw-storage-plus 0.14.0",
+ "cw-utils 0.14.0",
  "cw2 0.13.4",
- "hex",
- "schemars",
- "serde",
- "sha2 0.9.9",
  "thiserror",
  "vectis-wallet",
 ]
