@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::helpers::{
-    ensure_enough_native_funds, ensure_has_govec, ensure_is_admin, ensure_is_valid_migration_msg,
-    ensure_is_valid_threshold,
+    create_mint_msg, ensure_enough_native_funds, ensure_has_govec, ensure_is_admin,
+    ensure_is_valid_migration_msg, ensure_is_valid_threshold, handle_govec_minted,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
@@ -27,11 +27,6 @@ pub use vectis_wallet::{
 use std::ops::{Add, Mul};
 use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
-#[cfg(feature = "dao-chain")]
-use vectis_govec::msg::ExecuteMsg::Mint;
-#[cfg(feature = "remote")]
-use vectis_remote_tunnel::msg::ExecuteMsg::MintGovec;
-
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -39,10 +34,6 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 // settings for pagination for unclaimed govec wallet list
 const MAX_LIMIT: u32 = 1000;
 const DEFAULT_LIMIT: u32 = 50;
-
-/// default value for claiming govec reply
-#[cfg(feature = "dao-chain")]
-const GOVEC_REPLY_ID: u64 = u64::MAX;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -295,7 +286,7 @@ fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         Err(ContractError::ClaimExpired {})
     } else {
         let govec_minter = GOVEC_MINTER.load(deps.storage)?;
-        let mint_msg = _create_mint_msg(
+        let mint_msg = create_mint_msg(
             deps.api.addr_humanize(&govec_minter)?.to_string(),
             info.sender.to_string(),
         )?;
@@ -306,29 +297,6 @@ fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             .add_attribute("proxy_address", info.sender);
         Ok(res)
     }
-}
-
-#[cfg(feature = "dao-chain")]
-fn _create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
-    Ok(SubMsg::reply_always(
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: govec_minter,
-            msg: to_binary(&Mint { new_wallet: wallet })?,
-            funds: vec![],
-        }),
-        GOVEC_REPLY_ID,
-    ))
-}
-
-#[cfg(feature = "remote")]
-fn _create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
-    Ok(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: govec_minter,
-        msg: to_binary(&MintGovec {
-            wallet_addr: wallet,
-        })?,
-        funds: vec![],
-    })))
 }
 
 #[cfg(feature = "remote")]
@@ -342,20 +310,9 @@ fn govec_minted(
     if info.sender != deps.api.addr_humanize(&govec_minter)?.to_string() {
         Err(ContractError::Unauthorized {})
     } else {
-        GOVEC_CLAIM_LIST.remove(deps.storage, deps.api.addr_canonicalize(&wallet)?.to_vec());
-        Ok(Response::new().add_attribute("Govec Minted on DAO Chain", "wallet"))
+        let to_remove_wallet = deps.api.addr_canonicalize(&wallet)?;
+        handle_govec_minted(deps, to_remove_wallet)
     }
-}
-
-fn _handle_govec_minted(deps: DepsMut, claiming_user: &str) -> Result<Response, ContractError> {
-    GOVEC_CLAIM_LIST.remove(
-        deps.storage,
-        deps.api.addr_canonicalize(claiming_user)?.to_vec(),
-    );
-    let res = Response::new()
-        .add_attribute("action", "Govec Minted")
-        .add_attribute("proxy_address", claiming_user);
-    Ok(res)
 }
 
 fn purge_expired_claims(
@@ -417,7 +374,7 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     if reply.id == GOVEC_REPLY_ID {
         let res = parse_reply_execute_data(reply)?;
         if let Some(b) = res.data {
-            GOVEC_CLAIM_LIST.remove(deps.storage, b.to_vec())
+            handle_govec_minted(deps.storage, b.to_vec())
         } else {
             return Err(ContractError::InvalidReplyFromGovec {});
         }
