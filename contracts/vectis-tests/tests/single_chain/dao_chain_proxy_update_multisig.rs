@@ -29,11 +29,12 @@ fn user_can_update_proxy_multisig_with_direct_message() {
         .unwrap();
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
@@ -86,11 +87,12 @@ fn user_without_multisig_can_instantiate_new_multisig_guardian() {
         .unwrap();
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert_eq!(w.multisig_address, None);
@@ -140,11 +142,12 @@ fn user_can_remove_multisig_for_guardians() {
         .unwrap();
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert!(w.multisig_address.is_some());
@@ -186,11 +189,12 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
         .unwrap();
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
@@ -264,11 +268,12 @@ fn non_user_update_proxy_multisig_fails() {
         .unwrap();
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {};
 
@@ -300,11 +305,12 @@ fn relayer_update_proxy_multisig_with_non_user_fails() {
         .unwrap();
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();

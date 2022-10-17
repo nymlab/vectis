@@ -3,9 +3,10 @@ use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, Uint1
 use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
 use cw_multi_test::Executor;
-use vectis_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
+use cw_utils::Expiration;
+use vectis_factory::ContractError;
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
-use vectis_wallet::{MultiSig, WalletInfo, WalletQueryPrefix};
+use vectis_wallet::{MultiSig, WalletInfo};
 
 use crate::common::*;
 
@@ -29,17 +30,19 @@ fn create_new_proxy() {
     );
     assert_matches!(rsp, Ok(_));
 
-    let mut r_user = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+    let mut unclaimed_wallet_list = suite
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap();
-    let r_all = suite
-        .query_all_wallet_addresses(&suite.factory_addr, None, None)
-        .unwrap();
-    assert_eq!(r_user.wallets[0], r_all.wallets[0]);
-    assert_eq!(r_user.wallets.len(), 1);
-    assert_eq!(r_all.wallets.len(), 1);
 
-    let wallet_addr = r_user.wallets.pop().unwrap();
+    assert_eq!(unclaimed_wallet_list.wallets.len(), 1);
+    if let Expiration::AtTime(time) = unclaimed_wallet_list.wallets[0].1 {
+        let expiration = suite.claim_expiration();
+        assert_eq!(time, suite.app.block_info().time.plus_seconds(expiration));
+    } else {
+        assert!(false);
+    }
+
+    let wallet_addr = unclaimed_wallet_list.wallets.pop().unwrap().0;
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
 
     let factory_fund = suite
@@ -113,11 +116,12 @@ fn user_rotate_keys_updates_factory() {
     assert!(rsp.is_ok());
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let new_address = "new_key";
     suite
@@ -134,53 +138,8 @@ fn user_rotate_keys_updates_factory() {
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert_eq!(w.user_addr.as_str(), new_address);
-
-    let origin_user_wallets = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
-        .unwrap()
-        .wallets
-        .pop();
-
-    assert!(origin_user_wallets.is_none());
-
-    let new_user_wallet_addr = suite
-        .query_user_wallet_addresses(&suite.factory_addr, new_address, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap();
-
-    assert_eq!(new_user_wallet_addr, wallet_address);
 }
 
-#[test]
-fn non_wallet_cannot_update_factory() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let rsp = suite.create_new_proxy_without_guardians(
-        Addr::unchecked(USER_ADDR),
-        suite.factory_addr.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-    assert!(rsp.is_ok());
-
-    let new_address = "new_key";
-    let err = suite
-        .app
-        .execute_contract(
-            Addr::unchecked(USER_ADDR),
-            suite.factory_addr,
-            &FactoryExecuteMsg::UpdateProxyUser {
-                new_user: Addr::unchecked(new_address.to_string()),
-                old_user: Addr::unchecked(USER_ADDR),
-            },
-            &[],
-        )
-        .unwrap_err();
-
-    println!("err {:?}", err);
-}
 #[test]
 fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
@@ -221,11 +180,12 @@ fn user_can_execute_messages() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
 
@@ -273,10 +233,13 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
         )
         .unwrap();
 
-    let mut r = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
-        .unwrap();
-    let wallet_addr = r.wallets.pop().unwrap();
+    let mut wallet_addr = suite
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
+        .unwrap()
+        .wallets
+        .pop()
+        .unwrap()
+        .0;
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
     assert!(!w.is_frozen);
 
@@ -363,10 +326,13 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
         )
         .unwrap();
 
-    let mut r = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
-        .unwrap();
-    let proxy_addr = r.wallets.pop().unwrap();
+    let mut proxy_addr = suite
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
+        .unwrap()
+        .wallets
+        .pop()
+        .unwrap()
+        .0;
 
     let w: WalletInfo = suite.query_wallet_info(&proxy_addr).unwrap();
     let multisig_balance = suite.query_balance(&w.multisig_address.unwrap(), "ucosm".to_string());
@@ -384,7 +350,7 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
 }
 
 #[test]
-fn query_all_wallets() {
+fn query_all_unclaimed_wallets_works() {
     let mut suite = DaoChainSuite::init().unwrap();
 
     // Create a few wallets
@@ -419,16 +385,12 @@ fn query_all_wallets() {
         .unwrap();
 
     let all = suite
-        .query_all_wallet_addresses(&suite.factory_addr, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap();
-    let wallet_info: WalletInfo = suite.query_wallet_info(&all.wallets[0]).unwrap();
     let pagination_second = suite
-        .query_all_wallet_addresses(
+        .query_unclaimed_govec_wallets(
             &suite.factory_addr,
-            Some(WalletQueryPrefix {
-                user_addr: wallet_info.user_addr.to_string(),
-                wallet_addr: all.wallets[0].to_string(),
-            }),
+            Some(all.wallets[0].0.to_string()),
             None,
         )
         .unwrap();

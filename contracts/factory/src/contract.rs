@@ -3,7 +3,7 @@ use crate::helpers::{
     ensure_enough_native_funds, ensure_has_govec, ensure_is_admin, ensure_is_valid_migration_msg,
     ensure_is_valid_threshold,
 };
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, WalletListResponse};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
     ADDR_PREFIX, ADMIN, FEE, GOVEC, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
     TOTAL_CREATED,
@@ -282,7 +282,7 @@ fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         .is_expired(&env.block)
     {
         GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user);
-        return Err(ContractError::ClaimExpired {});
+        Err(ContractError::ClaimExpired {})
     } else {
         let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
             contract_addr: deps
@@ -322,7 +322,6 @@ fn purge_expired_claims(
         .prefix(())
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
-        .map(|w| -> StdResult<(Vec<u8>, Expiration)> { w })
         .collect();
 
     for w in wallets? {
@@ -344,7 +343,6 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     if reply.id == expected_id {
         if let Ok(res) = parse_reply_instantiate_data(reply) {
             let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&res.contract_address)?;
-            let addr_bin = res.data.ok_or(ContractError::ProxyInstantiationError {})?;
             let expiration = Expiration::AtTime(env.block.time)
                 .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
                 .expect("error defining activate_at");
@@ -364,10 +362,10 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::UnclaimedGovecWallets { start_after, limit } => {
-            to_binary(&query_unclaim_wallet_list(deps, env, start_after, limit)?)
+            to_binary(&query_unclaim_wallet_list(deps, start_after, limit)?)
         }
         QueryMsg::ClaimExpiration { wallet } => {
             to_binary(&query_wallet_claim_expiration(deps, wallet)?)
@@ -388,10 +386,9 @@ pub fn query_fee(deps: Deps) -> StdResult<Coin> {
 /// Returns wallets created with limit
 pub fn query_unclaim_wallet_list(
     deps: Deps,
-    env: Env,
     start_after: Option<String>,
     limit: Option<u32>,
-) -> StdResult<WalletListResponse> {
+) -> StdResult<UnclaimedWalletList> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = match start_after {
         Some(s) => {
@@ -400,18 +397,21 @@ pub fn query_unclaim_wallet_list(
         }
         None => None,
     };
-    let wallets: StdResult<Vec<_>> = GOVEC_CLAIM_LIST
+    let wallets: StdResult<Vec<(Addr, Expiration)>> = GOVEC_CLAIM_LIST
         .prefix(())
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
-        .map(|w| -> StdResult<Addr> { deps.api.addr_humanize(&CanonicalAddr::from(w?.0)) })
+        .map(|w| -> StdResult<(Addr, Expiration)> {
+            let ww = w?;
+            Ok((deps.api.addr_humanize(&CanonicalAddr::from(ww.0))?, ww.1))
+        })
         .collect();
 
-    Ok(WalletListResponse { wallets: wallets? })
+    Ok(UnclaimedWalletList { wallets: wallets? })
 }
 /// Returns wallets of user
-pub fn query_wallet_claim_expiration(deps: Deps, wallet: String) -> StdResult<Expiration> {
-    GOVEC_CLAIM_LIST.load(deps.storage, deps.api.addr_canonicalize(&wallet)?.to_vec())
+pub fn query_wallet_claim_expiration(deps: Deps, wallet: String) -> StdResult<Option<Expiration>> {
+    GOVEC_CLAIM_LIST.may_load(deps.storage, deps.api.addr_canonicalize(&wallet)?.to_vec())
 }
 
 /// Returns the current supported code Id:

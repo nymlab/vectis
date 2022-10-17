@@ -20,11 +20,12 @@ fn user_can_migrate_proxy_with_direct_message() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
     let old_code_id = w.code_id;
@@ -98,11 +99,13 @@ fn relayer_can_migrate_proxy_with_user_signature() {
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
+
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let old_code_id = w.code_id;
     let relayer = w.relayers.pop().unwrap();
@@ -150,11 +153,13 @@ fn user_cannot_migrate_others_wallet() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
+
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let code_id = w.code_id;
 
@@ -206,11 +211,13 @@ fn user_cannot_migrate_with_mismatched_code_id() {
     assert!(create_proxy_rsp.is_ok());
 
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
+
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let code_id = w.code_id;
 
@@ -262,13 +269,14 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
         WALLET_FEE,
     );
     assert!(create_proxy_rsp.is_ok());
-
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
+
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
     // User migrates their wallet to the new code id
@@ -313,11 +321,13 @@ fn relayer_cannot_migrate_others_wallet() {
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
+
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();
 
@@ -362,11 +372,13 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
+
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();
 
@@ -414,11 +426,13 @@ fn relayer_cannot_migrate_proxy_with_invalid_signature() {
 
     assert!(create_proxy_rsp.is_ok());
     let wallet_address = suite
-        .query_user_wallet_addresses(&suite.factory_addr, USER_ADDR, None, None)
+        .query_unclaimed_govec_wallets(&suite.factory_addr, None, None)
         .unwrap()
         .wallets
         .pop()
-        .unwrap();
+        .unwrap()
+        .0;
+
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();
 
