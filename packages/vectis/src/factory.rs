@@ -109,8 +109,9 @@ pub enum WalletFactoryExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum WalletFactoryQueryMsg {
-    /// Shows proxy wallet address of unclaimed wallets which has not expired
-    /// Returns WalletListResponse
+    /// Shows proxy wallet address of unclaimed wallets which has not been removed due to
+    /// expiration
+    /// Returns UnclaimedWalletList
     UnclaimedGovecWallets {
         // Address string to start after
         start_after: Option<String>,
