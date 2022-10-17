@@ -22,6 +22,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 remote = ["vectis-proxy/remote", "vectis-remote-tunnel", "vectis-wallet/remote"]
 dao-chain= ["vectis-proxy/dao-chain"]
+default = ["dao-chain"]
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0" }
