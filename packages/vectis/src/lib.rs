@@ -7,7 +7,7 @@ pub use crate::factory::{
 pub use crate::govec::GOVEC_CLAIM_DURATION_DAY_MUL;
 pub use crate::guardians::*;
 pub use crate::ibc::{
-    check_connection, check_order, check_port, check_version, DispatchResponse, PacketMsg,
+    check_connection, check_order, check_port, check_version, acknowledge_dispatch, DispatchResponse, PacketMsg,
     ReceiveIbcResponseMsg, StdAck,
 };
 pub use crate::pubkey::pub_key_to_address;

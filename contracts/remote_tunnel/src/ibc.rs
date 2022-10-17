@@ -8,8 +8,8 @@ use cosmwasm_std::{
 
 use vectis_wallet::{
     check_connection, check_order, check_port, check_version, DispatchResponse, PacketMsg,
-    ReceiveIbcResponseMsg, StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
-    IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
+    StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
+    IBC_APP_VERSION, RECEIVE_DISPATCH_ID, acknowledge_dispatch,
 };
 
 use crate::state::{CHANNEL, CONFIG, FACTORY, RESULTS};
@@ -40,38 +40,15 @@ pub fn ibc_channel_open(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
-    deps: DepsMut,
-    env: Env,
+    _deps: DepsMut,
+    _env: Env,
     msg: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // we need to parse the ack based on our request
     let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
     match original_packet {
-        PacketMsg::Dispatch { job_id, sender, .. } => {
-            acknowledge_dispatch(deps, env, job_id, sender, msg)
-        }
+        PacketMsg::Dispatch { job_id, sender, .. } => Ok(acknowledge_dispatch(job_id, sender, msg)?),
         _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack")),
-    }
-}
-
-fn acknowledge_dispatch(
-    _deps: DepsMut,
-    _env: Env,
-    job_id: Option<String>,
-    sender: String,
-    ack: IbcPacketAckMsg,
-) -> Result<IbcBasicResponse, ContractError> {
-    let res = IbcBasicResponse::new().add_attribute("action", "acknowledge_dispatch");
-    match job_id {
-        Some(id) => {
-            let msg: StdAck = from_slice(&ack.acknowledgement.data)?;
-            // Send IBC packet ack message to another contract
-            let res = res
-                .add_attribute("job_id", &id)
-                .add_message(ReceiveIbcResponseMsg { id: id, msg }.into_cosmos_msg(sender)?);
-            Ok(res)
-        }
-        None => Ok(res),
     }
 }
 
