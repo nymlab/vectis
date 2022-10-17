@@ -2,10 +2,17 @@ use cosmwasm_std::{
     from_slice, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
     IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult,
+    SubMsg,
 };
-use vectis_wallet::{check_order, check_version, IbcError, PacketMsg, IBC_APP_VERSION};
+use vectis_wallet::{
+    acknowledge_dispatch, check_order, check_version, DispatchResponse, IbcError, PacketMsg,
+    StdAck, IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
+};
 
-use crate::{error::ContractError, state::IBC_CONTROLLERS};
+use crate::{
+    error::ContractError,
+    state::{IBC_CONTROLLERS, RESULTS},
+};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering and versioing constraints
@@ -41,9 +48,15 @@ pub fn ibc_channel_open(
 pub fn ibc_packet_ack(
     _deps: DepsMut,
     _env: Env,
-    _msg: IbcPacketAckMsg,
+    msg: IbcPacketAckMsg,
 ) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack"))
+    let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
+    match original_packet {
+        PacketMsg::Dispatch { job_id, sender, .. } => {
+            Ok(acknowledge_dispatch(job_id, sender, msg)?)
+        }
+        _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack")),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -55,11 +68,7 @@ pub fn ibc_packet_receive(
     let packet = msg.packet;
 
     match from_slice(&packet.data)? {
-        PacketMsg::Dispatch {
-            msgs,
-            sender,
-            job_id,
-        } => receive_dispatch(deps, msgs, sender, job_id),
+        PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
         PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
         _ => Err(ContractError::IbcError(IbcError::InvalidPacket)),
     }
@@ -69,16 +78,29 @@ fn receive_mint_govec(
     _deps: DepsMut,
     _wallet_addr: String,
 ) -> Result<IbcReceiveResponse, ContractError> {
+    // Call Govec for minting and ack
     Ok(IbcReceiveResponse::new().add_attribute("action", "receive_mint_govec"))
 }
 
-fn receive_dispatch(
-    _deps: DepsMut,
-    _msgs: Vec<CosmosMsg>,
-    _sender: String,
-    _job_id: Option<String>,
+pub fn receive_dispatch(
+    deps: DepsMut,
+    msgs: Vec<CosmosMsg>,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    Ok(IbcReceiveResponse::new().add_attribute("action", "receive_dispatch"))
+    let response = DispatchResponse { results: vec![] };
+    let acknowledgement = StdAck::success(&response);
+
+    let sub_msgs: Vec<SubMsg> = msgs
+        .iter()
+        .map(|m| SubMsg::reply_on_success(m.clone(), RECEIVE_DISPATCH_ID))
+        .collect();
+
+    // reset the data field
+    RESULTS.save(deps.storage, &vec![])?;
+
+    Ok(IbcReceiveResponse::new()
+        .set_ack(acknowledgement)
+        .add_submessages(sub_msgs)
+        .add_attribute("action", "vectis_tunnel_remote_receive_dispatch"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

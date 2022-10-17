@@ -6,16 +6,14 @@ use vectis_wallet::IbcError;
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
-
     #[error("{0}")]
     IbcError(#[from] IbcError),
-
     #[error("Invalid controller")]
     InvalidController {},
-
     #[error("Invalid Dispatch")]
     InvalidDispatch {},
-
+    #[error("Invalid reply id")]
+    InvalidReplyId,
     #[error("Unauthorized")]
     Unauthorized,
 }
