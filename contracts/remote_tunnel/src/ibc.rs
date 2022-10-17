@@ -1,15 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_slice, to_binary, Binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse,
+    from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse,
     IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
     IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
 };
 
 use vectis_wallet::{
-    check_connection, check_order, check_port, check_version, DispatchResponse, PacketMsg,
-    StdAck, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
-    IBC_APP_VERSION, RECEIVE_DISPATCH_ID, acknowledge_dispatch,
+    acknowledge_dispatch, check_connection, check_order, check_port, check_version,
+    DispatchResponse, PacketMsg, StdAck, WalletFactoryExecuteMsg,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
 };
 
 use crate::state::{CHANNEL, CONFIG, FACTORY, RESULTS};
@@ -47,7 +47,9 @@ pub fn ibc_packet_ack(
     // we need to parse the ack based on our request
     let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
     match original_packet {
-        PacketMsg::Dispatch { job_id, sender, .. } => Ok(acknowledge_dispatch(job_id, sender, msg)?),
+        PacketMsg::Dispatch { job_id, sender, .. } => {
+            Ok(acknowledge_dispatch(job_id, sender, msg)?)
+        }
         _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack")),
     }
 }
@@ -128,18 +130,19 @@ pub fn receive_instantiate(
 
 pub fn receive_mint_govec(
     deps: DepsMut,
-    _wallet_addr: String,
+    wallet_addr: String,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let acknowledgement = StdAck::success(&());
 
     let factory_addr = FACTORY.load(deps.storage)?;
 
-    // TODO: We need the factory msg to let it know we already mint the govec token.
-    let msg = WasmMsg::Execute {
-        contract_addr: deps.api.addr_humanize(&factory_addr)?.to_string(),
-        msg: Binary::from(vec![]),
+    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: deps.api.addr_humanize(&factory_addr).unwrap().to_string(),
+        msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
+            wallet: wallet_addr,
+        }).unwrap(),
         funds: vec![],
-    };
+    });
 
     Ok(IbcReceiveResponse::new()
         .set_ack(acknowledgement)

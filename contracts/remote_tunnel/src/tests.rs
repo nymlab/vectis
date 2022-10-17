@@ -11,7 +11,7 @@ use cosmwasm_std::{
 use vectis_wallet::{
     DispatchResponse, IbcError, PacketMsg, StdAck,
     WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
-    PACKET_LIFETIME, RECEIVE_DISPATCH_ID,
+    PACKET_LIFETIME, RECEIVE_DISPATCH_ID, WalletFactoryExecuteMsg,
 };
 
 use crate::contract::{execute_dispatch, execute_mint_govec, instantiate, query, reply};
@@ -317,7 +317,9 @@ fn handle_mint_govec_packet() {
     assert_eq!(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: factory_addr.to_string(),
-            msg: Binary::from(vec![]),
+            msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
+                wallet: wallet_addr.to_string(),
+            }).unwrap(),
             funds: vec![],
         }),
         res.messages[0].msg
