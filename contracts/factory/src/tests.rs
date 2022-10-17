@@ -17,7 +17,7 @@ fn do_instantiate(
     proxy_multisig_code_id: u64,
     addr_prefix: &str,
     wallet_fee: Coin,
-    govec: Option<String>,
+    govec_minter: Option<String>,
 ) {
     // we do not do integrated tests here so code ids are arbitrary
     let instantiate_msg = InstantiateMsg {
@@ -25,7 +25,7 @@ fn do_instantiate(
         proxy_multisig_code_id,
         addr_prefix: addr_prefix.to_string(),
         wallet_fee,
-        govec,
+        govec_minter,
     };
     let info = mock_info("admin", &[]);
     let env = mock_env();

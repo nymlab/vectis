@@ -98,6 +98,10 @@ pub enum WalletFactoryExecuteMsg {
         addr: String,
     },
     ClaimGovec {},
+    #[cfg(feature = "remote")]
+    GovecMinted {
+        wallet: String,
+    },
     PurgeExpiredClaims {
         // Address string to start after
         start_after: Option<String>,
