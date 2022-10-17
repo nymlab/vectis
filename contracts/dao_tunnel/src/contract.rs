@@ -144,11 +144,10 @@ pub fn ibc_packet_receive(
     is_authorised_controller(deps.as_ref(), caller_channel_id, caller_port_id)?;
     match from_slice(&packet.data)? {
         PacketMsg::Dispatch {
-            msg,
+            msgs,
             sender,
-            callback_id,
-            contract_addr,
-        } => receive_dispatch(deps, msg, sender, callback_id),
+            job_id,
+        } => receive_dispatch(deps),
         _ => Err(ContractError::InvalidDispatch {}),
     }
 }
@@ -174,12 +173,7 @@ fn is_authorised_controller(
     }
 }
 
-fn receive_dispatch(
-    deps: DepsMut,
-    msgs: CosmosMsg,
-    sender: String,
-    callback_id: Option<String>,
-) -> Result<IbcReceiveResponse, ContractError> {
+fn receive_dispatch(deps: DepsMut) -> Result<IbcReceiveResponse, ContractError> {
     Ok(IbcReceiveResponse::new().add_attribute("action", "receive_dispatch"))
 }
 
