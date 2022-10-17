@@ -5,19 +5,19 @@ use cosmwasm_std::testing::{
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg,
     DepsMut, IbcChannelOpenMsg, IbcOrder, OwnedDeps, Reply, SubMsgResponse, SubMsgResult, Uint128,
-    WasmMsg,
+    WasmMsg, IbcMsg,
 };
 
 use vectis_wallet::{
     DispatchResponse, IbcError, PacketMsg, StdAck,
     WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
-    RECEIVE_DISPATCH_ID,
+    RECEIVE_DISPATCH_ID, PACKET_LIFETIME,
 };
 
-use crate::contract::{instantiate, query, reply};
+use crate::contract::{instantiate, query, reply, execute_mint_govec, execute_dispatch};
 use crate::ibc::{ibc_channel_connect, ibc_channel_open, ibc_packet_receive};
 use crate::msg::{InstantiateMsg, QueryMsg};
-use crate::state::{RESULTS};
+use crate::state::{RESULTS, FACTORY, CHANNEL};
 use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 const CONNECTION_ID: &str = "connection-1";
@@ -322,4 +322,68 @@ fn handle_mint_govec_packet() {
         }),
         res.messages[0].msg
     )
+}
+
+#[test]
+fn handle_execute_mint_govec() {
+    let mut deps = do_instantiate();
+    let factory_addr = "factory_addr";
+    let cannonical_fact_addr = deps.as_mut().api.addr_canonicalize(factory_addr).unwrap();
+    let wallet_addr = "wallet_addr";
+    let info = mock_info("sender", &vec![]);
+    let env = mock_env();
+
+    CHANNEL.save(deps.as_mut().storage, &CHANNEL_ID.to_string()).unwrap();
+
+    // should expect err because there is not factory in the state
+    let res = execute_mint_govec(deps.as_mut(), env.clone(), info.clone(), wallet_addr.to_string()).unwrap_err();
+    assert_eq!(res, ContractError::NotFound("Factory".to_string()));
+
+    FACTORY.save(deps.as_mut().storage, &cannonical_fact_addr).unwrap();
+
+    // should expect err because factory addr is different
+    let res = execute_mint_govec(deps.as_mut(), env.clone(), info.clone(), wallet_addr.to_string()).unwrap_err();
+    assert_eq!(res, ContractError::Unauthorized);
+
+
+    let res = execute_mint_govec(deps.as_mut(), env.clone(), mock_info(factory_addr, &vec![]), wallet_addr.to_string()).unwrap();
+
+    let packet = PacketMsg::MintGovec {
+        wallet_addr: wallet_addr.to_string(),
+    };
+
+    let msg = CosmosMsg::Ibc(IbcMsg::SendPacket {
+        channel_id: CHANNEL_ID.to_string(),
+        data: to_binary(&packet).unwrap(),
+        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
+    });
+
+    assert_eq!(res.messages[0].msg, msg);
+
+}
+
+#[test]
+fn handle_execute_dispatch() {
+    let mut deps = do_instantiate();
+    let info = mock_info("sender", &vec![]);
+    let env = mock_env();
+
+    CHANNEL.save(deps.as_mut().storage, &CHANNEL_ID.to_string()).unwrap();
+
+    let res = execute_dispatch(deps.as_mut(), env.clone(), info.clone(), vec![], None).unwrap();
+
+    let packet = PacketMsg::Dispatch {
+        sender: info.sender.to_string(),
+        job_id: None,
+        msgs: vec![],
+    };
+
+    let msg = CosmosMsg::Ibc(IbcMsg::SendPacket {
+        channel_id: CHANNEL_ID.to_string(),
+        data: to_binary(&packet).unwrap(),
+        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
+    });
+
+    assert_eq!(res.messages[0].msg, msg);
+
 }
