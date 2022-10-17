@@ -1,9 +1,9 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
-    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg, Binary,
+    from_slice, to_binary, Binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse,
+    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
+    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
 };
 
 use vectis_wallet::{

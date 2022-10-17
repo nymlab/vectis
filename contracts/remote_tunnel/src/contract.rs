@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 
 use cw_utils::parse_reply_instantiate_data;
-use vectis_wallet::{PacketMsg, StdAck, PACKET_LIFETIME, RECEIVE_DISPATCH_ID, DispatchResponse};
+use vectis_wallet::{DispatchResponse, PacketMsg, StdAck, PACKET_LIFETIME, RECEIVE_DISPATCH_ID};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, CHANNEL, CONFIG, FACTORY, RESULTS};
@@ -37,7 +37,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::MintGovec { wallet_addr } => execute_mint_govec(deps, env, info, wallet_addr),
-        ExecuteMsg::Dispatch { msgs, job_id  } => execute_dispatch(deps, env, info, msgs, job_id),
+        ExecuteMsg::Dispatch { msgs, job_id } => execute_dispatch(deps, env, info, msgs, job_id),
     }
 }
 
@@ -78,7 +78,7 @@ pub fn execute_dispatch(
     env: Env,
     info: MessageInfo,
     msgs: Vec<CosmosMsg>,
-    job_id: Option<String>
+    job_id: Option<String>,
 ) -> Result<Response, ContractError> {
     let packet = PacketMsg::Dispatch {
         sender: info.sender.to_string(),

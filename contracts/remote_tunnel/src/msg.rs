@@ -9,8 +9,13 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    MintGovec { wallet_addr: String },
-    Dispatch { msgs: Vec<CosmosMsg>, job_id: Option<String> },
+    MintGovec {
+        wallet_addr: String,
+    },
+    Dispatch {
+        msgs: Vec<CosmosMsg>,
+        job_id: Option<String>,
+    },
 }
 
 #[cw_serde]
