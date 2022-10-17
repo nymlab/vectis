@@ -22,6 +22,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 migration = []
 remote = []
+dao-chain= []
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0", features = ["staking"] }

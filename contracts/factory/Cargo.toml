@@ -20,7 +20,8 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
-remote = ["vectis-proxy/remote"]
+remote = ["vectis-proxy/remote", "vectis-remote-tunnel", "vectis-wallet/remote"]
+dao-chain= ["vectis-proxy/dao-chain"]
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0" }
@@ -38,6 +39,7 @@ cw-utils = "0.13" # required lower version due to stake-cw20
 vectis-proxy = { path = "../proxy", features = ["library"]}
 vectis-govec = { path = "../govec", features = ["library"]}
 vectis-wallet = {path = "../../packages/vectis"}
+vectis-remote-tunnel = {path = "../remote_tunnel", optional = true, features = ["library"]}
 
 [dev-dependencies]
 anyhow = "1"

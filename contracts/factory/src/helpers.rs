@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::state::{ADDR_PREFIX, ADMIN, GOVEC};
+use crate::state::{ADDR_PREFIX, ADMIN, GOVEC_MINTER};
 use cosmwasm_std::{Addr, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Uint128};
 use cw1::CanExecuteResponse;
 pub use vectis_proxy::msg::QueryMsg as ProxyQueryMsg;
@@ -139,7 +139,7 @@ pub fn ensure_is_valid_migration_msg(
 }
 
 pub fn ensure_has_govec(deps: Deps) -> Result<CanonicalAddr, ContractError> {
-    GOVEC
+    GOVEC_MINTER
         .may_load(deps.storage)?
         .ok_or(ContractError::GovecNotSet {})
 }

@@ -230,6 +230,7 @@ pub fn execute_mint(
     )?;
 
     let res = Response::new()
+        .set_data(deps.api.addr_canonicalize(&new_wallet)?.as_slice())
         .add_attribute("action", "mint")
         .add_attribute("to", new_wallet)
         .add_attribute("amount", "1");

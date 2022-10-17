@@ -5,7 +5,7 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
-    ADDR_PREFIX, ADMIN, FEE, GOVEC, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
+    ADDR_PREFIX, ADMIN, FEE, GOVEC_CLAIM_LIST, GOVEC_MINTER, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
     TOTAL_CREATED,
 };
 
@@ -17,8 +17,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
-use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
-use vectis_govec::msg::ExecuteMsg::Mint;
+use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Expiration, DAY};
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
@@ -28,13 +27,22 @@ pub use vectis_wallet::{
 use std::ops::{Add, Mul};
 use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
+#[cfg(feature = "dao-chain")]
+use vectis_govec::msg::ExecuteMsg::Mint;
+#[cfg(feature = "remote")]
+use vectis_remote_tunnel::msg::ExecuteMsg::MintGovec;
+
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-// settings for pagination for wallet list
+// settings for pagination for unclaimed govec wallet list
 const MAX_LIMIT: u32 = 1000;
 const DEFAULT_LIMIT: u32 = 50;
+
+/// default value for claiming govec reply
+#[cfg(feature = "dao-chain")]
+const GOVEC_REPLY_ID: u64 = u64::MAX;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -52,9 +60,9 @@ pub fn instantiate(
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     FEE.save(deps.storage, &msg.wallet_fee)?;
-    if let Some(addr) = msg.govec {
-        GOVEC.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
-    }
+    if let Some(mint) = msg.govec_minter {
+        GOVEC_MINTER.save(deps.storage, &deps.api.addr_canonicalize(&mint)?)?;
+    };
 
     Ok(Response::new().add_attribute("Vectis Factory instantiated", env.contract.address))
 }
@@ -79,6 +87,8 @@ pub fn execute(
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => update_admin_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec(deps, env, info),
+        #[cfg(feature = "remote")]
+        ExecuteMsg::GovecMinted { wallet } => govec_minted(deps, env, info, wallet),
         ExecuteMsg::PurgeExpiredClaims { start_after, limit } => {
             purge_expired_claims(deps, env, start_after, limit)
         }
@@ -257,7 +267,7 @@ fn update_govec_addr(
     addr: String,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
-    GOVEC.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
+    GOVEC_MINTER.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
     Ok(Response::new()
         .add_attribute("config", "Govec Addr")
         .add_attribute("New Addr", addr))
@@ -284,16 +294,11 @@ fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user);
         Err(ContractError::ClaimExpired {})
     } else {
-        let mint_msg: SubMsg = SubMsg::new(WasmMsg::Execute {
-            contract_addr: deps
-                .api
-                .addr_humanize(&GOVEC.load(deps.storage)?)?
-                .to_string(),
-            msg: to_binary(&Mint {
-                new_wallet: info.sender.to_string(),
-            })?,
-            funds: vec![],
-        });
+        let govec_minter = GOVEC_MINTER.load(deps.storage)?;
+        let mint_msg = _create_mint_msg(
+            deps.api.addr_humanize(&govec_minter)?.to_string(),
+            info.sender.to_string(),
+        )?;
 
         let res = Response::new()
             .add_submessage(mint_msg)
@@ -301,6 +306,56 @@ fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             .add_attribute("proxy_address", info.sender);
         Ok(res)
     }
+}
+
+#[cfg(feature = "dao-chain")]
+fn _create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
+    Ok(SubMsg::reply_always(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: govec_minter,
+            msg: to_binary(&Mint { new_wallet: wallet })?,
+            funds: vec![],
+        }),
+        GOVEC_REPLY_ID,
+    ))
+}
+
+#[cfg(feature = "remote")]
+fn _create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
+    Ok(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: govec_minter,
+        msg: to_binary(&MintGovec {
+            wallet_addr: wallet,
+        })?,
+        funds: vec![],
+    })))
+}
+
+#[cfg(feature = "remote")]
+fn govec_minted(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    wallet: String,
+) -> Result<Response, ContractError> {
+    let govec_minter = GOVEC_MINTER.load(deps.storage)?;
+    if info.sender != deps.api.addr_humanize(&govec_minter)?.to_string() {
+        Err(ContractError::Unauthorized {})
+    } else {
+        GOVEC_CLAIM_LIST.remove(deps.storage, deps.api.addr_canonicalize(&wallet)?.to_vec());
+        Ok(Response::new().add_attribute("Govec Minted on DAO Chain", "wallet"))
+    }
+}
+
+fn _handle_govec_minted(deps: DepsMut, claiming_user: &str) -> Result<Response, ContractError> {
+    GOVEC_CLAIM_LIST.remove(
+        deps.storage,
+        deps.api.addr_canonicalize(claiming_user)?.to_vec(),
+    );
+    let res = Response::new()
+        .add_attribute("action", "Govec Minted")
+        .add_attribute("proxy_address", claiming_user);
+    Ok(res)
 }
 
 fn purge_expired_claims(
@@ -352,13 +407,23 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
             let res = Response::new()
                 .add_attribute("action", "Govec claim list updated")
                 .add_attribute("proxy_address", res.contract_address);
-            Ok(res)
+            return Ok(res);
         } else {
-            Err(ContractError::ProxyInstantiationError {})
+            return Err(ContractError::ProxyInstantiationError {});
         }
-    } else {
-        Err(ContractError::InvalidReplyId {})
     }
+
+    #[cfg(feature = "dao-chain")]
+    if reply.id == GOVEC_REPLY_ID {
+        let res = parse_reply_execute_data(reply)?;
+        if let Some(b) = res.data {
+            GOVEC_CLAIM_LIST.remove(deps.storage, b.to_vec())
+        } else {
+            return Err(ContractError::InvalidReplyFromGovec {});
+        }
+    }
+
+    Err(ContractError::InvalidReplyId {})
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -426,7 +491,7 @@ pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
 }
 /// Returns govec token address
 pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
-    deps.api.addr_humanize(&GOVEC.load(deps.storage)?)
+    deps.api.addr_humanize(&GOVEC_MINTER.load(deps.storage)?)
 }
 
 /// Returns admin address
