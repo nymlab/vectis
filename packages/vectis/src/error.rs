@@ -39,5 +39,5 @@ pub enum IbcError {
     #[error("Connection id must be = '{0}'")]
     InvalidConnectionId(String),
     #[error("Port id must be = '{0}'")]
-    InvalidPortId(String)
+    InvalidPortId(String),
 }

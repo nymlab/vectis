@@ -1,8 +1,6 @@
-
-
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{CanonicalAddr, Binary};
-use cw_storage_plus::{Item};
+use cosmwasm_std::{Binary, CanonicalAddr};
+use cw_storage_plus::Item;
 
 #[cw_serde]
 pub struct Config {
