@@ -15,4 +15,7 @@ pub enum ContractError {
 
     #[error("Invalid Dispatch")]
     InvalidDispatch {},
+
+    #[error("Unauthorized")]
+    Unauthorized,
 }
