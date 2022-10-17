@@ -11,13 +11,17 @@ use crate::state::{
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
+#[cfg(feature = "dao-chain")]
+use cosmwasm_std::from_binary;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
-use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Expiration, DAY};
+#[cfg(feature = "dao-chain")]
+use cw_utils::parse_reply_execute_data;
+use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
@@ -34,6 +38,10 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 // settings for pagination for unclaimed govec wallet list
 const MAX_LIMIT: u32 = 1000;
 const DEFAULT_LIMIT: u32 = 50;
+
+/// Dao Chain govec contract reply
+#[cfg(feature = "dao-chain")]
+pub const GOVEC_REPLY_ID: u64 = u64::MAX;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -374,7 +382,8 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     if reply.id == GOVEC_REPLY_ID {
         let res = parse_reply_execute_data(reply)?;
         if let Some(b) = res.data {
-            handle_govec_minted(deps.storage, b.to_vec())
+            let addr: CanonicalAddr = from_binary(&b)?;
+            return handle_govec_minted(deps, addr);
         } else {
             return Err(ContractError::InvalidReplyFromGovec {});
         }
