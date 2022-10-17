@@ -147,7 +147,7 @@ fn handle_factory_packet() {
     let msg = FactoryInstantiateMsg {
         proxy_multisig_code_id: 13,
         addr_prefix: "prefix".to_string(),
-        govec: None,
+        govec_minter: None,
         proxy_code_id: 13,
         wallet_fee: Coin {
             amount: Uint128::one(),
