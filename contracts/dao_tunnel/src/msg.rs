@@ -1,19 +1,32 @@
-use cosmwasm_std::{Addr, CosmosMsg, Empty};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::CosmosMsg;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+use vectis_wallet::WalletFactoryInstantiateMsg;
+
+#[cw_serde]
 pub struct InstantiateMsg {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     AddApprovedController {
         connection_id: String,
         port_id: String,
     },
+    InstantiateRemoteFactory {
+        code_id: u64,
+        msg: WalletFactoryInstantiateMsg,
+        channel_id: String,
+    },
+    Dispatch {
+        msgs: Vec<CosmosMsg>,
+        job_id: Option<String>,
+        channel_id: String,
+    },
+    UpdateRemoteTunnelChannel {
+        channel_id: String,
+    },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct QueryMsg {}
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum QueryMsg {}

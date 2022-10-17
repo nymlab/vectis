@@ -1,7 +1,4 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
-use cosmwasm_std::{Addr, Binary, CanonicalAddr};
+use cosmwasm_std::CanonicalAddr;
 use cw_storage_plus::{Item, Map};
 
 /// We store approved connection and port id, whilst allowing multiple channels to be created
