@@ -1,8 +1,9 @@
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Coin};
+use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
-pub struct WalletListResponse {
-    pub wallets: Vec<Addr>,
+pub struct UnclaimedWalletList {
+    pub wallets: Vec<(Addr, Expiration)>,
 }

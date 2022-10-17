@@ -14,6 +14,7 @@ use cw3_fixed_multisig::contract::{
 };
 use cw3_fixed_multisig::msg::QueryMsg as MultiSigQueryMsg;
 use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
+use cw_utils::Expiration;
 use derivative::Derivative;
 use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 use serde::de::DeserializeOwned;
@@ -34,7 +35,7 @@ use vectis_factory::{
     },
     msg::{
         ExecuteMsg as FactoryExecuteMsg, InstantiateMsg, QueryMsg as FactoryQueryMsg,
-        WalletListResponse,
+        UnclaimedWalletList,
     },
 };
 use vectis_govec::{
@@ -53,7 +54,8 @@ use vectis_proxy::{
 
 use vectis_wallet::{
     pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
-    GuardiansUpdateRequest, MultiSig, RelayTransaction, ThresholdAbsoluteCount, WalletQueryPrefix,
+    GuardiansUpdateRequest, MultiSig, RelayTransaction, ThresholdAbsoluteCount,
+    GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
 pub const WALLET_FEE: u128 = 10u128;
@@ -408,15 +410,7 @@ impl DaoChainSuite {
             )
             .unwrap();
 
-        let block = self.app.block_info();
-
-        let mock_block = BlockInfo {
-            height: block.height,
-            chain_id: block.chain_id,
-            time: block.time.plus_seconds(90000),
-        };
-
-        self.app.set_block(mock_block);
+        self.fast_forward_block_time(90000);
 
         let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {};
 
@@ -433,39 +427,48 @@ impl DaoChainSuite {
         Ok(r)
     }
 
-    pub fn query_all_wallet_addresses(
+    pub fn fast_forward_block_time(&mut self, forward_time_sec: u64) {
+        let block = self.app.block_info();
+
+        let mock_block = BlockInfo {
+            height: block.height,
+            chain_id: block.chain_id,
+            time: block.time.plus_seconds(forward_time_sec),
+        };
+
+        self.app.set_block(mock_block);
+    }
+
+    pub fn query_unclaimed_govec_wallets(
         &self,
         contract_addr: &Addr,
-        start_after: Option<WalletQueryPrefix>,
+        start_after: Option<String>,
         limit: Option<u32>,
-    ) -> Result<WalletListResponse, StdError> {
+    ) -> Result<UnclaimedWalletList, StdError> {
         let r = self
             .app
             .wrap()
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: contract_addr.to_string(),
-                msg: to_binary(&FactoryQueryMsg::Wallets { start_after, limit }).unwrap(),
+                msg: to_binary(&FactoryQueryMsg::UnclaimedGovecWallets { start_after, limit })
+                    .unwrap(),
             }))
             .unwrap();
         Ok(r)
     }
 
-    pub fn query_user_wallet_addresses(
+    pub fn query_user_govec_claim_expiration(
         &self,
         contract_addr: &Addr,
         user: &str,
-        start_after: Option<String>,
-        limit: Option<u32>,
-    ) -> Result<WalletListResponse, StdError> {
+    ) -> Result<Option<Expiration>, StdError> {
         let r = self
             .app
             .wrap()
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: contract_addr.to_string(),
-                msg: to_binary(&FactoryQueryMsg::WalletsOf {
-                    user: user.to_string(),
-                    start_after,
-                    limit,
+                msg: to_binary(&FactoryQueryMsg::ClaimExpiration {
+                    wallet: user.to_string(),
                 })
                 .unwrap(),
             }))
@@ -509,5 +512,9 @@ impl DaoChainSuite {
 
     pub fn query_balance(&self, addr: &Addr, denom: String) -> Result<Coin> {
         Ok(self.app.wrap().query_balance(addr.as_str(), denom)?)
+    }
+
+    pub fn claim_expiration(&self) -> u64 {
+        GOVEC_CLAIM_DURATION_DAY_MUL * 24 * 60 * 60
     }
 }

@@ -5,10 +5,10 @@ use cosmwasm_std::{coin, Coin, DepsMut};
 use crate::{
     contract::{
         execute, instantiate, query_admin_addr, query_code_id, query_fee, query_govec_addr,
-        query_wallet_list, CodeIdType,
+        query_unclaim_wallet_list, query_wallet_claim_expiration, CodeIdType,
     },
     error::ContractError,
-    msg::{ExecuteMsg, InstantiateMsg, WalletListResponse},
+    msg::{ExecuteMsg, InstantiateMsg, UnclaimedWalletList},
 };
 // this will set up the instantiation for other tests
 fn do_instantiate(
@@ -40,7 +40,8 @@ fn initialise_with_no_wallets() {
     do_instantiate(deps.as_mut(), 0, 1, "wasm", coin(1, "ucosm"), None);
 
     // no wallets to start
-    let wallets: WalletListResponse = query_wallet_list(deps.as_ref(), None, None).unwrap();
+    let wallets: UnclaimedWalletList =
+        query_unclaim_wallet_list(deps.as_ref(), None, None).unwrap();
     assert_eq!(wallets.wallets.len(), 0);
 }
 
@@ -155,7 +156,7 @@ fn admin_updates_addresses_work() {
     assert_eq!(new_govec, "new_govec");
 
     // update admin
-    let msg = ExecuteMsg::UpdateAdmin {
+    let msg = ExecuteMsg::UpdateDao {
         addr: "new_admin".to_string(),
     };
 
@@ -169,7 +170,7 @@ fn admin_updates_addresses_work() {
     assert_eq!(new_admin, "new_admin");
 
     // old admin cannot update admin or govec anymore
-    let msg = ExecuteMsg::UpdateAdmin {
+    let msg = ExecuteMsg::UpdateDao {
         addr: "new_admin".to_string(),
     };
 
