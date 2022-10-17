@@ -1,4 +1,4 @@
-use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder, StdResult, WasmMsg};
+use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder, StdResult, WasmMsg, IbcPacketAckMsg, IbcBasicResponse};
 
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
@@ -54,6 +54,25 @@ pub fn check_port(host_port: &str, remote_port: &str) -> Result<(), IbcError> {
         return Err(IbcError::InvalidPortId(host_port.to_string()));
     }
     Ok(())
+}
+
+pub fn acknowledge_dispatch(
+    job_id: Option<String>,
+    sender: String,
+    ack: IbcPacketAckMsg,
+) -> StdResult<IbcBasicResponse> {
+    let res = IbcBasicResponse::new().add_attribute("action", "acknowledge_dispatch");
+    match job_id {
+        Some(id) => {
+            let msg: StdAck = from_slice(&ack.acknowledgement.data)?;
+            // Send IBC packet ack message to another contract
+            let res = res
+                .add_attribute("job_id", &id)
+                .add_message(ReceiveIbcResponseMsg { id: id, msg }.into_cosmos_msg(sender)?);
+            Ok(res)
+        }
+        None => Ok(res),
+    }
 }
 
 /// This is a generic ICS acknowledgement format.
