@@ -19,5 +19,7 @@ pub const GOVEC_CLAIM_LIST: Map<Vec<u8>, Expiration> = Map::new("govec-claim-lis
 pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
 /// Fee for DAO when a wallet is created
 pub const FEE: Item<Coin> = Item::new("fee");
-/// Governing token contract Addr
-pub const GOVEC: Item<CanonicalAddr> = Item::new("govec");
+/// Governing token minting interface providing contract CanonicalAddr
+/// - DAO Chain: this is directly the Govec Contract
+/// - Remote Chain: Mint via the `remote_tunnel` contract
+pub const GOVEC_MINTER: Item<CanonicalAddr> = Item::new("govec-minter");

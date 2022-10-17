@@ -1046,6 +1046,7 @@ dependencies = [
  "thiserror",
  "vectis-govec",
  "vectis-proxy",
+ "vectis-remote-tunnel",
  "vectis-wallet",
 ]
 

@@ -1,4 +1,5 @@
 use cosmwasm_std::{Addr, StdError, Uint128};
+use cw_utils::ParseReplyError;
 use thiserror::Error;
 use vectis_wallet::{MigrationMsgError, RelayTxError};
 
@@ -38,6 +39,12 @@ pub enum ContractError {
     ProxyInstantiationError {},
     #[error("ClaimExpired")]
     ClaimExpired {},
+    #[error("Invalid Govec Minter")]
+    InvalidGovecMinter {},
+    #[error("Invalid Govec Reply")]
+    InvalidReplyFromGovec {},
+    #[error("ParseReplyError")]
+    ParseReplyError(#[from] ParseReplyError),
 }
 
 impl From<MigrationMsgError> for ContractError {

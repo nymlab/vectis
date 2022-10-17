@@ -197,7 +197,7 @@ impl DaoChainSuite {
                         denom: "ucosm".to_string(),
                         amount: Uint128::new(WALLET_FEE),
                     },
-                    govec: Some(govec_addr.to_string()),
+                    govec_minter: Some(govec_addr.to_string()),
                 },
                 &[],
                 "wallet-factory",        // label: human readible name for contract
