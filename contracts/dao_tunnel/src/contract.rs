@@ -3,11 +3,11 @@ use cosmwasm_std::{
     Response, StdResult,
 };
 use cw2::set_contract_version;
-use vectis_wallet::{PacketMsg, WalletFactoryInstantiateMsg, PACKET_LIFETIME};
+use vectis_wallet::{PacketMsg, WalletFactoryInstantiateMsg, PACKET_LIFETIME, RECEIVE_DISPATCH_ID, StdAck, DispatchResponse};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ADMIN, IBC_CONTROLLERS};
+use crate::state::{ADMIN, IBC_CONTROLLERS, RESULTS};
 
 const CONTRACT_NAME: &str = "crates.io:vectis-ibc-host";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -147,8 +147,22 @@ pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(_deps: DepsMut, _env: Env, _reply: Reply) -> Result<Response, ContractError> {
-    Ok(Response::new())
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
+    match reply.id {
+        RECEIVE_DISPATCH_ID => reply_dispatch_callback(deps, reply),
+        _ => Err(ContractError::InvalidReplyId),
+    }
+}
+
+pub fn reply_dispatch_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
+    // add the new result to the current tracker
+    let mut results = RESULTS.load(deps.storage)?;
+    results.push(reply.result.unwrap().data.unwrap_or_default());
+    RESULTS.save(deps.storage, &results)?;
+
+    // update result data if this is the last
+    let data = StdAck::success(&DispatchResponse { results });
+    Ok(Response::new().set_data(data))
 }
 
 /// Ensures provided addr is the state stored ADMIN
