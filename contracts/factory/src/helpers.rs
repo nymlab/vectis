@@ -1,8 +1,17 @@
+#[cfg(feature = "dao-chain")]
+use crate::contract::GOVEC_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::{ADDR_PREFIX, ADMIN, GOVEC_MINTER};
-use cosmwasm_std::{Addr, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Uint128};
+use crate::state::{ADDR_PREFIX, ADMIN, GOVEC_CLAIM_LIST, GOVEC_MINTER};
+use cosmwasm_std::{
+    to_binary, Addr, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Response,
+    StdResult, SubMsg, Uint128, WasmMsg,
+};
 use cw1::CanExecuteResponse;
+#[cfg(feature = "dao-chain")]
+use vectis_govec::msg::ExecuteMsg::Mint;
 pub use vectis_proxy::msg::QueryMsg as ProxyQueryMsg;
+#[cfg(feature = "remote")]
+use vectis_remote_tunnel::msg::ExecuteMsg::MintGovec;
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, Guardians, ProxyMigrationTxMsg, RelayTransaction,
     RelayTxError, WalletInfo,
@@ -142,4 +151,38 @@ pub fn ensure_has_govec(deps: Deps) -> Result<CanonicalAddr, ContractError> {
     GOVEC_MINTER
         .may_load(deps.storage)?
         .ok_or(ContractError::GovecNotSet {})
+}
+
+#[cfg(feature = "dao-chain")]
+pub fn create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
+    Ok(SubMsg::reply_always(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: govec_minter,
+            msg: to_binary(&Mint { new_wallet: wallet })?,
+            funds: vec![],
+        }),
+        GOVEC_REPLY_ID,
+    ))
+}
+
+#[cfg(feature = "remote")]
+pub fn create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
+    Ok(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: govec_minter,
+        msg: to_binary(&MintGovec {
+            wallet_addr: wallet,
+        })?,
+        funds: vec![],
+    })))
+}
+
+pub fn handle_govec_minted(
+    deps: DepsMut,
+    claiming_user: CanonicalAddr,
+) -> Result<Response, ContractError> {
+    GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+    let res = Response::new()
+        .add_attribute("action", "Govec Minted on DAO Chain")
+        .add_attribute("proxy_address", deps.api.addr_humanize(&claiming_user)?);
+    Ok(res)
 }
