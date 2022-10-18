@@ -1,18 +1,17 @@
 use cosmwasm_std::{
-    from_slice, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
-    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
-    IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult,
-    SubMsg,
+    from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
+    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
+    IbcChannelOpenResponse, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg,
+    IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
 };
+use vectis_govec::msg::ExecuteMsg as GovecExecuteMsg;
 use vectis_wallet::{
     acknowledge_dispatch, check_order, check_version, DispatchResponse, IbcError, PacketMsg,
     StdAck, IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
 };
 
-use crate::{
-    error::ContractError,
-    state::{IBC_CONTROLLERS, RESULTS},
-};
+use crate::state::{GOVEC, IBC_TUNNELS, RESULTS};
+use crate::{ContractError, MING_DISPATCH_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering and versioing constraints
@@ -75,11 +74,30 @@ pub fn ibc_packet_receive(
 }
 
 fn receive_mint_govec(
-    _deps: DepsMut,
-    _wallet_addr: String,
+    deps: DepsMut,
+    wallet_addr: String,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    // Call Govec for minting and ack
-    Ok(IbcReceiveResponse::new().add_attribute("action", "receive_mint_govec"))
+    let acknowledgement = StdAck::success(&false);
+
+    let contract_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
+
+    let msg = to_binary(&GovecExecuteMsg::Mint {
+        new_wallet: wallet_addr,
+    })?;
+
+    let msg = SubMsg::reply_on_success(
+        WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            msg,
+            funds: vec![],
+        },
+        MING_DISPATCH_ID,
+    );
+
+    Ok(IbcReceiveResponse::new()
+        .set_ack(acknowledgement)
+        .add_submessage(msg)
+        .add_attribute("action", "vectis_dao_tunnel_receive_mint_govec"))
 }
 
 pub fn receive_dispatch(
@@ -142,7 +160,7 @@ fn is_authorised_tunnel(
     caller_connection_id: String,
     caller_port_id: String,
 ) -> Result<(), ContractError> {
-    if IBC_CONTROLLERS
+    if IBC_TUNNELS
         .may_load(deps.storage, (caller_connection_id, caller_port_id))?
         .is_none()
     {
