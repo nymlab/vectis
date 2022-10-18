@@ -71,6 +71,7 @@ pub struct WalletFactoryInstantiateMsg {
     /// Fee in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
     /// Governance Token, Govec, address
+    #[cfg(feature = "dao-chain")]
     pub govec_minter: Option<String>,
 }
 
@@ -91,7 +92,12 @@ pub enum WalletFactoryExecuteMsg {
     UpdateWalletFee {
         new_fee: Coin,
     },
+    #[cfg(feature = "dao-chain")]
     UpdateGovecAddr {
+        addr: String,
+    },
+    #[cfg(feature = "remote")]
+    UpdateRemoteTunnelAddr {
         addr: String,
     },
     UpdateDao {

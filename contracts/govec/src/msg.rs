@@ -1,4 +1,3 @@
-use crate::state::MinterData;
 use cosmwasm_std::{Binary, StdError, StdResult, Uint128};
 pub use cw20::{Cw20Coin, Logo, MarketingInfoResponse};
 use schemars::JsonSchema;
@@ -10,15 +9,13 @@ pub struct InstantiateMsg {
     pub symbol: String,
     pub initial_balances: Vec<Cw20Coin>,
     pub staking_addr: Option<String>,
-    pub minter: Option<MinterData>,
+    pub mint_cap: Option<Uint128>,
+    pub factory: Option<String>,
+    pub dao_tunnel: Option<String>,
     pub marketing: Option<MarketingInfoResponse>,
 }
 
 impl InstantiateMsg {
-    pub fn get_cap(&self) -> Option<Uint128> {
-        self.minter.as_ref().and_then(|v| v.cap)
-    }
-
     pub fn validate(&self) -> StdResult<()> {
         // Check name, symbol, decimals
         if !is_valid_name(&self.name) {
@@ -58,6 +55,15 @@ fn is_valid_symbol(symbol: &str) -> bool {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
+pub enum UpdateAddrReq {
+    Dao(String),
+    DaoTunnel(String),
+    Factory(String),
+    Staking(String),
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     /// Transfer is a base message to move tokens to another account without triggering actions
     Transfer { recipient: String, amount: Uint128 },
@@ -73,16 +79,12 @@ pub enum ExecuteMsg {
     },
     /// If authorized, creates 1 new vote token and adds to the new wallets .
     Mint { new_wallet: String },
+    /// Updates the mint cap of the contract.Authorized by the DAO
+    /// permission: executed by dao only
+    UpdateMintCap { new_mint_cap: Option<Uint128> },
     /// Updates the staking contract address.Authorized by the DAO
     /// permission: executed by dao only
-    UpdateStakingAddr { new_addr: String },
-    /// Updates the minter contract address.Authorized by the DAO
-    /// permission: executed by dao only
-    UpdateMintData { new_mint: Option<MinterData> },
-    /// Updates the DAO address for this governance token
-    /// All balance from old DAO will go to the new DAO
-    /// permission: executed by dao only
-    UpdateDaoAddr { new_addr: String },
+    UpdateConfigAddr { new_addr: UpdateAddrReq },
     /// If authorized, updates marketing metadata.
     /// Setting None/null for any of these will leave it unchanged.
     /// Setting Some("") will clear this field on the contract storage
@@ -100,6 +102,12 @@ pub enum ExecuteMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MintResponse {
+    pub minters: Option<Vec<String>>,
+    pub cap: Option<Uint128>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     /// Returns the current balance of the given address, 0 if unset.
@@ -113,12 +121,16 @@ pub enum QueryMsg {
     /// Return type: TokenInfoResponse.
     TokenInfo {},
     /// Returns who can mint and the hard cap on maximum tokens after minting.
-    /// Return type: MinterResponse.
-    Minter {},
+    /// Return type: MintResponse
+    Minters {},
     /// Returns the staking contract address
     Staking {},
     /// Returns the dao contract address
     Dao {},
+    /// Returns the dao tunnel contract address
+    DaoTunnel {},
+    /// Returns the factory contract address
+    Factory {},
     /// Only with "enumerable" extension
     /// Returns all accounts that have balances. Supports pagination.
     /// Return type: AllAccountsResponse.

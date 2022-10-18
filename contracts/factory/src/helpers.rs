@@ -1,7 +1,7 @@
 #[cfg(feature = "dao-chain")]
 use crate::contract::GOVEC_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::{ADDR_PREFIX, ADMIN, GOVEC_CLAIM_LIST, GOVEC_MINTER};
+use crate::state::{ADDR_PREFIX, DAO, GOVEC_CLAIM_LIST, GOVEC_MINTER};
 use cosmwasm_std::{
     to_binary, Addr, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Response,
     StdResult, SubMsg, Uint128, WasmMsg,
@@ -17,11 +17,11 @@ pub use vectis_wallet::{
     RelayTxError, WalletInfo,
 };
 
-/// Ensures provided addr is the state stored ADMIN
-pub fn ensure_is_admin(deps: Deps, sender: &str) -> Result<(), ContractError> {
-    let admin = ADMIN.load(deps.storage)?;
+/// Ensures provided addr is the state stored DAO
+pub fn ensure_is_dao(deps: Deps, sender: &str) -> Result<(), ContractError> {
+    let dao = DAO.load(deps.storage)?;
     let caller = deps.api.addr_canonicalize(sender)?;
-    if caller == admin {
+    if caller == dao {
         Ok(())
     } else {
         Err(ContractError::Unauthorized {})

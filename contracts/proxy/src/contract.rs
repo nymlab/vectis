@@ -10,8 +10,7 @@ use schemars::JsonSchema;
 use std::fmt;
 use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, GuardiansUpdateMsg,
-    GuardiansUpdateRequest, RelayTransaction, RelayTxError, WalletFactoryExecuteMsg,
-    WalletFactoryQueryMsg, WalletInfo,
+    GuardiansUpdateRequest, RelayTransaction, RelayTxError, WalletFactoryQueryMsg, WalletInfo,
 };
 
 use crate::error::ContractError;
@@ -497,9 +496,11 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
     };
 
     let user = USER.load(deps.storage)?;
+    let factory = FACTORY.load(deps.storage)?;
 
     Ok(WalletInfo {
         user_addr: deps.api.addr_humanize(&user.addr)?,
+        factory: deps.api.addr_humanize(&factory)?,
         nonce: user.nonce,
         version: cw2::get_contract_version(deps.storage)?,
         code_id: CODE_ID.load(deps.storage)?,

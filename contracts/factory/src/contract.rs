@@ -1,14 +1,15 @@
 use crate::error::ContractError;
 use crate::helpers::{
-    create_mint_msg, ensure_enough_native_funds, ensure_has_govec, ensure_is_admin,
+    create_mint_msg, ensure_enough_native_funds, ensure_has_govec, ensure_is_dao,
     ensure_is_valid_migration_msg, ensure_is_valid_threshold, handle_govec_minted,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
-    ADDR_PREFIX, ADMIN, FEE, GOVEC_CLAIM_LIST, GOVEC_MINTER, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
-    TOTAL_CREATED,
+    ADDR_PREFIX, DAO, FEE, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
 };
 
+#[cfg(feature = "dao-chain")]
+use crate::state::GOVEC_MINTER;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 #[cfg(feature = "dao-chain")]
@@ -53,12 +54,14 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let admin_addr = deps.api.addr_canonicalize(info.sender.as_ref())?;
 
-    ADMIN.save(deps.storage, &admin_addr)?;
+    DAO.save(deps.storage, &admin_addr)?;
     PROXY_CODE_ID.save(deps.storage, &msg.proxy_code_id)?;
     PROXY_MULTISIG_CODE_ID.save(deps.storage, &msg.proxy_multisig_code_id)?;
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     FEE.save(deps.storage, &msg.wallet_fee)?;
+
+    #[cfg(feature = "dao-chain")]
     if let Some(mint) = msg.govec_minter {
         GOVEC_MINTER.save(deps.storage, &deps.api.addr_canonicalize(&mint)?)?;
     };
@@ -83,8 +86,9 @@ pub fn execute(
         } => migrate_wallet(deps, info, wallet_address, migration_msg),
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => update_code_id(deps, info, ty, new_code_id),
         ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
+        #[cfg(feature = "dao-chain")]
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
-        ExecuteMsg::UpdateDao { addr } => update_admin_addr(deps, info, addr),
+        ExecuteMsg::UpdateDao { addr } => update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec(deps, env, info),
         #[cfg(feature = "remote")]
         ExecuteMsg::GovecMinted { wallet } => govec_minted(deps, env, info, wallet),
@@ -137,14 +141,14 @@ fn create_wallet(
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
         let res = Response::new().add_submessage(msg);
 
-        // Send native tokens to admin to join the DAO
+        // Send native tokens to DAO to join the DAO
         TOTAL_CREATED.save(deps.storage, &next_id)?;
 
         if fee.amount != Uint128::zero() {
             let bank_msg = CosmosMsg::Bank(BankMsg::Send {
                 to_address: deps
                     .api
-                    .addr_humanize(&ADMIN.load(deps.storage)?)?
+                    .addr_humanize(&DAO.load(deps.storage)?)?
                     .to_string(),
                 amount: vec![fee],
             });
@@ -221,7 +225,7 @@ fn update_code_id(
     ty: CodeIdType,
     new_code_id: u64,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_ref())?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_ref())?;
     match ty {
         CodeIdType::Proxy => {
             PROXY_CODE_ID.update(deps.storage, |c| {
@@ -253,7 +257,7 @@ fn update_wallet_fee(
     info: MessageInfo,
     new_fee: Coin,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
     FEE.save(deps.storage, &new_fee)?;
     Ok(Response::new()
         .add_attribute("config", "Wallet Fee")
@@ -265,23 +269,23 @@ fn update_govec_addr(
     info: MessageInfo,
     addr: String,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
     GOVEC_MINTER.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
     Ok(Response::new()
         .add_attribute("config", "Govec Addr")
         .add_attribute("New Addr", addr))
 }
 
-fn update_admin_addr(
+fn update_dao_addr(
     deps: DepsMut,
     info: MessageInfo,
     addr: String,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
-    ADMIN.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
+    DAO.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
     Ok(Response::new()
-        .add_attribute("config", "Admin")
-        .add_attribute("New Admin", addr))
+        .add_attribute("config", "DAO")
+        .add_attribute("New DAO", addr))
 }
 
 fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
@@ -314,8 +318,8 @@ fn govec_minted(
     info: MessageInfo,
     wallet: String,
 ) -> Result<Response, ContractError> {
-    let govec_minter = GOVEC_MINTER.load(deps.storage)?;
-    if info.sender != deps.api.addr_humanize(&govec_minter)?.to_string() {
+    let dao_minter = DAO.load(deps.storage)?;
+    if info.sender != deps.api.addr_humanize(&dao_minter)?.to_string() {
         Err(ContractError::Unauthorized {})
     } else {
         let to_remove_wallet = deps.api.addr_canonicalize(&wallet)?;
@@ -404,7 +408,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
         QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
-        QueryMsg::DaoAddr {} => to_binary(&query_admin_addr(deps)?),
+        QueryMsg::DaoAddr {} => to_binary(&query_dao_addr(deps)?),
         QueryMsg::TotalCreated {} => to_binary(&query_total(deps)?),
     }
 }
@@ -460,9 +464,9 @@ pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
     deps.api.addr_humanize(&GOVEC_MINTER.load(deps.storage)?)
 }
 
-/// Returns admin address
-pub fn query_admin_addr(deps: Deps) -> StdResult<Addr> {
-    deps.api.addr_humanize(&ADMIN.load(deps.storage)?)
+/// Returns DAO address
+pub fn query_dao_addr(deps: Deps) -> StdResult<Addr> {
+    deps.api.addr_humanize(&DAO.load(deps.storage)?)
 }
 
 pub fn query_total(deps: Deps) -> StdResult<u64> {
