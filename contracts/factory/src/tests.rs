@@ -4,7 +4,7 @@ use cosmwasm_std::{coin, Coin, DepsMut};
 
 use crate::{
     contract::{
-        execute, instantiate, query_admin_addr, query_code_id, query_fee, query_govec_addr,
+        execute, instantiate, query_code_id, query_dao_addr, query_fee, query_govec_addr,
         query_unclaim_wallet_list, query_wallet_claim_expiration, CodeIdType,
     },
     error::ContractError,
@@ -157,21 +157,21 @@ fn admin_updates_addresses_work() {
 
     // update admin
     let msg = ExecuteMsg::UpdateDao {
-        addr: "new_admin".to_string(),
+        addr: "new_dao".to_string(),
     };
 
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
         response.attributes,
-        [("config", "Admin"), ("New Admin", "new_admin")]
+        [("config", "DAO"), ("New DAO", "new_dao")]
     );
 
-    let new_admin = query_admin_addr(deps.as_ref()).unwrap();
-    assert_eq!(new_admin, "new_admin");
+    let new_admin = query_dao_addr(deps.as_ref()).unwrap();
+    assert_eq!(new_admin, "new_dao");
 
     // old admin cannot update admin or govec anymore
     let msg = ExecuteMsg::UpdateDao {
-        addr: "new_admin".to_string(),
+        addr: "new_dao".to_string(),
     };
 
     let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();

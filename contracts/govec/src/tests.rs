@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use cosmwasm_std::testing::{
     mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info,
 };
@@ -9,7 +11,6 @@ use crate::contract::*;
 use crate::enumerable::*;
 use crate::error::*;
 use crate::msg::*;
-use crate::state::MinterData;
 
 use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MarketingInfoResponse, TokenInfoResponse};
 use cw20_stake::contract::{query_download_logo, query_marketing_info};
@@ -19,17 +20,18 @@ fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
 }
 
 const STAKE_ADDR: &str = "staker";
-const MINTER_ADDR: &str = "factory";
+const FACTORY: &str = "factory";
 const DAO_ADDR: &str = "dao";
-const MINTERS: &'static [&'static str] = &[MINTER_ADDR];
+const DAO_TUNNEL: &str = "dao-tunnel";
 
 // this will set up the instantiation for other tests
 fn do_instantiate(
     mut deps: DepsMut,
     addr: Vec<&str>,
     amount: Vec<Uint128>,
-    minters: Vec<&str>,
-    cap: Option<Uint128>,
+    factory: Option<&str>,
+    dao_tunnel: Option<&str>,
+    mint_cap: Option<Uint128>,
     marketing: Option<MarketingInfoResponse>,
 ) -> TokenInfoResponse {
     let mut coins: Vec<Cw20Coin> = Vec::new();
@@ -41,16 +43,14 @@ fn do_instantiate(
         });
         total_supply = amount[i] + total_supply;
     }
-    let mint = MinterData {
-        minters: minters.iter().map(|s| s.to_string()).collect(),
-        cap,
-    };
     let instantiate_msg = InstantiateMsg {
         name: "Auto Gen".to_string(),
         symbol: "AUTO".to_string(),
         initial_balances: coins,
         staking_addr: None,
-        minter: Some(mint.clone()),
+        mint_cap,
+        factory: factory.map(|e| e.to_string()),
+        dao_tunnel: dao_tunnel.map(|e| e.to_string()),
         marketing,
     };
 
@@ -68,30 +68,52 @@ fn do_instantiate(
             total_supply
         }
     );
-    assert_eq!(query_minter(deps.as_ref()).unwrap(), Some(mint));
+
+    let minters = if factory.is_none() && dao_tunnel.is_none() {
+        None
+    } else {
+        let mut v = Vec::new();
+        if let Some(daot) = dao_tunnel {
+            v.push(daot.to_string());
+        }
+        if let Some(f) = factory {
+            v.push(f.to_string());
+        }
+        Some(v)
+    };
+
+    let mr = MintResponse {
+        minters,
+        cap: mint_cap,
+    };
+
+    assert_eq!(query_minter(deps.as_ref()).unwrap(), mr);
     assert_eq!(query_dao(deps.as_ref()).unwrap(), DAO_ADDR);
     meta
 }
 
 #[test]
-fn mintable() {
+fn can_instantiate_accounts() {
     let mut deps = mock_dependencies();
     let amount = Uint128::new(11223344);
-    let minters = vec![String::from("asmodat")];
     let limit = Uint128::new(511223344);
-    let minter = Some(MinterData {
-        minters: minters.clone(),
-        cap: Some(limit),
-    });
     let instantiate_msg = InstantiateMsg {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
-        initial_balances: vec![Cw20Coin {
-            address: "addr0000".into(),
-            amount,
-        }],
-        minter: minter.clone(),
+        initial_balances: vec![
+            Cw20Coin {
+                address: "addr0000".into(),
+                amount,
+            },
+            Cw20Coin {
+                address: "addr0011".into(),
+                amount,
+            },
+        ],
         staking_addr: None,
+        factory: None,
+        dao_tunnel: None,
+        mint_cap: Some(limit),
         marketing: None,
     };
     let info = mock_info("creator", &[]);
@@ -105,21 +127,17 @@ fn mintable() {
             name: "Cash Token".to_string(),
             symbol: "CASH".to_string(),
             decimals: 0,
-            total_supply: amount,
+            total_supply: amount.add(amount),
         }
     );
-    assert_eq!(
-        get_balance(deps.as_ref(), "addr0000"),
-        Uint128::new(11223344)
-    );
-    assert_eq!(query_minter(deps.as_ref()).unwrap(), minter,);
+    assert_eq!(get_balance(deps.as_ref(), "addr0000"), amount);
+    assert_eq!(get_balance(deps.as_ref(), "addr0011"), amount);
 }
 
 #[test]
 fn cannot_mint_over_cap() {
     let mut deps = mock_dependencies();
     let amount = Uint128::new(11223344);
-    let minters = vec![String::from("asmodat")];
     let limit = Uint128::new(11223300);
     let instantiate_msg = InstantiateMsg {
         name: "Cash Token".to_string(),
@@ -128,10 +146,9 @@ fn cannot_mint_over_cap() {
             address: String::from("addr0000"),
             amount,
         }],
-        minter: Some(MinterData {
-            minters,
-            cap: Some(limit),
-        }),
+        factory: None,
+        dao_tunnel: None,
+        mint_cap: Some(limit),
         staking_addr: None,
         marketing: None,
     };
@@ -156,7 +173,8 @@ fn query_joined_works() {
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        vec![DAO_ADDR],
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         Some(limit),
         None,
     );
@@ -195,25 +213,23 @@ fn dao_can_update_staking_addr() {
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        vec![DAO_ADDR],
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         Some(limit),
         None,
     );
 
-    let msg = ExecuteMsg::UpdateStakingAddr {
-        new_addr: new_staking.clone(),
+    let msg = ExecuteMsg::UpdateConfigAddr {
+        new_addr: UpdateAddrReq::Staking(new_staking.clone()),
     };
 
     // only dao can update staking
-    let info = mock_info(MINTER_ADDR, &[]);
+    let info = mock_info(FACTORY, &[]);
     let env = mock_env();
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
     // dao can update staking
-    let msg = ExecuteMsg::UpdateStakingAddr {
-        new_addr: new_staking.clone(),
-    };
     let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
@@ -233,23 +249,23 @@ fn dao_can_update_dao_addr_and_transfer_tokens() {
         deps.as_mut(),
         vec![DAO_ADDR],
         vec![dao_balance],
-        MINTERS.to_vec(),
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         Some(limit),
         None,
     );
-
     assert_eq!(
         query_balance(deps.as_ref(), DAO_ADDR.to_string())
             .unwrap()
             .balance,
         Uint128::new(5)
     );
-    let msg = ExecuteMsg::UpdateDaoAddr {
-        new_addr: new_dao.clone(),
+    let msg = ExecuteMsg::UpdateConfigAddr {
+        new_addr: UpdateAddrReq::Dao(new_dao.clone()),
     };
 
     // only dao can update DAO
-    let info = mock_info(MINTER_ADDR, &[]);
+    let info = mock_info(FACTORY, &[]);
     let env = mock_env();
     let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -274,49 +290,34 @@ fn dao_can_update_dao_addr_and_transfer_tokens() {
 }
 
 #[test]
-fn dao_can_update_mint_data() {
+fn dao_can_update_mint_cap() {
     let mut deps = mock_dependencies();
-    let genesis = String::from("genesis");
-    let amount = Uint128::new(0);
-    let limit = Uint128::new(12);
+    let new_mint_cap = Some(Uint128::new(123));
 
     do_instantiate(
         deps.as_mut(),
-        vec![genesis.as_str()],
-        vec![amount],
-        MINTERS.to_vec(),
-        Some(limit),
+        vec![],
+        vec![],
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
+        None,
         None,
     );
 
-    let msg = ExecuteMsg::UpdateMintData { new_mint: None };
+    let msg = ExecuteMsg::UpdateMintCap { new_mint_cap };
 
     // only dao can update mint data
-    let info = mock_info(MINTER_ADDR, &[]);
+    let info = mock_info(FACTORY, &[]);
     let env = mock_env();
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
-    let new_mint = MinterData {
-        minters: vec!["new_minter".to_string()],
-        cap: Some(Uint128::new(200)),
-    };
     // dao can update mint data
-    let msg = ExecuteMsg::UpdateMintData {
-        new_mint: Some(new_mint.clone()),
-    };
     let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(0, res.messages.len());
-    assert_eq!(
-        query_minter(deps.as_ref()).unwrap().unwrap().minters,
-        new_mint.minters
-    );
-    assert_eq!(
-        query_minter(deps.as_ref()).unwrap().unwrap().cap,
-        new_mint.cap
-    );
+    assert_eq!(query_minter(deps.as_ref()).unwrap().cap, new_mint_cap);
 }
 
 #[test]
@@ -325,12 +326,14 @@ fn can_mint_by_minter() {
 
     let genesis = String::from("genesis");
     let amount = Uint128::new(0);
-    let limit = Uint128::new(1);
+    let limit = Uint128::new(2);
+
     do_instantiate(
         deps.as_mut(),
-        vec![genesis.as_str()],
-        vec![amount],
-        MINTERS.to_vec(),
+        vec![],
+        vec![],
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         Some(limit),
         None,
     );
@@ -341,96 +344,48 @@ fn can_mint_by_minter() {
         new_wallet: winner.clone(),
     };
 
-    let info = mock_info(MINTER_ADDR, &[]);
+    // Others cannot mint
+    let info = mock_info("others", &[]);
     let env = mock_env();
-    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
+
+    // Factory can mint
+    let info = mock_info(FACTORY, &[]);
+    let env = mock_env();
+    let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
-    assert_eq!(get_balance(deps.as_ref(), genesis), amount);
+    assert_eq!(get_balance(deps.as_ref(), genesis.clone()), amount);
     assert_eq!(get_balance(deps.as_ref(), winner.clone()), Uint128::new(1));
 
-    // but if it exceeds cap, it fails cap is enforced
-    let msg = ExecuteMsg::Mint { new_wallet: winner };
-    let info = mock_info(MINTER_ADDR, &[]);
+    // DAO Tunnel can also mint
+    let info = mock_info(DAO_TUNNEL, &[]);
     let env = mock_env();
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::CannotExceedCap {});
-}
-
-#[test]
-fn others_cannot_mint() {
-    let mut deps = mock_dependencies();
-    do_instantiate(
-        deps.as_mut(),
-        vec!["genesis"],
-        vec![Uint128::new(1234)],
-        MINTERS.to_vec(),
-        None,
-        None,
-    );
-
-    let msg = ExecuteMsg::Mint {
-        new_wallet: String::from("genesis"),
-    };
-    let info = mock_info("anyone else", &[]);
-    let env = mock_env();
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-}
-
-#[test]
-fn instantiate_multiple_accounts() {
-    let mut deps = mock_dependencies();
-    let amount1 = Uint128::from(11223344u128);
-    let addr1 = String::from("addr0001");
-    let amount2 = Uint128::from(7890987u128);
-    let addr2 = String::from("addr0002");
-    let instantiate_msg = InstantiateMsg {
-        name: "Bash Shell".to_string(),
-        symbol: "BASH".to_string(),
-        initial_balances: vec![
-            Cw20Coin {
-                address: addr1.clone(),
-                amount: amount1,
-            },
-            Cw20Coin {
-                address: addr2.clone(),
-                amount: amount2,
-            },
-        ],
-        minter: None,
-        staking_addr: None,
-        marketing: None,
-    };
-    let info = mock_info("creator", &[]);
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
+    let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
+    assert_eq!(get_balance(deps.as_ref(), genesis), amount);
+    assert_eq!(get_balance(deps.as_ref(), winner.clone()), Uint128::new(2));
 
-    assert_eq!(
-        query_token_info(deps.as_ref()).unwrap(),
-        TokenInfoResponse {
-            name: "Bash Shell".to_string(),
-            symbol: "BASH".to_string(),
-            decimals: 0,
-            total_supply: amount1 + amount2,
-        }
-    );
-    assert_eq!(get_balance(deps.as_ref(), addr1), amount1);
-    assert_eq!(get_balance(deps.as_ref(), addr2), amount2);
+    // but if it exceeds cap, it fails cap is enforced
+    let info = mock_info(FACTORY, &[]);
+    let env = mock_env();
+    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
+    assert_eq!(err, ContractError::CannotExceedCap {});
 }
 
 #[test]
 fn queries_work() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let addr1 = String::from("addr0001");
+    let addr1 = "addr0001";
     let amount1 = Uint128::new(12340000);
+    let limit = Uint128::new(999999900);
 
     let expected = do_instantiate(
         deps.as_mut(),
-        vec![addr1.as_str()],
+        vec![addr1],
         vec![amount1],
-        MINTERS.to_vec(),
-        None,
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
+        Some(limit),
         None,
     );
 
@@ -438,13 +393,14 @@ fn queries_work() {
     let loaded = query_token_info(deps.as_ref()).unwrap();
     assert_eq!(expected, loaded);
 
-    let _info = mock_info(&addr1, &[]);
     let env = mock_env();
     // check balance query (full)
     let data = query(
         deps.as_ref(),
         env.clone(),
-        QueryMsg::Balance { address: addr1 },
+        QueryMsg::Balance {
+            address: addr1.to_string(),
+        },
     )
     .unwrap();
     let loaded: BalanceResponse = from_binary(&data).unwrap();
@@ -489,7 +445,8 @@ fn transfer() {
         deps.as_mut(),
         vec![addr1.as_str(), addr2.as_str()],
         vec![amount1, Uint128::zero()],
-        MINTERS.to_vec(),
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         None,
         None,
     );
@@ -579,7 +536,8 @@ fn burn() {
         deps.as_mut(),
         vec![addr1.as_str(), addr2.as_str(), addr3.as_str()],
         vec![right_amount, too_little, too_much],
-        MINTERS.to_vec(),
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         None,
         None,
     );
@@ -660,7 +618,8 @@ fn send() {
         deps.as_mut(),
         vec![addr1.as_str(), addr2.as_str()],
         vec![amount1, Uint128::new(0)],
-        MINTERS.to_vec(),
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         None,
         None,
     );
@@ -771,7 +730,8 @@ fn query_all_accounts_works() {
             Uint128::new(1),
             Uint128::new(1),
         ],
-        MINTERS.to_vec(),
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         None,
         None,
     );
@@ -804,13 +764,17 @@ fn query_minter_works() {
         deps.as_mut(),
         vec![acct1.as_str()],
         vec![Uint128::new(1)],
-        MINTERS.to_vec(),
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         None,
         None,
     );
 
     let minter = query_minter(deps.as_ref()).unwrap();
-    assert_eq!(minter.unwrap().minters, MINTERS);
+    assert_eq!(
+        minter.minters,
+        Some(vec![DAO_TUNNEL.to_string(), FACTORY.to_string()])
+    );
 }
 
 #[test]
@@ -823,7 +787,7 @@ fn query_marketing_info_works() {
     let marketing_msg = MarketingInfoResponse {
         project: Some(project.clone()),
         description: Some(description.clone()),
-        marketing: Some(Addr::unchecked(MINTER_ADDR)),
+        marketing: Some(Addr::unchecked(DAO_ADDR)),
         logo: None,
     };
 
@@ -831,7 +795,8 @@ fn query_marketing_info_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        MINTERS.to_vec(),
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
         None,
         Some(marketing_msg),
     );
@@ -845,7 +810,7 @@ fn query_marketing_info_works() {
 fn query_download_logo_works() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
-    do_instantiate(deps.as_mut(), vec![], vec![], MINTERS.to_vec(), None, None);
+    do_instantiate(deps.as_mut(), vec![], vec![], None, None, None, None);
 
     let logo = query_download_logo(deps.as_ref()).expect_err("NotFound");
 
@@ -855,7 +820,7 @@ fn query_download_logo_works() {
 #[test]
 fn execute_update_marketing_works() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let info = mock_info(MINTER_ADDR, &[]);
+    let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
 
     let project = "website".to_string();
@@ -864,7 +829,7 @@ fn execute_update_marketing_works() {
     let marketing_msg = MarketingInfoResponse {
         project: Some(project.clone()),
         description: Some(description.clone()),
-        marketing: Some(Addr::unchecked(MINTER_ADDR)),
+        marketing: Some(Addr::unchecked(DAO_ADDR)),
         logo: None,
     };
 
@@ -872,7 +837,8 @@ fn execute_update_marketing_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        MINTERS.to_vec(),
+        None,
+        None,
         None,
         Some(marketing_msg),
     );
@@ -905,7 +871,7 @@ fn execute_update_marketing_works() {
 #[test]
 fn execute_update_logo_works() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let info = mock_info(MINTER_ADDR, &[]);
+    let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
 
     let project = "website".to_string();
@@ -914,7 +880,7 @@ fn execute_update_logo_works() {
     let marketing_msg = MarketingInfoResponse {
         project: Some(project.clone()),
         description: Some(description.clone()),
-        marketing: Some(Addr::unchecked(MINTER_ADDR)),
+        marketing: Some(Addr::unchecked(DAO_ADDR)),
         logo: None,
     };
 
@@ -922,7 +888,8 @@ fn execute_update_logo_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        MINTERS.to_vec(),
+        None,
+        None,
         None,
         Some(marketing_msg),
     );
