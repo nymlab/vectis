@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse,
-    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
+    from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
+    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
     IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
 };
 
@@ -140,7 +140,8 @@ pub fn receive_mint_govec(
         contract_addr: deps.api.addr_humanize(&factory_addr).unwrap().to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
             wallet: wallet_addr,
-        }).unwrap(),
+        })
+        .unwrap(),
         funds: vec![],
     });
 

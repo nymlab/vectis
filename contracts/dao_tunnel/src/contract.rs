@@ -1,26 +1,39 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, IbcMsg, MessageInfo, Reply,
-    Response, StdResult,
+    entry_point, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, IbcMsg, MessageInfo,
+    Order, Reply, Response, StdResult,
 };
 use cw2::set_contract_version;
-use vectis_wallet::{PacketMsg, WalletFactoryInstantiateMsg, PACKET_LIFETIME, RECEIVE_DISPATCH_ID, StdAck, DispatchResponse};
+use cw_storage_plus::Bound;
+use vectis_wallet::{
+    DispatchResponse, PacketMsg, StdAck, WalletFactoryInstantiateMsg, PACKET_LIFETIME,
+    RECEIVE_DISPATCH_ID,
+};
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ADMIN, IBC_CONTROLLERS, RESULTS};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
+use crate::state::{ADMIN, GOVEC, IBC_TUNNELS, RESULTS};
+use crate::MING_DISPATCH_ID;
 
-const CONTRACT_NAME: &str = "crates.io:vectis-ibc-host";
+const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+// settings for pagination
+const MAX_LIMIT: u32 = 30;
+const DEFAULT_LIMIT: u32 = 10;
 
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let admin_addr = deps.api.addr_canonicalize(info.sender.as_ref())?;
+    let govec_addr = deps
+        .api
+        .addr_canonicalize(deps.api.addr_validate(&msg.govec_minter)?.as_str())?;
+    GOVEC.save(deps.storage, &govec_addr)?;
     ADMIN.save(deps.storage, &admin_addr)?;
     Ok(Response::new())
 }
@@ -61,7 +74,7 @@ fn execute_add_approved_controller(
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
-    IBC_CONTROLLERS
+    IBC_TUNNELS
         .save(deps.storage, (connection_id.clone(), port_id.clone()), &())
         .unwrap();
 
@@ -142,14 +155,44 @@ fn execute_update_remote_tunnel_channel(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::Govec => to_binary(&query_govec(deps)?),
+        QueryMsg::Controllers { start_after, limit } => {
+            to_binary(&query_controllers(deps, start_after, limit)?)
+        }
+    }
+}
+
+pub fn query_govec(deps: Deps) -> StdResult<Option<Addr>> {
+    let addr = match GOVEC.may_load(deps.storage)? {
+        Some(c) => Some(deps.api.addr_humanize(&c)?),
+        _ => None,
+    };
+    Ok(addr)
+}
+
+pub fn query_controllers(
+    deps: Deps,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> StdResult<RemoteTunnels> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
+
+    let tunnels: StdResult<Vec<(String, String)>> = IBC_TUNNELS
+        .keys(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .collect();
+
+    Ok(RemoteTunnels { tunnels: tunnels? })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         RECEIVE_DISPATCH_ID => reply_dispatch_callback(deps, reply),
+        MING_DISPATCH_ID => reply_mint_govec(),
         _ => Err(ContractError::InvalidReplyId),
     }
 }
@@ -163,6 +206,10 @@ pub fn reply_dispatch_callback(deps: DepsMut, reply: Reply) -> Result<Response, 
     // update result data if this is the last
     let data = StdAck::success(&DispatchResponse { results });
     Ok(Response::new().set_data(data))
+}
+
+pub fn reply_mint_govec() -> Result<Response, ContractError> {
+    Ok(Response::new().set_data(StdAck::success(true)))
 }
 
 /// Ensures provided addr is the state stored ADMIN

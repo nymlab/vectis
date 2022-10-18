@@ -1,4 +1,7 @@
-use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder, StdResult, WasmMsg, IbcPacketAckMsg, IbcBasicResponse};
+use cosmwasm_std::{
+    from_slice, to_binary, Binary, CosmosMsg, IbcBasicResponse, IbcOrder, IbcPacketAckMsg,
+    StdResult, WasmMsg,
+};
 
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;

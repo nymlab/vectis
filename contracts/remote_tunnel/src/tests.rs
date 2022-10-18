@@ -9,9 +9,9 @@ use cosmwasm_std::{
 };
 
 use vectis_wallet::{
-    DispatchResponse, IbcError, PacketMsg, StdAck,
+    DispatchResponse, IbcError, PacketMsg, StdAck, WalletFactoryExecuteMsg,
     WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
-    PACKET_LIFETIME, RECEIVE_DISPATCH_ID, WalletFactoryExecuteMsg,
+    PACKET_LIFETIME, RECEIVE_DISPATCH_ID,
 };
 
 use crate::contract::{execute_dispatch, execute_mint_govec, instantiate, query, reply};
@@ -319,7 +319,8 @@ fn handle_mint_govec_packet() {
             contract_addr: factory_addr.to_string(),
             msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
                 wallet: wallet_addr.to_string(),
-            }).unwrap(),
+            })
+            .unwrap(),
             funds: vec![],
         }),
         res.messages[0].msg
