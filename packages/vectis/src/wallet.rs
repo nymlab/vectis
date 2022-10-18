@@ -18,6 +18,7 @@ pub enum WalletAddr {
 #[serde(rename_all = "snake_case")]
 pub struct WalletInfo {
     pub user_addr: Addr,
+    pub factory: Addr,
     pub version: cw2::ContractVersion,
     pub code_id: u64,
     pub multisig_code_id: u64,
