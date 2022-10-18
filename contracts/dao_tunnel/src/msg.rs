@@ -1,10 +1,12 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::CosmosMsg;
+use cosmwasm_std::{Addr, CosmosMsg};
 
 use vectis_wallet::WalletFactoryInstantiateMsg;
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub govec_minter: String,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {
@@ -29,4 +31,17 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    #[returns(Option<u64>)]
+    Controllers {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    #[returns(Option<Addr>)]
+    Govec,
+}
+
+#[cw_serde]
+pub struct RemoteTunnels {
+    pub tunnels: Vec<(String, String)>,
+}

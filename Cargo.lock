@@ -1014,6 +1014,7 @@ dependencies = [
  "cw-utils 0.14.0",
  "cw2 0.13.4",
  "thiserror",
+ "vectis-govec",
  "vectis-wallet",
 ]
 
