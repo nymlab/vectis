@@ -6,5 +6,7 @@ pub mod state;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_remote;
 
 pub use crate::error::ContractError;

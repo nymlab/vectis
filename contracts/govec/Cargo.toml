@@ -26,7 +26,7 @@ thiserror = { version = "1.0.26" }
 derivative = "2"
 hex = "0.4"
 cw20-stake = { git = "https://github.com/DA0-DA0/dao-contracts.git", tag = "v1.0.0", features = ['library'] }
-vectis-wallet = {path = "../../packages/vectis"}
+vectis-wallet = {path = "../../packages/vectis", features = ["dao-chain"]}
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0" }
