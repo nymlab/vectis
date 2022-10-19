@@ -1,31 +1,31 @@
 use std::ops::Add;
 
-use cosmwasm_std::testing::{
+pub use crate::contract::*;
+pub use crate::enumerable::*;
+pub use crate::error::*;
+pub use crate::msg::*;
+pub use cosmwasm_std::testing::{
     mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info,
 };
-use cosmwasm_std::{
+pub use cosmwasm_std::{
     coins, from_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg, Uint128, WasmMsg,
 };
+pub use cw20::{
+    BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MarketingInfoResponse, TokenInfoResponse,
+};
+pub use cw20_stake::contract::{query_download_logo, query_marketing_info};
 
-use crate::contract::*;
-use crate::enumerable::*;
-use crate::error::*;
-use crate::msg::*;
+pub const STAKE_ADDR: &str = "staker";
+pub const FACTORY: &str = "factory";
+pub const DAO_ADDR: &str = "dao";
+pub const DAO_TUNNEL: &str = "dao-tunnel";
 
-use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MarketingInfoResponse, TokenInfoResponse};
-use cw20_stake::contract::{query_download_logo, query_marketing_info};
-
-fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
+pub fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
     query_balance(deps, address.into()).unwrap().balance
 }
 
-const STAKE_ADDR: &str = "staker";
-const FACTORY: &str = "factory";
-const DAO_ADDR: &str = "dao";
-const DAO_TUNNEL: &str = "dao-tunnel";
-
 // this will set up the instantiation for other tests
-fn do_instantiate(
+pub fn do_instantiate(
     mut deps: DepsMut,
     addr: Vec<&str>,
     amount: Vec<Uint128>,
@@ -347,7 +347,8 @@ fn can_mint_by_minter() {
     // Others cannot mint
     let info = mock_info("others", &[]);
     let env = mock_env();
-    let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 
     // Factory can mint
     let info = mock_info(FACTORY, &[]);
@@ -457,6 +458,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr2.clone(),
         amount: Uint128::zero(),
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -467,6 +469,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr2.clone(),
         amount: too_much,
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -477,6 +480,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr1.clone(),
         amount: transfer,
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -487,6 +491,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: not_wallet.clone(),
         amount: transfer,
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -502,6 +507,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr2.clone(),
         amount: transfer,
+        remote_from: None,
     };
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
 
@@ -547,7 +553,7 @@ fn burn() {
     // valid burn reduces total supply and remove account from BALANCES
     let info = mock_info(addr1.as_ref(), &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn {};
+    let msg = ExecuteMsg::Burn { remote_from: None };
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
     assert_eq!(res.messages.len(), 0);
 
@@ -573,6 +579,7 @@ fn burn() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr1.clone(),
         amount: Uint128::new(1),
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -585,6 +592,7 @@ fn burn() {
         contract: addr1,
         amount: Uint128::new(1),
         msg: send_msg,
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -592,14 +600,14 @@ fn burn() {
     // cannot burn too little
     let info = mock_info(addr2.as_ref(), &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn {};
+    let msg = ExecuteMsg::Burn { remote_from: None };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::IncorrectBalance(too_little));
 
     // cannot burn too much
     let info = mock_info(addr3.as_ref(), &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn {};
+    let msg = ExecuteMsg::Burn { remote_from: None };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::IncorrectBalance(too_much));
 }
@@ -631,6 +639,7 @@ fn send() {
         contract: STAKE_ADDR.to_string(),
         amount: Uint128::zero(),
         msg: send_msg.clone(),
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -642,6 +651,7 @@ fn send() {
         contract: addr2.to_string(),
         amount: too_much,
         msg: send_msg.clone(),
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -653,6 +663,7 @@ fn send() {
         contract: addr2.to_string(),
         amount: transfer,
         msg: send_msg.clone(),
+        remote_from: None,
     };
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
@@ -700,6 +711,7 @@ fn send() {
         contract: "not-a-wallet".to_string(),
         amount: transfer,
         msg: send_msg.clone(),
+        remote_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});

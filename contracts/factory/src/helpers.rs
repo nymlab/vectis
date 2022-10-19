@@ -1,7 +1,10 @@
 #[cfg(feature = "dao-chain")]
 use crate::contract::GOVEC_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::{ADDR_PREFIX, DAO, GOVEC_CLAIM_LIST, GOVEC_MINTER};
+#[cfg(feature = "dao-chain")]
+use crate::state::GOVEC_MINTER;
+use crate::state::{ADDR_PREFIX, DAO, GOVEC_CLAIM_LIST};
+
 use cosmwasm_std::{
     to_binary, Addr, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Response,
     StdResult, SubMsg, Uint128, WasmMsg,
@@ -147,6 +150,7 @@ pub fn ensure_is_valid_migration_msg(
     Ok(tx_msg)
 }
 
+#[cfg(feature = "dao-chain")]
 pub fn ensure_has_govec(deps: Deps) -> Result<CanonicalAddr, ContractError> {
     GOVEC_MINTER
         .may_load(deps.storage)?
@@ -154,10 +158,13 @@ pub fn ensure_has_govec(deps: Deps) -> Result<CanonicalAddr, ContractError> {
 }
 
 #[cfg(feature = "dao-chain")]
-pub fn create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
+pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
     Ok(SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: govec_minter,
+            contract_addr: deps
+                .api
+                .addr_humanize(&GOVEC_MINTER.load(deps.storage)?)?
+                .to_string(),
             msg: to_binary(&Mint { new_wallet: wallet })?,
             funds: vec![],
         }),
@@ -166,9 +173,12 @@ pub fn create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg
 }
 
 #[cfg(feature = "remote")]
-pub fn create_mint_msg(govec_minter: String, wallet: String) -> StdResult<SubMsg> {
+pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
     Ok(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: govec_minter,
+        contract_addr: deps
+            .api
+            .addr_humanize(&DAO.load(deps.storage)?)?
+            .to_string(),
         msg: to_binary(&MintGovec {
             wallet_addr: wallet,
         })?,

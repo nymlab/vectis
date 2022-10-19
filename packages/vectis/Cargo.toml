@@ -8,7 +8,6 @@ edition = "2018"
 [features]
 remote = []
 dao-chain = []
-default = ["dao-chain"]
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0", features = ["ibc3"] }

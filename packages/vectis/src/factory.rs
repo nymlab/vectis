@@ -1,7 +1,7 @@
 use crate::guardians::Guardians;
 use crate::wallet::{RelayTransaction, WalletAddr};
 use crate::MigrationMsgError;
-use cosmwasm_std::{Addr, Binary, Coin};
+use cosmwasm_std::{Binary, Coin};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -71,7 +71,6 @@ pub struct WalletFactoryInstantiateMsg {
     /// Fee in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
     /// Governance Token, Govec, address
-    #[cfg(feature = "dao-chain")]
     pub govec_minter: Option<String>,
 }
 
@@ -94,10 +93,6 @@ pub enum WalletFactoryExecuteMsg {
     },
     #[cfg(feature = "dao-chain")]
     UpdateGovecAddr {
-        addr: String,
-    },
-    #[cfg(feature = "remote")]
-    UpdateRemoteTunnelAddr {
         addr: String,
     },
     UpdateDao {
@@ -141,6 +136,7 @@ pub enum WalletFactoryQueryMsg {
     /// Fee goes to the DAO
     Fee {},
     /// Returns the address of the Govec Voting Tokens Contract
+    #[cfg(feature = "dao-chain")]
     GovecAddr {},
     /// Returns the address of the DAO which holds the admin role of this contract
     DaoAddr {},
