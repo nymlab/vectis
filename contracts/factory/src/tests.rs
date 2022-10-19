@@ -2,10 +2,12 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Coin, DepsMut};
 
+#[cfg(feature = "dao-chain")]
+use crate::contract::query_govec_addr;
 use crate::{
     contract::{
-        execute, instantiate, query_code_id, query_dao_addr, query_fee, query_govec_addr,
-        query_unclaim_wallet_list, query_wallet_claim_expiration, CodeIdType,
+        execute, instantiate, query_code_id, query_dao_addr, query_fee, query_unclaim_wallet_list,
+        query_wallet_claim_expiration, CodeIdType,
     },
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, UnclaimedWalletList},
@@ -142,18 +144,20 @@ fn admin_updates_addresses_work() {
     let info = mock_info("admin", &[]);
     let env = mock_env();
 
-    // update govec
-    let msg = ExecuteMsg::UpdateGovecAddr {
-        addr: "new_govec".to_string(),
-    };
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(
-        response.attributes,
-        [("config", "Govec Addr"), ("New Addr", "new_govec")]
-    );
-
-    let new_govec = query_govec_addr(deps.as_ref()).unwrap();
-    assert_eq!(new_govec, "new_govec");
+    #[cfg(feature = "dao-chain")]
+    {
+        // update govec
+        let msg = ExecuteMsg::UpdateGovecAddr {
+            addr: "new_govec".to_string(),
+        };
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(
+            response.attributes,
+            [("config", "Govec Addr"), ("New Addr", "new_govec")]
+        );
+        let new_govec = query_govec_addr(deps.as_ref()).unwrap();
+        assert_eq!(new_govec, "new_govec");
+    }
 
     // update admin
     let msg = ExecuteMsg::UpdateDao {
@@ -169,7 +173,7 @@ fn admin_updates_addresses_work() {
     let new_admin = query_dao_addr(deps.as_ref()).unwrap();
     assert_eq!(new_admin, "new_dao");
 
-    // old admin cannot update admin or govec anymore
+    // old admin cannot update addresses
     let msg = ExecuteMsg::UpdateDao {
         addr: "new_dao".to_string(),
     };
@@ -177,12 +181,15 @@ fn admin_updates_addresses_work() {
     let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
-    let msg = ExecuteMsg::UpdateGovecAddr {
-        addr: "new_govec".to_string(),
-    };
+    #[cfg(feature = "dao-chain")]
+    {
+        let msg = ExecuteMsg::UpdateGovecAddr {
+            addr: "new_govec".to_string(),
+        };
 
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
+        let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+        assert_eq!(err, ContractError::Unauthorized {});
+    }
 }
 
 #[test]

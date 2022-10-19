@@ -105,15 +105,18 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Transfer { recipient, amount } => {
-            execute_transfer(deps, env, info, recipient, amount)
-        }
-        ExecuteMsg::Burn {} => execute_burn(deps, env, info),
+        ExecuteMsg::Transfer {
+            recipient,
+            amount,
+            remote_from,
+        } => execute_transfer(deps, env, info, recipient, amount, remote_from),
+        ExecuteMsg::Burn { remote_from } => execute_burn(deps, env, info, remote_from),
         ExecuteMsg::Send {
             contract,
             amount,
             msg,
-        } => execute_send(deps, env, info, contract, amount, msg),
+            remote_from,
+        } => execute_send(deps, env, info, contract, amount, msg, remote_from),
         ExecuteMsg::Mint { new_wallet } => execute_mint(deps, env, info, new_wallet),
         ExecuteMsg::UpdateConfigAddr { new_addr } => {
             execute_update_config_addr(deps, info, new_addr)
@@ -136,17 +139,28 @@ pub fn execute_transfer(
     info: MessageInfo,
     recipient: String,
     amount: Uint128,
+    remote_from: Option<String>,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    let rcpt_addr = deps.api.addr_validate(&recipient)?;
+    let from = match remote_from {
+        Some(remote) => {
+            ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
+            Addr::unchecked(remote)
+        }
+        None => info.sender,
+    };
+
+    // TODO: catch error that is the wrong prefix
+    // let rcpt_addr = deps.api.addr_validate(&recipient)?;
+    let rcpt_addr = Addr::unchecked(recipient);
     ensure_is_staking_or_wallet(deps.as_ref(), &rcpt_addr)?;
 
     BALANCES.update(
         deps.storage,
-        &info.sender,
+        &from,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
@@ -161,8 +175,8 @@ pub fn execute_transfer(
 
     let res = Response::new()
         .add_attribute("action", "transfer")
-        .add_attribute("from", info.sender)
-        .add_attribute("to", recipient)
+        .add_attribute("from", from)
+        .add_attribute("to", rcpt_addr)
         .add_attribute("amount", amount);
     Ok(res)
 }
@@ -175,17 +189,25 @@ pub fn execute_burn(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+    remote_from: Option<String>,
 ) -> Result<Response, ContractError> {
     let to_burn = Uint128::from(1u8);
+    let from = match remote_from {
+        Some(remote) => {
+            ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
+            Addr::unchecked(remote)
+        }
+        None => info.sender,
+    };
     // Ensure only have voting power of exactly 1
-    let balance_option = query_balance_joined(deps.as_ref(), info.sender.to_string())?;
+    let balance_option = query_balance_joined(deps.as_ref(), from.to_string())?;
     if let Some(balance) = balance_option {
         if balance.balance != to_burn {
             return Err(ContractError::IncorrectBalance(balance.balance));
         };
 
         // remove key from the map as they exit the DAO
-        BALANCES.remove(deps.storage, &info.sender);
+        BALANCES.remove(deps.storage, &from);
 
         // reduce total_supply
         TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
@@ -195,7 +217,7 @@ pub fn execute_burn(
 
         let res = Response::new()
             .add_attribute("action", "burn")
-            .add_attribute("from", info.sender)
+            .add_attribute("from", from)
             .add_attribute("amount", to_burn);
         Ok(res)
     } else {
@@ -272,10 +294,18 @@ pub fn execute_send(
     contract: String,
     amount: Uint128,
     msg: Binary,
+    remote_from: Option<String>,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
         return Err(ContractError::InvalidZeroAmount {});
     }
+    let from = match remote_from {
+        Some(remote) => {
+            ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
+            Addr::unchecked(remote)
+        }
+        None => info.sender,
+    };
 
     let contract = deps.api.addr_validate(&contract)?;
     ensure_is_staking_or_wallet(deps.as_ref(), &contract)?;
@@ -283,7 +313,7 @@ pub fn execute_send(
     // move the tokens to the contract
     BALANCES.update(
         deps.storage,
-        &info.sender,
+        &from,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
@@ -296,12 +326,12 @@ pub fn execute_send(
 
     let res = Response::new()
         .add_attribute("action", "send")
-        .add_attribute("from", &info.sender)
+        .add_attribute("from", &from)
         .add_attribute("to", &contract)
         .add_attribute("amount", amount)
         .add_message(
             Cw20ReceiveMsg {
-                sender: info.sender.into(),
+                sender: from.into(),
                 amount,
                 msg,
             }
@@ -358,10 +388,7 @@ pub fn execute_update_config_addr(
     let res = match new_addr {
         UpdateAddrReq::Dao(addr) => {
             let new_dao = deps.api.addr_validate(&addr)?;
-            DAO_ADDR.save(
-                deps.storage,
-                &deps.api.addr_canonicalize(&new_dao.as_str())?,
-            )?;
+            DAO_ADDR.save(deps.storage, &deps.api.addr_canonicalize(new_dao.as_str())?)?;
             // transfer all balance from existing DAO to the new DAO
             let existing_dao_balance = BALANCES.may_load(deps.storage, &dao)?;
             let new_dao_balance = BALANCES.may_load(deps.storage, &new_dao)?;
@@ -391,7 +418,7 @@ pub fn execute_update_config_addr(
                 deps.storage,
                 &deps
                     .api
-                    .addr_canonicalize(&deps.api.addr_validate(&addr)?.as_str())?,
+                    .addr_canonicalize(deps.api.addr_validate(&addr)?.as_str())?,
             )?;
             Response::new()
                 .add_attribute("action", "update_factory")
@@ -402,7 +429,7 @@ pub fn execute_update_config_addr(
                 deps.storage,
                 &deps
                     .api
-                    .addr_canonicalize(&deps.api.addr_validate(&addr)?.as_str())?,
+                    .addr_canonicalize(deps.api.addr_validate(&addr)?.as_str())?,
             )?;
             Response::new()
                 .add_attribute("action", "update_dao_tunnel")
@@ -413,7 +440,7 @@ pub fn execute_update_config_addr(
                 deps.storage,
                 &deps
                     .api
-                    .addr_canonicalize(&deps.api.addr_validate(&addr)?.as_str())?,
+                    .addr_canonicalize(deps.api.addr_validate(&addr)?.as_str())?,
             )?;
             Response::new()
                 .add_attribute("action", "update_staking")
@@ -459,6 +486,14 @@ pub fn execute_upload_logo(
             cw20_stake::ContractError::Cw20Error(err),
         )),
     }
+}
+
+fn ensure_is_dao_tunnel(deps: Deps, sender: Addr) -> Result<Addr, ContractError> {
+    let dao = DAO_TUNNEL.load(deps.storage)?;
+    if dao != deps.api.addr_canonicalize(sender.as_str())? {
+        return Err(ContractError::Unauthorized {});
+    }
+    Ok(sender)
 }
 
 fn ensure_is_dao(deps: Deps, sender: Addr) -> Result<Addr, ContractError> {

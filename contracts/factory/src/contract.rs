@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::helpers::{
-    create_mint_msg, ensure_enough_native_funds, ensure_has_govec, ensure_is_dao,
-    ensure_is_valid_migration_msg, ensure_is_valid_threshold, handle_govec_minted,
+    create_mint_msg, ensure_enough_native_funds, ensure_is_dao, ensure_is_valid_migration_msg,
+    ensure_is_valid_threshold, handle_govec_minted,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
@@ -9,7 +9,10 @@ use crate::state::{
 };
 
 #[cfg(feature = "dao-chain")]
+use crate::helpers::ensure_has_govec;
+#[cfg(feature = "dao-chain")]
 use crate::state::GOVEC_MINTER;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 #[cfg(feature = "dao-chain")]
@@ -91,7 +94,7 @@ pub fn execute(
         ExecuteMsg::UpdateDao { addr } => update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec(deps, env, info),
         #[cfg(feature = "remote")]
-        ExecuteMsg::GovecMinted { wallet } => govec_minted(deps, env, info, wallet),
+        ExecuteMsg::GovecMinted { wallet } => govec_minted(deps, info, wallet),
         ExecuteMsg::PurgeExpiredClaims { start_after, limit } => {
             purge_expired_claims(deps, env, start_after, limit)
         }
@@ -105,7 +108,9 @@ fn create_wallet(
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
+    #[cfg(feature = "dao-chain")]
     ensure_has_govec(deps.as_ref())?;
+
     let fee = FEE.load(deps.storage)?;
     let proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
     let multisig_initial_funds = create_wallet_msg
@@ -264,6 +269,7 @@ fn update_wallet_fee(
         .add_attribute("New Fee", format!("{}", new_fee)))
 }
 
+#[cfg(feature = "dao-chain")]
 fn update_govec_addr(
     deps: DepsMut,
     info: MessageInfo,
@@ -297,15 +303,10 @@ fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user);
         Err(ContractError::ClaimExpired {})
     } else {
-        let govec_minter = GOVEC_MINTER.load(deps.storage)?;
-        let mint_msg = create_mint_msg(
-            deps.api.addr_humanize(&govec_minter)?.to_string(),
-            info.sender.to_string(),
-        )?;
-
+        let mint_msg = create_mint_msg(deps.as_ref(), info.sender.to_string())?;
         let res = Response::new()
             .add_submessage(mint_msg)
-            .add_attribute("action", "Claimed Govec")
+            .add_attribute("action", "Claim Govec Requested")
             .add_attribute("proxy_address", info.sender);
         Ok(res)
     }
@@ -314,7 +315,6 @@ fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 #[cfg(feature = "remote")]
 fn govec_minted(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     wallet: String,
 ) -> Result<Response, ContractError> {
@@ -407,6 +407,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
+        #[cfg(feature = "dao-chain")]
         QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
         QueryMsg::DaoAddr {} => to_binary(&query_dao_addr(deps)?),
         QueryMsg::TotalCreated {} => to_binary(&query_total(deps)?),
@@ -460,6 +461,7 @@ pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
     Ok(id)
 }
 /// Returns govec token address
+#[cfg(feature = "dao-chain")]
 pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
     deps.api.addr_humanize(&GOVEC_MINTER.load(deps.storage)?)
 }
