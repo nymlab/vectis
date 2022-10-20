@@ -31,7 +31,7 @@ pub enum ExecuteMsg {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(Option<Addr>)]
-    Factory,
+    Factory {},
     #[returns(Option<String>)]
-    Channel,
+    Channel {},
 }

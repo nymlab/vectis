@@ -157,7 +157,7 @@ fn execute_update_remote_tunnel_channel(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Govec => to_binary(&query_govec(deps)?),
+        QueryMsg::Govec {} => to_binary(&query_govec(deps)?),
         QueryMsg::Controllers { start_after, limit } => {
             to_binary(&query_controllers(deps, start_after, limit)?)
         }

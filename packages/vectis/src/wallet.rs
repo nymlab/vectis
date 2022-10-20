@@ -1,12 +1,11 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 /// User nonce
 pub type Nonce = u64;
 
 /// Representation of the wallet address in both form used in migration
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub enum WalletAddr {
     /// CanonicalAddr
     Canonical(CanonicalAddr),
@@ -14,8 +13,7 @@ pub enum WalletAddr {
     Addr(Addr),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct WalletInfo {
     pub user_addr: Addr,
     pub factory: Addr,
@@ -30,7 +28,7 @@ pub struct WalletInfo {
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct RelayTransaction {
     /// User pubkey
     pub user_pubkey: Binary,

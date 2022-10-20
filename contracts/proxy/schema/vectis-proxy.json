@@ -1,0 +1,1498 @@
+{
+  "contract_name": "vectis-proxy",
+  "contract_version": "0.1.0",
+  "idl_version": "1.0.0",
+  "instantiate": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "InstantiateMsg",
+    "type": "object",
+    "required": [
+      "addr_prefix",
+      "code_id",
+      "create_wallet_msg",
+      "multisig_code_id"
+    ],
+    "properties": {
+      "addr_prefix": {
+        "description": "Chain address prefix",
+        "type": "string"
+      },
+      "code_id": {
+        "description": "Code Id used to instantiate the contract",
+        "type": "integer",
+        "format": "uint64",
+        "minimum": 0.0
+      },
+      "create_wallet_msg": {
+        "$ref": "#/definitions/CreateWalletMsg"
+      },
+      "multisig_code_id": {
+        "description": "Fixed Multisig Code Id for guardians",
+        "type": "integer",
+        "format": "uint64",
+        "minimum": 0.0
+      }
+    },
+    "additionalProperties": false,
+    "definitions": {
+      "Coin": {
+        "type": "object",
+        "required": [
+          "amount",
+          "denom"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/definitions/Uint128"
+          },
+          "denom": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateWalletMsg": {
+        "type": "object",
+        "required": [
+          "guardians",
+          "label",
+          "proxy_initial_funds",
+          "relayers",
+          "user_addr"
+        ],
+        "properties": {
+          "guardians": {
+            "$ref": "#/definitions/Guardians"
+          },
+          "label": {
+            "type": "string"
+          },
+          "proxy_initial_funds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Coin"
+            }
+          },
+          "relayers": {
+            "description": "A List of keys can act as relayer for",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "user_addr": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Guardians": {
+        "type": "object",
+        "required": [
+          "addresses"
+        ],
+        "properties": {
+          "addresses": {
+            "description": "A List of keys can act as guardian for",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "guardians_multisig": {
+            "description": "Whether multisig option for guardians is enabled",
+            "anyOf": [
+              {
+                "$ref": "#/definitions/MultiSig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MultiSig": {
+        "type": "object",
+        "required": [
+          "multisig_initial_funds",
+          "threshold_absolute_count"
+        ],
+        "properties": {
+          "multisig_initial_funds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Coin"
+            }
+          },
+          "threshold_absolute_count": {
+            "description": "Only Fixed multisig is supported in this version",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
+      "Uint128": {
+        "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+        "type": "string"
+      }
+    }
+  },
+  "execute": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ExecuteMsg",
+    "oneOf": [
+      {
+        "description": "Execute requests the contract to re-dispatch all these messages with the contract's address as sender. Priviledge: User",
+        "type": "object",
+        "required": [
+          "execute"
+        ],
+        "properties": {
+          "execute": {
+            "type": "object",
+            "required": [
+              "msgs"
+            ],
+            "properties": {
+              "msgs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/CosmosMsg_for_Empty"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Freeze will freeze the account in the scenario the user lose their key / device Priviledge: Guardian/Multisig",
+        "type": "object",
+        "required": [
+          "revert_freeze_status"
+        ],
+        "properties": {
+          "revert_freeze_status": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Relay message contains the signature and the message to relay Priviledge: Relayer",
+        "type": "object",
+        "required": [
+          "relay"
+        ],
+        "properties": {
+          "relay": {
+            "type": "object",
+            "required": [
+              "transaction"
+            ],
+            "properties": {
+              "transaction": {
+                "$ref": "#/definitions/RelayTransaction"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Rotating the User Key Priviledge: User, Guardian/Multisig",
+        "type": "object",
+        "required": [
+          "rotate_user_key"
+        ],
+        "properties": {
+          "rotate_user_key": {
+            "type": "object",
+            "required": [
+              "new_user_address"
+            ],
+            "properties": {
+              "new_user_address": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Adding a new relayer Priviledge: User/Multisig",
+        "type": "object",
+        "required": [
+          "add_relayer"
+        ],
+        "properties": {
+          "add_relayer": {
+            "type": "object",
+            "required": [
+              "new_relayer_address"
+            ],
+            "properties": {
+              "new_relayer_address": {
+                "$ref": "#/definitions/Addr"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Removing relayer Priviledge: User/Multisig",
+        "type": "object",
+        "required": [
+          "remove_relayer"
+        ],
+        "properties": {
+          "remove_relayer": {
+            "type": "object",
+            "required": [
+              "relayer_address"
+            ],
+            "properties": {
+              "relayer_address": {
+                "$ref": "#/definitions/Addr"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "It create a request for update guardians and it has a delay of one day after that is possible to update the guardians using UpdateGuardiansMsg",
+        "type": "object",
+        "required": [
+          "request_update_guardians"
+        ],
+        "properties": {
+          "request_update_guardians": {
+            "type": "object",
+            "properties": {
+              "request": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/GuardiansUpdateMsg"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Once the request passed the waiting time, it is possible to update the guardians.",
+        "type": "object",
+        "required": [
+          "update_guardians"
+        ],
+        "properties": {
+          "update_guardians": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Updates label by the user",
+        "type": "object",
+        "required": [
+          "update_label"
+        ],
+        "properties": {
+          "update_label": {
+            "type": "object",
+            "required": [
+              "new_label"
+            ],
+            "properties": {
+              "new_label": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ],
+    "definitions": {
+      "Addr": {
+        "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      },
+      "BankMsg": {
+        "description": "The message types of the bank module.\n\nSee https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/bank/v1beta1/tx.proto",
+        "oneOf": [
+          {
+            "description": "Sends native tokens from the contract to the given address.\n\nThis is translated to a [MsgSend](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/bank/v1beta1/tx.proto#L19-L28). `from_address` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "send"
+            ],
+            "properties": {
+              "send": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "to_address"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/Coin"
+                    }
+                  },
+                  "to_address": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "This will burn the given coins from the contract's account. There is no Cosmos SDK message that performs this, but it can be done by calling the bank keeper. Important if a contract controls significant token supply that must be retired.",
+            "type": "object",
+            "required": [
+              "burn"
+            ],
+            "properties": {
+              "burn": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/Coin"
+                    }
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Binary": {
+        "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+        "type": "string"
+      },
+      "Coin": {
+        "type": "object",
+        "required": [
+          "amount",
+          "denom"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/definitions/Uint128"
+          },
+          "denom": {
+            "type": "string"
+          }
+        }
+      },
+      "CosmosMsg_for_Empty": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "bank"
+            ],
+            "properties": {
+              "bank": {
+                "$ref": "#/definitions/BankMsg"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "custom"
+            ],
+            "properties": {
+              "custom": {
+                "$ref": "#/definitions/Empty"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "staking"
+            ],
+            "properties": {
+              "staking": {
+                "$ref": "#/definitions/StakingMsg"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "distribution"
+            ],
+            "properties": {
+              "distribution": {
+                "$ref": "#/definitions/DistributionMsg"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "A Stargate message encoded the same way as a protobuf [Any](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/any.proto). This is the same structure as messages in `TxBody` from [ADR-020](https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-020-protobuf-transaction-encoding.md)",
+            "type": "object",
+            "required": [
+              "stargate"
+            ],
+            "properties": {
+              "stargate": {
+                "type": "object",
+                "required": [
+                  "type_url",
+                  "value"
+                ],
+                "properties": {
+                  "type_url": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "$ref": "#/definitions/Binary"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "ibc"
+            ],
+            "properties": {
+              "ibc": {
+                "$ref": "#/definitions/IbcMsg"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "wasm"
+            ],
+            "properties": {
+              "wasm": {
+                "$ref": "#/definitions/WasmMsg"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "gov"
+            ],
+            "properties": {
+              "gov": {
+                "$ref": "#/definitions/GovMsg"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "DistributionMsg": {
+        "description": "The message types of the distribution module.\n\nSee https://github.com/cosmos/cosmos-sdk/blob/v0.42.4/proto/cosmos/distribution/v1beta1/tx.proto",
+        "oneOf": [
+          {
+            "description": "This is translated to a [MsgSetWithdrawAddress](https://github.com/cosmos/cosmos-sdk/blob/v0.42.4/proto/cosmos/distribution/v1beta1/tx.proto#L29-L37). `delegator_address` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "set_withdraw_address"
+            ],
+            "properties": {
+              "set_withdraw_address": {
+                "type": "object",
+                "required": [
+                  "address"
+                ],
+                "properties": {
+                  "address": {
+                    "description": "The `withdraw_address`",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "This is translated to a [[MsgWithdrawDelegatorReward](https://github.com/cosmos/cosmos-sdk/blob/v0.42.4/proto/cosmos/distribution/v1beta1/tx.proto#L42-L50). `delegator_address` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "withdraw_delegator_reward"
+            ],
+            "properties": {
+              "withdraw_delegator_reward": {
+                "type": "object",
+                "required": [
+                  "validator"
+                ],
+                "properties": {
+                  "validator": {
+                    "description": "The `validator_address`",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Empty": {
+        "description": "An empty struct that serves as a placeholder in different places, such as contracts that don't set a custom message.\n\nIt is designed to be expressable in correct JSON and JSON Schema but contains no meaningful data. Previously we used enums without cases, but those cannot represented as valid JSON Schema (https://github.com/CosmWasm/cosmwasm/issues/451)",
+        "type": "object"
+      },
+      "GovMsg": {
+        "oneOf": [
+          {
+            "description": "This maps directly to [MsgVote](https://github.com/cosmos/cosmos-sdk/blob/v0.42.5/proto/cosmos/gov/v1beta1/tx.proto#L46-L56) in the Cosmos SDK with voter set to the contract address.",
+            "type": "object",
+            "required": [
+              "vote"
+            ],
+            "properties": {
+              "vote": {
+                "type": "object",
+                "required": [
+                  "proposal_id",
+                  "vote"
+                ],
+                "properties": {
+                  "proposal_id": {
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0.0
+                  },
+                  "vote": {
+                    "$ref": "#/definitions/VoteOption"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Guardians": {
+        "type": "object",
+        "required": [
+          "addresses"
+        ],
+        "properties": {
+          "addresses": {
+            "description": "A List of keys can act as guardian for",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "guardians_multisig": {
+            "description": "Whether multisig option for guardians is enabled",
+            "anyOf": [
+              {
+                "$ref": "#/definitions/MultiSig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuardiansUpdateMsg": {
+        "description": "If the `Guardians.guardian_multisig` is given, we will instantiate a new multisig contract. This contract can be an instance of 3 code ids. - 1: exisiting stored `MULTISIG_CODE_ID` if `new_multisig_code_id == None` - 2: the `new_multisig_code_id` if given - 3: if 1 nor 2 are available, the supported multisig from the FACTORY will be used.",
+        "type": "object",
+        "required": [
+          "guardians"
+        ],
+        "properties": {
+          "guardians": {
+            "$ref": "#/definitions/Guardians"
+          },
+          "new_multisig_code_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
+      "IbcMsg": {
+        "description": "These are messages in the IBC lifecycle. Only usable by IBC-enabled contracts (contracts that directly speak the IBC protocol via 6 entry points)",
+        "oneOf": [
+          {
+            "description": "Sends bank tokens owned by the contract to the given address on another chain. The channel must already be established between the ibctransfer module on this chain and a matching module on the remote chain. We cannot select the port_id, this is whatever the local chain has bound the ibctransfer module to.",
+            "type": "object",
+            "required": [
+              "transfer"
+            ],
+            "properties": {
+              "transfer": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "channel_id",
+                  "timeout",
+                  "to_address"
+                ],
+                "properties": {
+                  "amount": {
+                    "description": "packet data only supports one coin https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/applications/transfer/v1/transfer.proto#L11-L20",
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/Coin"
+                      }
+                    ]
+                  },
+                  "channel_id": {
+                    "description": "exisiting channel to send the tokens over",
+                    "type": "string"
+                  },
+                  "timeout": {
+                    "description": "when packet times out, measured on remote chain",
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/IbcTimeout"
+                      }
+                    ]
+                  },
+                  "to_address": {
+                    "description": "address on the remote chain to receive these tokens",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Sends an IBC packet with given data over the existing channel. Data should be encoded in a format defined by the channel version, and the module on the other side should know how to parse this.",
+            "type": "object",
+            "required": [
+              "send_packet"
+            ],
+            "properties": {
+              "send_packet": {
+                "type": "object",
+                "required": [
+                  "channel_id",
+                  "data",
+                  "timeout"
+                ],
+                "properties": {
+                  "channel_id": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "$ref": "#/definitions/Binary"
+                  },
+                  "timeout": {
+                    "description": "when packet times out, measured on remote chain",
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/IbcTimeout"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "This will close an existing channel that is owned by this contract. Port is auto-assigned to the contract's IBC port",
+            "type": "object",
+            "required": [
+              "close_channel"
+            ],
+            "properties": {
+              "close_channel": {
+                "type": "object",
+                "required": [
+                  "channel_id"
+                ],
+                "properties": {
+                  "channel_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "IbcTimeout": {
+        "description": "In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.",
+        "type": "object",
+        "properties": {
+          "block": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/IbcTimeoutBlock"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "IbcTimeoutBlock": {
+        "description": "IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)",
+        "type": "object",
+        "required": [
+          "height",
+          "revision"
+        ],
+        "properties": {
+          "height": {
+            "description": "block height after which the packet times out. the height within the given revision",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "revision": {
+            "description": "the version that the client is currently on (eg. after reseting the chain this could increment 1 as height drops to 0)",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "MultiSig": {
+        "type": "object",
+        "required": [
+          "multisig_initial_funds",
+          "threshold_absolute_count"
+        ],
+        "properties": {
+          "multisig_initial_funds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Coin"
+            }
+          },
+          "threshold_absolute_count": {
+            "description": "Only Fixed multisig is supported in this version",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
+      "RelayTransaction": {
+        "type": "object",
+        "required": [
+          "message",
+          "nonce",
+          "signature",
+          "user_pubkey"
+        ],
+        "properties": {
+          "message": {
+            "description": "Message to verify",
+            "allOf": [
+              {
+                "$ref": "#/definitions/Binary"
+              }
+            ]
+          },
+          "nonce": {
+            "description": "Nonce",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "signature": {
+            "description": "Serialized signature (message + nonce). Cosmos format (64 bytes). Cosmos format (secp256k1 verification scheme).",
+            "allOf": [
+              {
+                "$ref": "#/definitions/Binary"
+              }
+            ]
+          },
+          "user_pubkey": {
+            "description": "User pubkey",
+            "allOf": [
+              {
+                "$ref": "#/definitions/Binary"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "StakingMsg": {
+        "description": "The message types of the staking module.\n\nSee https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto",
+        "oneOf": [
+          {
+            "description": "This is translated to a [MsgDelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L81-L90). `delegator_address` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "delegate"
+            ],
+            "properties": {
+              "delegate": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "validator"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/definitions/Coin"
+                  },
+                  "validator": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "This is translated to a [MsgUndelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L112-L121). `delegator_address` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "undelegate"
+            ],
+            "properties": {
+              "undelegate": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "validator"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/definitions/Coin"
+                  },
+                  "validator": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "This is translated to a [MsgBeginRedelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L95-L105). `delegator_address` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "redelegate"
+            ],
+            "properties": {
+              "redelegate": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "dst_validator",
+                  "src_validator"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/definitions/Coin"
+                  },
+                  "dst_validator": {
+                    "type": "string"
+                  },
+                  "src_validator": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Timestamp": {
+        "description": "A point in time in nanosecond precision.\n\nThis type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.\n\n## Examples\n\n``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);\n\nlet ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```",
+        "allOf": [
+          {
+            "$ref": "#/definitions/Uint64"
+          }
+        ]
+      },
+      "Uint128": {
+        "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+        "type": "string"
+      },
+      "Uint64": {
+        "description": "A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u64` to get the value out:\n\n``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);\n\nlet b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```",
+        "type": "string"
+      },
+      "VoteOption": {
+        "type": "string",
+        "enum": [
+          "yes",
+          "no",
+          "abstain",
+          "no_with_veto"
+        ]
+      },
+      "WasmMsg": {
+        "description": "The message types of the wasm module.\n\nSee https://github.com/CosmWasm/wasmd/blob/v0.14.0/x/wasm/internal/types/tx.proto",
+        "oneOf": [
+          {
+            "description": "Dispatches a call to another contract at a known address (with known ABI).\n\nThis is translated to a [MsgExecuteContract](https://github.com/CosmWasm/wasmd/blob/v0.14.0/x/wasm/internal/types/tx.proto#L68-L78). `sender` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "execute"
+            ],
+            "properties": {
+              "execute": {
+                "type": "object",
+                "required": [
+                  "contract_addr",
+                  "funds",
+                  "msg"
+                ],
+                "properties": {
+                  "contract_addr": {
+                    "type": "string"
+                  },
+                  "funds": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/Coin"
+                    }
+                  },
+                  "msg": {
+                    "description": "msg is the json-encoded ExecuteMsg struct (as raw Binary)",
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/Binary"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Instantiates a new contracts from previously uploaded Wasm code.\n\nThis is translated to a [MsgInstantiateContract](https://github.com/CosmWasm/wasmd/blob/v0.16.0-alpha1/x/wasm/internal/types/tx.proto#L47-L61). `sender` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "instantiate"
+            ],
+            "properties": {
+              "instantiate": {
+                "type": "object",
+                "required": [
+                  "code_id",
+                  "funds",
+                  "label",
+                  "msg"
+                ],
+                "properties": {
+                  "admin": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "code_id": {
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0.0
+                  },
+                  "funds": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/Coin"
+                    }
+                  },
+                  "label": {
+                    "description": "A human-readbale label for the contract",
+                    "type": "string"
+                  },
+                  "msg": {
+                    "description": "msg is the JSON-encoded InstantiateMsg struct (as raw Binary)",
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/Binary"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Migrates a given contracts to use new wasm code. Passes a MigrateMsg to allow us to customize behavior.\n\nOnly the contract admin (as defined in wasmd), if any, is able to make this call.\n\nThis is translated to a [MsgMigrateContract](https://github.com/CosmWasm/wasmd/blob/v0.14.0/x/wasm/internal/types/tx.proto#L86-L96). `sender` is automatically filled with the current contract's address.",
+            "type": "object",
+            "required": [
+              "migrate"
+            ],
+            "properties": {
+              "migrate": {
+                "type": "object",
+                "required": [
+                  "contract_addr",
+                  "msg",
+                  "new_code_id"
+                ],
+                "properties": {
+                  "contract_addr": {
+                    "type": "string"
+                  },
+                  "msg": {
+                    "description": "msg is the json-encoded MigrateMsg struct that will be passed to the new code",
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/Binary"
+                      }
+                    ]
+                  },
+                  "new_code_id": {
+                    "description": "the code_id of the new logic to place in the given contract",
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0.0
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Sets a new admin (for migrate) on the given contract. Fails if this contract is not currently admin of the target contract.",
+            "type": "object",
+            "required": [
+              "update_admin"
+            ],
+            "properties": {
+              "update_admin": {
+                "type": "object",
+                "required": [
+                  "admin",
+                  "contract_addr"
+                ],
+                "properties": {
+                  "admin": {
+                    "type": "string"
+                  },
+                  "contract_addr": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Clears the admin on the given contract, so no more migration possible. Fails if this contract is not currently admin of the target contract.",
+            "type": "object",
+            "required": [
+              "clear_admin"
+            ],
+            "properties": {
+              "clear_admin": {
+                "type": "object",
+                "required": [
+                  "contract_addr"
+                ],
+                "properties": {
+                  "contract_addr": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "query": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "QueryMsg",
+    "oneOf": [
+      {
+        "description": "Query for wallet info",
+        "type": "object",
+        "required": [
+          "info"
+        ],
+        "properties": {
+          "info": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Checks permissions of the caller on this proxy. If CanExecuteRelay returns true then a call to `ExecuteRelay`, before any further state changes, should also succeed.",
+        "type": "object",
+        "required": [
+          "can_execute_relay"
+        ],
+        "properties": {
+          "can_execute_relay": {
+            "type": "object",
+            "required": [
+              "sender"
+            ],
+            "properties": {
+              "sender": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Return the current guardian update request.",
+        "type": "object",
+        "required": [
+          "guardians_update_request"
+        ],
+        "properties": {
+          "guardians_update_request": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ]
+  },
+  "migrate": null,
+  "sudo": null,
+  "responses": {
+    "can_execute_relay": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CanExecuteResponse",
+      "type": "object",
+      "required": [
+        "can_execute"
+      ],
+      "properties": {
+        "can_execute": {
+          "type": "boolean"
+        }
+      }
+    },
+    "guardians_update_request": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Nullable_GuardiansUpdateRequest",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GuardiansUpdateRequest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "definitions": {
+        "Coin": {
+          "type": "object",
+          "required": [
+            "amount",
+            "denom"
+          ],
+          "properties": {
+            "amount": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "denom": {
+              "type": "string"
+            }
+          }
+        },
+        "Expiration": {
+          "description": "Expiration represents a point in time when some event happens. It can compare with a BlockInfo and will return is_expired() == true once the condition is hit (and for every block in the future)",
+          "oneOf": [
+            {
+              "description": "AtHeight will expire when `env.block.height` >= height",
+              "type": "object",
+              "required": [
+                "at_height"
+              ],
+              "properties": {
+                "at_height": {
+                  "type": "integer",
+                  "format": "uint64",
+                  "minimum": 0.0
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "description": "AtTime will expire when `env.block.time` >= time",
+              "type": "object",
+              "required": [
+                "at_time"
+              ],
+              "properties": {
+                "at_time": {
+                  "$ref": "#/definitions/Timestamp"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "description": "Never will never expire. Used to express the empty variant",
+              "type": "object",
+              "required": [
+                "never"
+              ],
+              "properties": {
+                "never": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "Guardians": {
+          "type": "object",
+          "required": [
+            "addresses"
+          ],
+          "properties": {
+            "addresses": {
+              "description": "A List of keys can act as guardian for",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "guardians_multisig": {
+              "description": "Whether multisig option for guardians is enabled",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MultiSig"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "GuardiansUpdateRequest": {
+          "type": "object",
+          "required": [
+            "activate_at",
+            "guardians"
+          ],
+          "properties": {
+            "activate_at": {
+              "$ref": "#/definitions/Expiration"
+            },
+            "guardians": {
+              "$ref": "#/definitions/Guardians"
+            },
+            "new_multisig_code_id": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        },
+        "MultiSig": {
+          "type": "object",
+          "required": [
+            "multisig_initial_funds",
+            "threshold_absolute_count"
+          ],
+          "properties": {
+            "multisig_initial_funds": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Coin"
+              }
+            },
+            "threshold_absolute_count": {
+              "description": "Only Fixed multisig is supported in this version",
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        },
+        "Timestamp": {
+          "description": "A point in time in nanosecond precision.\n\nThis type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.\n\n## Examples\n\n``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);\n\nlet ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Uint64"
+            }
+          ]
+        },
+        "Uint128": {
+          "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+          "type": "string"
+        },
+        "Uint64": {
+          "description": "A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u64` to get the value out:\n\n``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);\n\nlet b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```",
+          "type": "string"
+        }
+      }
+    },
+    "info": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "WalletInfo",
+      "type": "object",
+      "required": [
+        "code_id",
+        "factory",
+        "guardians",
+        "is_frozen",
+        "label",
+        "multisig_code_id",
+        "nonce",
+        "relayers",
+        "user_addr",
+        "version"
+      ],
+      "properties": {
+        "code_id": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "factory": {
+          "$ref": "#/definitions/Addr"
+        },
+        "guardians": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Addr"
+          }
+        },
+        "is_frozen": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "multisig_address": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Addr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "multisig_code_id": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "nonce": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "relayers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Addr"
+          }
+        },
+        "user_addr": {
+          "$ref": "#/definitions/Addr"
+        },
+        "version": {
+          "$ref": "#/definitions/ContractVersion"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        },
+        "ContractVersion": {
+          "type": "object",
+          "required": [
+            "contract",
+            "version"
+          ],
+          "properties": {
+            "contract": {
+              "description": "contract is the crate name of the implementing contract, eg. `crate:cw20-base` we will use other prefixes for other languages, and their standard global namespacing",
+              "type": "string"
+            },
+            "version": {
+              "description": "version is any string that this implementation knows. It may be simple counter \"1\", \"2\". or semantic version on release tags \"v0.7.0\", or some custom feature flag list. the only code that needs to understand the version parsing is code that knows how to migrate from the given contract (and is tied to it's implementation somehow)",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

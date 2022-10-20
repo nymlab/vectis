@@ -1,12 +1,10 @@
+use cosmwasm_schema::cw_serde;
 use cw20::{Logo, MarketingInfoResponse};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, CanonicalAddr, Uint128};
 use cw_storage_plus::{Item, Map};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct TokenInfo {
     pub name: String,
     pub symbol: String,
