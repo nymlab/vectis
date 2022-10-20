@@ -25,30 +25,6 @@
     {
       "type": "object",
       "required": [
-        "update_proxy_user"
-      ],
-      "properties": {
-        "update_proxy_user": {
-          "type": "object",
-          "required": [
-            "new_user",
-            "old_user"
-          ],
-          "properties": {
-            "new_user": {
-              "$ref": "#/definitions/Addr"
-            },
-            "old_user": {
-              "$ref": "#/definitions/Addr"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
         "migrate_wallet"
       ],
       "properties": {
@@ -139,10 +115,10 @@
     {
       "type": "object",
       "required": [
-        "update_admin"
+        "update_dao"
       ],
       "properties": {
-        "update_admin": {
+        "update_dao": {
           "type": "object",
           "required": [
             "addr"
@@ -150,6 +126,66 @@
           "properties": {
             "addr": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "claim_govec"
+      ],
+      "properties": {
+        "claim_govec": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "govec_minted"
+      ],
+      "properties": {
+        "govec_minted": {
+          "type": "object",
+          "required": [
+            "wallet"
+          ],
+          "properties": {
+            "wallet": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "purge_expired_claims"
+      ],
+      "properties": {
+        "purge_expired_claims": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "start_after": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }
@@ -163,7 +199,7 @@
       "type": "string"
     },
     "Binary": {
-      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>",
+      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
       "type": "string"
     },
     "CanonicalAddr": {

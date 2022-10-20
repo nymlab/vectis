@@ -45,6 +45,8 @@ pub enum ContractError {
     InvalidReplyFromGovec {},
     #[error("ParseReplyError")]
     ParseReplyError(#[from] ParseReplyError),
+    #[error("Feature Not Supported By Current Chain")]
+    NotSupportedByChain {},
 }
 
 impl From<MigrationMsgError> for ContractError {

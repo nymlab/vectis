@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "code_id",
+    "factory",
     "guardians",
     "is_frozen",
     "label",
@@ -18,6 +19,9 @@
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
+    },
+    "factory": {
+      "$ref": "#/definitions/Addr"
     },
     "guardians": {
       "type": "array",

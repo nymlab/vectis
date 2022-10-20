@@ -3,49 +3,14 @@
   "title": "QueryMsg",
   "oneOf": [
     {
-      "description": "Shows proxy wallet address Returns WalletListResponse",
+      "description": "Shows proxy wallet address of unclaimed wallets which has not been removed due to expiration Returns UnclaimedWalletList",
       "type": "object",
       "required": [
-        "wallets"
+        "unclaimed_govec_wallets"
       ],
       "properties": {
-        "wallets": {
+        "unclaimed_govec_wallets": {
           "type": "object",
-          "properties": {
-            "limit": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "uint32",
-              "minimum": 0.0
-            },
-            "start_after": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/WalletQueryPrefix"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "wallets_of"
-      ],
-      "properties": {
-        "wallets_of": {
-          "type": "object",
-          "required": [
-            "user"
-          ],
           "properties": {
             "limit": {
               "type": [
@@ -60,11 +25,42 @@
                 "string",
                 "null"
               ]
-            },
-            "user": {
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Returns the expiration date for claiming Govec if not yet claimed or expired",
+      "type": "object",
+      "required": [
+        "claim_expiration"
+      ],
+      "properties": {
+        "claim_expiration": {
+          "type": "object",
+          "required": [
+            "wallet"
+          ],
+          "properties": {
+            "wallet": {
               "type": "string"
             }
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Total wallets created in this contract",
+      "type": "object",
+      "required": [
+        "total_created"
+      ],
+      "properties": {
+        "total_created": {
+          "type": "object"
         }
       },
       "additionalProperties": false
@@ -116,13 +112,13 @@
       "additionalProperties": false
     },
     {
-      "description": "Returns the address of the Admin of this contract",
+      "description": "Returns the address of the DAO which holds the admin role of this contract",
       "type": "object",
       "required": [
-        "admin_addr"
+        "dao_addr"
       ],
       "properties": {
-        "admin_addr": {
+        "dao_addr": {
           "type": "object"
         }
       },
@@ -136,21 +132,6 @@
         "Proxy",
         "Multisig"
       ]
-    },
-    "WalletQueryPrefix": {
-      "type": "object",
-      "required": [
-        "user_addr",
-        "wallet_addr"
-      ],
-      "properties": {
-        "user_addr": {
-          "type": "string"
-        },
-        "wallet_addr": {
-          "type": "string"
-        }
-      }
     }
   }
 }
