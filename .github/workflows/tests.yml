@@ -32,27 +32,56 @@ jobs:
           cargo install grcov
           rustup component add llvm-tools-preview
 
-      - name: Run contract tests
-        run: cargo test --locked
+      - name: Run contract tests for dao chain
+        run: cargo test-dao-chain --locked
         env:
           RUST_BACKTRACE: 1
       
+      - name: Run contract tests for remote chain
+        run: cargo test-remote-chain --locked
+        env:
+          RUST_BACKTRACE: 1
+
       - name: Generate LCOV Report
         run: grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing -o ./lcov.info
 
       - name: Upload Coverage
         run: bash <(curl -s https://codecov.io/bash) -f lcov.info
 
-      - name: Compile WASM contract factory
-        run: cargo wasm-factory --locked
+      - name: Compile WASM contract factory dao chain
+        run: cargo wasm-factory-dao-chain --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract proxy 
-        run: cargo wasm-proxy --locked
+      - name: Compile WASM contract proxy dao chain 
+        run: cargo wasm-proxy-dao-chain --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
+      - name: Compile WASM contract factory remote chain
+        run: cargo wasm-factory-remote-chain --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
+      - name: Compile WASM contract proxy remote chain
+        run: cargo wasm-proxy-remote-chain --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
+      - name: Compile WASM contract govec 
+        run: cargo wasm-govec --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
+      - name: Compile WASM contract dao tunnel 
+        run: cargo wasm-dao-tunnel --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
+      - name: Compile WASM contract remote tunnel 
+        run: cargo wasm-remote-tunnel --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
   lints:
     name: Lints
     runs-on: ubuntu-latest

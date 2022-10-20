@@ -39,7 +39,7 @@ cw-utils = "0.13" # required lower version due to stake-cw20
 vectis-proxy = { path = "../proxy", features = ["library"]}
 vectis-govec = { path = "../govec", features = ["library"], optional = true}
 vectis-wallet = {path = "../../packages/vectis", default-features = false, optional = true}
-vectis-remote-tunnel = {path = "../remote_tunnel", optional = true, features = ["library"]}
+vectis-remote-tunnel = {path = "../remote_tunnel", features = ["library"], optional = true}
 
 [dev-dependencies]
 anyhow = "1"
