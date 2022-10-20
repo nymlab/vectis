@@ -91,7 +91,6 @@ pub enum WalletFactoryExecuteMsg {
     UpdateWalletFee {
         new_fee: Coin,
     },
-    #[cfg(feature = "dao-chain")]
     UpdateGovecAddr {
         addr: String,
     },
@@ -99,7 +98,6 @@ pub enum WalletFactoryExecuteMsg {
         addr: String,
     },
     ClaimGovec {},
-    #[cfg(feature = "remote")]
     GovecMinted {
         wallet: String,
     },
@@ -136,7 +134,6 @@ pub enum WalletFactoryQueryMsg {
     /// Fee goes to the DAO
     Fee {},
     /// Returns the address of the Govec Voting Tokens Contract
-    #[cfg(feature = "dao-chain")]
     GovecAddr {},
     /// Returns the address of the DAO which holds the admin role of this contract
     DaoAddr {},

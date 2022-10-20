@@ -19,7 +19,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::from_binary;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
@@ -89,11 +89,9 @@ pub fn execute(
         } => migrate_wallet(deps, info, wallet_address, migration_msg),
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => update_code_id(deps, info, ty, new_code_id),
         ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
-        #[cfg(feature = "dao-chain")]
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec(deps, env, info),
-        #[cfg(feature = "remote")]
         ExecuteMsg::GovecMinted { wallet } => govec_minted(deps, info, wallet),
         ExecuteMsg::PurgeExpiredClaims { start_after, limit } => {
             purge_expired_claims(deps, env, start_after, limit)
@@ -282,6 +280,15 @@ fn update_govec_addr(
         .add_attribute("New Addr", addr))
 }
 
+#[cfg(feature = "remote")]
+fn update_govec_addr(
+    _deps: DepsMut,
+    _info: MessageInfo,
+    _addr: String,
+) -> Result<Response, ContractError> {
+    Err(ContractError::NotSupportedByChain {})
+}
+
 fn update_dao_addr(
     deps: DepsMut,
     info: MessageInfo,
@@ -325,6 +332,15 @@ fn govec_minted(
         let to_remove_wallet = deps.api.addr_canonicalize(&wallet)?;
         handle_govec_minted(deps, to_remove_wallet)
     }
+}
+
+#[cfg(feature = "dao-chain")]
+fn govec_minted(
+    _deps: DepsMut,
+    _info: MessageInfo,
+    _wallet: String,
+) -> Result<Response, ContractError> {
+    Err(ContractError::NotSupportedByChain {})
 }
 
 fn purge_expired_claims(
@@ -407,7 +423,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
-        #[cfg(feature = "dao-chain")]
         QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
         QueryMsg::DaoAddr {} => to_binary(&query_dao_addr(deps)?),
         QueryMsg::TotalCreated {} => to_binary(&query_total(deps)?),
@@ -464,6 +479,13 @@ pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
 #[cfg(feature = "dao-chain")]
 pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
     deps.api.addr_humanize(&GOVEC_MINTER.load(deps.storage)?)
+}
+
+#[cfg(feature = "remote")]
+pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
+    Err(StdError::GenericErr {
+        msg: String::from("Not supported"),
+    })
 }
 
 /// Returns DAO address
