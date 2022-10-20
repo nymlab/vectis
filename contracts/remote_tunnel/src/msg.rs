@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, CosmosMsg};
+use cosmwasm_std::{Addr, Coin, CosmosMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -15,6 +15,10 @@ pub enum ExecuteMsg {
     Dispatch {
         msgs: Vec<CosmosMsg>,
         job_id: Option<String>,
+    },
+    IbcTransfer {
+        amount: Coin,
+        to_address: String,
     },
 }
 
