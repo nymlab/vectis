@@ -1,10 +1,11 @@
+use cosmwasm_schema::{cw_serde, schemars, QueryResponses};
 use cosmwasm_std::{Addr, CosmosMsg, Empty};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cw1::CanExecuteResponse;
 use std::fmt;
-use vectis_wallet::{CreateWalletMsg, GuardiansUpdateMsg, RelayTransaction};
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+use vectis_wallet::{
+    CreateWalletMsg, GuardiansUpdateMsg, GuardiansUpdateRequest, RelayTransaction, WalletInfo,
+};
+#[cw_serde]
 pub struct InstantiateMsg {
     pub create_wallet_msg: CreateWalletMsg,
     /// Fixed Multisig Code Id for guardians
@@ -15,11 +16,10 @@ pub struct InstantiateMsg {
     pub addr_prefix: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg<T = Empty>
 where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
+    T: Clone + fmt::Debug + PartialEq + schemars::JsonSchema,
 {
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender.
@@ -49,15 +49,18 @@ where
     UpdateLabel { new_label: String },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Query for wallet info
+    #[returns(WalletInfo)]
     Info {},
     /// Checks permissions of the caller on this proxy.
     /// If CanExecuteRelay returns true then a call to `ExecuteRelay`,
     /// before any further state changes, should also succeed.
+    #[returns(CanExecuteResponse)]
     CanExecuteRelay { sender: String },
     /// Return the current guardian update request.
+    #[returns(Option<GuardiansUpdateRequest>)]
     GuardiansUpdateRequest {},
 }

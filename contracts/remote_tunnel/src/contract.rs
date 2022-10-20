@@ -140,8 +140,8 @@ pub fn execute_ibc_transfer(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
     match msg {
-        QueryMsg::Factory => to_binary(&query_factory(deps)?),
-        QueryMsg::Channel => to_binary(&query_channel(deps)?),
+        QueryMsg::Factory {} => to_binary(&query_factory(deps)?),
+        QueryMsg::Channel {} => to_binary(&query_channel(deps)?),
     }
 }
 

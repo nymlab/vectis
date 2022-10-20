@@ -1,3 +1,4 @@
+use cosmwasm_schema::schemars;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -6,7 +7,6 @@ use cosmwasm_std::{
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
-use schemars::JsonSchema;
 use std::fmt;
 use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, GuardiansUpdateMsg,
@@ -154,7 +154,7 @@ pub fn execute_execute<T>(
     msgs: Vec<CosmosMsg<T>>,
 ) -> Result<Response<T>, ContractError>
 where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
+    T: Clone + fmt::Debug + PartialEq + schemars::JsonSchema,
 {
     if is_frozen(deps.as_ref())? {
         return Err(ContractError::Frozen {});

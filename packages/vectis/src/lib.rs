@@ -1,8 +1,8 @@
 pub use crate::error::{IbcError, MigrationMsgError, RelayTxError};
 pub use crate::factory::{
     CodeIdType, CreateWalletMsg, MultiSig, ProxyMigrateMsg, ProxyMigrationTxMsg,
-    ThresholdAbsoluteCount, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg,
-    WalletFactoryQueryMsg,
+    ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
+    WalletFactoryInstantiateMsg, WalletFactoryQueryMsg,
 };
 pub use crate::govec::GOVEC_CLAIM_DURATION_DAY_MUL;
 pub use crate::guardians::*;

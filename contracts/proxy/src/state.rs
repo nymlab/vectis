@@ -1,12 +1,11 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::cw_serde;
 
 use crate::error::ContractError;
 use cosmwasm_std::CanonicalAddr;
 use cw_storage_plus::{Item, Map};
 use vectis_wallet::{GuardiansUpdateRequest, Nonce, RelayTxError};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct User {
     pub addr: CanonicalAddr,
     pub nonce: Nonce,

@@ -15,6 +15,14 @@ codegen({
     {
       name: 'Govec',
       dir: contracts('govec/schema')
+    },
+    {
+      name: "DaoTunnel",
+      dir: contracts('dao_tunnel/schema')
+    },
+    {
+      name: "RemoteTunnel",
+      dir: contracts('remote_tunnel/schema')
     }
   ],
   outPath: join( __dirname, '../contracts'),

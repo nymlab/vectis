@@ -1,9 +1,11 @@
-use cosmwasm_std::{Binary, StdError, StdResult, Uint128};
-pub use cw20::{Cw20Coin, Logo, MarketingInfoResponse};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Addr, Binary, StdError, StdResult, Uint128};
+pub use cw20::{
+    AllAccountsResponse, BalanceResponse, Cw20Coin, DownloadLogoResponse, Logo,
+    MarketingInfoResponse, TokenInfoResponse,
+};
 
-#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
@@ -53,8 +55,7 @@ fn is_valid_symbol(symbol: &str) -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum UpdateAddrReq {
     Dao(String),
     DaoTunnel(String),
@@ -62,8 +63,7 @@ pub enum UpdateAddrReq {
     Staking(String),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     /// Transfer is a base message to move tokens to another account without triggering actions
     Transfer {
@@ -106,39 +106,48 @@ pub enum ExecuteMsg {
     UploadLogo(Logo),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MintResponse {
     pub minters: Option<Vec<String>>,
     pub cap: Option<Uint128>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.
+    #[returns(BalanceResponse)]
     Balance { address: String },
     /// Returns Some(balance) if address has ever been issued a token,
     /// If the current balance is 0, returns Some(0)
     /// IF address has never been issued a token, None is returned
+    #[returns(Option<BalanceResponse>)]
     Joined { address: String },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
+    #[returns(TokenInfoResponse)]
     TokenInfo {},
     /// Returns who can mint and the hard cap on maximum tokens after minting.
     /// Return type: MintResponse
+    #[returns(MintResponse)]
     Minters {},
     /// Returns the staking contract address
+    #[returns(Addr)]
     Staking {},
     /// Returns the dao contract address
+    #[returns(Addr)]
     Dao {},
     /// Returns the dao tunnel contract address
+    #[returns(Addr)]
     DaoTunnel {},
     /// Returns the factory contract address
+    #[returns(Addr)]
     Factory {},
     /// Only with "enumerable" extension
     /// Returns all accounts that have balances. Supports pagination.
     /// Return type: AllAccountsResponse.
+    #[returns(AllAccountsResponse)]
     AllAccounts {
         start_after: Option<String>,
         limit: Option<u32>,
@@ -146,9 +155,11 @@ pub enum QueryMsg {
     /// Returns more metadata on the contract to display in the client:
     /// - description, logo, project url, etc.
     /// Return type: MarketingInfoResponse
+    #[returns(MarketingInfoResponse)]
     MarketingInfo {},
     /// Downloads the embedded logo data (if stored on chain). Errors if no logo data is stored for this
     /// contract.
     /// Return type: DownloadLogoResponse.
+    #[returns(DownloadLogoResponse)]
     DownloadLogo {},
 }
