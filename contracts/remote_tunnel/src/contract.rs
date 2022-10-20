@@ -38,6 +38,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::MintGovec { wallet_addr } => execute_mint_govec(deps, env, info, wallet_addr),
         ExecuteMsg::Dispatch { msgs, job_id } => execute_dispatch(deps, env, info, msgs, job_id),
+        ExecuteMsg::IbcTransfer { msgs, job_id } => execute_dispatch(deps, env, info, msgs, job_id),
     }
 }
 
