@@ -38,7 +38,7 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
     #[returns(Option<Addr>)]
-    Govec,
+    Govec {},
 }
 
 #[cw_serde]

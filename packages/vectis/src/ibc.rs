@@ -1,18 +1,14 @@
+use cosmwasm_schema::{cw_serde, schemars, serde};
 use cosmwasm_std::{
     from_slice, to_binary, Binary, CosmosMsg, IbcBasicResponse, IbcOrder, IbcPacketAckMsg,
     StdResult, WasmMsg,
 };
 
-use schemars::JsonSchema;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
-
 use crate::error::IbcError;
 use crate::WalletFactoryInstantiateMsg;
 pub use crate::{APP_ORDER, IBC_APP_VERSION, RECEIVE_DISPATCH_ID};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum PacketMsg {
     UpdateChannel,
     InstantiateFactory {
@@ -67,8 +63,7 @@ pub fn acknowledge_dispatch(
 /// This is a generic ICS acknowledgement format.
 /// Proto defined here: https://github.com/cosmos/cosmos-sdk/blob/v0.42.0/proto/ibc/core/channel/v1/channel.proto#L141-L147
 /// If ibc_receive_packet returns Err(), then x/wasm runtime will rollback the state and return an error message in this format
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum StdAck {
     Result(Binary),
     Error(String),
@@ -76,7 +71,7 @@ pub enum StdAck {
 
 impl StdAck {
     // create a serialized success message
-    pub fn success(data: impl Serialize) -> Binary {
+    pub fn success(data: impl serde::Serialize) -> Binary {
         let res = to_binary(&data).unwrap();
         StdAck::Result(res).ack()
     }
@@ -97,7 +92,7 @@ impl StdAck {
         }
     }
 
-    pub fn unwrap_into<T: DeserializeOwned>(self) -> T {
+    pub fn unwrap_into<T: serde::de::DeserializeOwned>(self) -> T {
         from_slice(&self.unwrap()).unwrap()
     }
 
@@ -110,8 +105,7 @@ impl StdAck {
 }
 
 /// ReceiveIbcResponseMsg should be de/serialized under `Receive()` variant in a ExecuteMsg
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct ReceiveIbcResponseMsg {
     /// The ID chosen by the caller in the `job_id`
     pub id: String,
@@ -128,7 +122,7 @@ impl ReceiveIbcResponseMsg {
     /// creates a cosmos_msg sending this struct to the named contract
     pub fn into_cosmos_msg<T: Into<String>, C>(self, contract_addr: T) -> StdResult<CosmosMsg<C>>
     where
-        C: Clone + std::fmt::Debug + PartialEq + JsonSchema,
+        C: Clone + std::fmt::Debug + PartialEq + schemars::JsonSchema,
     {
         let msg = self.into_binary()?;
         let execute = WasmMsg::Execute {
@@ -142,14 +136,13 @@ impl ReceiveIbcResponseMsg {
 
 /// This is just a helper to properly serialize the above message.
 /// The actual receiver should include this variant in the larger ExecuteMsg enum
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 enum SimpleIbcReceiverExecuteMsg {
     ReceiveIcaResponse(ReceiveIbcResponseMsg),
 }
 
 /// Return the data field for each message
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct DispatchResponse {
     pub results: Vec<Binary>,
 }

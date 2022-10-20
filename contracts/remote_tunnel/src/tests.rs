@@ -195,7 +195,7 @@ fn handle_factory_packet() {
 
     reply(deps.as_mut(), mock_env(), response).unwrap();
     let res: Option<Addr> =
-        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Factory).unwrap()).unwrap();
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Factory {}).unwrap()).unwrap();
 
     assert_eq!(contract_address.to_string(), res.unwrap());
 }
@@ -273,7 +273,7 @@ fn handle_update_packet() {
     connect(deps.as_mut(), channel_id);
 
     let res: Option<String> =
-        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel).unwrap()).unwrap();
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel {}).unwrap()).unwrap();
 
     assert!(res.is_none());
 
@@ -285,7 +285,7 @@ fn handle_update_packet() {
     ack.unwrap();
 
     let res: Option<String> =
-        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel).unwrap()).unwrap();
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel {}).unwrap()).unwrap();
 
     assert_eq!(channel_id.to_string(), res.unwrap());
 }

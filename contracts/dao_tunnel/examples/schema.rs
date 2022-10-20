@@ -1,6 +1,6 @@
 use cosmwasm_schema::write_api;
 
-use vectis_proxy::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use vectis_dao_tunnel::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {

@@ -1,16 +1,16 @@
 use crate::guardians::Guardians;
 use crate::wallet::{RelayTransaction, WalletAddr};
 use crate::MigrationMsgError;
-use cosmwasm_std::{Binary, Coin};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Addr, Binary, Coin};
+use cw_utils::Expiration;
 
 /// Declares that a fixed weight of Yes votes is needed to pass.
 /// See `ThresholdResponse.AbsoluteCount` in the cw3 spec for details.
 /// Only Fixed multisig is supported in this version
 pub type ThresholdAbsoluteCount = u64;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct CreateWalletMsg {
     pub user_addr: String,
     pub guardians: Guardians,
@@ -20,7 +20,14 @@ pub struct CreateWalletMsg {
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
+#[cw_serde]
+#[derive(Default)]
+pub struct UnclaimedWalletList {
+    pub wallets: Vec<(Addr, Expiration)>,
+}
+
+#[cw_serde]
+#[derive(Default)]
 pub struct MultiSig {
     // Declares that a fixed weight of Yes votes is needed to pass.
     /// Only Fixed multisig is supported in this version
@@ -29,19 +36,19 @@ pub struct MultiSig {
     pub multisig_initial_funds: Vec<Coin>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub enum CodeIdType {
     Proxy,
     Multisig,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub enum ProxyMigrationTxMsg {
     RelayTx(RelayTransaction),
     DirectMigrationMsg(Binary),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct ProxyMigrateMsg {
     pub new_code_id: u64,
 }
@@ -59,7 +66,7 @@ impl ProxyMigrateMsg {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct WalletFactoryInstantiateMsg {
     /// Smart contract wallet contract code id
     pub proxy_code_id: u64,
@@ -74,8 +81,7 @@ pub struct WalletFactoryInstantiateMsg {
     pub govec_minter: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum WalletFactoryExecuteMsg {
     CreateWallet {
         create_wallet_msg: CreateWalletMsg,
@@ -109,12 +115,13 @@ pub enum WalletFactoryExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum WalletFactoryQueryMsg {
     /// Shows proxy wallet address of unclaimed wallets which has not been removed due to
     /// expiration
     /// Returns UnclaimedWalletList
+    #[returns(UnclaimedWalletList)]
     UnclaimedGovecWallets {
         // Address string to start after
         start_after: Option<String>,
@@ -122,19 +129,21 @@ pub enum WalletFactoryQueryMsg {
         limit: Option<u32>,
     },
     /// Returns the expiration date for claiming Govec if not yet claimed or expired
-    ClaimExpiration {
-        wallet: String,
-    },
+    #[returns(Expiration)]
+    ClaimExpiration { wallet: String },
     /// Total wallets created in this contract
+    #[returns(u64)]
     TotalCreated {},
-    CodeId {
-        ty: CodeIdType,
-    },
+    #[returns(u64)]
+    CodeId { ty: CodeIdType },
     /// Returns the fee required to create a wallet
     /// Fee goes to the DAO
+    #[returns(Coin)]
     Fee {},
     /// Returns the address of the Govec Voting Tokens Contract
+    #[returns(Addr)]
     GovecAddr {},
     /// Returns the address of the DAO which holds the admin role of this contract
+    #[returns(Addr)]
     DaoAddr {},
 }

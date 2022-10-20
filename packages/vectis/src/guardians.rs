@@ -1,16 +1,15 @@
 use std::ops::Add;
 
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, BlockInfo, StdError, StdResult};
 use cw_utils::{Duration, Expiration, DAY};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::MultiSig;
 
 /// Min delay time is set to 1 day
 pub const GUARDIAN_REQUEST_ACTIVATION_TIME: Duration = DAY;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Guardians {
     /// A List of keys can act as guardian for
     pub addresses: Vec<String>,
@@ -29,7 +28,7 @@ impl Guardians {
     }
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+#[cw_serde]
 pub struct GuardiansUpdateRequest {
     pub guardians: Guardians,
     pub new_multisig_code_id: Option<u64>,
@@ -60,7 +59,7 @@ impl GuardiansUpdateRequest {
 /// - 1: exisiting stored `MULTISIG_CODE_ID` if `new_multisig_code_id == None`
 /// - 2: the `new_multisig_code_id` if given
 /// - 3: if 1 nor 2 are available, the supported multisig from the FACTORY will be used.
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct GuardiansUpdateMsg {
     pub guardians: Guardians,
     pub new_multisig_code_id: Option<u64>,
