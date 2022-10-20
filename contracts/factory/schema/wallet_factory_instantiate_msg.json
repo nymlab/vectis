@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "InstantiateMsg",
+  "title": "WalletFactoryInstantiateMsg",
   "type": "object",
   "required": [
     "addr_prefix",
@@ -13,7 +13,7 @@
       "description": "Chain address prefix",
       "type": "string"
     },
-    "govec": {
+    "govec_minter": {
       "description": "Governance Token, Govec, address",
       "type": [
         "string",
