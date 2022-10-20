@@ -138,7 +138,7 @@ fn create_wallet(
                 code_id: PROXY_CODE_ID.load(deps.storage)?,
                 addr_prefix: ADDR_PREFIX.load(deps.storage)?,
             })?,
-            funds: vec![proxy_init_funds, multisig_initial_funds].concat(),
+            funds: vec![proxy_init_funds, multisig_initial_funds],
             label: "Wallet-Proxy".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
@@ -148,14 +148,28 @@ fn create_wallet(
         TOTAL_CREATED.save(deps.storage, &next_id)?;
 
         if fee.amount != Uint128::zero() {
-            let bank_msg = CosmosMsg::Bank(BankMsg::Send {
-                to_address: deps
-                    .api
-                    .addr_humanize(&DAO.load(deps.storage)?)?
-                    .to_string(),
-                amount: vec![fee],
-            });
-            return Ok(res.add_message(bank_msg));
+            #[cfg(feature = "dao-chain")]
+            {
+                let bank_msg = CosmosMsg::Bank(BankMsg::Send {
+                    to_address: deps
+                        .api
+                        .addr_humanize(&DAO.load(deps.storage)?)?
+                        .to_string(),
+                    amount: vec![fee],
+                });
+                return Ok(res.add_message(bank_msg));
+            }
+
+            {
+                let ibc_bank_msg = CosmosMsg::Ibc(BankMsg::Send {
+                    to_address: deps
+                        .api
+                        .addr_humanize(&DAO.load(deps.storage)?)?
+                        .to_string(),
+                    amount: vec![fee],
+                });
+                return Ok(res.add_message(bank_msg));
+            }
         }
 
         Ok(res)
