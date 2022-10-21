@@ -1,8 +1,8 @@
 use cosmwasm_std::{
     entry_point, from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
     IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
-    IbcChannelOpenResponse, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg,
-    IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
+    IbcChannelOpenResponse, IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg,
+    IbcQuery, IbcReceiveResponse, QueryRequest, StdResult, SubMsg, WasmMsg,
 };
 use vectis_govec::msg::ExecuteMsg as GovecExecuteMsg;
 use vectis_wallet::{
@@ -23,20 +23,12 @@ pub fn ibc_channel_open(
     msg: IbcChannelOpenMsg,
 ) -> Result<IbcChannelOpenResponse, ContractError> {
     let channel = msg.channel();
-
     check_order(&channel.order)?;
-    // In ibcv3 we don't check the version string passed in the message
-    // and only check the counterparty version.
+    // In ibcv3 we don't check the version string passed in the IbcChannel
+    // and only check the counterparty version in OpenTry
     if let Some(counter_version) = msg.counterparty_version() {
         check_version(counter_version)?;
     }
-
-    is_authorised_tunnel(
-        deps.as_ref(),
-        channel.connection_id.clone(),
-        channel.endpoint.port_id.clone(),
-    )?;
-
     // We return the version we need (which could be different than the counterparty version)
     Ok(Some(Ibc3ChannelOpenResponse {
         version: IBC_APP_VERSION.to_string(),
@@ -65,7 +57,7 @@ pub fn ibc_packet_receive(
     msg: IbcPacketReceiveMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let packet = msg.packet;
-
+    is_authorised_src(deps.as_ref(), packet.src)?;
     match from_slice(&packet.data)? {
         PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
         PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
@@ -137,9 +129,17 @@ pub fn ibc_channel_connect(
     _env: Env,
     msg: IbcChannelConnectMsg,
 ) -> StdResult<IbcBasicResponse> {
+    // We currently do not save the channel_id to call the remote_tunnels
+    is_authorised_src(
+        deps,
+        msg.channel().counterparty_endpointa,
+        msg.channel().endpoint,
+    )
+    .map_err(|e| StdError::generic_err(e.to_string()))?;
     Ok(IbcBasicResponse::new()
         .add_attribute("action", "ibc_connect")
-        .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
+        .add_attribute("channel_id", &msg.channel().endpoint.channel_id)
+        .add_attribute("src port_id", &msg.channel().counterparty_endpoint.port_id))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -154,18 +154,34 @@ pub fn ibc_channel_close(
         .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
 }
 
-/// Makes sure that the incoming connection is from a smart contract that the DAO has approved
+/// Makes sure that the incoming msg is is from a smart contract that the DAO has approved
+/// see IBC_TUNNELS for state details
 fn is_authorised_tunnel(
     deps: Deps,
-    caller_connection_id: String,
+    local_connection_id: String,
     caller_port_id: String,
 ) -> Result<(), ContractError> {
     if IBC_TUNNELS
-        .may_load(deps.storage, (caller_connection_id, caller_port_id))?
+        .may_load(deps.storage, (local_connection_id, caller_port_id))?
         .is_none()
     {
-        return Err(ContractError::InvalidController {});
+        return Err(ContractError::InvalidTunnel {});
     }
 
     Ok(())
+}
+
+/// Wrapper around `is_authorised_tunnel` to query for the correct connection_id of the underlying
+/// light client
+fn is_authorised_src(
+    deps: Deps,
+    counterparty_endpoint: IbcEndpoint,
+    endpoint: IbcEndpoint,
+) -> Result<(), ContractError> {
+    let connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
+        channel_id: endpoint.channel_id,
+        port_id: Some(_endpoint.port_id.clone()),
+    }))?;
+
+    is_authorised_tunnel(deps, connection_id, counterparty_endpoint.port_id)
 }
