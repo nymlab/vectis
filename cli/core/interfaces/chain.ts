@@ -1,6 +1,4 @@
-export type NetworkOptions = "juno_testnet" | "juno_local" | "wasmd_testnet" | "wasmd_local";
-
-export interface Network {
+export interface Chain {
     readonly chainId: string;
     readonly chainName: string;
     readonly addressPrefix: string;
@@ -11,5 +9,7 @@ export interface Network {
     readonly feeToken: string;
     readonly stakingToken: string;
     readonly coinMap: { [key: string]: { denom: string; fractionalDigits: number } };
+    readonly estimatedBlockTime: number;
+    readonly estimatedIndexerTime: number;
     readonly gasPrice: number;
 }

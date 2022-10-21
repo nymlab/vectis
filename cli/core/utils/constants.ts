@@ -1,45 +1,22 @@
 import path from "path";
 import * as dotenv from "dotenv";
 import { coin } from "@cosmjs/stargate";
-import networks from "../config/networks.json";
-import wallets from "../config/accounts.json";
-import { NetworkOptions } from "../interfaces/network";
 
 const envPath = `${__dirname}/../../../.env`;
 dotenv.config({ path: envPath });
 
 // Arch
-const archSuffix = process.arch === "arm64" ? "-aarch64" : "";
-
-// Network
-const network = networks[process.env.NETWORK as NetworkOptions];
-export const chainId = network.chainId;
-export const addrPrefix = network.addressPrefix;
-export const rpcEndPoint = network.rpcUrl;
-export const gasPrice = network.gasPrice + network.feeToken;
-export const coinDenom = network.feeToken;
-export const coinMinDenom = network.feeToken;
-
-// Accounts
-const accounts = wallets[network.addressPrefix as "juno" | "wasm"];
-export const adminMnemonic = accounts.admin.mnemonic;
-export const adminAddr = accounts.admin.address;
-export const userMnemonic = accounts.user.mnemonic;
-export const userAddr = accounts.user.address;
-export const guardian1Mnemonic = accounts.guardian_1.mnemonic;
-export const guardian1Addr = accounts.guardian_1.address;
-export const guardian2Mnemonic = accounts.guardian_2.mnemonic;
-export const guardian2Addr = accounts.guardian_2.address;
-export const relayer1Mnemonic = accounts.relayer_1.mnemonic;
-export const relayer1Addr = accounts.relayer_1.address;
-export const relayer2Mnemonic = accounts.relayer_2.mnemonic;
-export const relayer2Addr = accounts.relayer_2.address;
+const archSuffix = ""; //process.arch === "arm64" ? "-aarch64" : "";
 
 // Contracts Filenames
 export const contractsFileNames = {
+    vectis_dao_tunnel: "vectis_dao_tunnel.wasm",
     vectis_proxy: `vectis_proxy${archSuffix}.wasm`,
     vectis_factory: `vectis_factory${archSuffix}.wasm`,
     vectis_govec: `vectis_govec${archSuffix}.wasm`,
+    vectis_remote_tunnel: "vectis_remote_tunnel.wasm",
+    vectis_remote_proxy: "vectis_remote_proxy.wasm",
+    vectis_remote_factory: "vectis_remote_factory.wasm",
     cw3_mutltisig: "cw3_fixed_multisig.wasm",
     cw20_base: "cw20_base.wasm",
     cw_dao: "cw_core.wasm",
@@ -67,16 +44,26 @@ export const cachePath = path.join(__dirname, "..", "..", ".cache");
 export const downloadContractPath = path.join(cachePath, "/contracts");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
 
-export const vectisContractsPath = process.env.VECTIS_CW_PATH as string;
+// Host Contracts
+// const vectisContractsPath = process.env.VECTIS_CW_PATH as string;
+const vectisContractsPath = path.join(__dirname, "..", "/contracts");
+export const daoTunnelCodetPath = path.join(vectisContractsPath, contractsFileNames.vectis_dao_tunnel);
 export const proxyCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_proxy);
 export const govecCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_govec);
 export const factoryCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_factory);
 
+// Remote Contracts
+const remoteContractsPath = path.join(__dirname, "..", "/contracts");
+export const remoteTunnelCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_tunnel);
+export const remoteProxyCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_proxy);
+export const remoteFactoryCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_factory);
+
+// CWPlus Contracts
 export const fixMultiSigCodePath = path.join(downloadContractPath, contractsFileNames.cw3_mutltisig);
 export const cw20CodePath = path.join(downloadContractPath, contractsFileNames.cw20_base);
+
+// DAODAO Contracts
 export const daoCodePath = path.join(downloadContractPath, contractsFileNames.cw_dao);
 export const stakingCodePath = path.join(downloadContractPath, contractsFileNames.cw20_staking);
 export const voteCodePath = path.join(downloadContractPath, contractsFileNames.cw20_voting);
 export const proposalSingleCodePath = path.join(downloadContractPath, contractsFileNames.cw_proposal_single);
-
-export const testWalletInitialFunds = coin(5_000_000, coinMinDenom!);

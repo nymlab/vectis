@@ -19,7 +19,7 @@ import {
     userMnemonic,
 } from "@vectis/core/utils/constants";
 import { defaultWalletCreationFee } from "@vectis/core/utils/fee";
-import { createSigningClient, mnemonicToKeyPair } from "@vectis/core/services/cosmwasm";
+import { createSigningClient } from "@vectis/core/services/cosmwasm";
 import { FACTORY_INITIAL_FUND, instantiateFactoryContract } from "@vectis/core/services/factory";
 import { instantiateGovec } from "@vectis/core/services/govec";
 
