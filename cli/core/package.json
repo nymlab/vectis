@@ -1,13 +1,16 @@
 {
     "name": "@vectis/core",
     "scripts": {
-        "upload": "ts-node upload.ts",
-        "deploy:dao": "ts-node dao-deployer.ts"
+        "upload": "ts-node upload.ts local remote",
+        "deploy:dao": "ts-node deployer.ts local remote"
     },
     "dependencies": {
+        "@confio/relayer": "^0.7.0",
         "@cosmjs/amino": "^0.28.4",
         "@cosmjs/cosmwasm-stargate": "^0.28.4",
+        "@cosmjs/proto-signing": "^0.29.2",
         "@cosmjs/stargate": "^0.28.4",
+        "@cosmjs/tendermint-rpc": "^0.29.2",
         "axios": "^0.27.2",
         "dotenv": "^16.0.1",
         "ts-node": "^10.8.0"
