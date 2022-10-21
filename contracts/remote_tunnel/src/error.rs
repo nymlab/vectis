@@ -19,4 +19,6 @@ pub enum ContractError {
     NotFound(String),
     #[error("Unauthorized")]
     Unauthorized,
+    #[error("Empty Funds")]
+    EmptyFund {},
 }

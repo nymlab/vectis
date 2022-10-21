@@ -1,28 +1,29 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
-    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcQuery, IbcReceiveResponse, QueryRequest, StdError,
-    StdResult, SubMsg, WasmMsg,
+    from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
+    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
+    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdError, StdResult, SubMsg,
+    WasmMsg,
 };
 
 use vectis_wallet::{
-    acknowledge_dispatch, check_connection, check_order, check_version, DispatchResponse, IbcError,
-    PacketMsg, StdAck, WalletFactoryExecuteMsg,
-    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
+    acknowledge_dispatch, check_order, check_version, DispatchResponse, IbcError, PacketMsg,
+    StdAck, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
+    IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
 };
 
-use crate::state::{CHANNEL, CONFIG, FACTORY, RESULTS};
+use crate::state::{CONFIG, DAO_TUNNEL_CHANNEL, FACTORY, IBC_TRANSFER_CHANNEL, RESULTS};
 use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering, versioning and connection constraints
 pub fn ibc_channel_open(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
     msg: IbcChannelOpenMsg,
 ) -> Result<Option<Ibc3ChannelOpenResponse>, ContractError> {
+    // We dont enforce anything regarding permission here as counterparty_endpoint is not set yet
     let channel = msg.channel();
     check_order(&channel.order)?;
     if let Some(counter_version) = msg.counterparty_version() {
@@ -56,18 +57,18 @@ pub fn ibc_packet_receive(
     msg: IbcPacketReceiveMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let packet_msg: PacketMsg = from_slice(&msg.packet.data)?;
-    let local_connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery {
-        channel_id: msg.packet.dest.channel_id.clone(),
-        port_id: Some(msg.packet.dest.port_id),
-    }))?;
-    ensure_is_dao_tunnel(deps, local_connection_id, src_port_id)?;
-    match packet_msg {
-        PacketMsg::UpdateChannel => receive_update_channel(deps, msg.packet.dest.channel_id),
-        PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
-        PacketMsg::InstantiateFactory { code_id, msg, .. } => {
-            receive_instantiate(deps, code_id, msg)
+    let dao_channel = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
+    if msg.packet.dest.channel_id == dao_channel {
+        match packet_msg {
+            PacketMsg::UpdateChannel => receive_update_channel(deps, msg.packet.dest.channel_id),
+            PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
+            PacketMsg::InstantiateFactory { code_id, msg, .. } => {
+                receive_instantiate(deps, code_id, msg)
+            }
+            PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
         }
-        PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
+    } else {
+        Err(ContractError::Unauthorized {})
     }
 }
 
@@ -77,7 +78,7 @@ pub fn receive_update_channel(
 ) -> Result<IbcReceiveResponse, ContractError> {
     let acknowledgement = StdAck::success(&());
 
-    CHANNEL.save(deps.storage, &channel_id)?;
+    DAO_TUNNEL_CHANNEL.save(deps.storage, &channel_id)?;
 
     Ok(IbcReceiveResponse::new()
         .set_ack(acknowledgement)
@@ -167,23 +168,43 @@ pub fn ibc_channel_connect(
     msg: IbcChannelConnectMsg,
 ) -> StdResult<IbcBasicResponse> {
     let channel = msg.channel();
-    ensure_is_dao_tunnel(
-        deps,
+
+    if ensure_is_dao_tunnel(
+        deps.as_ref(),
         &channel.connection_id,
         &channel.counterparty_endpoint.port_id,
     )
-    .map_err(|e| StdError::generic_err(e.to_string()))?;
-
-    // We only save a new channel if it was not previously set
-    if CHANNEL.load(deps.storage).is_err() {
-        CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
+    .is_ok()
+    {
+        // We only save a new channel if it was not previously set
+        if DAO_TUNNEL_CHANNEL.load(deps.storage).is_err() {
+            DAO_TUNNEL_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
+            Ok(IbcBasicResponse::new()
+                .add_attribute("action", "ibc_connect")
+                .add_attribute("dao_tunnel_channel_id", &msg.channel().endpoint.channel_id))
+        } else {
+            Err(StdError::generic_err(
+                "Channel already set, DAO should update it with UpdateChannel".to_string(),
+            ))
+        }
+    } else if ensure_is_ibc_trasnfer(
+        deps.as_ref(),
+        &channel.connection_id,
+        &channel.counterparty_endpoint.port_id,
+    )
+    .is_ok()
+    {
+        // As long as it is the port of the remote ibc transfer module,
+        // we can save it
+        IBC_TRANSFER_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
         Ok(IbcBasicResponse::new()
             .add_attribute("action", "ibc_connect")
-            .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
+            .add_attribute(
+                "ibc_transfer_channel_id",
+                &msg.channel().endpoint.channel_id,
+            ))
     } else {
-        Err(StdError::generic_err(
-            "Channel already set, DAO should update it with UpdateChannel".to_string(),
-        ))
+        Err(StdError::generic_err("Not authorised"))
     }
 }
 
@@ -206,12 +227,25 @@ fn ensure_is_dao_tunnel(
 ) -> Result<(), ContractError> {
     let dao_tunnel_config = CONFIG.load(deps.storage)?;
     if dao_tunnel_config.connection_id != local_connection_id {
-        return Err(IbcError::InvalidConnectionId(
-            dao_tunnel_config.connection_id,
-        ));
+        return Err(IbcError::InvalidConnectionId(dao_tunnel_config.connection_id).into());
     }
-    if dao_tunnel_config.port_id != src_port_id {
-        return Err(IbcError::InvalidPortId(dao_tunnel_config.port_id));
+    if dao_tunnel_config.dao_tunnel_port_id != src_port_id {
+        return Err(IbcError::InvalidPortId(dao_tunnel_config.dao_tunnel_port_id).into());
+    }
+    Ok(())
+}
+
+fn ensure_is_ibc_trasnfer(
+    deps: Deps,
+    local_connection_id: &str,
+    src_port_id: &str,
+) -> Result<(), ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if config.connection_id != local_connection_id {
+        return Err(IbcError::InvalidConnectionId(config.connection_id).into());
+    }
+    if config.ibc_transfer_port_id != src_port_id {
+        return Err(IbcError::InvalidPortId(config.ibc_transfer_port_id).into());
     }
     Ok(())
 }

@@ -17,12 +17,15 @@ use vectis_wallet::{
 use crate::contract::{execute_dispatch, execute_mint_govec, instantiate, query, reply};
 use crate::ibc::{ibc_channel_connect, ibc_channel_open, ibc_packet_receive};
 use crate::msg::{InstantiateMsg, QueryMsg};
-use crate::state::{CHANNEL, FACTORY, RESULTS};
+use crate::state::{DAO_TUNNEL_CHANNEL, FACTORY, RESULTS};
 use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 const CONNECTION_ID: &str = "connection-1";
 const CHANNEL_ID: &str = "channel-1";
 const PORT_ID: &str = "wasm.address";
+const IBC_TRANSFER_PORT_ID: &str = "ibc_module";
+const DAO_ADDR: &str = "wasm.address_dao";
+const DENOM: &str = "denom";
 
 fn mock_ibc_channel_open_init(
     connection_id: &str,
@@ -39,7 +42,10 @@ fn mock_ibc_channel_open_init(
 
 fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let connection_id = CONNECTION_ID.to_string();
-    let port_id = PORT_ID.to_string();
+    let dao_tunnel_port_id = PORT_ID.to_string();
+    let ibc_transfer_port_id = IBC_TRANSFER_PORT_ID.to_string();
+    let dao_addr = DAO_ADDR.to_string();
+    let denom = DENOM.to_string();
 
     let mut deps = mock_dependencies();
     let info = mock_info("address", &[]);
@@ -47,7 +53,10 @@ fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
 
     let instantiate_msg = InstantiateMsg {
         connection_id,
-        port_id,
+        dao_tunnel_port_id,
+        ibc_transfer_port_id,
+        dao_addr,
+        denom,
     };
 
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -336,7 +345,7 @@ fn handle_execute_mint_govec() {
     let info = mock_info("sender", &vec![]);
     let env = mock_env();
 
-    CHANNEL
+    DAO_TUNNEL_CHANNEL
         .save(deps.as_mut().storage, &CHANNEL_ID.to_string())
         .unwrap();
 
@@ -391,7 +400,7 @@ fn handle_execute_dispatch() {
     let info = mock_info("sender", &vec![]);
     let env = mock_env();
 
-    CHANNEL
+    DAO_TUNNEL_CHANNEL
         .save(deps.as_mut().storage, &CHANNEL_ID.to_string())
         .unwrap();
 
