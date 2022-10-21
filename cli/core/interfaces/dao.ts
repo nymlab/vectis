@@ -1,3 +1,5 @@
+import { Code } from "@cosmjs/cosmwasm-stargate";
+
 export interface VectisDaoContractsAddrs {
     daoAddr: string;
     govecAddr: string;
@@ -8,9 +10,8 @@ export interface VectisDaoContractsAddrs {
 }
 
 export interface DaoDaoContracts {
-    [index: string]: any;
-    dao: any;
-    staking: any;
-    vote: any;
-    proposalSingle: any;
+    dao: Code;
+    staking: Code;
+    vote: Code;
+    proposalSingle: Code;
 }

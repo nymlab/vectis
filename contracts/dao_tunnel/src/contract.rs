@@ -24,7 +24,7 @@ const DEFAULT_LIMIT: u32 = 10;
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
@@ -35,7 +35,7 @@ pub fn instantiate(
         .addr_canonicalize(deps.api.addr_validate(&msg.govec_minter)?.as_str())?;
     GOVEC.save(deps.storage, &govec_addr)?;
     ADMIN.save(deps.storage, &admin_addr)?;
-    Ok(Response::new())
+    Ok(Response::new().add_attribute("Vectis DAO-Tunnel instantiated", env.contract.address))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
