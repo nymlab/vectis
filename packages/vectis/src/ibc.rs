@@ -45,20 +45,6 @@ pub fn check_version(version: &str) -> Result<(), IbcError> {
     }
 }
 
-pub fn check_connection(host_connection: &str, remote_connection: &str) -> Result<(), IbcError> {
-    if host_connection != remote_connection {
-        return Err(IbcError::InvalidConnectionId(host_connection.to_string()));
-    }
-    Ok(())
-}
-
-pub fn check_port(host_port: &str, remote_port: &str) -> Result<(), IbcError> {
-    if host_port != remote_port {
-        return Err(IbcError::InvalidPortId(host_port.to_string()));
-    }
-    Ok(())
-}
-
 pub fn acknowledge_dispatch(
     job_id: Option<String>,
     sender: String,

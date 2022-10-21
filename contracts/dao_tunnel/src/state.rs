@@ -1,7 +1,11 @@
 use cosmwasm_std::{Binary, CanonicalAddr};
 use cw_storage_plus::{Item, Map};
 
-/// We store approved connection and port id, whilst allowing multiple channels to be created
+/// We store approved:
+/// local connection_id: the light client of the remote chain
+/// caller port id: bounded to the wasm contract addr on the remote chain
+///
+/// This allows for multiple channels to be created between dao and remote tunnels
 pub const IBC_TUNNELS: Map<(String, String), ()> = Map::new("ibc_tunnels");
 
 /// The admin where the fees for new wallet goes to, also the admin of the contract.
