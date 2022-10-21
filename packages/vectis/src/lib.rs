@@ -7,8 +7,8 @@ pub use crate::factory::{
 pub use crate::govec::GOVEC_CLAIM_DURATION_DAY_MUL;
 pub use crate::guardians::*;
 pub use crate::ibc::{
-    acknowledge_dispatch, check_connection, check_order, check_port, check_version,
-    DispatchResponse, PacketMsg, ReceiveIbcResponseMsg, StdAck,
+    acknowledge_dispatch, check_order, check_version, DispatchResponse, PacketMsg,
+    ReceiveIbcResponseMsg, StdAck,
 };
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;

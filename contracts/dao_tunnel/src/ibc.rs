@@ -2,7 +2,7 @@ use cosmwasm_std::{
     entry_point, from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
     IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
     IbcChannelOpenResponse, IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg,
-    IbcQuery, IbcReceiveResponse, QueryRequest, StdResult, SubMsg, WasmMsg,
+    IbcQuery, IbcReceiveResponse, QueryRequest, StdError, StdResult, SubMsg, WasmMsg,
 };
 use vectis_govec::msg::ExecuteMsg as GovecExecuteMsg;
 use vectis_wallet::{
@@ -18,7 +18,7 @@ use crate::{ContractError, MING_DISPATCH_ID};
 /// note: anyone can create a channel but only the DAO approved (connection_id, port) will be able
 /// to reflect calls
 pub fn ibc_channel_open(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
     msg: IbcChannelOpenMsg,
 ) -> Result<IbcChannelOpenResponse, ContractError> {
@@ -57,7 +57,7 @@ pub fn ibc_packet_receive(
     msg: IbcPacketReceiveMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let packet = msg.packet;
-    is_authorised_src(deps.as_ref(), packet.src)?;
+    is_authorised_src(deps.as_ref(), packet.src, packet.dest)?;
     match from_slice(&packet.data)? {
         PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
         PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
@@ -125,15 +125,15 @@ pub fn ibc_packet_timeout(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_channel_connect(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     msg: IbcChannelConnectMsg,
 ) -> StdResult<IbcBasicResponse> {
     // We currently do not save the channel_id to call the remote_tunnels
     is_authorised_src(
-        deps,
-        msg.channel().counterparty_endpointa,
-        msg.channel().endpoint,
+        deps.as_ref(),
+        msg.channel().counterparty_endpoint.clone(),
+        msg.channel().endpoint.clone(),
     )
     .map_err(|e| StdError::generic_err(e.to_string()))?;
     Ok(IbcBasicResponse::new()
@@ -180,7 +180,7 @@ fn is_authorised_src(
 ) -> Result<(), ContractError> {
     let connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
         channel_id: endpoint.channel_id,
-        port_id: Some(_endpoint.port_id.clone()),
+        port_id: Some(endpoint.port_id.clone()),
     }))?;
 
     is_authorised_tunnel(deps, connection_id, counterparty_endpoint.port_id)

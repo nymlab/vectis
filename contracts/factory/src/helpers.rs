@@ -14,7 +14,7 @@ use cw1::CanExecuteResponse;
 use vectis_govec::msg::ExecuteMsg::Mint;
 pub use vectis_proxy::msg::QueryMsg as ProxyQueryMsg;
 #[cfg(feature = "remote")]
-use vectis_remote_tunnel::msg::ExecuteMsg::MintGovec;
+pub use vectis_remote_tunnel::msg::ExecuteMsg::{IbcTransfer, MintGovec};
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, Guardians, ProxyMigrationTxMsg, RelayTransaction,
     RelayTxError, WalletInfo,
@@ -183,6 +183,22 @@ pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
             wallet_addr: wallet,
         })?,
         funds: vec![],
+    })))
+}
+
+#[cfg(feature = "remote")]
+pub fn create_ibc_transfer_msg(
+    deps: Deps,
+    amount: Coin,
+    addr: Option<String>,
+) -> StdResult<SubMsg> {
+    Ok(SubMsg::reply_on_error(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: deps
+            .api
+            .addr_humanize(&DAO.load(deps.storage)?)?
+            .to_string(),
+        msg: to_binary(&IbcTransfer { addr })?,
+        funds: vec![amount],
     })))
 }
 
