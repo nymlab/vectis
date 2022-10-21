@@ -3,12 +3,13 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdResult, SubMsg, WasmMsg,
+    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcQuery, IbcReceiveResponse, QueryRequest, StdError,
+    StdResult, SubMsg, WasmMsg,
 };
 
 use vectis_wallet::{
-    acknowledge_dispatch, check_connection, check_order, check_port, check_version,
-    DispatchResponse, PacketMsg, StdAck, WalletFactoryExecuteMsg,
+    acknowledge_dispatch, check_connection, check_order, check_version, DispatchResponse, IbcError,
+    PacketMsg, StdAck, WalletFactoryExecuteMsg,
     WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
 };
 
@@ -23,16 +24,10 @@ pub fn ibc_channel_open(
     msg: IbcChannelOpenMsg,
 ) -> Result<Option<Ibc3ChannelOpenResponse>, ContractError> {
     let channel = msg.channel();
-    let config = CONFIG.load(deps.storage)?;
     check_order(&channel.order)?;
-    check_version(&channel.version)?;
-    check_connection(&config.connection_id, &channel.connection_id)?;
-    check_port(&config.port_id, &channel.endpoint.port_id)?;
-
     if let Some(counter_version) = msg.counterparty_version() {
         check_version(counter_version)?;
     }
-
     Ok(Some(Ibc3ChannelOpenResponse {
         version: IBC_APP_VERSION.to_string(),
     }))
@@ -61,9 +56,13 @@ pub fn ibc_packet_receive(
     msg: IbcPacketReceiveMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let packet_msg: PacketMsg = from_slice(&msg.packet.data)?;
-    let channel_id = msg.packet.dest.channel_id;
+    let local_connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery {
+        channel_id: msg.packet.dest.channel_id.clone(),
+        port_id: Some(msg.packet.dest.port_id),
+    }))?;
+    ensure_is_dao_tunnel(deps, local_connection_id, src_port_id)?;
     match packet_msg {
-        PacketMsg::UpdateChannel => receive_update_channel(deps, channel_id),
+        PacketMsg::UpdateChannel => receive_update_channel(deps, msg.packet.dest.channel_id),
         PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
         PacketMsg::InstantiateFactory { code_id, msg, .. } => {
             receive_instantiate(deps, code_id, msg)
@@ -163,13 +162,29 @@ pub fn ibc_packet_timeout(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_channel_connect(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     msg: IbcChannelConnectMsg,
 ) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new()
-        .add_attribute("action", "ibc_connect")
-        .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
+    let channel = msg.channel();
+    ensure_is_dao_tunnel(
+        deps,
+        &channel.connection_id,
+        &channel.counterparty_endpoint.port_id,
+    )
+    .map_err(|e| StdError::generic_err(e.to_string()))?;
+
+    // We only save a new channel if it was not previously set
+    if CHANNEL.load(deps.storage).is_err() {
+        CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
+        Ok(IbcBasicResponse::new()
+            .add_attribute("action", "ibc_connect")
+            .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
+    } else {
+        Err(StdError::generic_err(
+            "Channel already set, DAO should update it with UpdateChannel".to_string(),
+        ))
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -182,4 +197,21 @@ pub fn ibc_channel_close(
     Ok(IbcBasicResponse::new()
         .add_attribute("action", "ibc_close")
         .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
+}
+
+fn ensure_is_dao_tunnel(
+    deps: Deps,
+    local_connection_id: &str,
+    src_port_id: &str,
+) -> Result<(), ContractError> {
+    let dao_tunnel_config = CONFIG.load(deps.storage)?;
+    if dao_tunnel_config.connection_id != local_connection_id {
+        return Err(IbcError::InvalidConnectionId(
+            dao_tunnel_config.connection_id,
+        ));
+    }
+    if dao_tunnel_config.port_id != src_port_id {
+        return Err(IbcError::InvalidPortId(dao_tunnel_config.port_id));
+    }
+    Ok(())
 }
