@@ -7,7 +7,7 @@ use crate::contract::query_govec_addr;
 use crate::{
     contract::{
         execute, instantiate, query_code_id, query_dao_addr, query_fee, query_unclaim_wallet_list,
-        query_wallet_claim_expiration, CodeIdType,
+        CodeIdType,
     },
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, UnclaimedWalletList},

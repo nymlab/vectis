@@ -7,25 +7,13 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
     ADDR_PREFIX, DAO, FEE, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
 };
-
-#[cfg(feature = "dao-chain")]
-use crate::helpers::ensure_has_govec;
-#[cfg(feature = "dao-chain")]
-use crate::state::GOVEC_MINTER;
-
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
-#[cfg(feature = "dao-chain")]
-use cosmwasm_std::from_binary;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
-#[cfg(feature = "dao-chain")]
-use cw_utils::parse_reply_execute_data;
-use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
+use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Expiration, DAY};
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
@@ -35,17 +23,28 @@ pub use vectis_wallet::{
 use std::ops::{Add, Mul};
 use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+#[cfg(feature = "remote")]
+use {crate::helpers::create_ibc_transfer_msg, cosmwasm_std::StdError};
+#[cfg(feature = "dao-chain")]
+use {
+    crate::helpers::ensure_has_govec,
+    crate::state::GOVEC_MINTER,
+    cosmwasm_std::{from_binary, BankMsg},
+};
+
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
 // settings for pagination for unclaimed govec wallet list
 const MAX_LIMIT: u32 = 1000;
 const DEFAULT_LIMIT: u32 = 50;
-
 /// Dao Chain govec contract reply
 #[cfg(feature = "dao-chain")]
-pub const GOVEC_REPLY_ID: u64 = u64::MAX;
+pub const GOVEC_REPLY_ID: u64 = u64::MIN;
+#[cfg(feature = "remote")]
+pub const IBC_TRANSFER_ERR_REPLY_ID: u64 = u64::MIN + 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -110,8 +109,8 @@ fn create_wallet(
     ensure_has_govec(deps.as_ref())?;
 
     let fee = FEE.load(deps.storage)?;
-    let proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
-    let multisig_initial_funds = create_wallet_msg
+    let mut proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
+    let mut multisig_initial_funds = create_wallet_msg
         .guardians
         .guardians_multisig
         .clone()
@@ -127,7 +126,9 @@ fn create_wallet(
         &info.funds,
     )?;
 
-    if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
+    // reply_id starts at 2 as 0 and 1 are occupied by consts
+    if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(2) {
+        proxy_init_funds.append(&mut multisig_initial_funds);
         // The wasm message containing the `wallet_proxy` instantiation message
         let instantiate_msg = WasmMsg::Instantiate {
             admin: Some(env.contract.address.to_string()),
@@ -138,40 +139,38 @@ fn create_wallet(
                 code_id: PROXY_CODE_ID.load(deps.storage)?,
                 addr_prefix: ADDR_PREFIX.load(deps.storage)?,
             })?,
-            funds: vec![proxy_init_funds, multisig_initial_funds],
+            funds: proxy_init_funds.to_owned(),
             label: "Wallet-Proxy".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
         let res = Response::new().add_submessage(msg);
 
-        // Send native tokens to DAO to join the DAO
         TOTAL_CREATED.save(deps.storage, &next_id)?;
 
+        // Send native tokens to DAO to join the DAO
         if fee.amount != Uint128::zero() {
             #[cfg(feature = "dao-chain")]
             {
+                let to_address = deps
+                    .api
+                    .addr_humanize(&DAO.load(deps.storage)?)?
+                    .to_string();
+
+                // Direct transfer to DAO
                 let bank_msg = CosmosMsg::Bank(BankMsg::Send {
-                    to_address: deps
-                        .api
-                        .addr_humanize(&DAO.load(deps.storage)?)?
-                        .to_string(),
+                    to_address,
                     amount: vec![fee],
                 });
                 return Ok(res.add_message(bank_msg));
             }
-
+            #[cfg(feature = "remote")]
             {
-                let ibc_bank_msg = CosmosMsg::Ibc(BankMsg::Send {
-                    to_address: deps
-                        .api
-                        .addr_humanize(&DAO.load(deps.storage)?)?
-                        .to_string(),
-                    amount: vec![fee],
-                });
-                return Ok(res.add_message(bank_msg));
+                // Send to get relayed by remote-tunnel to the DAO
+                // This does not need
+                let msg_to_remote_tunnel = create_ibc_transfer_msg(deps.as_ref(), fee, None)?;
+                return Ok(res.add_submessage(msg_to_remote_tunnel));
             }
         }
-
         Ok(res)
     } else {
         Err(ContractError::OverFlow {})
@@ -393,22 +392,24 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     // NOTE: Error returned in `reply` is equivalent to contract error, all states revert,
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
 
-    let expected_id = TOTAL_CREATED.load(deps.storage)?;
-    if reply.id == expected_id {
-        if let Ok(res) = parse_reply_instantiate_data(reply) {
-            let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&res.contract_address)?;
-            let expiration = Expiration::AtTime(env.block.time)
-                .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
-                .expect("error defining activate_at");
+    if let Some(expected_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
+        if reply.id == expected_id {
+            if let Ok(res) = parse_reply_instantiate_data(reply) {
+                let wallet_addr: CanonicalAddr =
+                    deps.api.addr_canonicalize(&res.contract_address)?;
+                let expiration = Expiration::AtTime(env.block.time)
+                    .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
+                    .expect("error defining activate_at");
 
-            GOVEC_CLAIM_LIST.save(deps.storage, wallet_addr.to_vec(), &expiration)?;
+                GOVEC_CLAIM_LIST.save(deps.storage, wallet_addr.to_vec(), &expiration)?;
 
-            let res = Response::new()
-                .add_attribute("action", "Govec claim list updated")
-                .add_attribute("proxy_address", res.contract_address);
-            return Ok(res);
-        } else {
-            return Err(ContractError::ProxyInstantiationError {});
+                let res = Response::new()
+                    .add_attribute("action", "Govec claim list updated")
+                    .add_attribute("proxy_address", res.contract_address);
+                return Ok(res);
+            } else {
+                return Err(ContractError::ProxyInstantiationError {});
+            }
         }
     }
 
@@ -421,6 +422,12 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
         } else {
             return Err(ContractError::InvalidReplyFromGovec {});
         }
+    }
+
+    #[cfg(feature = "remote")]
+    if reply.id == IBC_TRANSFER_ERR_REPLY_ID {
+        // This is expected to be be an error
+        parse_reply_execute_data(reply).map(|_| ())?
     }
 
     Err(ContractError::InvalidReplyId {})
@@ -496,7 +503,7 @@ pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
 }
 
 #[cfg(feature = "remote")]
-pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
+pub fn query_govec_addr(_deps: Deps) -> StdResult<Addr> {
     Err(StdError::GenericErr {
         msg: String::from("Not supported"),
     })
