@@ -30,8 +30,8 @@ import {
 } from "./RemoteTunnel.types";
 export interface RemoteTunnelReadOnlyInterface {
     contractAddress: string;
-    factory: () => Promise<NullableAddr>;
-    channel: () => Promise<NullableString>;
+    factory: () => Promise<Nullable_Addr>;
+    channel: () => Promise<Nullable_String>;
 }
 export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
     client: CosmWasmClient;
@@ -44,12 +44,12 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
         this.channel = this.channel.bind(this);
     }
 
-    factory = async (): Promise<NullableAddr> => {
+    factory = async (): Promise<Nullable_Addr> => {
         return this.client.queryContractSmart(this.contractAddress, {
             factory: {},
         });
     };
-    channel = async (): Promise<NullableString> => {
+    channel = async (): Promise<Nullable_String> => {
         return this.client.queryContractSmart(this.contractAddress, {
             channel: {},
         });
@@ -82,9 +82,9 @@ export interface RemoteTunnelInterface extends RemoteTunnelReadOnlyInterface {
     ) => Promise<ExecuteResult>;
 }
 export class RemoteTunnelClient extends RemoteTunnelQueryClient implements RemoteTunnelInterface {
-    client: SigningCosmWasmClient;
+    override client: SigningCosmWasmClient;
     sender: string;
-    contractAddress: string;
+    override contractAddress: string;
 
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
         super(client, contractAddress);

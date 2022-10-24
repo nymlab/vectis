@@ -11,8 +11,8 @@ export const juno_testnet = {
     gasPrice: 0.025,
 };
 
-export const juno_local = {
-    chainId: "testing",
+export const juno_localnet = {
+    chainId: "juno-local",
     chainName: "Juno Localnet",
     addressPrefix: "juno",
     rpcUrl: "http://localhost:26657",
