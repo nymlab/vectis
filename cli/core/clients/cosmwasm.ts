@@ -193,12 +193,14 @@ class CWClient extends SigningCosmWasmClient {
         remoteTunnel: UploadResult;
         remoteProxy: UploadResult;
         remoteFactory: UploadResult;
+        remoteMultisig: UploadResult;
     }> {
         const remoteTunnel = await this.uploadContract(remoteTunnelCodePath);
         const remoteProxy = await this.uploadContract(remoteProxyCodePath);
         const remoteFactory = await this.uploadContract(remoteFactoryCodePath);
+        const remoteMultisig = await this.uploadContract(fixMultiSigCodePath);
 
-        return { remoteTunnel, remoteProxy, remoteFactory };
+        return { remoteTunnel, remoteProxy, remoteFactory, remoteMultisig };
     }
 
     async uploadDaoDaoContracts() {

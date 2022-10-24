@@ -1,3 +1,4 @@
+import { ChannelPair } from "@confio/relayer/build/lib/link";
 import { IbcClient, Link } from "@confio/relayer";
 import { GasPrice } from "@cosmjs/stargate";
 
@@ -10,10 +11,12 @@ class RelayerClient {
     hostChainName: Chains;
     remoteChainName: Chains;
     link: Link | null;
+    channel: ChannelPair | null;
     constructor(hostChainName: Chains, remoteChainName: Chains) {
         this.hostChainName = hostChainName;
         this.remoteChainName = remoteChainName;
         this.link = null;
+        this.channel = null;
     }
 
     get connections(): { hostConnection: string; remoteConnection: string } {
@@ -25,11 +28,26 @@ class RelayerClient {
         };
     }
 
+    get channels(): { hostChannel: string; remoteChannel: string } {
+        if (!this.channel) throw new Error("Channel not initialized");
+
+        return {
+            hostChannel: this.channel.src.channelId,
+            remoteChannel: this.channel.dest.channelId,
+        };
+    }
+
+    async relayAll() {
+        if (!this.link) throw new Error("Link not initialized");
+        return await this.link.relayAll();
+    }
+
     async createConnection() {
         const hostClient = await this.createIbcClient(this.hostChainName);
         const remoteClient = await this.createIbcClient(this.remoteChainName);
 
         this.link = await Link.createWithNewConnections(hostClient, remoteClient);
+        return this.connections;
     }
 
     async createIbcClient(chainName: Chains): Promise<IbcClient> {
@@ -43,6 +61,13 @@ class RelayerClient {
             estimatedBlockTime,
             estimatedIndexerTime,
         });
+    }
+
+    async createChannel(src: string, dest: string) {
+        if (!this.link) throw new Error("Link not initialized");
+
+        this.channel = await this.link.createChannel("A", src, dest, 1, "vectis-v1");
+        return this.channels;
     }
 
     async recoverConnection() {
