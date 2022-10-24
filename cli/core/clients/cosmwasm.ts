@@ -49,7 +49,7 @@ class CWClient extends SigningCosmWasmClient {
         signer: OfflineSigner,
         options: SigningCosmWasmClientOptions
     ) {
-        super(tmClient as any, signer, options);
+        super(tmClient, signer, options);
     }
 
     static async connectWithAccount(chain: Chains, account: Accounts) {
