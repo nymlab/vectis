@@ -4,7 +4,6 @@ import DaoClient from "@vectis/core/clients/dao";
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import { uploadReportPath } from "./utils/constants";
 import * as ACCOUNTS from "./config/accounts";
-import * as CHAINS from "./config/chains";
 
 import RelayerClient from "@vectis/core/clients/relayer";
 import CWClient from "@vectis/core/clients/cosmwasm";
@@ -40,43 +39,33 @@ import { writeInCacheFolder } from "./utils/fs";
 export async function deploy(): Promise<void> {
     const { host, remote } = await import(uploadReportPath);
     const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes } = host;
-    const { remoteTunnel, remoteProxy, remoteFactory } = remote;
+    const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
 
     const [hostChainName, remoteChainName] = process.argv.slice(2) as Chains[];
-    const hostChain = CHAINS[hostChainName];
-    const hostAccounts = ACCOUNTS[hostChainName.split("_")[0] as keyof typeof ACCOUNTS];
-    const remoteAccounts = ACCOUNTS[remoteChainName.split("_")[0] as keyof typeof ACCOUNTS];
 
     const relayerClient = new RelayerClient(hostChainName, remoteChainName);
     await relayerClient.createConnection();
 
-    const {
-        admin: { address: hostAdminAddr },
-    } = hostAccounts as ACCOUNTS.Account;
-
-    const {
-        admin: { address: remoteAdminAddr },
-    } = remoteAccounts as ACCOUNTS.Account;
-
-    const adminClient = await CWClient.connectWithAccount(hostChainName, "admin");
+    const adminHostClient = await CWClient.connectWithAccount(hostChainName, "admin");
+    const adminRemoteClient = await CWClient.connectWithAccount(remoteChainName, "admin");
 
     const initial_balances: GovecT.Cw20Coin[] = [
         {
-            address: hostAdminAddr,
+            address: adminHostClient.sender,
             amount: "1",
         },
     ];
 
     // Instantiate Govec
-    const govecClient = await GovecClient.instantiate(adminClient, govecRes.codeId, {
+    const govecClient = await GovecClient.instantiate(adminHostClient, govecRes.codeId, {
         initial_balances,
-        marketing: GovecClient.createVectisMarketingInfo(hostAdminAddr),
+        marketing: GovecClient.createVectisMarketingInfo(adminHostClient.sender),
     });
     const govecAddr = govecClient.contractAddress;
     console.log("Instantiated Govec at: ", govecAddr);
 
     // Instantiate DAO
-    const daoClient = await DaoClient.instantiate(adminClient, govecAddr);
+    const daoClient = await DaoClient.instantiate(adminHostClient, govecAddr);
 
     // Admin stake initial balance to prepare for proposal
     await govecClient.updateConfigAddr({ newAddr: { staking: daoClient.stakingAddr } });
@@ -136,6 +125,75 @@ export async function deploy(): Promise<void> {
 
     const daoTunnelAddr = CWClient.getContractAddrFromResult(daoTunnelInstRes, "Vectis DAO-Tunnel instantiated");
 
+    ///// Remote chain
+    // Instantiate Remote Tunnel
+    const { contractAddress: remoteTunnelAddr } = await adminRemoteClient.instantiate(
+        adminRemoteClient.sender,
+        remoteTunnel.codeId,
+        { connection_id: relayerClient.connections.hostConnection, port_id: `wasm.${daoTunnelAddr}` },
+        "Vectis Remote tunnel",
+        "auto"
+    );
+
+    // Admin propose and execute add connection to dao tunnel
+    const daoTunnelApproveControllerMsg: ProxyT.CosmosMsgForEmpty = {
+        wasm: {
+            execute: {
+                contract_addr: daoTunnelAddr,
+                funds: [],
+                msg: toCosmosMsg({
+                    add_approved_controller: {
+                        connection_id: relayerClient.connections.remoteConnection,
+                        port_id: `wasm.${remoteTunnelAddr}`,
+                    },
+                }),
+            },
+        },
+    };
+
+    // Allow connection to remote tunnel
+    await daoClient.createProposal("Allow connection in DAO Tunnel", "Allow connection in DAO Tunnel", [
+        daoTunnelApproveControllerMsg,
+    ]);
+    const approveControllerProposalId = 2;
+
+    await daoClient.voteProposal(approveControllerProposalId, "yes");
+    await daoClient.executeProposal(approveControllerProposalId);
+
+    // Instantiate Factory in remote chain
+
+    // Create channel
+    const channels = await relayerClient.createChannel(`wasm.${daoTunnelAddr}`, `wasm.${remoteTunnelAddr}`);
+
+    // Admin propose and execute dao deploy factory remote
+    const createRemoteFactoryMsg: DaoTunnelT.ExecuteMsg = {
+        instantiate_remote_factory: {
+            code_id: remoteFactory.codeId,
+            msg: FactoryClient.createFactoryInstMsg(remoteChainName, remoteProxy.codeId, remoteMultisig.codeId),
+            channel_id: channels.remoteChannel,
+        },
+    };
+
+    const createRemoteFactoryProposalMsg: ProxyT.CosmosMsgForEmpty = {
+        wasm: {
+            execute: {
+                contract_addr: daoTunnelAddr,
+                funds: [],
+                msg: toCosmosMsg(createRemoteFactoryMsg),
+            },
+        },
+    };
+    await daoClient.createProposal("Instantiate Factory in Remote Chain", "Instantiate Factory in Remote Chain", [
+        createRemoteFactoryProposalMsg,
+    ]);
+    const instRemoteFactoryProposalId = 3;
+
+    await daoClient.voteProposal(instRemoteFactoryProposalId, "yes");
+    await daoClient.executeProposal(instRemoteFactoryProposalId);
+
+    // Relay packets and acknowledge
+    await relayerClient.relayAll();
+
     // Update marketing address on Govec
     let res = await govecClient.updateMarketing({ marketing: daoClient.daoAddr });
     console.log("\n\nUpdated Marketing Address on Govec\n", JSON.stringify(res));
@@ -152,18 +210,23 @@ export async function deploy(): Promise<void> {
     res = await govecClient.updateConfigAddr({ newAddr: { dao: daoClient.daoAddr } });
     console.log("\n\nUpdated Dao Address on Govec\n", JSON.stringify(res));
 
-    res = await adminClient.updateAdmin(hostAdminAddr, govecAddr, daoClient.daoAddr, "auto");
+    res = await adminHostClient.updateAdmin(adminHostClient.sender, govecAddr, daoClient.daoAddr, "auto");
     console.log("\n\nUpdated Govec Contract Admin to DAO\n", JSON.stringify(res));
 
-    res = await adminClient.execute(hostAdminAddr, daoClient.stakingAddr, { unstake: { amount: "1" } }, "auto");
+    res = await adminHostClient.execute(
+        adminHostClient.sender,
+        daoClient.stakingAddr,
+        { unstake: { amount: "1" } },
+        "auto"
+    );
     console.log("\n\nAdmin unstakes \n", JSON.stringify(res));
 
     //// Below is only needed if theres is an unstake period
     // delay(5000);
-    // res = await adminClient.execute(adminAddr!, stakingAddr, { claim: {} }, defaultExecuteFee);
+    // res = await adminHostClient.execute(adminAddr!, stakingAddr, { claim: {} }, defaultExecuteFee);
     // console.log("\n\nAdmin claim \n", JSON.stringify(res));
 
-    res = await adminClient.execute(hostAdminAddr, govecAddr, { burn: {} }, "auto");
+    res = await adminHostClient.execute(adminHostClient.sender, govecAddr, { burn: {} }, "auto");
     console.log("\n\nAdmin burns the one govec\n", JSON.stringify(res));
 
     const vectisContracts = {

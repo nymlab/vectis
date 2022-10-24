@@ -17,7 +17,7 @@ class FactoryClient extends FactoryC {
         chainName: Chains,
         proxyCodeId: number,
         multisigCodeId: number,
-        govecMinter: string | null
+        govecMinter?: string | null
     ): FactoryT.InstantiateMsg {
         const { addressPrefix, feeToken } = CHAINS[chainName];
         return {
