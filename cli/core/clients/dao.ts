@@ -10,8 +10,7 @@ import { toCosmosMsg } from "@vectis/core/utils/enconding";
 import CWClient from "./cosmwasm";
 
 import { Duration as StakeDuration } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import { uploadReportPath } from "core/utils/constants";
-import { CosmosMsg_for_Empty } from "types/build/contracts/ProxyContract";
+import { uploadReportPath } from "@vectis/core/utils/constants";
 import { ExecuteMsg as CwPropSingleExecuteMsg, Vote } from "@dao-dao/types/contracts/cw-proposal-single";
 
 // Proposal
@@ -70,7 +69,7 @@ class DaoClient {
         return await this.client.queryContractSmart(this.proposalAddr, { list_proposals: {} });
     }
 
-    async createProposal(title: string, description: string, msgs: CosmosMsg_for_Empty[]) {
+    async createProposal(title: string, description: string, msgs: Record<string, unknown>[]) {
         const proposal = {
             propose: {
                 description,
@@ -114,7 +113,7 @@ class DaoClient {
         const { stakingRes, voteRes, daoRes, proposalSingleRes } = host;
         const [{ address }] = await client.getAccounts();
 
-        const tokenInfo = DaoClient.createTokenInfo(govecAddr, stakingRes.id, unstakeDuration);
+        const tokenInfo = DaoClient.createTokenInfo(govecAddr, stakingRes.codeId, unstakeDuration);
         const voteInstMsg = DaoClient.createVoteInstMsg(tokenInfo);
         // cw-proposal-single instantiation msg
         const propInstMsg = DaoClient.createPropInstMsg(
@@ -129,15 +128,15 @@ class DaoClient {
         // TODO: the module types `ModuleInstantiateInfo` do not work with the @daodao/types,
         // therefore not using interfaces. There is versioning issues
         // https://github.com/DA0-DA0/dao-contracts/pull/347#pullrequestreview-1011556931
-        const govModInstInfo = DaoClient.createGovModInstInfo(proposalSingleRes.id, propInstMsg as any);
-        const voteModInstInfo = DaoClient.createVoteModInstInfo(voteRes.id, voteInstMsg);
+        const govModInstInfo = DaoClient.createGovModInstInfo(proposalSingleRes.codeId, propInstMsg as any);
+        const voteModInstInfo = DaoClient.createVoteModInstInfo(voteRes.codeId, voteInstMsg);
         const daoInstMsg = DaoClient.createDaoInstMsg(govModInstInfo, voteModInstInfo);
 
-        console.log("dao code id: ", daoRes.id);
+        console.log("dao code id: ", daoRes.codeId);
 
         const { contractAddress: daoAddr } = await client.instantiate(
             address,
-            daoRes.id,
+            daoRes.codeId,
             daoInstMsg,
             "VectisDAO",
             "auto"
