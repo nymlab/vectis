@@ -8,7 +8,6 @@ export interface Chain {
     readonly faucetToken?: string;
     readonly feeToken: string;
     readonly stakingToken: string;
-    readonly coinMap: { [key: string]: { denom: string; fractionalDigits: number } };
     readonly estimatedBlockTime: number;
     readonly estimatedIndexerTime: number;
     readonly gasPrice: number;

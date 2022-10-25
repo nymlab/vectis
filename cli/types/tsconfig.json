@@ -3,6 +3,7 @@
     "compilerOptions": {
         "types": [],
         "outDir": "build",
+        "sourceMap": false,
     },
     "include": [
         "index.ts",

@@ -7,7 +7,7 @@
         "j0nl1 <jonlitech@gmail.com>"
     ],
     "version": "0.0.10",
-    "main": "index.js",
+    "main": "index.ts",
     "scripts": {
         "publish:dev": "tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
         "publish:prod": "tsc && cp package.json build/package.json && cd build && npm publish",

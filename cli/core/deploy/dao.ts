@@ -2,15 +2,16 @@ import FactoryClient from "@vectis/core/clients/factory";
 import GovecClient from "@vectis/core/clients/govec";
 import DaoClient from "@vectis/core/clients/dao";
 import { toCosmosMsg } from "@vectis/core/utils/enconding";
-import { uploadReportPath } from "./utils/constants";
+import { uploadReportPath } from "../utils/constants";
 
 import RelayerClient from "@vectis/core/clients/relayer";
 import CWClient from "@vectis/core/clients/cosmwasm";
 
 import { DaoTunnelT, GovecT, ProxyT } from "@vectis/types";
-import type { Chains } from "./config/chains";
-import { writeInCacheFolder } from "./utils/fs";
-import { delay } from "./utils/promises";
+import type { Chains } from "../config/chains";
+import { writeInCacheFolder } from "../utils/fs";
+import { delay } from "../utils/promises";
+import { VectisDaoContractsAddrs } from "../interfaces/dao";
 
 // Deployment
 // The deployment of the DAO on the host chain has the following steps:
@@ -35,12 +36,14 @@ import { delay } from "./utils/promises";
 // 11. Admin unstakes and burn its govec (exits system)
 //
 
-export async function deploy(): Promise<void> {
+export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<VectisDaoContractsAddrs> {
+    console.log(hostName, remoteName);
     const { host, remote } = await import(uploadReportPath);
     const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes } = host;
     const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
 
-    const [hostChainName, remoteChainName] = process.argv.slice(2) as Chains[];
+    const hostChainName = hostName ? hostName : (process.argv.slice(2)[0] as Chains);
+    const remoteChainName = remoteName ? remoteName : (process.argv.slice(2)[1] as Chains);
 
     const relayerClient = new RelayerClient(hostChainName, remoteChainName);
     const connection = await relayerClient.createConnection();
@@ -95,7 +98,6 @@ export async function deploy(): Promise<void> {
     // Propose instantiate factory
     await daoClient.createProposal("Deploy Vectis Factory", "Deploy Vectis Factory", [deployFactoryMsg]);
     const factoryProposalId = 1;
-    const proposals = await daoClient.queryProposals();
     await delay(10000);
 
     // Vote and Execute to deploy Factory
@@ -243,7 +245,9 @@ export async function deploy(): Promise<void> {
     res = await adminHostClient.execute(adminHostClient.sender, govecAddr, { burn: {} }, "auto");
     console.log("\n\nAdmin burns the one govec\n", JSON.stringify(res));
 
-    const vectisContracts = {
+    return {
+        remoteTunnelAddr,
+        daoTunnelAddr,
         govecAddr,
         factoryAddr,
         daoAddr: daoClient.daoAddr,
@@ -251,8 +255,4 @@ export async function deploy(): Promise<void> {
         proposalAddr: daoClient.proposalAddr,
         voteAddr: daoClient.voteAddr,
     };
-
-    writeInCacheFolder("deployInfo.json", JSON.stringify(vectisContracts, null, 2));
 }
-
-deploy();
