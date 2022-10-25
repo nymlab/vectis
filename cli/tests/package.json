@@ -1,7 +1,7 @@
 {
     "name": "@vectis/tests",
     "scripts": {
-        "test": "jest --config config/jest.json --runInBand"
+        "test": "jest --runInBand"
     },
     "dependencies": {
         "@dao-dao/types": "^1.1.0",
@@ -9,5 +9,27 @@
         "dotenv": "^16.0.1",
         "jest": "^28.1.0",
         "ts-jest": "^28.0.3"
+    },
+    "jest": {
+        "globalSetup": "./setup.ts",
+        "testRegex": "\\.spec\\.ts$",
+        "testTimeout": 600000,
+        "moduleFileExtensions": [
+            "ts",
+            "js"
+        ],
+        "transform": {
+            ".ts": "ts-jest"
+        },
+        "collectCoverageFrom": [
+            "**/*.ts",
+            "!**/node_modules/**"
+        ],
+        "coverageDirectory": "coverage",
+        "coveragePathIgnorePatterns": [
+            "node_modules",
+            "utils"
+        ],
+        "verbose": true
     }
 }

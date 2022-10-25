@@ -1,30 +1,32 @@
-import { FactoryClient, GovecClient } from "@vectis/types";
-import { adminAddr, addrPrefix, adminMnemonic } from "@vectis/core/utils/constants";
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { createSigningClient } from "@vectis/core/services/cosmwasm";
-import { deploy } from "@vectis/core/utils/dao-deploy";
-import { VectisDaoContractsAddrs } from "@vectis/core/interfaces/dao";
-import { marketingDescription, marketingProject } from "@vectis/core/services/govec";
+import { FactoryClient, GovecClient, CWClient, DaoClient } from "@vectis/core/clients";
+import { marketingDescription, marketingProject } from "@vectis/core/clients/govec";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
  */
-describe("DAO Suite: ", () => {
-    let adminClient: SigningCosmWasmClient;
+
+describe("DAO Suite:", () => {
+    const addrs = global.contracts;
+    let adminClient: CWClient;
     let govecClient: GovecClient;
+    let daoClient: DaoClient;
     let factoryClient: FactoryClient;
-    let addrs: VectisDaoContractsAddrs;
 
     beforeAll(async () => {
-        addrs = await deploy();
-        adminClient = await createSigningClient(adminMnemonic, addrPrefix);
-        govecClient = new GovecClient(adminClient, adminAddr, addrs.govecAddr);
-        factoryClient = new FactoryClient(adminClient, adminAddr, addrs.factoryAddr);
+        adminClient = await CWClient.connectWithAccount("juno_localnet", "admin");
+        govecClient = new GovecClient(adminClient, adminClient.sender, addrs.govecAddr);
+        factoryClient = new FactoryClient(adminClient, adminClient.sender, addrs.factoryAddr);
+        daoClient = new DaoClient(adminClient, {
+            daoAddr: addrs.daoAddr,
+            proposalAddr: addrs.proposalAddr,
+            stakingAddr: addrs.stakingAddr,
+            voteAddr: addrs.voteAddr,
+        });
     });
 
     it("Admin should have no govec tokens", async () => {
         try {
-            await govecClient.balance({ address: adminAddr });
+            await govecClient.balance({ address: adminClient.sender });
             expect(false).toBeTruthy;
         } catch (error) {
             expect(error).toBeInstanceOf(Error);
@@ -46,9 +48,9 @@ describe("DAO Suite: ", () => {
         expect(contract.admin).toEqual(addrs.daoAddr);
     });
 
-    it("Govec should have factoryAddr as one the minters", async () => {
-        const m = await govecClient.minter();
-        expect(m.minters).toEqual([addrs.factoryAddr]);
+    it("Govec should have factory addr and dao_tunnel addr", async () => {
+        const m = await govecClient.minters();
+        expect(m.minters).toEqual([addrs.daoTunnelAddr, addrs.factoryAddr]);
     });
 
     it("Govec should have daoAddr as the dao", async () => {
@@ -70,6 +72,11 @@ describe("DAO Suite: ", () => {
         const marketingInfo = await govecClient.marketingInfo();
         expect(marketingInfo.project).toEqual(marketingProject);
         expect(marketingInfo.description).toEqual(marketingDescription);
+    });
+
+    it("Dao should have executed 4 proposals", async () => {
+        const { proposals } = await daoClient.queryProposals();
+        expect(proposals.length).toEqual(4);
     });
 
     it("download logo shouldn't return an error logo not found", async () => {

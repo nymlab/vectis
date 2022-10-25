@@ -43,6 +43,7 @@ export const cw20ProposalSingleDownloadLink = `https://github.com/DA0-DA0/dao-co
 export const cachePath = path.join(__dirname, "..", "..", ".cache");
 export const downloadContractPath = path.join(cachePath, "/contracts");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
+export const deployReportPath = path.join(cachePath, "deployInfo.json");
 
 // Host Contracts
 // const vectisContractsPath = process.env.VECTIS_CW_PATH as string;
