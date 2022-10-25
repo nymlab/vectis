@@ -1,6 +1,8 @@
 import { Code } from "@cosmjs/cosmwasm-stargate";
 
 export interface VectisDaoContractsAddrs {
+    remoteTunnelAddr: string;
+    daoTunnelAddr: string;
     daoAddr: string;
     govecAddr: string;
     factoryAddr: string;

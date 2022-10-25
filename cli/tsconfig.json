@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "lib": ["es2017"],
-    "typeRoots": ["node_modules/@types"],
+    "typeRoots": ["node_modules/@types", "@types"],
     "module": "commonjs",
     "types": ["node", "jest"],
     "moduleResolution": "node",
-    "newLine": "LF",
-    "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noImplicitOverride": true,

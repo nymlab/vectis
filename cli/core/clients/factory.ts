@@ -9,8 +9,8 @@ import type { Chains } from "../config/chains";
 import type { FactoryT } from "@vectis/types";
 
 class FactoryClient extends FactoryC {
-    constructor(client: SigningCosmWasmClient, sender: string, readonly contractAddr: string) {
-        super(client, sender, contractAddr);
+    constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
+        super(client, sender, contractAddress);
     }
 
     static createFactoryInstMsg(
