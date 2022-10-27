@@ -1,6 +1,6 @@
 import { coin } from "@cosmjs/stargate";
 import { FactoryT, FactoryClient } from "@vectis/types";
-import { defaultWalletCreationFee, HOST_ACCOUNTS, HOST_CHAIN, walletInitialFunds } from "./constants";
+import { getDefaultWalletCreationFee, HOST_ACCOUNTS, HOST_CHAIN, walletInitialFunds } from "./constants";
 
 export async function createTestProxyWallets(factoryClient: FactoryClient): Promise<FactoryT.Addr[]> {
     const initial_funds = walletInitialFunds(HOST_CHAIN);
@@ -19,10 +19,13 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                 label: "wallet",
             },
         },
-        defaultWalletCreationFee,
+        getDefaultWalletCreationFee(HOST_CHAIN),
         undefined,
         [coin(totalFee.toString(), HOST_CHAIN.feeToken) as FactoryT.Coin]
     );
+
+    let walletRes = await factoryClient.unclaimedGovecWallets({});
+    const walletAddress = walletRes.wallets[walletRes.wallets.length - 1][0];
 
     await factoryClient.createWallet(
         {
@@ -40,14 +43,14 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                 label: "wallet-multisig",
             },
         },
-        defaultWalletCreationFee,
+        getDefaultWalletCreationFee(HOST_CHAIN),
         undefined,
         [coin(totalFee.toString(), HOST_CHAIN.feeToken) as FactoryT.Coin]
     );
 
-    const { wallets } = await factoryClient.unclaimedGovecWallets({});
-    const walletAddress = wallets[0][0];
-    const walletMSAddress = wallets[1][0];
+    walletRes = await factoryClient.unclaimedGovecWallets({});
+
+    const walletMSAddress = walletRes.wallets[walletRes.wallets.length - 1][0];
 
     return [walletAddress, walletMSAddress];
 }

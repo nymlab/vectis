@@ -6,7 +6,6 @@ pub struct InstantiateMsg {
     pub dao_tunnel_port_id: String,
     pub ibc_transfer_port_id: String,
     pub connection_id: String,
-    pub dao_addr: String,
     pub denom: String,
 }
 

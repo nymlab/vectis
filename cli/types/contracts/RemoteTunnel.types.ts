@@ -6,7 +6,9 @@
 
 export interface InstantiateMsg {
     connection_id: string;
-    port_id: string;
+    dao_tunnel_port_id: string;
+    denom: string;
+    ibc_transfer_port_id: string;
 }
 export type ExecuteMsg =
     | {
@@ -18,6 +20,11 @@ export type ExecuteMsg =
           dispatch: {
               job_id?: string | null;
               msgs: CosmosMsgForEmpty[];
+          };
+      }
+    | {
+          ibc_transfer: {
+              addr?: string | null;
           };
       };
 export type CosmosMsgForEmpty =
