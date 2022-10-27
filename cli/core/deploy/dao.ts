@@ -9,7 +9,6 @@ import CWClient from "@vectis/core/clients/cosmwasm";
 
 import { DaoTunnelT, GovecT, ProxyT } from "@vectis/types";
 import type { Chains } from "../config/chains";
-import { writeInCacheFolder } from "../utils/fs";
 import { delay } from "../utils/promises";
 import { VectisDaoContractsAddrs } from "../interfaces/dao";
 
@@ -138,7 +137,12 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
     const { contractAddress: remoteTunnelAddr } = await adminRemoteClient.instantiate(
         adminRemoteClient.sender,
         remoteTunnel.codeId,
-        { connection_id: relayerClient.connections.remoteConnection, port_id: `wasm.${daoTunnelAddr}` },
+        {
+            connection_id: relayerClient.connections.remoteConnection,
+            dao_tunnel_port_id: `wasm.${daoTunnelAddr}`,
+            ibc_transfer_port_id: "",
+            denom: "",
+        },
         "Vectis Remote tunnel",
         "auto"
     );
@@ -163,6 +167,7 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
     await daoClient.createProposal("Allow connection in DAO Tunnel", "Allow connection in DAO Tunnel", [
         daoTunnelApproveControllerMsg,
     ]);
+
     const approveControllerProposalId = 3;
     await delay(10000);
 
@@ -209,6 +214,9 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
 
     // Relay packets and acknowledge
     await relayerClient.relayAll();
+    await delay(15000);
+
+    const remoteFactoryAddr = await adminRemoteClient.queryContractSmart(remoteTunnelAddr, { factory: {} });
 
     // Update marketing address on Govec
     let res = await govecClient.updateMarketing({ marketing: daoClient.daoAddr });
@@ -246,6 +254,7 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
     console.log("\n\nAdmin burns the one govec\n", JSON.stringify(res));
 
     return {
+        remoteFactoryAddr,
         remoteTunnelAddr,
         daoTunnelAddr,
         govecAddr,

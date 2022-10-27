@@ -80,6 +80,16 @@ export interface RemoteTunnelInterface extends RemoteTunnelReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    ibcTransfer: (
+        {
+            addr,
+        }: {
+            addr?: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
 }
 export class RemoteTunnelClient extends RemoteTunnelQueryClient implements RemoteTunnelInterface {
     override client: SigningCosmWasmClient;
@@ -93,6 +103,7 @@ export class RemoteTunnelClient extends RemoteTunnelQueryClient implements Remot
         this.contractAddress = contractAddress;
         this.mintGovec = this.mintGovec.bind(this);
         this.dispatch = this.dispatch.bind(this);
+        this.ibcTransfer = this.ibcTransfer.bind(this);
     }
 
     mintGovec = async (
@@ -137,6 +148,29 @@ export class RemoteTunnelClient extends RemoteTunnelQueryClient implements Remot
                 dispatch: {
                     job_id: jobId,
                     msgs,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    ibcTransfer = async (
+        {
+            addr,
+        }: {
+            addr?: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                ibc_transfer: {
+                    addr,
                 },
             },
             fee,

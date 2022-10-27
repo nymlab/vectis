@@ -14,7 +14,14 @@ import { getContract } from "@vectis/core/utils/fs";
 import { cw20CodePath, uploadReportPath } from "@vectis/core/utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { CWClient } from "@vectis/core/clients";
-import { defaultSendFee, HOST_ACCOUNTS, HOST_CHAIN, INITIAL_FACTORY_BALANCE } from "./mocks/constants";
+import {
+    getDefaultRelayFee,
+    getDefaultSendFee,
+    getDefaultUploadFee,
+    HOST_ACCOUNTS,
+    HOST_CHAIN,
+    getInitialFactoryBalance,
+} from "./mocks/constants";
 import { ProxyClient } from "@vectis/types";
 
 /**
@@ -45,7 +52,7 @@ describe("Proxy Suite: ", () => {
             adminClient,
             factoryRes.codeId,
             FactoryClient.createFactoryInstMsg("juno_localnet", proxyRes.codeId, multisigRes.codeId),
-            [INITIAL_FACTORY_BALANCE]
+            [getInitialFactoryBalance(HOST_CHAIN)]
         );
 
         const govecClient = await GovecClient.instantiate(adminClient, govecRes.codeId, {
@@ -109,7 +116,12 @@ describe("Proxy Suite: ", () => {
         const sendAmount = coin(10_000, HOST_CHAIN.feeToken);
         const userBalanceBefore = await client.getBalance(HOST_ACCOUNTS.user.address, HOST_CHAIN.feeToken!);
         const walletBalanceBefore = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken);
-        await userClient.sendTokens(HOST_ACCOUNTS.user.address, proxyWalletAddress, [sendAmount], defaultSendFee);
+        await userClient.sendTokens(
+            HOST_ACCOUNTS.user.address,
+            proxyWalletAddress,
+            [sendAmount],
+            getDefaultSendFee(HOST_CHAIN)
+        );
         const userBalanceAfter = await client.getBalance(HOST_ACCOUNTS.user.address, HOST_CHAIN.feeToken);
         const walletBalanceAfter = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken);
 
@@ -244,7 +256,7 @@ describe("Proxy Suite: ", () => {
                     latest: null,
                 },
             };
-            await clientG1.execute(clientG1.sender, multisig_address!, proposal, "auto");
+            await clientG1.execute(clientG1.sender, multisig_address!, proposal, getDefaultRelayFee(HOST_CHAIN));
 
             // Should have proposal in the list
             const queryProps: ProposalQueryMsg = { list_proposals: {} };
@@ -287,7 +299,7 @@ describe("Proxy Suite: ", () => {
         const clientG2 = await CWClient.connectWithAccount("juno_localnet", "guardian_2");
 
         try {
-            const msProxyClient = new ProxyClient(userClient, HOST_ACCOUNTS.user.address!, proxyWalletMultisigAddress);
+            const msProxyClient = new ProxyClient(userClient, userClient.sender, proxyWalletMultisigAddress);
             const { multisig_address } = await msProxyClient.info();
 
             // Propose freezing of multisig wallet
@@ -314,7 +326,7 @@ describe("Proxy Suite: ", () => {
                     latest: null,
                 },
             };
-            await clientG1.execute(clientG1.sender, multisig_address!, proposal, "auto");
+            await clientG1.execute(clientG1.sender, multisig_address!, proposal, getDefaultRelayFee(HOST_CHAIN));
 
             // Should have proposal in the list
             const queryProps: ProposalQueryMsg = { list_proposals: {} };
@@ -397,7 +409,11 @@ describe("Proxy Suite: ", () => {
 
         // Instantiate a new CW20 contract giving the wallet some funds
         const cw20Code = getContract(cw20CodePath!);
-        const cw20Res = await adminClient.upload(HOST_ACCOUNTS.admin.address, cw20Code, "auto");
+        const cw20Res = await adminClient.upload(
+            HOST_ACCOUNTS.admin.address,
+            cw20Code,
+            getDefaultUploadFee(HOST_CHAIN)
+        );
 
         const initAmount = "1000";
         const cw20contract = await adminClient.instantiate(
