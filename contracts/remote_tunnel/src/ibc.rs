@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
+    from_binary, from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
     IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
     IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdError, StdResult, SubMsg,
     WasmMsg,
@@ -36,16 +36,18 @@ pub fn ibc_channel_open(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     msg: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // we need to parse the ack based on our request
     let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
+
     match original_packet {
         PacketMsg::Dispatch { job_id, sender, .. } => {
             Ok(acknowledge_dispatch(job_id, sender, msg)?)
         }
+        PacketMsg::MintGovec { wallet_addr } => acknowledge_mint_govec(deps, wallet_addr, msg),
         _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack")),
     }
 }
@@ -65,7 +67,7 @@ pub fn ibc_packet_receive(
             PacketMsg::InstantiateFactory { code_id, msg, .. } => {
                 receive_instantiate(deps, code_id, msg)
             }
-            PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
+            _ => Err(ContractError::IbcError(IbcError::InvalidPacket)),
         }
     } else {
         Err(ContractError::Unauthorized {})
@@ -128,14 +130,21 @@ pub fn receive_instantiate(
         .add_attribute("action", "receive_instantiate"))
 }
 
-pub fn receive_mint_govec(
+pub fn acknowledge_mint_govec(
     deps: DepsMut,
     wallet_addr: String,
-) -> Result<IbcReceiveResponse, ContractError> {
-    let acknowledgement = StdAck::success(&());
+    ack: IbcPacketAckMsg,
+) -> Result<IbcBasicResponse, ContractError> {
+    let ack: StdAck = from_slice(&ack.acknowledgement.data)?;
+    let minted_result: bool = from_binary(&ack.ack())?;
+
+    if !minted_result {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Couldn't mint govec token".to_string(),
+        )));
+    }
 
     let factory_addr = FACTORY.load(deps.storage)?;
-
     let msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: deps.api.addr_humanize(&factory_addr).unwrap().to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
@@ -145,8 +154,7 @@ pub fn receive_mint_govec(
         funds: vec![],
     });
 
-    Ok(IbcReceiveResponse::new()
-        .set_ack(acknowledgement)
+    Ok(IbcBasicResponse::new()
         .add_message(msg)
         .add_attribute("action", "receive_mint_govec"))
 }
