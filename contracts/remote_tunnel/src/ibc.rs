@@ -60,6 +60,9 @@ pub fn ibc_packet_receive(
 ) -> Result<IbcReceiveResponse, ContractError> {
     let packet_msg: PacketMsg = from_slice(&msg.packet.data)?;
     let dao_channel = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
+    // We only need to check for dao_channel here because messages can only be received from
+    // authorised / opened channels, which for a remote_tunnel,
+    // only connects to the dao_tunnel_channel
     if msg.packet.dest.channel_id == dao_channel {
         match packet_msg {
             PacketMsg::UpdateChannel => receive_update_channel(deps, msg.packet.dest.channel_id),
@@ -184,16 +187,25 @@ pub fn ibc_channel_connect(
     )
     .is_ok()
     {
-        // We only save a new channel if it was not previously set
         if DAO_TUNNEL_CHANNEL.load(deps.storage).is_err() {
+            // We only save a new channel if it was not previously set
             DAO_TUNNEL_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
             Ok(IbcBasicResponse::new()
                 .add_attribute("action", "ibc_connect")
-                .add_attribute("dao_tunnel_channel_id", &msg.channel().endpoint.channel_id))
+                .add_attribute(
+                    "saved new dao_tunnel_channel_id",
+                    &msg.channel().endpoint.channel_id,
+                ))
         } else {
-            Err(StdError::generic_err(
-                "Channel already set, DAO should update it with UpdateChannel".to_string(),
-            ))
+            // We accept new channel creation but this will only be used if the DAO calls
+            // `UpdateChannel` to update the official channel used to communicate with the
+            // dao-tunnel
+            Ok(IbcBasicResponse::new()
+                .add_attribute("action", "ibc_connect")
+                .add_attribute(
+                    "unsaved new dao_tunnel_channel_id",
+                    &msg.channel().endpoint.channel_id,
+                ))
         }
     } else if ensure_is_ibc_trasnfer(
         deps.as_ref(),
@@ -203,7 +215,7 @@ pub fn ibc_channel_connect(
     .is_ok()
     {
         // As long as it is the port of the remote ibc transfer module,
-        // we can save it
+        // we can save it as we are not expecting messages to come from this
         IBC_TRANSFER_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
         Ok(IbcBasicResponse::new()
             .add_attribute("action", "ibc_connect")
