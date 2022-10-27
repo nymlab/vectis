@@ -9,41 +9,26 @@
 ## Overview
 
 Smart Contract Wallet allows user to interact with DAPPs on the blockchain with the same amount of autonomy of a classic non-custodial solution, but with more flexibility by providing functionalities designed to serve the user.
-SCW also provide functions that allow businesses to satisfy regulatory requirements regarding support of users, transparency, separation of control duties and verifiability.
+SCW also provide functions that allow businesses to satisfy regulatory requirements regarding support of users,
+transparency,
+separation of control duties and verifiability.
 
 VectisDAO is the organisation that provides governance to the this infrastructure.
 Every wallet has a Govec token that is minted during wallet creation and can be staked to vote.
 VectisDAO lives on [Juno Network] and leverages the [DAO DAO] stack.
 
-Thanks to [IBC], Vectis wallets can also be deployed on other chains.
+Through [IBC], Vectis wallets can also be deployed on other chains.
 From the perspective of DAO participation,
 there is no difference between a wallet on [Juno Network] or others.
 Staking and voting will be done via IBC calls from the wallet.
-Please see [IBC Architecture] for details.
 
-[Juno Network]:
-[DAO DAO]:
-[IBC Architecture]:
+[dao dao]: https://daodao.zone
+[juno network]: https://www.junonetwork.io/
+[ibc]: https://github.com/cosmos/ibc
 
-### Design
+Please see our [wiki] for details
 
-SCW is designed to provide the user with confidence whilst interacting with the DApps by providing the most amount of control yet allowing recoverability.
-It also enables companies to drive mass adoption of blockchain-based services by their customers, providing a better user experience, solving the problems of buying gas in advance, increasing the resilience, security and verifiability of their solutions.
-
-At the core, the SCW builds on [cw-1 specifications](https://github.com/CosmWasm/cw-plus/blob/main/packages/cw1/README.md) for proxy contracts, with the addition of roles and functionalities listed below.
-
-We also provide a [factory](/contracts/factory/src/contract.rs) contract to instantiate the SCW,
-this allows service providers to help users instantiate SCW and keep track of the wallets they potentially are guardians / relayers of.
-
-[cw-1 specifications]: (https://crates.io/crates/cw1)
-
-#### Roles
-
-There are 3 roles in a SCW:
-
-1. [_user:_](/contracts/README.md#User) the address that this wallet services, they have full control over the roles assignment and wallet operations
-1. [_guardians:_](/contracts/README.md#Guardians) the addresses appointed by the user to protect the user (via key recovery and / or account freezing)
-1. [_relayers_](/contracts/README.md#Relayers) the addresses appointed by the user to allow for user's off-chain transaction signatures be committed on-chain with gas.
+[wiki]: https://github.com/nymlab/vectis/wiki
 
 #### IBC Architecture
 
@@ -167,16 +152,24 @@ npm i           # Install all dependencies
 npm test        # Run tests
 ```
 
-### Gitpod integration
+### Deployment
 
-The `/contracts` directory is generated from the [cosmwasm template](https://github.com/CosmWasm/cw-template) which provides config for gitpod.
+Deployment
+The deployment of the DAO on the host chain has the following steps:
 
-[Gitpod](https://www.gitpod.io/) container-based development platform will be enabled on your project by default.
+1. Upload all required contracts (in ./upload.ts) to host chain + remote chains - Host: Factory, Govec, Proxy, Ibc-host - Remote: Factory-remote, Proxy-remote, Ibc-remote
+2. Instantiate Govec contract (with admin having initial balance for proposing for DAO to deploy Factory)
+3. Instantiate dao-core contract (which will instantiate proposal(s) and vote contracts)
+   note: vote contracts also instantiates a new staking contract
+4. Admin propose and execute on DAO to deploy factory and ibc-host contracts
+5. Admin updates Govec staking address to the staking contract in step 3.
+6. Admin updates Govec minter address to the factory contract addr and ibc-host addr in step 4.
+7. Admin updates Govec contract DAO_ADDR as DAO
+8. Admin updates Govec contract admin as DAO (for future upgrades)
 
-Workspace contains:
+   (Somehow DAO gets ICA on other chains?)
 
-- **rust**: for builds
-- [wasmd](https://github.com/CosmWasm/wasmd): for local node setup and client
-- **jq**: shell JSON manipulation tool
-
-Follow [Gitpod Getting Started](https://www.gitpod.io/docs/getting-started) and launch your workspace.
+9. Admin propose and execute on DAO to deploy factory-remote and Ibc-remote contracts with DAO ICA
+10. Create channels between Ibc-host<> Ibc-remote_1; Ibc-host <> Ibc-remote_2; with known connection ids?
+11. Admin propose and execute to add <connection-id, portid> to ibc-host for each channel in step 9
+12. Admin unstakes and burn its govec (exits system)
