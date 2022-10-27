@@ -10,6 +10,8 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    /// Adds approved controller contract,
+    /// i.e. remote tunnels
     AddApprovedController {
         connection_id: String,
         port_id: String,
