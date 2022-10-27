@@ -8,13 +8,21 @@
     "type": "object",
     "required": [
       "connection_id",
-      "port_id"
+      "dao_tunnel_port_id",
+      "denom",
+      "ibc_transfer_port_id"
     ],
     "properties": {
       "connection_id": {
         "type": "string"
       },
-      "port_id": {
+      "dao_tunnel_port_id": {
+        "type": "string"
+      },
+      "denom": {
+        "type": "string"
+      },
+      "ibc_transfer_port_id": {
         "type": "string"
       }
     },
@@ -68,6 +76,28 @@
                 "items": {
                   "$ref": "#/definitions/CosmosMsg_for_Empty"
                 }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Transfer funds to the dao-chain if `addr = None`, funds is transfer to the DAO Fund amount is forward from the WasmMsg.funds",
+        "type": "object",
+        "required": [
+          "ibc_transfer"
+        ],
+        "properties": {
+          "ibc_transfer": {
+            "type": "object",
+            "properties": {
+              "addr": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "additionalProperties": false

@@ -6,9 +6,9 @@ import { CWClient, FactoryClient, GovecClient } from "@vectis/core/clients";
 import {
     HOST_ACCOUNTS,
     HOST_CHAIN,
-    INITIAL_FACTORY_BALANCE,
+    getInitialFactoryBalance,
     walletInitialFunds,
-    defaultWalletCreationFee,
+    getDefaultWalletCreationFee,
 } from "./mocks/constants";
 import { FactoryT } from "@vectis/types";
 
@@ -34,7 +34,7 @@ describe("Factory Suite: ", () => {
             adminClient,
             factoryRes.codeId,
             FactoryClient.createFactoryInstMsg("juno_localnet", proxyRes.codeId, multisigRes.codeId),
-            [INITIAL_FACTORY_BALANCE]
+            [getInitialFactoryBalance(HOST_CHAIN)]
         );
 
         let govecClient = await GovecClient.instantiate(adminClient, govecRes.codeId, {
@@ -50,7 +50,7 @@ describe("Factory Suite: ", () => {
 
     it("Should have correct funds in Factory contract", async () => {
         const fund = await client.getBalance(factoryClient.contractAddress, HOST_CHAIN.feeToken);
-        expect(fund).toEqual(INITIAL_FACTORY_BALANCE);
+        expect(fund).toEqual(getInitialFactoryBalance(HOST_CHAIN));
     });
 
     it("Should store Proxy code id in Factory contract", async () => {
@@ -79,7 +79,7 @@ describe("Factory Suite: ", () => {
                     label: "initial label",
                 },
             },
-            defaultWalletCreationFee,
+            getDefaultWalletCreationFee(HOST_CHAIN),
             undefined,
             [coin(totalFee.toString(), HOST_CHAIN.feeToken) as FactoryT.Coin]
         );
