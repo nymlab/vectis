@@ -90,7 +90,7 @@ pub fn execute(
         ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => update_dao_addr(deps, info, addr),
-        ExecuteMsg::ClaimGovec {} => claim_govec(deps, env, info),
+        ExecuteMsg::ClaimGovec {} => claim_govec_or_remove_from_list(deps, env, info),
         ExecuteMsg::GovecMinted { wallet } => govec_minted(deps, info, wallet),
         ExecuteMsg::PurgeExpiredClaims { start_after, limit } => {
             purge_expired_claims(deps, env, start_after, limit)
@@ -314,7 +314,11 @@ fn update_dao_addr(
         .add_attribute("New DAO", addr))
 }
 
-fn claim_govec(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+fn claim_govec_or_remove_from_list(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+) -> Result<Response, ContractError> {
     let claiming_user = deps.api.addr_canonicalize(info.sender.as_str())?.to_vec();
     if GOVEC_CLAIM_LIST
         .load(deps.storage, claiming_user.clone())?
