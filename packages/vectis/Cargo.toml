@@ -21,3 +21,5 @@ cw2 = "0.13"
 thiserror = { version = "1.0.26" }
 cw-utils = "0.13"
 cw20 = "0.13"
+cw20-stake = {git = "https://github.com/nymlab/dao-contracts", branch = "v1.0.0-vectis"}
+cw-proposal-single = {git = "https://github.com/nymlab/dao-contracts", branch = "v1.0.0-vectis"}

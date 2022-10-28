@@ -4,25 +4,41 @@ use cosmwasm_std::{
     StdResult, WasmMsg,
 };
 
-use crate::error::IbcError;
-use crate::WalletFactoryInstantiateMsg;
-pub use crate::{APP_ORDER, IBC_APP_VERSION, RECEIVE_DISPATCH_ID};
+pub use crate::{
+    GovecExecuteMsg, IbcError, WalletFactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
+    RECEIVE_DISPATCH_ID,
+};
+use cw20_stake::msg::ExecuteMsg as StakeExecuteMsg;
+use cw_proposal_single::msg::ExecuteMsg as ProposalExecuteMsg;
 
 #[cw_serde]
-pub enum PacketMsg {
+pub struct PacketMsg {
+    pub sender: String,
+    pub job_id: Option<String>,
+    // This can only be DaoTunnelPacketMsg or RemoteTunnelPacketMsg
+    pub msg: Binary,
+}
+
+/// The IBC Packet Msg allowed dispatched by dao-tunnel
+#[cw_serde]
+pub enum DaoTunnelPacketMsg {
     UpdateChannel,
     InstantiateFactory {
         code_id: u64,
         msg: WalletFactoryInstantiateMsg,
     },
-    Dispatch {
-        msgs: Vec<CosmosMsg>,
-        sender: String,
-        job_id: Option<String>,
-    },
     MintGovec {
         wallet_addr: String,
     },
+}
+
+/// The IBC Packet Msg allowed dispatched by remote-tunnel
+#[cw_serde]
+pub enum RemoteTunnelPacketMsg {
+    MintGovec { wallet_addr: String },
+    GovecActions(GovecExecuteMsg),
+    StakeActions(StakeExecuteMsg),
+    ProposalActions(ProposalExecuteMsg),
 }
 
 pub fn check_order(order: &IbcOrder) -> Result<(), IbcError> {

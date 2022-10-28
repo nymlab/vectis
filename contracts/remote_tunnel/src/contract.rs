@@ -6,7 +6,10 @@ use cosmwasm_std::{
 };
 
 use cw_utils::parse_reply_instantiate_data;
-use vectis_wallet::{DispatchResponse, PacketMsg, StdAck, PACKET_LIFETIME, RECEIVE_DISPATCH_ID};
+use vectis_wallet::{
+    DispatchResponse, PacketMsg, RemoteTunnelPacketMsg, StdAck, PACKET_LIFETIME,
+    RECEIVE_DISPATCH_ID,
+};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
@@ -40,8 +43,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::MintGovec { wallet_addr } => execute_mint_govec(deps, env, info, wallet_addr),
-        ExecuteMsg::Dispatch { msgs, job_id } => execute_dispatch(deps, env, info, msgs, job_id),
+        ExecuteMsg::DaoActions { msg, job_id } => execute_dispatch(deps, env, info, msg, job_id),
         ExecuteMsg::IbcTransfer { addr } => execute_ibc_transfer(deps, env, info, addr),
     }
 }
@@ -60,7 +62,7 @@ pub fn execute_mint_govec(
         return Err(ContractError::Unauthorized);
     }
 
-    let packet = PacketMsg::MintGovec {
+    let packet = RemoteTunnelPacketMsg::MintGovec {
         wallet_addr: wallet_addr.clone(),
     };
 
@@ -82,13 +84,13 @@ pub fn execute_dispatch(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msgs: Vec<CosmosMsg>,
+    msg: RemoteTunnelPacketMsg,
     job_id: Option<String>,
 ) -> Result<Response, ContractError> {
-    let packet = PacketMsg::Dispatch {
+    let packet = PacketMsg {
         sender: info.sender.to_string(),
         job_id,
-        msgs,
+        msg: to_binary(&msg)?,
     };
 
     let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
