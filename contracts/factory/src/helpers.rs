@@ -6,19 +6,26 @@ use crate::state::GOVEC_MINTER;
 use crate::state::{ADDR_PREFIX, DAO, GOVEC_CLAIM_LIST};
 
 use cosmwasm_std::{
-    to_binary, Addr, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Response, StdResult, SubMsg,
+    Uint128, WasmMsg,
 };
 use cw1::CanExecuteResponse;
-#[cfg(feature = "dao-chain")]
-use vectis_govec::msg::ExecuteMsg::Mint;
 pub use vectis_proxy::msg::QueryMsg as ProxyQueryMsg;
-#[cfg(feature = "remote")]
-pub use vectis_remote_tunnel::msg::ExecuteMsg::{IbcTransfer, MintGovec};
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, Guardians, ProxyMigrationTxMsg, RelayTransaction,
     RelayTxError, WalletInfo,
 };
+#[cfg(feature = "remote")]
+use {
+    crate::state::PENDING_CLAIM_LIST,
+    cosmwasm_std::Env,
+    cw_utils::{Expiration, DAY},
+    std::ops::{Add, Mul},
+    vectis_remote_tunnel::msg::ExecuteMsg::IbcTransfer,
+    vectis_wallet::{RemoteTunnelPacketMsg, GOVEC_CLAIM_DURATION_DAY_MUL},
+};
+#[cfg(feature = "dao-chain")]
+use {cosmwasm_std::CanonicalAddr, vectis_govec::msg::ExecuteMsg::Mint};
 
 /// Ensures provided addr is the state stored DAO
 pub fn ensure_is_dao(deps: Deps, sender: &str) -> Result<(), ContractError> {
@@ -179,7 +186,7 @@ pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
             .api
             .addr_humanize(&DAO.load(deps.storage)?)?
             .to_string(),
-        msg: to_binary(&MintGovec {
+        msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
             wallet_addr: wallet,
         })?,
         funds: vec![],
@@ -192,7 +199,7 @@ pub fn create_ibc_transfer_msg(
     amount: Coin,
     addr: Option<String>,
 ) -> StdResult<SubMsg> {
-    Ok(SubMsg::reply_on_error(CosmosMsg::Wasm(WasmMsg::Execute {
+    Ok(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: deps
             .api
             .addr_humanize(&DAO.load(deps.storage)?)?
@@ -202,13 +209,41 @@ pub fn create_ibc_transfer_msg(
     })))
 }
 
-pub fn handle_govec_minted(
-    deps: DepsMut,
-    claiming_user: CanonicalAddr,
-) -> Result<Response, ContractError> {
+#[cfg(feature = "dao-chain")]
+pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, ContractError> {
+    let claiming_user = deps.api.addr_canonicalize(&wallet)?;
     GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
     let res = Response::new()
         .add_attribute("action", "Govec Minted on DAO Chain")
-        .add_attribute("proxy_address", deps.api.addr_humanize(&claiming_user)?);
+        .add_attribute("proxy_address", wallet);
+    Ok(res)
+}
+
+#[cfg(feature = "remote")]
+pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, ContractError> {
+    let claiming_user = deps.api.addr_canonicalize(&wallet)?;
+    PENDING_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+    let res = Response::new()
+        .add_attribute("action", "Govec Minted on DAO Chain")
+        .add_attribute("proxy_address", wallet);
+    Ok(res)
+}
+
+#[cfg(feature = "remote")]
+pub fn handle_govec_mint_failed(
+    deps: DepsMut,
+    env: Env,
+    wallet: String,
+) -> Result<Response, ContractError> {
+    let claiming_user = deps.api.addr_canonicalize(&wallet)?;
+    PENDING_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+    let expiration = Expiration::AtTime(env.block.time)
+        .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
+        .expect("error defining activate_at");
+    GOVEC_CLAIM_LIST.save(deps.storage, claiming_user.to_vec(), &expiration)?;
+    let res = Response::new()
+        .add_attribute("action", "Govec Mint failed on DAO Chain")
+        .add_attribute("action", "Renewed Claim expiration")
+        .add_attribute("proxy_address", wallet);
     Ok(res)
 }

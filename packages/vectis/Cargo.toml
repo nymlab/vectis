@@ -4,11 +4,6 @@ authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheio
 version = "0.1.0"
 edition = "2018"
 
-
-[features]
-remote = []
-dao-chain = []
-
 [dependencies]
 cosmwasm-std = { version = "1.0.0", features = ["ibc3"] }
 cosmwasm-schema = { version = "1.1.5" }

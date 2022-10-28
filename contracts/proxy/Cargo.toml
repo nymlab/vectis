@@ -21,8 +21,6 @@ backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
 migration = []
-remote = ["vectis-wallet/remote"]
-dao-chain = ["vectis-wallet/dao-chain"]
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0", features = ["staking"] }
@@ -36,7 +34,7 @@ cw-utils = "0.13"
 thiserror = { version = "1.0.26" }
 sha2 = "0.9"
 hex = { version = "0.4", default-features = false }
-vectis-wallet = { path = "../../packages/vectis", default-features = false }
+vectis-wallet = { path = "../../packages/vectis" }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0" }

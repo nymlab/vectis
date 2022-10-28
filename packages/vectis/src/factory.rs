@@ -105,7 +105,8 @@ pub enum WalletFactoryExecuteMsg {
     },
     ClaimGovec {},
     GovecMinted {
-        wallet: String,
+        success: bool,
+        wallet_addr: String,
     },
     PurgeExpiredClaims {
         // Address string to start after
