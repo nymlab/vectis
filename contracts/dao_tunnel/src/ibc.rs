@@ -1,15 +1,14 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
+    from_binary, from_slice, to_binary, Addr, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
     IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
     IbcChannelOpenResponse, IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg,
     IbcQuery, IbcReceiveResponse, QueryRequest, StdError, StdResult, SubMsg, WasmMsg,
 };
-use vectis_govec::msg::ExecuteMsg as GovecExecuteMsg;
 use vectis_wallet::{
-    check_order, check_version, DispatchResponse, PacketMsg, ProposalExecuteMsg,
-    RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, IBC_APP_VERSION,
+    check_order, check_version, GovecExecuteMsg, GovecQueryMsg, PacketMsg, ProposalExecuteMsg,
+    RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, VectisDaoActionIds, IBC_APP_VERSION,
 };
 
 use crate::state::{GOVEC, IBC_TUNNELS};
@@ -41,7 +40,7 @@ pub fn ibc_channel_open(
 pub fn ibc_packet_ack(
     _deps: DepsMut,
     _env: Env,
-    msg: IbcPacketAckMsg,
+    _msg: IbcPacketAckMsg,
 ) -> StdResult<IbcBasicResponse> {
     // TODO handle the updates
     // let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
@@ -70,9 +69,10 @@ pub fn ibc_packet_receive(
             RemoteTunnelPacketMsg::StakeActions(msg) => {
                 receive_stake_actions(deps, packet_msg.sender, msg)
             }
-            RemoteTunnelPacketMsg::ProposalActions(msg) => {
-                receive_proposal_actions(deps, packet_msg.sender, msg)
-            }
+            RemoteTunnelPacketMsg::ProposalActions {
+                prop_module_addr,
+                msg,
+            } => receive_proposal_actions(packet_msg.sender, prop_module_addr, msg),
         }
     })()
     .or_else(|e| {
@@ -87,8 +87,6 @@ fn receive_mint_govec(
     deps: DepsMut,
     wallet_addr: String,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let acknowledgement = StdAck::fail("Mint Govec Failed on Dao-chain".to_string());
-
     let contract_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
 
     let msg = to_binary(&GovecExecuteMsg::Mint {
@@ -105,7 +103,6 @@ fn receive_mint_govec(
     );
 
     Ok(IbcReceiveResponse::new()
-        .set_ack(acknowledgement)
         .add_submessage(msg)
         .add_attribute("action", "vectis_dao_tunnel_receive_mint_govec"))
 }
@@ -115,42 +112,56 @@ pub fn receive_govec_actions(
     sender: String,
     govec_msg: GovecExecuteMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    // TODO
-    let acknowledgement = StdAck::fail("Govec Action failed".to_string());
-
     let govec_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
-    let msg = match govec_msg {
+    let sub_msg = match govec_msg {
         GovecExecuteMsg::Transfer {
             recipient, amount, ..
-        } => to_binary(&GovecExecuteMsg::Transfer {
-            recipient,
-            amount,
-            remote_from: Some(sender),
-        })?,
+        } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: govec_addr.to_string(),
+                msg: to_binary(&GovecExecuteMsg::Transfer {
+                    recipient,
+                    amount,
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::GovecTransfer as u64,
+        ),
         GovecExecuteMsg::Send {
             contract,
             amount,
             msg,
             ..
-        } => to_binary(&GovecExecuteMsg::Send {
-            contract,
-            amount,
-            msg,
-            remote_from: Some(sender),
-        })?,
-        GovecExecuteMsg::Burn { .. } => to_binary(&GovecExecuteMsg::Burn {
-            remote_from: Some(sender),
-        })?,
+        } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: govec_addr.to_string(),
+                msg: to_binary(&GovecExecuteMsg::Send {
+                    contract,
+                    amount,
+                    msg,
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::GovecSend as u64,
+        ),
+        GovecExecuteMsg::Burn { .. } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: govec_addr.to_string(),
+                msg: to_binary(&GovecExecuteMsg::Burn {
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::GovecBurn as u64,
+        ),
         _ => return Err(ContractError::Unauthorized {}),
     };
 
+    // Ack is set in the reply
     Ok(IbcReceiveResponse::new()
-        .set_ack(acknowledgement)
-        .add_submessage(SubMsg::new(WasmMsg::Execute {
-            contract_addr: govec_addr.to_string(),
-            msg,
-            funds: vec![],
-        }))
+        .add_submessage(sub_msg)
         .add_attribute("action", "vectis_tunnel_receive_govec_actions"))
 }
 
@@ -159,17 +170,98 @@ pub fn receive_stake_actions(
     sender: String,
     msg: StakeExecuteMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    //TODO
-    Err(ContractError::Unauthorized {})
+    let govec_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
+    let staking_addr: Addr = deps
+        .querier
+        .query_wasm_smart(govec_addr, &GovecQueryMsg::Staking {})?;
+    let sub_msg = match msg {
+        StakeExecuteMsg::Unstake { amount, .. } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: staking_addr.to_string(),
+                msg: to_binary(&StakeExecuteMsg::Unstake {
+                    amount,
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::StakeUnstake as u64,
+        ),
+        StakeExecuteMsg::Claim { .. } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: staking_addr.to_string(),
+                msg: to_binary(&StakeExecuteMsg::Claim {
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::StakeClaim as u64,
+        ),
+        _ => return Err(ContractError::Unauthorized {}),
+    };
+
+    // Ack is set in the reply
+    Ok(IbcReceiveResponse::new()
+        .add_submessage(sub_msg)
+        .add_attribute("action", "vectis_tunnel_receive_stake_actions"))
 }
 
 pub fn receive_proposal_actions(
-    deps: DepsMut,
     sender: String,
+    prop_module_addr: String,
     msg: ProposalExecuteMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    //TODO
-    Err(ContractError::Unauthorized {})
+    let sub_msg = match msg {
+        ProposalExecuteMsg::Propose {
+            title,
+            description,
+            msgs,
+            ..
+        } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: prop_module_addr.clone(),
+                msg: to_binary(&ProposalExecuteMsg::Propose {
+                    title,
+                    description,
+                    msgs,
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::ProposalPropose as u64,
+        ),
+        ProposalExecuteMsg::Vote {
+            proposal_id, vote, ..
+        } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: prop_module_addr.clone(),
+                msg: to_binary(&ProposalExecuteMsg::Vote {
+                    proposal_id,
+                    vote,
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::ProposalVote as u64,
+        ),
+        ProposalExecuteMsg::Execute { proposal_id, .. } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: prop_module_addr.clone(),
+                msg: to_binary(&ProposalExecuteMsg::Execute {
+                    proposal_id,
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::ProposalExecute as u64,
+        ),
+        _ => return Err(ContractError::Unauthorized {}),
+    };
+
+    // Ack is set in the reply
+    Ok(IbcReceiveResponse::new()
+        .add_submessage(sub_msg)
+        .add_attribute("action", "vectis_tunnel_receive_proposal_actions")
+        .add_attribute("prop module addr", prop_module_addr))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

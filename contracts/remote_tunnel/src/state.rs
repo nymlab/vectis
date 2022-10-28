@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, CanonicalAddr};
+use cosmwasm_std::CanonicalAddr;
 use cw_storage_plus::Item;
 
 #[cw_serde]
@@ -26,7 +26,9 @@ pub const DAO_TUNNEL_CHANNEL: Item<String> = Item::new("dao-tunnel-channel");
 /// The channel_id for the channel between this contract and the dao-chain ibc transfer module
 /// endpoint
 pub const IBC_TRANSFER_CHANNEL: Item<String> = Item::new("ibc_transfer_channel");
-// this stores all results from current dispatch
-pub const RESULTS: Item<Vec<Binary>> = Item::new("results");
 /// DAO addr on dao chain
 pub const DAO: Item<String> = Item::new("dao");
+/// Job Id for current dispatch,
+/// used for listening for callbacks for users.
+/// Will loop around if max is hit
+pub const JOB_ID: Item<u64> = Item::new("job_id");

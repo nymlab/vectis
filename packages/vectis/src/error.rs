@@ -44,4 +44,6 @@ pub enum IbcError {
     InvalidPacket,
     #[error("Invalid Job id")]
     UnsupportedJobId,
+    #[error("Invalid DAO action id")]
+    InvalidDaoActionId {},
 }
