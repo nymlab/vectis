@@ -13,12 +13,12 @@ use cw20::{
 use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
 
-use crate::msg::{ExecuteMsg, InstantiateMsg, MintResponse, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
     TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_CAP, STAKING_ADDR,
     TOKEN_INFO,
 };
-use vectis_wallet::UpdateAddrReq;
+use vectis_wallet::{MintResponse, UpdateAddrReq};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
@@ -109,15 +109,15 @@ pub fn execute(
         ExecuteMsg::Transfer {
             recipient,
             amount,
-            remote_from,
-        } => execute_transfer(deps, env, info, recipient, amount, remote_from),
-        ExecuteMsg::Burn { remote_from } => execute_burn(deps, env, info, remote_from),
+            relayed_from,
+        } => execute_transfer(deps, env, info, recipient, amount, relayed_from),
+        ExecuteMsg::Burn { relayed_from } => execute_burn(deps, env, info, relayed_from),
         ExecuteMsg::Send {
             contract,
             amount,
             msg,
-            remote_from,
-        } => execute_send(deps, env, info, contract, amount, msg, remote_from),
+            relayed_from,
+        } => execute_send(deps, env, info, contract, amount, msg, relayed_from),
         ExecuteMsg::Mint { new_wallet } => execute_mint(deps, env, info, new_wallet),
         ExecuteMsg::UpdateConfigAddr { new_addr } => {
             execute_update_config_addr(deps, info, new_addr)
@@ -140,13 +140,13 @@ pub fn execute_transfer(
     info: MessageInfo,
     recipient: String,
     amount: Uint128,
-    remote_from: Option<String>,
+    relayed_from: Option<String>,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    let from = match remote_from {
+    let from = match relayed_from {
         Some(remote) => {
             ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
             Addr::unchecked(remote)
@@ -190,10 +190,10 @@ pub fn execute_burn(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    remote_from: Option<String>,
+    relayed_from: Option<String>,
 ) -> Result<Response, ContractError> {
     let to_burn = Uint128::from(1u8);
-    let from = match remote_from {
+    let from = match relayed_from {
         Some(remote) => {
             ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
             Addr::unchecked(remote)
@@ -295,12 +295,12 @@ pub fn execute_send(
     contract: String,
     amount: Uint128,
     msg: Binary,
-    remote_from: Option<String>,
+    relayed_from: Option<String>,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
         return Err(ContractError::InvalidZeroAmount {});
     }
-    let from = match remote_from {
+    let from = match relayed_from {
         Some(remote) => {
             ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
             Addr::unchecked(remote)

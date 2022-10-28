@@ -7,9 +7,8 @@ use cosmwasm_std::{
     IbcMsg, IbcOrder, OwnedDeps, Reply, SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
 };
 
-use vectis_govec::msg::ExecuteMsg as GovecExecuteMsg;
 use vectis_wallet::{
-    DispatchResponse, IbcError, PacketMsg, StdAck,
+    DispatchResponse, GovecExecuteMsg, IbcError, PacketMsg, StdAck,
     WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
     PACKET_LIFETIME, RECEIVE_DISPATCH_ID,
 };

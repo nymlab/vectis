@@ -1,17 +1,16 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, IbcMsg, MessageInfo,
-    Order, Reply, Response, StdResult,
+    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, IbcMsg, MessageInfo, Order, Reply,
+    Response, StdResult, SubMsgResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use vectis_wallet::{
-    DaoTunnelPacketMsg, DispatchResponse, StdAck, WalletFactoryInstantiateMsg, PACKET_LIFETIME,
-    RECEIVE_DISPATCH_ID,
+    DaoTunnelPacketMsg, PacketMsg, StdAck, WalletFactoryInstantiateMsg, PACKET_LIFETIME,
 };
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
-use crate::state::{ADMIN, GOVEC, IBC_TUNNELS, RESULTS};
+use crate::state::{ADMIN, GOVEC, IBC_TUNNELS};
 use crate::MINT_DISPATCH_ID;
 
 const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
@@ -51,12 +50,13 @@ pub fn execute(
             port_id,
         } => execute_add_approved_controller(deps, info, connection_id, port_id),
         ExecuteMsg::InstantiateRemoteFactory {
+            job_id,
             code_id,
             msg,
             channel_id,
-        } => execute_instantiate_remote_factory(deps, env, info, code_id, msg, channel_id),
-        ExecuteMsg::UpdateRemoteTunnelChannel { channel_id } => {
-            execute_update_remote_tunnel_channel(deps, env, info, channel_id)
+        } => execute_instantiate_remote_factory(deps, env, info, job_id, code_id, msg, channel_id),
+        ExecuteMsg::UpdateRemoteTunnelChannel { job_id, channel_id } => {
+            execute_update_remote_tunnel_channel(deps, env, info, job_id, channel_id)
         }
     }
 }
@@ -83,13 +83,18 @@ fn execute_instantiate_remote_factory(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    job_id: u64,
     code_id: u64,
     msg: WalletFactoryInstantiateMsg,
     channel_id: String,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
-    let packet = DaoTunnelPacketMsg::InstantiateFactory { code_id, msg };
+    let packet = PacketMsg {
+        sender: env.contract.address.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::InstantiateFactory { code_id, msg })?,
+    };
 
     let msg = IbcMsg::SendPacket {
         channel_id,
@@ -106,13 +111,20 @@ fn execute_update_remote_tunnel_channel(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    job_id: u64,
     channel_id: String,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
+    let packet = PacketMsg {
+        sender: env.contract.address.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::UpdateChannel)?,
+    };
+
     let msg = IbcMsg::SendPacket {
         channel_id: channel_id.clone(),
-        data: to_binary(&DaoTunnelPacketMsg::UpdateChannel)?,
+        data: to_binary(&packet)?,
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
 
@@ -157,27 +169,31 @@ pub fn query_controllers(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
+pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
-        RECEIVE_DISPATCH_ID => reply_dispatch_callback(deps, reply),
-        MINT_DISPATCH_ID => reply_mint_govec(),
-        _ => Err(ContractError::InvalidReplyId),
+        MINT_DISPATCH_ID => reply_mint_govec(reply),
+        // All possible DAO actions
+        // VectisDaoActionIds::GovecSend = 11
+        // VectisDaoActionIds::ProposalExecute = 18
+        11..=18 => reply_dao_actions(reply),
+        _ => Err(ContractError::InvalidReplyId {}),
     }
 }
 
-pub fn reply_dispatch_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
-    // add the new result to the current tracker
-    let mut results = RESULTS.load(deps.storage)?;
-    results.push(reply.result.unwrap().data.unwrap_or_default());
-    RESULTS.save(deps.storage, &results)?;
-
-    // update result data if this is the last
-    let data = StdAck::success(&DispatchResponse { results });
-    Ok(Response::new().set_data(data))
+pub fn reply_dao_actions(reply: Reply) -> Result<Response, ContractError> {
+    let res = Response::new();
+    match reply.result {
+        SubMsgResult::Ok(_) => Ok(res.set_data(StdAck::success(reply.id))),
+        SubMsgResult::Err(e) => Ok(res.set_data(StdAck::fail(e))),
+    }
 }
 
-pub fn reply_mint_govec() -> Result<Response, ContractError> {
-    Ok(Response::new().set_data(StdAck::success(true)))
+pub fn reply_mint_govec(reply: Reply) -> Result<Response, ContractError> {
+    let res = Response::new();
+    match reply.result {
+        SubMsgResult::Ok(_) => Ok(res.set_data(StdAck::success(&()))),
+        SubMsgResult::Err(e) => Ok(res.set_data(StdAck::fail(e))),
+    }
 }
 
 /// Ensures provided addr is the state stored ADMIN
