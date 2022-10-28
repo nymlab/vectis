@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, CosmosMsg};
+use cosmwasm_std::Addr;
 
 use vectis_wallet::WalletFactoryInstantiateMsg;
 
@@ -19,11 +19,6 @@ pub enum ExecuteMsg {
     InstantiateRemoteFactory {
         code_id: u64,
         msg: WalletFactoryInstantiateMsg,
-        channel_id: String,
-    },
-    Dispatch {
-        msgs: Vec<CosmosMsg>,
-        job_id: Option<String>,
         channel_id: String,
     },
     UpdateRemoteTunnelChannel {

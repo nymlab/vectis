@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use vectis_wallet::{
-    DispatchResponse, PacketMsg, StdAck, WalletFactoryInstantiateMsg, PACKET_LIFETIME,
+    DaoTunnelPacketMsg, DispatchResponse, StdAck, WalletFactoryInstantiateMsg, PACKET_LIFETIME,
     RECEIVE_DISPATCH_ID,
 };
 
@@ -55,11 +55,6 @@ pub fn execute(
             msg,
             channel_id,
         } => execute_instantiate_remote_factory(deps, env, info, code_id, msg, channel_id),
-        ExecuteMsg::Dispatch {
-            msgs,
-            job_id,
-            channel_id,
-        } => execute_dispatch(deps, env, info, msgs, job_id, channel_id),
         ExecuteMsg::UpdateRemoteTunnelChannel { channel_id } => {
             execute_update_remote_tunnel_channel(deps, env, info, channel_id)
         }
@@ -94,7 +89,7 @@ fn execute_instantiate_remote_factory(
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
-    let packet = PacketMsg::InstantiateFactory { code_id, msg };
+    let packet = DaoTunnelPacketMsg::InstantiateFactory { code_id, msg };
 
     let msg = IbcMsg::SendPacket {
         channel_id,
@@ -107,33 +102,6 @@ fn execute_instantiate_remote_factory(
         .add_attribute("action", "execute_instantiate_remote_factory"))
 }
 
-pub fn execute_dispatch(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msgs: Vec<CosmosMsg>,
-    job_id: Option<String>,
-    channel_id: String,
-) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
-
-    let packet = PacketMsg::Dispatch {
-        sender: info.sender.to_string(),
-        job_id,
-        msgs,
-    };
-
-    let msg = IbcMsg::SendPacket {
-        channel_id,
-        data: to_binary(&packet)?,
-        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-    };
-
-    Ok(Response::new()
-        .add_message(msg)
-        .add_attribute("action", "execute_dispatch"))
-}
-
 fn execute_update_remote_tunnel_channel(
     deps: DepsMut,
     env: Env,
@@ -144,7 +112,7 @@ fn execute_update_remote_tunnel_channel(
 
     let msg = IbcMsg::SendPacket {
         channel_id: channel_id.clone(),
-        data: to_binary(&PacketMsg::UpdateChannel)?,
+        data: to_binary(&DaoTunnelPacketMsg::UpdateChannel)?,
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
 

@@ -1,15 +1,16 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
-    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
-    IbcChannelOpenResponse, IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg,
-    IbcQuery, IbcReceiveResponse, QueryRequest, StdError, StdResult, SubMsg, WasmMsg,
+    entry_point, from_binary, from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env,
+    Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg,
+    IbcChannelOpenMsg, IbcChannelOpenResponse, IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg,
+    IbcPacketTimeoutMsg, IbcQuery, IbcReceiveResponse, QueryRequest, StdError, StdResult, SubMsg,
+    WasmMsg,
 };
 use vectis_govec::msg::ExecuteMsg as GovecExecuteMsg;
 use vectis_wallet::{
     acknowledge_dispatch, check_order, check_version, DispatchResponse, IbcError, PacketMsg,
-    StdAck, IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
+    RemoteTunnelPacketMsg, StdAck, IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
 };
 
 use crate::state::{GOVEC, IBC_TUNNELS, RESULTS};
@@ -44,6 +45,7 @@ pub fn ibc_packet_ack(
     msg: IbcPacketAckMsg,
 ) -> StdResult<IbcBasicResponse> {
     let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
+    // TODO handle the updates
     match original_packet {
         PacketMsg::Dispatch { job_id, sender, .. } => {
             Ok(acknowledge_dispatch(job_id, sender, msg)?)
@@ -60,10 +62,19 @@ pub fn ibc_packet_receive(
 ) -> Result<IbcReceiveResponse, ContractError> {
     let packet = msg.packet;
     is_authorised_src(deps.as_ref(), packet.src, packet.dest)?;
-    match from_slice(&packet.data)? {
-        PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
-        PacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
-        _ => Err(ContractError::IbcError(IbcError::InvalidPacket)),
+    let packet_msg: PacketMsg = from_slice(&packet.data)?;
+    let remote_ibc_msg: RemoteTunnelPacketMsg = from_binary(&packet_msg.msg)?;
+    match remote_ibc_msg {
+        RemoteTunnelPacketMsg::MintGovec { wallet_addr } => receive_mint_govec(deps, wallet_addr),
+        RemoteTunnelPacketMsg::GovecActions(msg) => {
+            receive_govec_actions(deps, packet_msg.sender, msg)
+        }
+        RemoteTunnelPacketMsg::StakeActions(msg) => {
+            receive_stake_actions(deps, packet_msg.sender, msg)
+        }
+        RemoteTunnelPacketMsg::ProposalActions(msg) => {
+            receive_proposal_actions(deps, packet_msg.sender, msg)
+        }
     }
 }
 
@@ -94,25 +105,50 @@ fn receive_mint_govec(
         .add_attribute("action", "vectis_dao_tunnel_receive_mint_govec"))
 }
 
-pub fn receive_dispatch(
+pub fn receive_govec_actions(
     deps: DepsMut,
-    msgs: Vec<CosmosMsg>,
+    sender: String,
+    govec_msg: GovecExecuteMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
     let response = DispatchResponse { results: vec![] };
     let acknowledgement = StdAck::success(&response);
 
-    let sub_msgs: Vec<SubMsg> = msgs
-        .iter()
-        .map(|m| SubMsg::reply_on_success(m.clone(), RECEIVE_DISPATCH_ID))
-        .collect();
-
-    // reset the data field
-    RESULTS.save(deps.storage, &vec![])?;
+    let govec_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
+    let msg = match govec_msg {
+        GovecExecuteMsg::Transfer {
+            recipient,
+            amount,
+            ..,
+        } => to_binary(&GovecExecuteMsg::Transfer {
+            recipient,
+            amount,
+            remote_from: Some(sender),
+        })?,
+        GovecExecuteMsg::Send {
+            contract,
+            amount,
+            msg,
+            ..
+        } => to_binary(&GovecExecuteMsg::Send{
+            contract,
+            amount,
+            msg,
+            remote_from: Some(sender),
+        })?,
+        GovecExecuteMsg::Burn{ .. } => to_binary(&GovecExecuteMsg::Bank {
+            remote_from: Some(sender),
+        })?,
+        _ => return Err(ContractError::Unauthorized {}),
+    };
 
     Ok(IbcReceiveResponse::new()
         .set_ack(acknowledgement)
-        .add_submessages(sub_msgs)
-        .add_attribute("action", "vectis_tunnel_remote_receive_dispatch"))
+        .add_submessage(SubMsg::new(WasmMsg::Execute {
+            contract_addr: govec_addr.to_string(),
+            msg,
+            funds: vec![],
+        }))
+        .add_attribute("action", "vectis_tunnel_receive_govec_actions"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

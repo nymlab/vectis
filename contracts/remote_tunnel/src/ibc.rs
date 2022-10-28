@@ -1,20 +1,20 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
+    from_binary, from_slice, to_binary, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
     IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
     IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdError, StdResult, SubMsg,
     WasmMsg,
 };
 
 use vectis_wallet::{
-    acknowledge_dispatch, check_order, check_version, DispatchResponse, IbcError, PacketMsg,
+    check_order, check_version, DaoTunnelPacketMsg, IbcError, PacketMsg, RemoteTunnelPacketMsg,
     StdAck, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
-    IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
+    IBC_APP_VERSION,
 };
 
-use crate::state::{CONFIG, DAO_TUNNEL_CHANNEL, FACTORY, IBC_TRANSFER_CHANNEL, RESULTS};
-use crate::{ContractError, FACTORY_CALLBACK_ID};
+use crate::state::{CONFIG, DAO_TUNNEL_CHANNEL, IBC_TRANSFER_CHANNEL};
+use crate::{ContractError, FACTORY_CALLBACK_ID, MINT_GOVEC_JOB_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering, versioning and connection constraints
@@ -36,19 +36,51 @@ pub fn ibc_channel_open(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
     msg: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // we need to parse the ack based on our request
-    let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
+    // WE really only expect to have StdAck from `MintGovec`
+    let res = IbcBasicResponse::new();
+    let original_packet_data: PacketMsg = from_binary(&msg.original_packet.data)?;
 
-    match original_packet {
-        PacketMsg::Dispatch { job_id, sender, .. } => {
-            Ok(acknowledge_dispatch(job_id, sender, msg)?)
+    let ack_result: StdAck = from_binary(&msg.acknowledgement.data)?;
+    if original_packet_data.job_id != MINT_GOVEC_JOB_ID {
+        let success = match ack_result {
+            StdAck::Result(id) => {
+                let reply_id: u64 = from_binary(&id)?;
+                // id maps to VectisDaoActionIds
+                format!("Success: {}", reply_id)
+            }
+            StdAck::Error(e) => e,
+        };
+        Ok(res
+            .add_attribute("job_id", original_packet_data.job_id.to_string())
+            .add_attribute("result", success))
+    } else {
+        if let RemoteTunnelPacketMsg::MintGovec { wallet_addr } =
+            from_binary(&original_packet_data.msg)?
+        {
+            let success = match ack_result {
+                StdAck::Result(_) => true,
+                StdAck::Error(_) => false,
+            };
+            let submsg = SubMsg::new(WasmMsg::Execute {
+                contract_addr: original_packet_data.sender,
+                msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
+                    success,
+                    wallet_addr,
+                })?,
+                funds: vec![],
+            });
+
+            Ok(res
+                .add_attribute("action", "Mint Govec Ack")
+                .add_submessage(submsg))
+        } else {
+            Err(IbcError::InvalidPacket {}.into())
         }
-        PacketMsg::MintGovec { wallet_addr } => acknowledge_mint_govec(deps, wallet_addr, msg),
-        _ => Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_ack")),
     }
 }
 
@@ -57,67 +89,51 @@ pub fn ibc_packet_receive(
     deps: DepsMut,
     _env: Env,
     msg: IbcPacketReceiveMsg,
-) -> Result<IbcReceiveResponse, ContractError> {
-    let packet_msg: PacketMsg = from_slice(&msg.packet.data)?;
-    let dao_channel = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
-    // We only need to check for dao_channel here because messages can only be received from
-    // authorised / opened channels, which for a remote_tunnel,
-    // only connects to the dao_tunnel_channel
-    if msg.packet.dest.channel_id == dao_channel {
-        match packet_msg {
-            PacketMsg::UpdateChannel => receive_update_channel(deps, msg.packet.dest.channel_id),
-            PacketMsg::Dispatch { msgs, .. } => receive_dispatch(deps, msgs),
-            PacketMsg::InstantiateFactory { code_id, msg, .. } => {
-                receive_instantiate(deps, code_id, msg)
+) -> StdResult<IbcReceiveResponse> {
+    (|| {
+        let packet_msg: PacketMsg = from_slice(&msg.packet.data)?;
+        let dao_tunnel_msg: DaoTunnelPacketMsg = from_binary(&packet_msg.msg)?;
+        let dao_channel = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
+
+        // We only need to check for dao_channel here because messages can only be received from
+        // authorised / opened channels, which for a remote_tunnel,
+        // only connects to the dao_tunnel_channel
+        if msg.packet.dest.channel_id == dao_channel {
+            match dao_tunnel_msg {
+                DaoTunnelPacketMsg::UpdateChannel => {
+                    receive_update_channel(deps, msg.packet.dest.channel_id, packet_msg.job_id)
+                }
+                DaoTunnelPacketMsg::InstantiateFactory { code_id, msg, .. } => {
+                    receive_instantiate(deps, code_id, msg, packet_msg.job_id)
+                }
             }
-            _ => Err(ContractError::IbcError(IbcError::InvalidPacket)),
+        } else {
+            Err(ContractError::Unauthorized {})
         }
-    } else {
-        Err(ContractError::Unauthorized {})
-    }
+    })()
+    .or_else(|e| {
+        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {}", e))))
+    })
 }
 
 pub fn receive_update_channel(
     deps: DepsMut,
     channel_id: String,
+    job_id: u64,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let acknowledgement = StdAck::success(&());
-
     DAO_TUNNEL_CHANNEL.save(deps.storage, &channel_id)?;
-
     Ok(IbcReceiveResponse::new()
-        .set_ack(acknowledgement)
-        .add_attribute("action", "receive_update_channel"))
-}
-
-pub fn receive_dispatch(
-    deps: DepsMut,
-    msgs: Vec<CosmosMsg>,
-) -> Result<IbcReceiveResponse, ContractError> {
-    let response = DispatchResponse { results: vec![] };
-    let acknowledgement = StdAck::success(&response);
-
-    let sub_msgs: Vec<SubMsg> = msgs
-        .iter()
-        .map(|m| SubMsg::reply_on_success(m.clone(), RECEIVE_DISPATCH_ID))
-        .collect();
-
-    // reset the data field
-    RESULTS.save(deps.storage, &vec![])?;
-
-    Ok(IbcReceiveResponse::new()
-        .set_ack(acknowledgement)
-        .add_submessages(sub_msgs)
-        .add_attribute("action", "vectis_tunnel_remote_receive_dispatch"))
+        .set_ack(StdAck::success(job_id))
+        .add_attribute("action", "dao channel updated")
+        .add_attribute("channel", channel_id))
 }
 
 pub fn receive_instantiate(
     _deps: DepsMut,
     code_id: u64,
     msg: FactoryInstantiateMsg,
+    job_id: u64,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let acknowledgement = StdAck::success(&());
-
     let msg = WasmMsg::Instantiate {
         admin: None,
         label: "vectis-remote-factory".to_string(),
@@ -125,41 +141,13 @@ pub fn receive_instantiate(
         msg: to_binary(&msg)?,
         funds: vec![],
     };
-    let msg = SubMsg::reply_on_success(msg, FACTORY_CALLBACK_ID);
+    let msg = SubMsg::reply_always(msg, FACTORY_CALLBACK_ID);
 
+    // Set ack in reply
     Ok(IbcReceiveResponse::new()
-        .set_ack(acknowledgement)
         .add_submessage(msg)
-        .add_attribute("action", "receive_instantiate"))
-}
-
-pub fn acknowledge_mint_govec(
-    deps: DepsMut,
-    wallet_addr: String,
-    ack: IbcPacketAckMsg,
-) -> Result<IbcBasicResponse, ContractError> {
-    let ack: StdAck = from_slice(&ack.acknowledgement.data)?;
-    let minted_result: bool = from_binary(&ack.ack())?;
-
-    if !minted_result {
-        return Err(ContractError::Std(StdError::generic_err(
-            "Couldn't mint govec token".to_string(),
-        )));
-    }
-
-    let factory_addr = FACTORY.load(deps.storage)?;
-    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: deps.api.addr_humanize(&factory_addr).unwrap().to_string(),
-        msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
-            wallet: wallet_addr,
-        })
-        .unwrap(),
-        funds: vec![],
-    });
-
-    Ok(IbcBasicResponse::new()
-        .add_message(msg)
-        .add_attribute("action", "receive_mint_govec"))
+        .add_attribute("action", "remote factory instantiation")
+        .add_attribute("job_id", job_id.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
