@@ -250,60 +250,6 @@ fn only_admin_can_instantiate_factory() {
 }
 
 #[test]
-fn only_admin_can_dispatch() {
-    let mut deps = do_instantiate();
-    let env = mock_env();
-    let job_id = Some("23".to_string());
-    let mock_msg = CosmosMsg::Bank(BankMsg::Send {
-        to_address: "address".to_string(),
-        amount: vec![Coin {
-            amount: Uint128::MAX,
-            denom: "denom".to_string(),
-        }],
-    });
-
-    let err = execute(
-        deps.as_mut(),
-        env.clone(),
-        mock_info("RANDOM_ADDR", &[]),
-        ExecuteMsg::Dispatch {
-            msgs: vec![mock_msg.clone()],
-            job_id: job_id.clone(),
-            channel_id: CHANNEL_ID.to_string(),
-        },
-    )
-    .unwrap_err();
-
-    assert_eq!(err, ContractError::Unauthorized);
-
-    let res = execute(
-        deps.as_mut(),
-        env.clone(),
-        mock_info(ADMIN_ADDR, &[]),
-        ExecuteMsg::Dispatch {
-            msgs: vec![mock_msg.clone()],
-            job_id: job_id.clone(),
-            channel_id: CHANNEL_ID.to_string(),
-        },
-    )
-    .unwrap();
-
-    let msg = CosmosMsg::Ibc(IbcMsg::SendPacket {
-        channel_id: CHANNEL_ID.to_string(),
-        data: to_binary(&PacketMsg::Dispatch {
-            msgs: vec![mock_msg],
-            sender: ADMIN_ADDR.to_string(),
-            job_id: job_id,
-        })
-        .unwrap(),
-        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-    });
-
-    assert_eq!(res.messages[0].msg, msg);
-    assert_eq!(res.attributes, vec![("action", "execute_dispatch")])
-}
-
-#[test]
 fn throw_error_when_invalid_ibc_packet() {
     let mut deps = do_instantiate();
     let ibc_msg = PacketMsg::UpdateChannel;
@@ -312,68 +258,6 @@ fn throw_error_when_invalid_ibc_packet() {
     let err = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap_err();
 
     assert_eq!(err, ContractError::IbcError(IbcError::InvalidPacket));
-}
-
-#[test]
-fn handle_dispatch_packet() {
-    let mut deps = do_instantiate();
-
-    let dispatch_msg = CosmosMsg::Bank(BankMsg::Send {
-        to_address: "test".to_string(),
-        amount: vec![],
-    });
-
-    let msgs = vec![dispatch_msg];
-
-    let ibc_msg = PacketMsg::Dispatch {
-        msgs: msgs.clone(),
-        sender: "sender".to_string(),
-        job_id: Some("my_job_id".to_string()),
-    };
-
-    add_mock_controller(deps.as_mut());
-    connect(deps.as_mut(), CHANNEL_ID);
-
-    let msg = mock_ibc_packet_recv(CHANNEL_ID, &ibc_msg).unwrap();
-    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
-
-    // assert app-level success
-    let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
-    ack.unwrap();
-
-    assert_eq!(msgs.len(), res.messages.len());
-
-    assert_eq!(RECEIVE_DISPATCH_ID, res.messages[0].id.clone());
-
-    let data = "string";
-
-    let mut encoded = vec![0x0a, data.len() as u8];
-    encoded.extend(data.as_bytes());
-
-    let msg = WasmMsg::Execute {
-        contract_addr: "address".to_string(),
-        msg: to_binary(&()).unwrap(),
-        funds: vec![],
-    };
-
-    let response = Reply {
-        id: res.messages[0].id,
-        result: SubMsgResult::Ok(SubMsgResponse {
-            events: vec![],
-            data: Some(to_binary(&msg).unwrap()),
-        }),
-    };
-
-    let res = reply(deps.as_mut(), mock_env(), response).unwrap();
-    let ack: StdAck = from_binary(&res.data.unwrap()).unwrap();
-    let response: DispatchResponse = from_binary(&ack.unwrap()).unwrap();
-
-    let result: WasmMsg = from_binary(&response.results[0]).unwrap();
-
-    let state = RESULTS.load(&deps.storage).unwrap();
-    let storage_result: WasmMsg = from_binary(&state[0]).unwrap();
-
-    assert_eq!(storage_result, result);
 }
 
 #[test]
