@@ -24,3 +24,8 @@ pub const FEE: Item<Coin> = Item::new("fee");
 /// - DAO Chain: this is directly the Govec Contract
 #[cfg(feature = "dao-chain")]
 pub const GOVEC_MINTER: Item<CanonicalAddr> = Item::new("govec-minter");
+
+/// A temp storage for remote chains only, to ensure actually minted on dao-chain
+/// `Expiration` is updated so that users can try to mint again if failed
+#[cfg(feature = "remote")]
+pub const PENDING_CLAIM_LIST: Map<Vec<u8>, Expiration> = Map::new("govec-claim-list");

@@ -29,7 +29,7 @@ cw-storage-plus = { version = "0.14.0" }
 cw-utils = { version = "0.14.0" }
 cw2 = { version = "0.13.4" }
 thiserror = { version = "1.0.37" }
-vectis-wallet = {path = "../../packages/vectis", features = ["dao-chain"]}
+vectis-wallet = {path = "../../packages/vectis"}
 vectis-govec = { path = "../govec", features = ["library"] }
 
 [dev-dependencies]

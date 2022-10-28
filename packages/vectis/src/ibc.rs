@@ -1,20 +1,17 @@
 use cosmwasm_schema::{cw_serde, schemars, serde};
-use cosmwasm_std::{
-    from_slice, to_binary, Binary, CosmosMsg, IbcBasicResponse, IbcOrder, IbcPacketAckMsg,
-    StdResult, WasmMsg,
-};
+use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder, StdResult, WasmMsg};
 
 pub use crate::{
-    GovecExecuteMsg, IbcError, WalletFactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
-    RECEIVE_DISPATCH_ID,
+    GovecExecuteMsg, IbcError, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg, APP_ORDER,
+    IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
 };
-use cw20_stake::msg::ExecuteMsg as StakeExecuteMsg;
-use cw_proposal_single::msg::ExecuteMsg as ProposalExecuteMsg;
+pub use cw20_stake::msg::ExecuteMsg as StakeExecuteMsg;
+pub use cw_proposal_single::msg::ExecuteMsg as ProposalExecuteMsg;
 
 #[cw_serde]
 pub struct PacketMsg {
     pub sender: String,
-    pub job_id: Option<String>,
+    pub job_id: Option<u64>,
     // This can only be DaoTunnelPacketMsg or RemoteTunnelPacketMsg
     pub msg: Binary,
 }
@@ -27,15 +24,15 @@ pub enum DaoTunnelPacketMsg {
         code_id: u64,
         msg: WalletFactoryInstantiateMsg,
     },
-    MintGovec {
-        wallet_addr: String,
-    },
 }
 
 /// The IBC Packet Msg allowed dispatched by remote-tunnel
 #[cw_serde]
 pub enum RemoteTunnelPacketMsg {
-    MintGovec { wallet_addr: String },
+    /// A special case where the Factory is the only one who can call this
+    MintGovec {
+        wallet_addr: String,
+    },
     GovecActions(GovecExecuteMsg),
     StakeActions(StakeExecuteMsg),
     ProposalActions(ProposalExecuteMsg),
@@ -54,25 +51,6 @@ pub fn check_version(version: &str) -> Result<(), IbcError> {
         Err(IbcError::InvalidChannelVersion(IBC_APP_VERSION))
     } else {
         Ok(())
-    }
-}
-
-pub fn acknowledge_dispatch(
-    job_id: Option<String>,
-    sender: String,
-    ack: IbcPacketAckMsg,
-) -> StdResult<IbcBasicResponse> {
-    let res = IbcBasicResponse::new().add_attribute("action", "acknowledge_dispatch");
-    match job_id {
-        Some(id) => {
-            let msg: StdAck = from_slice(&ack.acknowledgement.data)?;
-            // Send IBC packet ack message to another contract
-            let res = res
-                .add_attribute("job_id", &id)
-                .add_message(ReceiveIbcResponseMsg { id: id, msg }.into_cosmos_msg(sender)?);
-            Ok(res)
-        }
-        None => Ok(res),
     }
 }
 

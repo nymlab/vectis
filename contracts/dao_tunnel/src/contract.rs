@@ -12,7 +12,7 @@ use vectis_wallet::{
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
 use crate::state::{ADMIN, GOVEC, IBC_TUNNELS, RESULTS};
-use crate::MING_DISPATCH_ID;
+use crate::MINT_DISPATCH_ID;
 
 const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -160,7 +160,7 @@ pub fn query_controllers(
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         RECEIVE_DISPATCH_ID => reply_dispatch_callback(deps, reply),
-        MING_DISPATCH_ID => reply_mint_govec(),
+        MINT_DISPATCH_ID => reply_mint_govec(),
         _ => Err(ContractError::InvalidReplyId),
     }
 }

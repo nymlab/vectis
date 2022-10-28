@@ -4,11 +4,11 @@ pub use crate::factory::{
     ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
     WalletFactoryInstantiateMsg, WalletFactoryQueryMsg,
 };
-pub use crate::govec::{GovecExecuteMsg, GOVEC_CLAIM_DURATION_DAY_MUL};
+pub use crate::govec::{GovecExecuteMsg, UpdateAddrReq, GOVEC_CLAIM_DURATION_DAY_MUL};
 pub use crate::guardians::*;
 pub use crate::ibc::{
-    acknowledge_dispatch, check_order, check_version, DaoTunnelPacketMsg, DispatchResponse,
-    PacketMsg, ReceiveIbcResponseMsg, RemoteTunnelPacketMsg, StdAck,
+    check_order, check_version, DaoTunnelPacketMsg, DispatchResponse, PacketMsg,
+    ProposalExecuteMsg, ReceiveIbcResponseMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck,
 };
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;
