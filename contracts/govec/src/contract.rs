@@ -13,11 +13,12 @@ use cw20::{
 use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
 
-use crate::msg::{ExecuteMsg, InstantiateMsg, MintResponse, QueryMsg, UpdateAddrReq};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MintResponse, QueryMsg};
 use crate::state::{
     TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_CAP, STAKING_ADDR,
     TOKEN_INFO,
 };
+use vectis_wallet::UpdateAddrReq;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
@@ -278,7 +279,7 @@ pub fn execute_mint(
     )?;
 
     let res = Response::new()
-        .set_data(deps.api.addr_canonicalize(&new_wallet)?.as_slice())
+        .set_data(to_binary(&new_wallet)?)
         .add_attribute("action", "mint")
         .add_attribute("to", new_wallet)
         .add_attribute("amount", "1");

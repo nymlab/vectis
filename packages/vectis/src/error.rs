@@ -42,4 +42,6 @@ pub enum IbcError {
     InvalidPortId(String),
     #[error("Invalid Packet")]
     InvalidPacket,
+    #[error("Invalid Job id")]
+    UnsupportedJobId,
 }

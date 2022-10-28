@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse,
-    Reply, Response, StdResult, Uint128,
+    coin, to_binary, Addr, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response,
+    StdResult, Uint128,
 };
 
 use cw_utils::parse_reply_instantiate_data;
@@ -15,7 +15,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
     Config, CONFIG, DAO, DAO_TUNNEL_CHANNEL, DENOM, FACTORY, IBC_TRANSFER_CHANNEL, RESULTS,
 };
-use crate::{ContractError, FACTORY_CALLBACK_ID};
+use crate::{ContractError, FACTORY_CALLBACK_ID, MINT_GOVEC_JOB_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -43,7 +43,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::DaoActions { msg, job_id } => execute_dispatch(deps, env, info, msg, job_id),
+        ExecuteMsg::DaoActions { msg } => execute_dispatch(deps, env, info, msg),
         ExecuteMsg::IbcTransfer { addr } => execute_ibc_transfer(deps, env, info, addr),
     }
 }
@@ -62,8 +62,14 @@ pub fn execute_mint_govec(
         return Err(ContractError::Unauthorized);
     }
 
-    let packet = RemoteTunnelPacketMsg::MintGovec {
+    let mint_govec_msg = RemoteTunnelPacketMsg::MintGovec {
         wallet_addr: wallet_addr.clone(),
+    };
+
+    let packet = PacketMsg {
+        sender: info.sender.to_string(),
+        job_id: Some(MINT_GOVEC_JOB_ID),
+        msg: to_binary(&mint_govec_msg)?,
     };
 
     let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
@@ -76,7 +82,7 @@ pub fn execute_mint_govec(
 
     Ok(Response::new()
         .add_message(msg)
-        .add_attribute("action", "mint_govec")
+        .add_attribute("action", "mint_govec requested")
         .add_attribute("wallet_addr", wallet_addr))
 }
 
@@ -85,25 +91,28 @@ pub fn execute_dispatch(
     env: Env,
     info: MessageInfo,
     msg: RemoteTunnelPacketMsg,
-    job_id: Option<String>,
 ) -> Result<Response, ContractError> {
-    let packet = PacketMsg {
-        sender: info.sender.to_string(),
-        job_id,
-        msg: to_binary(&msg)?,
-    };
+    // Only the Factory can call this
+    if let RemoteTunnelPacketMsg::MintGovec { wallet_addr } = msg {
+        execute_mint_govec(deps, env, info, wallet_addr)
+    } else {
+        let packet = PacketMsg {
+            sender: info.sender.to_string(),
+            job_id: None,
+            msg: to_binary(&msg)?,
+        };
+        let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
 
-    let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
+        let msg = IbcMsg::SendPacket {
+            channel_id,
+            data: to_binary(&packet)?,
+            timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
+        };
 
-    let msg = IbcMsg::SendPacket {
-        channel_id,
-        data: to_binary(&packet)?,
-        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-    };
-
-    Ok(Response::new()
-        .add_message(msg)
-        .add_attribute("action", "execute_dispatch"))
+        Ok(Response::new()
+            .add_message(msg)
+            .add_attribute("action", "dispatched DAO actions"))
+    }
 }
 
 pub fn execute_ibc_transfer(
@@ -174,7 +183,7 @@ pub fn reply_inst_callback(deps: DepsMut, reply: Reply) -> Result<Response, Cont
     let addr = deps.api.addr_canonicalize(&reply.contract_address)?;
 
     FACTORY.save(deps.storage, &addr)?;
-    Ok(Response::new())
+    Ok(Response::new().set_data(StdAck::success(&())))
 }
 
 pub fn reply_dispatch_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {

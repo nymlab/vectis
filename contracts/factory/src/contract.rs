@@ -25,13 +25,16 @@ use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as Proxy
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-#[cfg(feature = "remote")]
-use {crate::helpers::create_ibc_transfer_msg, cosmwasm_std::StdError};
 #[cfg(feature = "dao-chain")]
 use {
     crate::helpers::ensure_has_govec,
     crate::state::GOVEC_MINTER,
     cosmwasm_std::{from_binary, BankMsg},
+};
+#[cfg(feature = "remote")]
+use {
+    crate::helpers::{create_ibc_transfer_msg, handle_govec_mint_failed},
+    cosmwasm_std::StdError,
 };
 
 // version info for migration info
@@ -91,7 +94,10 @@ pub fn execute(
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec_or_remove_from_list(deps, env, info),
-        ExecuteMsg::GovecMinted { wallet } => govec_minted(deps, info, wallet),
+        ExecuteMsg::GovecMinted {
+            success,
+            wallet_addr,
+        } => govec_minted(deps, env, info, success, wallet_addr),
         ExecuteMsg::PurgeExpiredClaims { start_after, limit } => {
             purge_expired_claims(deps, env, start_after, limit)
         }
@@ -339,22 +345,29 @@ fn claim_govec_or_remove_from_list(
 #[cfg(feature = "remote")]
 fn govec_minted(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
+    success: bool,
     wallet: String,
 ) -> Result<Response, ContractError> {
     let dao_minter = DAO.load(deps.storage)?;
     if info.sender != deps.api.addr_humanize(&dao_minter)?.to_string() {
         Err(ContractError::Unauthorized {})
     } else {
-        let to_remove_wallet = deps.api.addr_canonicalize(&wallet)?;
-        handle_govec_minted(deps, to_remove_wallet)
+        if success {
+            handle_govec_minted(deps, wallet)
+        } else {
+            handle_govec_mint_failed(deps, env, wallet)
+        }
     }
 }
 
 #[cfg(feature = "dao-chain")]
 fn govec_minted(
     _deps: DepsMut,
+    _env: Env,
     _info: MessageInfo,
+    _sucess: bool,
     _wallet: String,
 ) -> Result<Response, ContractError> {
     Err(ContractError::NotSupportedByChain {})
@@ -421,7 +434,7 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     if reply.id == GOVEC_REPLY_ID {
         let res = parse_reply_execute_data(reply)?;
         if let Some(b) = res.data {
-            let addr: CanonicalAddr = from_binary(&b)?;
+            let addr: String = from_binary(&b)?;
             return handle_govec_minted(deps, addr);
         } else {
             return Err(ContractError::InvalidReplyFromGovec {});
