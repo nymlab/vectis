@@ -6,14 +6,11 @@ use cosmwasm_std::{
 };
 
 use cw_utils::parse_reply_instantiate_data;
-use vectis_wallet::{
-    DispatchResponse, PacketMsg, RemoteTunnelPacketMsg, StdAck, PACKET_LIFETIME,
-    RECEIVE_DISPATCH_ID,
-};
+use vectis_wallet::{PacketMsg, RemoteTunnelPacketMsg, StdAck, PACKET_LIFETIME};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    Config, CONFIG, DAO, DAO_TUNNEL_CHANNEL, DENOM, FACTORY, IBC_TRANSFER_CHANNEL, RESULTS,
+    Config, CONFIG, DAO, DAO_TUNNEL_CHANNEL, DENOM, FACTORY, IBC_TRANSFER_CHANNEL, JOB_ID,
 };
 use crate::{ContractError, FACTORY_CALLBACK_ID, MINT_GOVEC_JOB_ID};
 
@@ -68,7 +65,7 @@ pub fn execute_mint_govec(
 
     let packet = PacketMsg {
         sender: info.sender.to_string(),
-        job_id: Some(MINT_GOVEC_JOB_ID),
+        job_id: MINT_GOVEC_JOB_ID,
         msg: to_binary(&mint_govec_msg)?,
     };
 
@@ -96,9 +93,11 @@ pub fn execute_dispatch(
     if let RemoteTunnelPacketMsg::MintGovec { wallet_addr } = msg {
         execute_mint_govec(deps, env, info, wallet_addr)
     } else {
+        // starts with 1 as 0 is for MINT_GOVEC_JOB_ID
+        let job_id = JOB_ID.load(deps.storage).unwrap_or(1);
         let packet = PacketMsg {
             sender: info.sender.to_string(),
-            job_id: None,
+            job_id: job_id,
             msg: to_binary(&msg)?,
         };
         let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
@@ -109,9 +108,12 @@ pub fn execute_dispatch(
             timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
         };
 
+        JOB_ID.save(deps.storage, &job_id.wrapping_add(1))?;
+
         Ok(Response::new()
             .add_message(msg)
-            .add_attribute("action", "dispatched DAO actions"))
+            .add_attribute("action", "dispatched DAO actions")
+            .add_attribute("job_id", job_id.to_string()))
     }
 }
 
@@ -173,7 +175,6 @@ pub fn query_channel(deps: Deps) -> StdResult<Option<String>> {
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         FACTORY_CALLBACK_ID => reply_inst_callback(deps, reply),
-        RECEIVE_DISPATCH_ID => reply_dispatch_callback(deps, reply),
         _ => Err(ContractError::InvalidReplyId),
     }
 }
@@ -186,13 +187,14 @@ pub fn reply_inst_callback(deps: DepsMut, reply: Reply) -> Result<Response, Cont
     Ok(Response::new().set_data(StdAck::success(&())))
 }
 
-pub fn reply_dispatch_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
-    // add the new result to the current tracker
-    let mut results = RESULTS.load(deps.storage)?;
-    results.push(reply.result.unwrap().data.unwrap_or_default());
-    RESULTS.save(deps.storage, &results)?;
-
-    // update result data if this is the last
-    let data = StdAck::success(&DispatchResponse { results });
-    Ok(Response::new().set_data(data))
-}
+// TODO
+// pub fn reply_dispatch_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
+//     // add the new result to the current tracker
+//     let mut results = RESULTS.load(deps.storage)?;
+//     results.push(reply.result.unwrap().data.unwrap_or_default());
+//     RESULTS.save(deps.storage, &results)?;
+//
+//     // update result data if this is the last
+//     let data = StdAck::success(&DispatchResponse { results });
+//     Ok(Response::new().set_data(data))
+// }

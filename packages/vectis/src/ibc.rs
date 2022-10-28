@@ -1,17 +1,47 @@
 use cosmwasm_schema::{cw_serde, schemars, serde};
 use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder, StdResult, WasmMsg};
+use std::convert::TryFrom;
 
-pub use crate::{
-    GovecExecuteMsg, IbcError, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg, APP_ORDER,
-    IBC_APP_VERSION, RECEIVE_DISPATCH_ID,
-};
+pub use crate::{GovecExecuteMsg, IbcError, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg};
 pub use cw20_stake::msg::ExecuteMsg as StakeExecuteMsg;
 pub use cw_proposal_single::msg::ExecuteMsg as ProposalExecuteMsg;
+pub const IBC_APP_VERSION: &str = "vectis-v1";
+pub const APP_ORDER: IbcOrder = IbcOrder::Unordered;
+pub const PACKET_LIFETIME: u64 = 60 * 60;
+
+#[cw_serde]
+pub enum VectisDaoActionIds {
+    GovecSend = 11,
+    GovecTransfer,
+    GovecBurn,
+    StakeUnstake,
+    StakeClaim,
+    ProposalPropose,
+    ProposalVote,
+    ProposalExecute,
+}
+
+impl TryFrom<u64> for VectisDaoActionIds {
+    type Error = IbcError;
+    fn try_from(v: u64) -> Result<Self, Self::Error> {
+        match v {
+            11 => Ok(Self::GovecSend),
+            12 => Ok(Self::GovecTransfer),
+            13 => Ok(Self::GovecBurn),
+            14 => Ok(Self::StakeUnstake),
+            15 => Ok(Self::StakeClaim),
+            16 => Ok(Self::ProposalPropose),
+            17 => Ok(Self::ProposalVote),
+            18 => Ok(Self::ProposalExecute),
+            _ => Err(IbcError::InvalidDaoActionId {}),
+        }
+    }
+}
 
 #[cw_serde]
 pub struct PacketMsg {
     pub sender: String,
-    pub job_id: Option<u64>,
+    pub job_id: u64,
     // This can only be DaoTunnelPacketMsg or RemoteTunnelPacketMsg
     pub msg: Binary,
 }
@@ -35,7 +65,10 @@ pub enum RemoteTunnelPacketMsg {
     },
     GovecActions(GovecExecuteMsg),
     StakeActions(StakeExecuteMsg),
-    ProposalActions(ProposalExecuteMsg),
+    ProposalActions {
+        prop_module_addr: String,
+        msg: ProposalExecuteMsg,
+    },
 }
 
 pub fn check_order(order: &IbcOrder) -> Result<(), IbcError> {

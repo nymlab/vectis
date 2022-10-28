@@ -4,11 +4,14 @@ pub use crate::factory::{
     ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
     WalletFactoryInstantiateMsg, WalletFactoryQueryMsg,
 };
-pub use crate::govec::{GovecExecuteMsg, UpdateAddrReq, GOVEC_CLAIM_DURATION_DAY_MUL};
+pub use crate::govec::{
+    GovecExecuteMsg, GovecQueryMsg, MintResponse, UpdateAddrReq, GOVEC_CLAIM_DURATION_DAY_MUL,
+};
 pub use crate::guardians::*;
 pub use crate::ibc::{
     check_order, check_version, DaoTunnelPacketMsg, DispatchResponse, PacketMsg,
     ProposalExecuteMsg, ReceiveIbcResponseMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck,
+    VectisDaoActionIds, APP_ORDER, IBC_APP_VERSION, PACKET_LIFETIME,
 };
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;
@@ -21,9 +24,3 @@ mod ibc;
 mod pubkey;
 mod signature;
 mod wallet;
-use cosmwasm_std::IbcOrder;
-
-pub const IBC_APP_VERSION: &str = "vectis-v1";
-pub const APP_ORDER: IbcOrder = IbcOrder::Unordered;
-pub const PACKET_LIFETIME: u64 = 60 * 60;
-pub const RECEIVE_DISPATCH_ID: u64 = 1234;

@@ -17,11 +17,13 @@ pub enum ExecuteMsg {
         port_id: String,
     },
     InstantiateRemoteFactory {
+        job_id: u64,
         code_id: u64,
         msg: WalletFactoryInstantiateMsg,
         channel_id: String,
     },
     UpdateRemoteTunnelChannel {
+        job_id: u64,
         channel_id: String,
     },
 }

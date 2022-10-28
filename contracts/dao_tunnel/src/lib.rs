@@ -6,7 +6,5 @@ pub mod state;
 
 pub use crate::error::ContractError;
 
-pub const MINT_DISPATCH_ID: u64 = 4321;
-
 #[cfg(test)]
 mod tests;
