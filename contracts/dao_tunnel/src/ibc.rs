@@ -1,18 +1,19 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
-    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
-    IbcChannelOpenResponse, IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg,
-    IbcQuery, IbcReceiveResponse, QueryRequest, StdError, StdResult, SubMsg, WasmMsg,
+    from_binary, to_binary, Addr, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
+    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
+    IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcQuery,
+    IbcReceiveResponse, QueryRequest, StdError, StdResult, SubMsg, WasmMsg,
 };
 use vectis_wallet::{
-    check_order, check_version, GovecExecuteMsg, GovecQueryMsg, PacketMsg, ProposalExecuteMsg,
-    RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, VectisDaoActionIds, IBC_APP_VERSION,
+    check_order, check_version, GovecExecuteMsg, GovecQueryMsg, IbcError, PacketMsg,
+    ProposalExecuteMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, VectisDaoActionIds,
+    IBC_APP_VERSION,
 };
 
 use crate::state::{GOVEC, IBC_TUNNELS};
-use crate::{ContractError, MINT_DISPATCH_ID};
+use crate::ContractError;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering and versioing constraints
@@ -40,12 +41,22 @@ pub fn ibc_channel_open(
 pub fn ibc_packet_ack(
     _deps: DepsMut,
     _env: Env,
-    _msg: IbcPacketAckMsg,
+    msg: IbcPacketAckMsg,
 ) -> StdResult<IbcBasicResponse> {
-    // TODO handle the updates
-    // let original_packet: PacketMsg = from_slice(&msg.original_packet.data)?;
-    let res = IbcBasicResponse::new().add_attribute("action", "acknowledge_dispatch");
-    Ok(res)
+    let res = IbcBasicResponse::new();
+    let original_packet: PacketMsg = from_binary(&msg.original_packet.data)?;
+    let ack_result: StdAck = from_binary(&msg.acknowledgement.data)?;
+    let success = match ack_result {
+        StdAck::Result(id) => {
+            let reply_id: u64 = from_binary(&id)?;
+            // id maps to VectisDaoActionIds
+            format!("Success: {}", reply_id)
+        }
+        StdAck::Error(e) => e,
+    };
+    Ok(res
+        .add_attribute("job_id", original_packet.job_id.to_string())
+        .add_attribute("result", success))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -56,9 +67,15 @@ pub fn ibc_packet_receive(
 ) -> Result<IbcReceiveResponse, ContractError> {
     (|| {
         let packet = msg.packet;
+
         is_authorised_src(deps.as_ref(), packet.src, packet.dest)?;
-        let packet_msg: PacketMsg = from_slice(&packet.data)?;
-        let remote_ibc_msg: RemoteTunnelPacketMsg = from_binary(&packet_msg.msg)?;
+
+        let packet_msg: PacketMsg =
+            from_binary(&packet.data).map_err(|_| IbcError::InvalidPacketMsg)?;
+
+        let remote_ibc_msg: RemoteTunnelPacketMsg =
+            from_binary(&packet_msg.msg).map_err(|_| IbcError::InvalidInnerMsg)?;
+
         match remote_ibc_msg {
             RemoteTunnelPacketMsg::MintGovec { wallet_addr } => {
                 receive_mint_govec(deps, wallet_addr)
@@ -76,10 +93,7 @@ pub fn ibc_packet_receive(
         }
     })()
     .or_else(|e| {
-        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!(
-            "Vectis remote tunnel packet error: {}",
-            e
-        ))))
+        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {}", e))))
     })
 }
 
@@ -99,7 +113,7 @@ fn receive_mint_govec(
             msg,
             funds: vec![],
         },
-        MINT_DISPATCH_ID,
+        VectisDaoActionIds::GovecMint as u64,
     );
 
     Ok(IbcReceiveResponse::new()
@@ -290,7 +304,7 @@ pub fn ibc_channel_connect(
     Ok(IbcBasicResponse::new()
         .add_attribute("action", "ibc_connect")
         .add_attribute("channel_id", &msg.channel().endpoint.channel_id)
-        .add_attribute("src port_id", &msg.channel().counterparty_endpoint.port_id))
+        .add_attribute("src_port_id", &msg.channel().counterparty_endpoint.port_id))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -305,34 +319,36 @@ pub fn ibc_channel_close(
         .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
 }
 
-/// Makes sure that the incoming msg is is from a smart contract that the DAO has approved
-/// see IBC_TUNNELS for state details
-fn is_authorised_tunnel(
+/// Query for the correct connection_id of the underlying light client
+fn is_authorised_src(
     deps: Deps,
-    local_connection_id: String,
-    caller_port_id: String,
+    counterparty_endpoint: IbcEndpoint,
+    endpoint: IbcEndpoint,
 ) -> Result<(), ContractError> {
+    let mut local_connection_id = String::new();
+
+    #[cfg(not(test))]
+    {
+        local_connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
+            channel_id: endpoint.channel_id,
+            port_id: Some(endpoint.port_id.clone()),
+        }))?;
+    }
+
+    #[cfg(test)]
+    {
+        local_connection_id = "TEST_CONNECTION_ID".to_string();
+    }
+
     if IBC_TUNNELS
-        .may_load(deps.storage, (local_connection_id, caller_port_id))?
+        .may_load(
+            deps.storage,
+            (local_connection_id, counterparty_endpoint.port_id),
+        )?
         .is_none()
     {
         return Err(ContractError::InvalidTunnel {});
     }
 
     Ok(())
-}
-
-/// Wrapper around `is_authorised_tunnel` to query for the correct connection_id of the underlying
-/// light client
-fn is_authorised_src(
-    deps: Deps,
-    counterparty_endpoint: IbcEndpoint,
-    endpoint: IbcEndpoint,
-) -> Result<(), ContractError> {
-    let connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
-        channel_id: endpoint.channel_id,
-        port_id: Some(endpoint.port_id.clone()),
-    }))?;
-
-    is_authorised_tunnel(deps, connection_id, counterparty_endpoint.port_id)
 }
