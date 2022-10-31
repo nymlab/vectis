@@ -11,7 +11,7 @@ use vectis_wallet::{
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
 use crate::state::{ADMIN, GOVEC, IBC_TUNNELS};
-use crate::MINT_DISPATCH_ID;
+use std::convert::Into;
 
 const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -112,7 +112,7 @@ fn execute_update_remote_tunnel_channel(
     env: Env,
     info: MessageInfo,
     job_id: u64,
-    channel_id: String,
+    sending_channel_id: String,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
@@ -123,15 +123,14 @@ fn execute_update_remote_tunnel_channel(
     };
 
     let msg = IbcMsg::SendPacket {
-        channel_id: channel_id.clone(),
+        channel_id: sending_channel_id.clone(),
         data: to_binary(&packet)?,
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
 
     Ok(Response::new()
         .add_message(msg)
-        .add_attribute("action", "update_remote_tunnel_channel")
-        .add_attribute("channel_id", channel_id))
+        .add_attribute("action", "update_remote_tunnel_channel"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -171,11 +170,10 @@ pub fn query_controllers(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
-        MINT_DISPATCH_ID => reply_mint_govec(reply),
         // All possible DAO actions
-        // VectisDaoActionIds::GovecSend = 11
+        // VectisDaoActionIds::GovecMint = 10
         // VectisDaoActionIds::ProposalExecute = 18
-        11..=18 => reply_dao_actions(reply),
+        10..=18 => reply_dao_actions(reply),
         _ => Err(ContractError::InvalidReplyId {}),
     }
 }
@@ -183,15 +181,7 @@ pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contra
 pub fn reply_dao_actions(reply: Reply) -> Result<Response, ContractError> {
     let res = Response::new();
     match reply.result {
-        SubMsgResult::Ok(_) => Ok(res.set_data(StdAck::success(reply.id))),
-        SubMsgResult::Err(e) => Ok(res.set_data(StdAck::fail(e))),
-    }
-}
-
-pub fn reply_mint_govec(reply: Reply) -> Result<Response, ContractError> {
-    let res = Response::new();
-    match reply.result {
-        SubMsgResult::Ok(_) => Ok(res.set_data(StdAck::success(&()))),
+        SubMsgResult::Ok(_) => Ok(res.set_data(StdAck::success(&reply.id))),
         SubMsgResult::Err(e) => Ok(res.set_data(StdAck::fail(e))),
     }
 }
