@@ -40,10 +40,12 @@ pub enum IbcError {
     InvalidConnectionId(String),
     #[error("Port id must be = '{0}'")]
     InvalidPortId(String),
-    #[error("Invalid Packet")]
-    InvalidPacket,
+    #[error("Invalid PacketMsg")]
+    InvalidPacketMsg,
+    #[error("Invalid PacketMsg.msg")]
+    InvalidInnerMsg,
     #[error("Invalid Job id")]
     UnsupportedJobId,
     #[error("Invalid DAO action id")]
-    InvalidDaoActionId {},
+    InvalidDaoActionId,
 }

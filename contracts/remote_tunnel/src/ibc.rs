@@ -9,12 +9,12 @@ use cosmwasm_std::{
 
 use vectis_wallet::{
     check_order, check_version, DaoTunnelPacketMsg, IbcError, PacketMsg, RemoteTunnelPacketMsg,
-    StdAck, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg as FactoryInstantiateMsg,
-    IBC_APP_VERSION,
+    StdAck, VectisDaoActionIds, WalletFactoryExecuteMsg,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_VERSION,
 };
 
 use crate::state::{CONFIG, DAO_TUNNEL_CHANNEL, IBC_TRANSFER_CHANNEL};
-use crate::{ContractError, FACTORY_CALLBACK_ID, MINT_GOVEC_JOB_ID};
+use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering, versioning and connection constraints
@@ -40,13 +40,13 @@ pub fn ibc_packet_ack(
     _env: Env,
     msg: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
-    // we need to parse the ack based on our request
-    // WE really only expect to have StdAck from `MintGovec`
     let res = IbcBasicResponse::new();
     let original_packet_data: PacketMsg = from_binary(&msg.original_packet.data)?;
 
     let ack_result: StdAck = from_binary(&msg.acknowledgement.data)?;
-    if original_packet_data.job_id != MINT_GOVEC_JOB_ID {
+    // TODO - stdAck(VectisDaoActionIds)
+    // THE BELOW IS WRONG
+    if original_packet_data.job_id != VectisDaoActionIds::GovecMint as u64 {
         let success = match ack_result {
             StdAck::Result(id) => {
                 let reply_id: u64 = from_binary(&id)?;
@@ -79,7 +79,7 @@ pub fn ibc_packet_ack(
                 .add_attribute("action", "Mint Govec Ack")
                 .add_submessage(submsg))
         } else {
-            Err(IbcError::InvalidPacket {}.into())
+            Err(IbcError::InvalidInnerMsg.into())
         }
     }
 }
@@ -91,8 +91,10 @@ pub fn ibc_packet_receive(
     msg: IbcPacketReceiveMsg,
 ) -> StdResult<IbcReceiveResponse> {
     (|| {
-        let packet_msg: PacketMsg = from_slice(&msg.packet.data)?;
-        let dao_tunnel_msg: DaoTunnelPacketMsg = from_binary(&packet_msg.msg)?;
+        let packet_msg: PacketMsg =
+            from_slice(&msg.packet.data).map_err(|_| IbcError::InvalidPacketMsg)?;
+        let dao_tunnel_msg: DaoTunnelPacketMsg =
+            from_binary(&packet_msg.msg).map_err(|_| IbcError::InvalidInnerMsg)?;
         let dao_channel = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
 
         // We only need to check for dao_channel here because messages can only be received from

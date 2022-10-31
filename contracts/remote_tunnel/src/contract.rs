@@ -12,7 +12,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
     Config, CONFIG, DAO, DAO_TUNNEL_CHANNEL, DENOM, FACTORY, IBC_TRANSFER_CHANNEL, JOB_ID,
 };
-use crate::{ContractError, FACTORY_CALLBACK_ID, MINT_GOVEC_JOB_ID};
+use crate::{ContractError, FACTORY_CALLBACK_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -93,11 +93,11 @@ pub fn execute_dispatch(
     if let RemoteTunnelPacketMsg::MintGovec { wallet_addr } = msg {
         execute_mint_govec(deps, env, info, wallet_addr)
     } else {
-        // starts with 1 as 0 is for MINT_GOVEC_JOB_ID
-        let job_id = JOB_ID.load(deps.storage).unwrap_or(1);
+        // starts with 20 as 10-18 is for DaoActions
+        let job_id = JOB_ID.load(deps.storage).unwrap_or(20);
         let packet = PacketMsg {
             sender: info.sender.to_string(),
-            job_id: job_id,
+            job_id,
             msg: to_binary(&msg)?,
         };
         let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;

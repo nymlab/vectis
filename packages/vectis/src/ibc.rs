@@ -11,7 +11,8 @@ pub const PACKET_LIFETIME: u64 = 60 * 60;
 
 #[cw_serde]
 pub enum VectisDaoActionIds {
-    GovecSend = 11,
+    GovecMint = 10,
+    GovecSend,
     GovecTransfer,
     GovecBurn,
     StakeUnstake,
@@ -25,6 +26,7 @@ impl TryFrom<u64> for VectisDaoActionIds {
     type Error = IbcError;
     fn try_from(v: u64) -> Result<Self, Self::Error> {
         match v {
+            10 => Ok(Self::GovecMint),
             11 => Ok(Self::GovecSend),
             12 => Ok(Self::GovecTransfer),
             13 => Ok(Self::GovecBurn),
@@ -166,10 +168,4 @@ impl ReceiveIbcResponseMsg {
 #[cw_serde]
 enum SimpleIbcReceiverExecuteMsg {
     ReceiveIcaResponse(ReceiveIbcResponseMsg),
-}
-
-/// Return the data field for each message
-#[cw_serde]
-pub struct DispatchResponse {
-    pub results: Vec<Binary>,
 }
