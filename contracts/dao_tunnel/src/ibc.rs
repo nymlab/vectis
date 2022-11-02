@@ -133,6 +133,15 @@ pub fn ibc_packet_ack(
         .add_attribute("result", success))
 }
 
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn ibc_packet_timeout(
+    _deps: DepsMut,
+    _env: Env,
+    _msg: IbcPacketTimeoutMsg,
+) -> StdResult<IbcBasicResponse> {
+    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
+}
+
 // Utils for dao-actions
 
 fn receive_mint_govec(
@@ -314,16 +323,6 @@ pub fn receive_proposal_actions(
         .add_submessage(sub_msg)
         .add_attribute("action", "vectis_tunnel_receive_proposal_actions")
         .add_attribute("prop module addr", prop_module_addr))
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-/// never should be called as we do not send packets
-pub fn ibc_packet_timeout(
-    _deps: DepsMut,
-    _env: Env,
-    _msg: IbcPacketTimeoutMsg,
-) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
 }
 
 /// Query for the correct connection_id of the underlying light client

@@ -25,7 +25,7 @@ fn remote_relayed_transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: dao_addr.clone(),
         amount: transfer,
-        remote_from: Some(remote_addr.clone()),
+        relayed_from: Some(remote_addr.clone()),
     };
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
@@ -52,7 +52,7 @@ fn remote_relayed_transfer() {
     let failing_msg = ExecuteMsg::Transfer {
         recipient: dao_addr.clone(),
         amount: transfer,
-        remote_from: Some(not_wallet.clone()),
+        relayed_from: Some(not_wallet.clone()),
     };
     let err = execute(deps.as_mut(), env.clone(), info, failing_msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -61,7 +61,7 @@ fn remote_relayed_transfer() {
     let failing_msg = ExecuteMsg::Transfer {
         recipient: dao_addr.clone(),
         amount: transfer,
-        remote_from: Some(not_wallet.clone()),
+        relayed_from: Some(not_wallet.clone()),
     };
     let info_wrong_dao_tunnel = mock_info("not_dao_tunnel", &[]);
     let err = execute(deps.as_mut(), env, info_wrong_dao_tunnel, failing_msg).unwrap_err();
@@ -90,7 +90,7 @@ fn burn() {
     let info = mock_info(DAO_TUNNEL.as_ref(), &[]);
     let env = mock_env();
     let msg = ExecuteMsg::Burn {
-        remote_from: Some(remote_addr.clone()),
+        relayed_from: Some(remote_addr.clone()),
     };
     let res = execute(deps.as_mut(), env.clone(), info, msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
@@ -143,7 +143,7 @@ fn send() {
         contract: addr2.to_string(),
         amount: transfer,
         msg: send_msg.clone(),
-        remote_from: Some(addr1.clone()),
+        relayed_from: Some(addr1.clone()),
     };
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
@@ -191,7 +191,7 @@ fn send() {
         contract: addr2,
         amount: transfer,
         msg: send_msg.clone(),
-        remote_from: Some(addr1.clone()),
+        relayed_from: Some(addr1.clone()),
     };
     let err = execute(deps.as_mut(), env, failing_info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});

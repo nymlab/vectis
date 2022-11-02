@@ -35,6 +35,116 @@ pub fn ibc_channel_open(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
+pub fn ibc_channel_connect(
+    deps: DepsMut,
+    _env: Env,
+    msg: IbcChannelConnectMsg,
+) -> StdResult<IbcBasicResponse> {
+    let channel = msg.channel();
+
+    if ensure_is_dao_tunnel(
+        deps.as_ref(),
+        &channel.connection_id,
+        &channel.counterparty_endpoint.port_id,
+    )
+    .is_ok()
+    {
+        if DAO_TUNNEL_CHANNEL.load(deps.storage).is_err() {
+            // We only save a new channel if it was not previously set
+            DAO_TUNNEL_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
+            Ok(IbcBasicResponse::new()
+                .add_attribute("action", "ibc_connect")
+                .add_attribute(
+                    "SAVED dao_tunnel_channel_id",
+                    &msg.channel().endpoint.channel_id,
+                )
+                .add_attribute("dao_tunnel_port_id", &channel.counterparty_endpoint.port_id))
+        } else {
+            // We accept new channel creation but this will only be used if the DAO calls
+            // `UpdateChannel` to update the official channel used to communicate with the
+            // dao-tunnel
+            Ok(IbcBasicResponse::new()
+                .add_attribute("action", "ibc_connect")
+                .add_attribute(
+                    "IGNORED dao_tunnel_channel_id",
+                    &msg.channel().endpoint.channel_id,
+                )
+                .add_attribute("dao_tunnel_port_id", &channel.counterparty_endpoint.port_id))
+        }
+    } else if ensure_is_ibc_trasnfer(
+        deps.as_ref(),
+        &channel.connection_id,
+        &channel.counterparty_endpoint.port_id,
+    )
+    .is_ok()
+    {
+        // As long as it is the port of the remote ibc transfer module,
+        // we can save it as we are not expecting messages to come from this
+        IBC_TRANSFER_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
+        Ok(IbcBasicResponse::new()
+            .add_attribute("action", "ibc_connect")
+            .add_attribute(
+                "SAVED ibc_transfer_channel_id",
+                &msg.channel().endpoint.channel_id,
+            )
+            .add_attribute(
+                "ibc_transfer_port_id",
+                &channel.counterparty_endpoint.port_id,
+            ))
+    } else {
+        Err(StdError::generic_err(IbcError::InvalidSrc.to_string()))
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+/// We don't do anything when a channel is closed
+pub fn ibc_channel_close(
+    _deps: DepsMut,
+    _env: Env,
+    msg: IbcChannelCloseMsg,
+) -> StdResult<IbcBasicResponse> {
+    Ok(IbcBasicResponse::new()
+        .add_attribute("action", "ibc_close")
+        .add_attribute("channel_id", &msg.channel().endpoint.channel_id)
+        .add_attribute("src_port_id", &msg.channel().counterparty_endpoint.port_id)
+        .add_attribute("connection_id", &msg.channel().connection_id))
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn ibc_packet_receive(
+    deps: DepsMut,
+    _env: Env,
+    msg: IbcPacketReceiveMsg,
+) -> StdResult<IbcReceiveResponse> {
+    (|| {
+        let packet_msg: PacketMsg =
+            from_slice(&msg.packet.data).map_err(|_| IbcError::InvalidPacketMsg)?;
+        let dao_tunnel_msg: DaoTunnelPacketMsg =
+            from_binary(&packet_msg.msg).map_err(|_| IbcError::InvalidInnerMsg)?;
+        let dao_channel = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
+
+        // We only need to check for dao_channel here because messages can only be received from
+        // authorised / opened channels, which for a remote_tunnel,
+        // only connects to the dao_tunnel_channel
+        if msg.packet.dest.channel_id == dao_channel {
+            match dao_tunnel_msg {
+                DaoTunnelPacketMsg::UpdateChannel => {
+                    receive_update_channel(deps, msg.packet.dest.channel_id, packet_msg.job_id)
+                }
+                DaoTunnelPacketMsg::InstantiateFactory { code_id, msg, .. } => {
+                    receive_instantiate(deps, code_id, msg, packet_msg.job_id)
+                }
+            }
+        } else {
+            Err(ContractError::Unauthorized {})
+        }
+    })()
+    .or_else(|e| {
+        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {}", e))))
+    })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
     _deps: DepsMut,
     _env: Env,
@@ -85,38 +195,16 @@ pub fn ibc_packet_ack(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn ibc_packet_receive(
-    deps: DepsMut,
+/// we just ignore these temporally. shall we store some info?
+pub fn ibc_packet_timeout(
+    _deps: DepsMut,
     _env: Env,
-    msg: IbcPacketReceiveMsg,
-) -> StdResult<IbcReceiveResponse> {
-    (|| {
-        let packet_msg: PacketMsg =
-            from_slice(&msg.packet.data).map_err(|_| IbcError::InvalidPacketMsg)?;
-        let dao_tunnel_msg: DaoTunnelPacketMsg =
-            from_binary(&packet_msg.msg).map_err(|_| IbcError::InvalidInnerMsg)?;
-        let dao_channel = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
-
-        // We only need to check for dao_channel here because messages can only be received from
-        // authorised / opened channels, which for a remote_tunnel,
-        // only connects to the dao_tunnel_channel
-        if msg.packet.dest.channel_id == dao_channel {
-            match dao_tunnel_msg {
-                DaoTunnelPacketMsg::UpdateChannel => {
-                    receive_update_channel(deps, msg.packet.dest.channel_id, packet_msg.job_id)
-                }
-                DaoTunnelPacketMsg::InstantiateFactory { code_id, msg, .. } => {
-                    receive_instantiate(deps, code_id, msg, packet_msg.job_id)
-                }
-            }
-        } else {
-            Err(ContractError::Unauthorized {})
-        }
-    })()
-    .or_else(|e| {
-        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {}", e))))
-    })
+    _msg: IbcPacketTimeoutMsg,
+) -> StdResult<IbcBasicResponse> {
+    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
 }
+
+// Recieve handlers
 
 pub fn receive_update_channel(
     deps: DepsMut,
@@ -152,83 +240,7 @@ pub fn receive_instantiate(
         .add_attribute("job_id", job_id.to_string()))
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-/// we just ignore these temporally. shall we store some info?
-pub fn ibc_packet_timeout(
-    _deps: DepsMut,
-    _env: Env,
-    _msg: IbcPacketTimeoutMsg,
-) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn ibc_channel_connect(
-    deps: DepsMut,
-    _env: Env,
-    msg: IbcChannelConnectMsg,
-) -> StdResult<IbcBasicResponse> {
-    let channel = msg.channel();
-
-    if ensure_is_dao_tunnel(
-        deps.as_ref(),
-        &channel.connection_id,
-        &channel.counterparty_endpoint.port_id,
-    )
-    .is_ok()
-    {
-        if DAO_TUNNEL_CHANNEL.load(deps.storage).is_err() {
-            // We only save a new channel if it was not previously set
-            DAO_TUNNEL_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
-            Ok(IbcBasicResponse::new()
-                .add_attribute("action", "ibc_connect")
-                .add_attribute(
-                    "saved new dao_tunnel_channel_id",
-                    &msg.channel().endpoint.channel_id,
-                ))
-        } else {
-            // We accept new channel creation but this will only be used if the DAO calls
-            // `UpdateChannel` to update the official channel used to communicate with the
-            // dao-tunnel
-            Ok(IbcBasicResponse::new()
-                .add_attribute("action", "ibc_connect")
-                .add_attribute(
-                    "unsaved new dao_tunnel_channel_id",
-                    &msg.channel().endpoint.channel_id,
-                ))
-        }
-    } else if ensure_is_ibc_trasnfer(
-        deps.as_ref(),
-        &channel.connection_id,
-        &channel.counterparty_endpoint.port_id,
-    )
-    .is_ok()
-    {
-        // As long as it is the port of the remote ibc transfer module,
-        // we can save it as we are not expecting messages to come from this
-        IBC_TRANSFER_CHANNEL.save(deps.storage, &channel.endpoint.channel_id)?;
-        Ok(IbcBasicResponse::new()
-            .add_attribute("action", "ibc_connect")
-            .add_attribute(
-                "ibc_transfer_channel_id",
-                &msg.channel().endpoint.channel_id,
-            ))
-    } else {
-        Err(StdError::generic_err("Not authorised"))
-    }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-/// We don't do anything when a channel is closed
-pub fn ibc_channel_close(
-    _deps: DepsMut,
-    _env: Env,
-    msg: IbcChannelCloseMsg,
-) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new()
-        .add_attribute("action", "ibc_close")
-        .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
-}
+// utils
 
 fn ensure_is_dao_tunnel(
     deps: Deps,

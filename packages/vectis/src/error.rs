@@ -40,6 +40,8 @@ pub enum IbcError {
     InvalidConnectionId(String),
     #[error("Port id must be = '{0}'")]
     InvalidPortId(String),
+    #[error("Invalid source endpoint")]
+    InvalidSrc,
     #[error("Invalid PacketMsg")]
     InvalidPacketMsg,
     #[error("Invalid PacketMsg.msg")]
