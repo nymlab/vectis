@@ -3,9 +3,12 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
-    IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcQuery,
-    IbcReceiveResponse, QueryRequest, StdError, StdResult, SubMsg, WasmMsg,
+    IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse,
+    StdError, StdResult, SubMsg, WasmMsg,
 };
+#[cfg(not(test))]
+use cosmwasm_std::{IbcQuery, QueryRequest};
+
 use vectis_wallet::{
     check_order, check_version, GovecExecuteMsg, GovecQueryMsg, IbcError, PacketMsg,
     ProposalExecuteMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, VectisDaoActionIds,
@@ -38,25 +41,36 @@ pub fn ibc_channel_open(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn ibc_packet_ack(
+pub fn ibc_channel_connect(
+    deps: DepsMut,
+    _env: Env,
+    msg: IbcChannelConnectMsg,
+) -> StdResult<IbcBasicResponse> {
+    // We currently do not save the channel_id to call the remote_tunnels
+    is_authorised_src(
+        deps.as_ref(),
+        msg.channel().counterparty_endpoint.clone(),
+        msg.channel().endpoint.clone(),
+    )
+    .map_err(|e| StdError::generic_err(e.to_string()))?;
+    Ok(IbcBasicResponse::new()
+        .add_attribute("action", "ibc_connect")
+        .add_attribute("channel_id", &msg.channel().endpoint.channel_id)
+        .add_attribute("src_port_id", &msg.channel().counterparty_endpoint.port_id))
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+/// Multiple channels are supported so this is something to observe
+pub fn ibc_channel_close(
     _deps: DepsMut,
     _env: Env,
-    msg: IbcPacketAckMsg,
+    msg: IbcChannelCloseMsg,
 ) -> StdResult<IbcBasicResponse> {
-    let res = IbcBasicResponse::new();
-    let original_packet: PacketMsg = from_binary(&msg.original_packet.data)?;
-    let ack_result: StdAck = from_binary(&msg.acknowledgement.data)?;
-    let success = match ack_result {
-        StdAck::Result(id) => {
-            let reply_id: u64 = from_binary(&id)?;
-            // id maps to VectisDaoActionIds
-            format!("Success: {}", reply_id)
-        }
-        StdAck::Error(e) => e,
-    };
-    Ok(res
-        .add_attribute("job_id", original_packet.job_id.to_string())
-        .add_attribute("result", success))
+    Ok(IbcBasicResponse::new()
+        .add_attribute("action", "ibc_close")
+        .add_attribute("channel_id", &msg.channel().endpoint.channel_id)
+        .add_attribute("src_port_id", &msg.channel().counterparty_endpoint.port_id)
+        .add_attribute("connection_id", &msg.channel().connection_id))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -96,6 +110,30 @@ pub fn ibc_packet_receive(
         Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {}", e))))
     })
 }
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn ibc_packet_ack(
+    _deps: DepsMut,
+    _env: Env,
+    msg: IbcPacketAckMsg,
+) -> StdResult<IbcBasicResponse> {
+    let res = IbcBasicResponse::new();
+    let original_packet: PacketMsg = from_binary(&msg.original_packet.data)?;
+    let ack_result: StdAck = from_binary(&msg.acknowledgement.data)?;
+    let success = match ack_result {
+        StdAck::Result(id) => {
+            let reply_id: u64 = from_binary(&id)?;
+            // id maps to VectisDaoActionIds
+            format!("Success: {}", reply_id)
+        }
+        StdAck::Error(e) => e,
+    };
+    Ok(res
+        .add_attribute("job_id", original_packet.job_id.to_string())
+        .add_attribute("result", success))
+}
+
+// Utils for dao-actions
 
 fn receive_mint_govec(
     deps: DepsMut,
@@ -288,57 +326,17 @@ pub fn ibc_packet_timeout(
     Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn ibc_channel_connect(
-    deps: DepsMut,
-    _env: Env,
-    msg: IbcChannelConnectMsg,
-) -> StdResult<IbcBasicResponse> {
-    // We currently do not save the channel_id to call the remote_tunnels
-    is_authorised_src(
-        deps.as_ref(),
-        msg.channel().counterparty_endpoint.clone(),
-        msg.channel().endpoint.clone(),
-    )
-    .map_err(|e| StdError::generic_err(e.to_string()))?;
-    Ok(IbcBasicResponse::new()
-        .add_attribute("action", "ibc_connect")
-        .add_attribute("channel_id", &msg.channel().endpoint.channel_id)
-        .add_attribute("src_port_id", &msg.channel().counterparty_endpoint.port_id))
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-/// We don't do anything when a channel is closed
-pub fn ibc_channel_close(
-    _deps: DepsMut,
-    _env: Env,
-    msg: IbcChannelCloseMsg,
-) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new()
-        .add_attribute("action", "ibc_close")
-        .add_attribute("channel_id", &msg.channel().endpoint.channel_id))
-}
-
 /// Query for the correct connection_id of the underlying light client
+#[cfg(not(test))]
 fn is_authorised_src(
     deps: Deps,
     counterparty_endpoint: IbcEndpoint,
     endpoint: IbcEndpoint,
 ) -> Result<(), ContractError> {
-    let mut local_connection_id = String::new();
-
-    #[cfg(not(test))]
-    {
-        local_connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
-            channel_id: endpoint.channel_id,
-            port_id: Some(endpoint.port_id.clone()),
-        }))?;
-    }
-
-    #[cfg(test)]
-    {
-        local_connection_id = "TEST_CONNECTION_ID".to_string();
-    }
+    let local_connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
+        channel_id: endpoint.channel_id,
+        port_id: Some(endpoint.port_id.clone()),
+    }))?;
 
     if IBC_TUNNELS
         .may_load(
@@ -347,7 +345,28 @@ fn is_authorised_src(
         )?
         .is_none()
     {
-        return Err(ContractError::InvalidTunnel {});
+        return Err(ContractError::InvalidTunnel);
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+fn is_authorised_src(
+    deps: Deps,
+    counterparty_endpoint: IbcEndpoint,
+    _endpoint: IbcEndpoint,
+) -> Result<(), ContractError> {
+    let local_connection_id = "TEST_CONNECTION_ID".to_string();
+
+    if IBC_TUNNELS
+        .may_load(
+            deps.storage,
+            (local_connection_id, counterparty_endpoint.port_id),
+        )?
+        .is_none()
+    {
+        return Err(ContractError::InvalidTunnel);
     }
 
     Ok(())
