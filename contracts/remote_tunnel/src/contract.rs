@@ -63,9 +63,10 @@ pub fn execute_mint_govec(
         wallet_addr: wallet_addr.clone(),
     };
 
+    let job_id = JOB_ID.load(deps.storage).unwrap_or(0);
     let packet = PacketMsg {
         sender: info.sender.to_string(),
-        job_id: MINT_GOVEC_JOB_ID,
+        job_id,
         msg: to_binary(&mint_govec_msg)?,
     };
 
@@ -76,6 +77,7 @@ pub fn execute_mint_govec(
         data: to_binary(&packet)?,
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
+    JOB_ID.save(deps.storage, &job_id.wrapping_add(1))?;
 
     Ok(Response::new()
         .add_message(msg)
@@ -93,8 +95,7 @@ pub fn execute_dispatch(
     if let RemoteTunnelPacketMsg::MintGovec { wallet_addr } = msg {
         execute_mint_govec(deps, env, info, wallet_addr)
     } else {
-        // starts with 20 as 10-18 is for DaoActions
-        let job_id = JOB_ID.load(deps.storage).unwrap_or(20);
+        let job_id = JOB_ID.load(deps.storage).unwrap_or(0);
         let packet = PacketMsg {
             sender: info.sender.to_string(),
             job_id,

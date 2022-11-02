@@ -25,9 +25,12 @@ use crate::ContractError;
 const TEST_CONNECTION_ID: &str = "TEST_CONNECTION_ID";
 const CHANNEL_ID: &str = "channel-1";
 // To match src port id in `mock_ibc_packet_recv`
+// For testing `ibc_packet_receive`_
 const SRC_PORT_ID_RCV: &str = "their-port";
 // To match src port id in `mock_ibc_channel`
+// For testing `ibc_channel_connect`
 const SRC_PORT_ID_CONNECT: &str = "their_port";
+
 const ADMIN_ADDR: &str = "admin_addr";
 const GOVEC_ADDR: &str = "govec_addr";
 const UPDATE_CHANNEL_JOB_ID: u64 = 8721;

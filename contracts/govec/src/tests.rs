@@ -11,9 +11,10 @@ pub use cosmwasm_std::{
     coins, from_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, StdError, SubMsg, Uint128, WasmMsg,
 };
 pub use cw20::{
-    BalanceResponse, Cw20Coin, Cw20ReceiveMsg, MarketingInfoResponse, TokenInfoResponse,
+    BalanceResponse, Cw20Coin, Cw20ReceiveMsg, Logo, MarketingInfoResponse, TokenInfoResponse,
 };
 pub use cw20_stake::contract::{query_download_logo, query_marketing_info};
+pub use vectis_wallet::{MintResponse, UpdateAddrReq};
 
 pub const STAKE_ADDR: &str = "staker";
 pub const FACTORY: &str = "factory";
@@ -458,7 +459,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr2.clone(),
         amount: Uint128::zero(),
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -469,7 +470,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr2.clone(),
         amount: too_much,
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -480,7 +481,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr1.clone(),
         amount: transfer,
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -491,7 +492,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: not_wallet.clone(),
         amount: transfer,
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -507,7 +508,7 @@ fn transfer() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr2.clone(),
         amount: transfer,
-        remote_from: None,
+        relayed_from: None,
     };
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
 
@@ -553,7 +554,7 @@ fn burn() {
     // valid burn reduces total supply and remove account from BALANCES
     let info = mock_info(addr1.as_ref(), &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn { remote_from: None };
+    let msg = ExecuteMsg::Burn { relayed_from: None };
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
     assert_eq!(res.messages.len(), 0);
 
@@ -579,7 +580,7 @@ fn burn() {
     let msg = ExecuteMsg::Transfer {
         recipient: addr1.clone(),
         amount: Uint128::new(1),
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -592,7 +593,7 @@ fn burn() {
         contract: addr1,
         amount: Uint128::new(1),
         msg: send_msg,
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -600,14 +601,14 @@ fn burn() {
     // cannot burn too little
     let info = mock_info(addr2.as_ref(), &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn { remote_from: None };
+    let msg = ExecuteMsg::Burn { relayed_from: None };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::IncorrectBalance(too_little));
 
     // cannot burn too much
     let info = mock_info(addr3.as_ref(), &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn { remote_from: None };
+    let msg = ExecuteMsg::Burn { relayed_from: None };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::IncorrectBalance(too_much));
 }
@@ -639,7 +640,7 @@ fn send() {
         contract: STAKE_ADDR.to_string(),
         amount: Uint128::zero(),
         msg: send_msg.clone(),
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -651,7 +652,7 @@ fn send() {
         contract: addr2.to_string(),
         amount: too_much,
         msg: send_msg.clone(),
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -663,7 +664,7 @@ fn send() {
         contract: addr2.to_string(),
         amount: transfer,
         msg: send_msg.clone(),
-        remote_from: None,
+        relayed_from: None,
     };
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
@@ -711,7 +712,7 @@ fn send() {
         contract: "not-a-wallet".to_string(),
         amount: transfer,
         msg: send_msg.clone(),
-        remote_from: None,
+        relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
