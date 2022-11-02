@@ -8,8 +8,8 @@ pub enum ContractError {
     Std(#[from] StdError),
     #[error("{0}")]
     IbcError(#[from] IbcError),
-    #[error("Invalid remote tunnel ")]
-    InvalidTunnel {},
+    #[error("Invalid remote tunnel")]
+    InvalidTunnel,
     #[error("Invalid Dispatch")]
     InvalidDispatch {},
     #[error("Invalid reply id")]
