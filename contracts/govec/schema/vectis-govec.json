@@ -179,7 +179,7 @@
               "recipient": {
                 "type": "string"
               },
-              "remote_from": {
+              "relayed_from": {
                 "type": [
                   "string",
                   "null"
@@ -201,7 +201,7 @@
           "burn": {
             "type": "object",
             "properties": {
-              "remote_from": {
+              "relayed_from": {
                 "type": [
                   "string",
                   "null"
@@ -237,7 +237,7 @@
               "msg": {
                 "$ref": "#/definitions/Binary"
               },
-              "remote_from": {
+              "relayed_from": {
                 "type": [
                   "string",
                   "null"

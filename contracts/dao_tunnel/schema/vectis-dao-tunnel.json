@@ -21,6 +21,7 @@
     "title": "ExecuteMsg",
     "oneOf": [
       {
+        "description": "Adds approved ibc controller contract, i.e. remote tunnels",
         "type": "object",
         "required": [
           "add_approved_controller"
@@ -34,9 +35,11 @@
             ],
             "properties": {
               "connection_id": {
+                "description": "The remote chain's light client identifier",
                 "type": "string"
               },
               "port_id": {
+                "description": "The port of the remote-tunnel in the IbcChannel endpoint",
                 "type": "string"
               }
             },
@@ -48,82 +51,56 @@
       {
         "type": "object",
         "required": [
-          "instantiate_remote_factory"
+          "remove_approved_controller"
         ],
         "properties": {
-          "instantiate_remote_factory": {
+          "remove_approved_controller": {
+            "type": "object",
+            "required": [
+              "connection_id",
+              "port_id"
+            ],
+            "properties": {
+              "connection_id": {
+                "description": "The remote chain's light client identifier",
+                "type": "string"
+              },
+              "port_id": {
+                "description": "The port of the remote-tunnel in the IbcChannel endpoint",
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "dispatch_action_on_remote_tunnel"
+        ],
+        "properties": {
+          "dispatch_action_on_remote_tunnel": {
             "type": "object",
             "required": [
               "channel_id",
-              "code_id",
+              "job_id",
               "msg"
             ],
             "properties": {
               "channel_id": {
+                "description": "Sending channel_id, the local channel to the remote chain",
                 "type": "string"
               },
-              "code_id": {
+              "job_id": {
+                "description": "Identifier used in the acknowledgement message",
                 "type": "integer",
                 "format": "uint64",
                 "minimum": 0.0
               },
               "msg": {
-                "$ref": "#/definitions/WalletFactoryInstantiateMsg"
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "required": [
-          "dispatch"
-        ],
-        "properties": {
-          "dispatch": {
-            "type": "object",
-            "required": [
-              "channel_id",
-              "msgs"
-            ],
-            "properties": {
-              "channel_id": {
-                "type": "string"
-              },
-              "job_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "msgs": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/CosmosMsg_for_Empty"
-                }
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "required": [
-          "update_remote_tunnel_channel"
-        ],
-        "properties": {
-          "update_remote_tunnel_channel": {
-            "type": "object",
-            "required": [
-              "channel_id"
-            ],
-            "properties": {
-              "channel_id": {
-                "type": "string"
+                "$ref": "#/definitions/DaoTunnelPacketMsg"
               }
             },
             "additionalProperties": false
@@ -193,6 +170,33 @@
       "Binary": {
         "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
         "type": "string"
+      },
+      "CanonicalAddr": {
+        "$ref": "#/definitions/Binary"
+      },
+      "ChainConfig": {
+        "type": "object",
+        "required": [
+          "demon"
+        ],
+        "properties": {
+          "demon": {
+            "description": "Denom of the current chain",
+            "type": "string"
+          },
+          "remote_factory": {
+            "description": "The Factory that has the remote features on the local chain",
+            "anyOf": [
+              {
+                "$ref": "#/definitions/CanonicalAddr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "Coin": {
         "type": "object",
@@ -292,6 +296,166 @@
             "properties": {
               "gov": {
                 "$ref": "#/definitions/GovMsg"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "DaoConfig": {
+        "type": "object",
+        "required": [
+          "addr",
+          "connection_id",
+          "dao_tunnel_port_id"
+        ],
+        "properties": {
+          "addr": {
+            "description": "DAO addr on dao chain",
+            "type": "string"
+          },
+          "connection_id": {
+            "description": "The local connection_id that is bounded to the remote chain light client This can be queried by the using the `IbcPacket` when receiving the ibc message IbcPacket.dest.channel_id and IbcPacket.dest.port_id",
+            "type": "string"
+          },
+          "dao_tunnel_channel": {
+            "description": "The channel_id to be used to call to the dao-tunnel contract on dao-chain This can be updated by the dao-tunnel forwarding message from the DAO",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dao_tunnel_port_id": {
+            "description": "The src.port_id from the connection This is bounded to the contract address on the remote chain `wasm.<contract_address>`, i.e. the dao-tunnel contract address",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DaoTunnelPacketMsg": {
+        "description": "The IBC Packet Msg allowed dispatched by dao-tunnel",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "update_dao_config"
+            ],
+            "properties": {
+              "update_dao_config": {
+                "type": "object",
+                "required": [
+                  "new_config"
+                ],
+                "properties": {
+                  "new_config": {
+                    "$ref": "#/definitions/DaoConfig"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "update_chain_config"
+            ],
+            "properties": {
+              "update_chain_config": {
+                "type": "object",
+                "required": [
+                  "new_config"
+                ],
+                "properties": {
+                  "new_config": {
+                    "$ref": "#/definitions/ChainConfig"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "instantiate_factory"
+            ],
+            "properties": {
+              "instantiate_factory": {
+                "type": "object",
+                "required": [
+                  "code_id",
+                  "msg"
+                ],
+                "properties": {
+                  "code_id": {
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0.0
+                  },
+                  "msg": {
+                    "$ref": "#/definitions/WalletFactoryInstantiateMsg"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "update_ibc_transfer_reciever_channel"
+            ],
+            "properties": {
+              "update_ibc_transfer_reciever_channel": {
+                "type": "object",
+                "required": [
+                  "connection_id",
+                  "port_id"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "connection_id": {
+                    "type": "string"
+                  },
+                  "port_id": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Other actions that are dispatched from dao-tunnel these do not affect the state of the remote-tunnel contract i.e. staking / unstaking native tokens",
+            "type": "object",
+            "required": [
+              "dispatch_actions"
+            ],
+            "properties": {
+              "dispatch_actions": {
+                "type": "object",
+                "required": [
+                  "msgs"
+                ],
+                "properties": {
+                  "msgs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/CosmosMsg_for_Empty"
+                    }
+                  }
+                },
+                "additionalProperties": false
               }
             },
             "additionalProperties": false
@@ -754,9 +918,19 @@
               },
               "start_after": {
                 "type": [
-                  "string",
+                  "array",
                   "null"
-                ]
+                ],
+                "items": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "maxItems": 2,
+                "minItems": 2
               }
             },
             "additionalProperties": false
@@ -784,13 +958,30 @@
   "responses": {
     "controllers": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Nullable_uint64",
-      "type": [
-        "integer",
-        "null"
+      "title": "RemoteTunnels",
+      "type": "object",
+      "required": [
+        "tunnels"
       ],
-      "format": "uint64",
-      "minimum": 0.0
+      "properties": {
+        "tunnels": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "maxItems": 2,
+            "minItems": 2
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "govec": {
       "$schema": "http://json-schema.org/draft-07/schema#",

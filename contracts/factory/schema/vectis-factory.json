@@ -230,10 +230,14 @@
           "govec_minted": {
             "type": "object",
             "required": [
-              "wallet"
+              "success",
+              "wallet_addr"
             ],
             "properties": {
-              "wallet": {
+              "success": {
+                "type": "boolean"
+              },
+              "wallet_addr": {
                 "type": "string"
               }
             },
