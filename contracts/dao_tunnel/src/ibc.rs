@@ -47,16 +47,25 @@ pub fn ibc_channel_connect(
     msg: IbcChannelConnectMsg,
 ) -> StdResult<IbcBasicResponse> {
     // We currently do not save the channel_id to call the remote_tunnels
-    is_authorised_src(
-        deps.as_ref(),
-        msg.channel().counterparty_endpoint.clone(),
-        msg.channel().endpoint.clone(),
-    )
-    .map_err(|e| StdError::generic_err(e.to_string()))?;
+    let channel = msg.channel();
+    if IBC_TUNNELS
+        .may_load(
+            deps.storage,
+            (
+                channel.connection_id.clone(),
+                channel.counterparty_endpoint.port_id.clone(),
+            ),
+        )?
+        .is_none()
+    {
+        return Err(StdError::generic_err(
+            ContractError::InvalidTunnel.to_string(),
+        ));
+    }
     Ok(IbcBasicResponse::new()
         .add_attribute("action", "ibc_connect")
-        .add_attribute("channel_id", &msg.channel().endpoint.channel_id)
-        .add_attribute("src_port_id", &msg.channel().counterparty_endpoint.port_id))
+        .add_attribute("channel_id", &channel.endpoint.channel_id)
+        .add_attribute("src_port_id", &channel.counterparty_endpoint.port_id))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -332,10 +341,18 @@ fn is_authorised_src(
     counterparty_endpoint: IbcEndpoint,
     endpoint: IbcEndpoint,
 ) -> Result<(), ContractError> {
-    let local_connection_id = deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
-        channel_id: endpoint.channel_id,
-        port_id: Some(endpoint.port_id.clone()),
-    }))?;
+    use cosmwasm_std::ChannelResponse;
+
+    let channel_resp: ChannelResponse =
+        deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
+            channel_id: endpoint.channel_id,
+            port_id: Some(endpoint.port_id.clone()),
+        }))?;
+
+    let local_connection_id = channel_resp
+        .channel
+        .ok_or(ContractError::InvalidTunnel)?
+        .connection_id;
 
     if IBC_TUNNELS
         .may_load(

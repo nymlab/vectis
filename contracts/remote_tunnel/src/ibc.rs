@@ -1,10 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, CosmosMsg, Deps, DepsMut, Env, Ibc3ChannelOpenResponse,
-    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcEndpoint,
-    IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcQuery, IbcReceiveResponse,
-    MessageInfo, QueryRequest, StdError, StdResult, SubMsg, WasmMsg,
+    from_binary, from_slice, to_binary, CosmosMsg, DepsMut, Env, Ibc3ChannelOpenResponse,
+    IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
+    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, StdError, StdResult, SubMsg,
+    WasmMsg,
 };
 
 use vectis_wallet::{
@@ -44,17 +44,7 @@ pub fn ibc_channel_connect(
     let mut dao_config = DAO_CONFIG.load(deps.storage)?;
 
     let remote_port_id = channel.counterparty_endpoint.port_id.clone();
-    let receiving_channel_id = channel.endpoint.channel_id.clone();
-
-    #[cfg(not(test))]
-    let local_connection_id: String =
-        deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
-            channel_id: receiving_channel_id.clone(),
-            port_id: Some(channel.endpoint.port_id.clone()),
-        }))?;
-
-    #[cfg(test)]
-    let local_connection_id = "connection-1";
+    let local_channel_id = channel.endpoint.channel_id.clone();
 
     if ensure_is_dao_tunnel(
         &dao_config,
@@ -64,11 +54,11 @@ pub fn ibc_channel_connect(
     .is_ok()
     {
         if dao_config.dao_tunnel_channel.is_none() {
-            dao_config.dao_tunnel_channel = Some(receiving_channel_id.clone());
+            dao_config.dao_tunnel_channel = Some(local_channel_id.clone());
             DAO_CONFIG.save(deps.storage, &dao_config)?;
             Ok(IbcBasicResponse::new()
                 .add_attribute("action", "ibc_connect")
-                .add_attribute("SAVED local dao_tunnel channel_id", &receiving_channel_id)
+                .add_attribute("SAVED local dao_tunnel channel_id", &local_channel_id)
                 .add_attribute("dao_tunnel_port_id", &remote_port_id))
         } else {
             // We accept new channel creation but this will only be used if the DAO calls
@@ -76,7 +66,7 @@ pub fn ibc_channel_connect(
             // dao-tunnel
             Ok(IbcBasicResponse::new()
                 .add_attribute("action", "ibc_connect")
-                .add_attribute("IGNORED local dao_tunnel channel_id", &receiving_channel_id)
+                .add_attribute("IGNORED local dao_tunnel channel_id", &local_channel_id)
                 .add_attribute("dao_tunnel_port_id", &remote_port_id))
         }
     } else {
@@ -85,11 +75,11 @@ pub fn ibc_channel_connect(
         IBC_TRANSFER_MODULES
             .update(
                 deps.storage,
-                (local_connection_id.to_string(), remote_port_id.clone()),
+                (channel.connection_id.clone(), remote_port_id.clone()),
                 |m| -> Result<Option<String>, ContractError> {
                     match m {
                         None => Err(ContractError::Unauthorized),
-                        Some(_) => Ok(Some(receiving_channel_id.clone())),
+                        Some(_) => Ok(Some(local_channel_id.clone())),
                     }
                 },
             )
@@ -97,7 +87,7 @@ pub fn ibc_channel_connect(
 
         Ok(IbcBasicResponse::new()
             .add_attribute("action", "ibc_connect")
-            .add_attribute("SAVED new ibc_transfer_channel_id", &receiving_channel_id)
+            .add_attribute("SAVED new ibc_transfer_channel_id", &local_channel_id)
             .add_attribute("ibc_transfer_port_id", &remote_port_id))
     }
 }
