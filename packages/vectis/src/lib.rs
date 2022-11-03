@@ -9,9 +9,9 @@ pub use crate::govec::{
 };
 pub use crate::guardians::*;
 pub use crate::ibc::{
-    check_order, check_version, DaoTunnelPacketMsg, PacketMsg, ProposalExecuteMsg,
-    ReceiveIbcResponseMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, VectisDaoActionIds,
-    APP_ORDER, IBC_APP_VERSION, PACKET_LIFETIME,
+    check_order, check_version, ChainConfig, DaoConfig, DaoTunnelPacketMsg, PacketMsg,
+    ProposalExecuteMsg, ReceiveIbcResponseMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck,
+    VectisDaoActionIds, APP_ORDER, IBC_APP_VERSION, PACKET_LIFETIME,
 };
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;
@@ -24,3 +24,7 @@ mod ibc;
 mod pubkey;
 mod signature;
 mod wallet;
+
+// settings for pagination
+pub const MAX_LIMIT: u32 = 100;
+pub const DEFAULT_LIMIT: u32 = 50;

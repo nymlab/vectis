@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
-use vectis_wallet::WalletFactoryInstantiateMsg;
+use vectis_wallet::DaoTunnelPacketMsg;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -18,23 +18,17 @@ pub enum ExecuteMsg {
         /// The port of the remote-tunnel in the IbcChannel endpoint
         port_id: String,
     },
-    InstantiateRemoteFactory {
-        /// Identifier used in the acknowledgement message
-        job_id: u64,
-        /// code_id of a Factory wasm code on the remote chain
-        code_id: u64,
-        msg: WalletFactoryInstantiateMsg,
-        /// Sending channel_id, the local channel to the remote chain
-        channel_id: String,
+    RemoveApprovedController {
+        /// The remote chain's light client identifier
+        connection_id: String,
+        /// The port of the remote-tunnel in the IbcChannel endpoint
+        port_id: String,
     },
-    /// The Channel Id the remote tunnel use to communicate with dao-tunnel will be the
-    /// channel that remote tunnel recieves the IBC package from
-    UpdateRemoteTunnelChannel {
+    DispatchActionOnRemoteTunnel {
         /// Identifier used in the acknowledgement message
         job_id: u64,
+        msg: DaoTunnelPacketMsg,
         /// Sending channel_id, the local channel to the remote chain
-        /// Note: NOT the channel set on the remote chain,
-        /// that will be set direct on the remote-tunnel
         channel_id: String,
     },
 }
@@ -42,9 +36,10 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(Option<u64>)]
+    #[returns(RemoteTunnels)]
     Controllers {
-        start_after: Option<String>,
+        // starts after the given connection_id and port_id
+        start_after: Option<(String, String)>,
         limit: Option<u32>,
     },
     #[returns(Option<Addr>)]

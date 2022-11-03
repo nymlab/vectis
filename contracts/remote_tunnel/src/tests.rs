@@ -3,30 +3,34 @@ use cosmwasm_std::testing::{
     mock_ibc_packet_recv, mock_info, MockApi, MockQuerier, MockStorage,
 };
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, DepsMut,
-    Ibc3ChannelOpenResponse, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcMsg, IbcOrder, OwnedDeps,
-    Reply, StdError, SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
+    from_binary, from_slice, to_binary, Addr, Api, Attribute, BankMsg, Binary, Coin, CosmosMsg,
+    DepsMut, Ibc3ChannelOpenResponse, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcMsg, IbcOrder,
+    OwnedDeps, Reply, StdError, SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
 };
 
 use vectis_wallet::{
-    IbcError, PacketMsg, StdAck, WalletFactoryExecuteMsg,
-    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
-    PACKET_LIFETIME,
+    ChainConfig, DaoConfig, DaoTunnelPacketMsg, IbcError, PacketMsg, StdAck,
+    WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER,
+    IBC_APP_VERSION, PACKET_LIFETIME,
 };
 
 use crate::contract::{execute_dispatch, execute_mint_govec, instantiate, query, reply};
 use crate::ibc::{ibc_channel_connect, ibc_channel_open, ibc_packet_receive};
-use crate::msg::{InstantiateMsg, QueryMsg};
-use crate::state::{DAO_TUNNEL_CHANNEL, FACTORY, JOB_ID};
+use crate::msg::{IbcTransferChannels, InstantiateMsg, QueryMsg};
+use crate::state::{CHAIN_CONFIG, DAO_CONFIG, JOB_ID};
 use crate::{ContractError, FACTORY_CALLBACK_ID};
 
-const CONNECTION_ID: &str = "connection-1";
-const CHANNEL_ID: &str = "channel-1";
-const DAO_PORT_ID: &str = "wasm.dao";
-const IBC_TRANSFER_PORT_ID: &str = "wasm.ibc_module";
 const INVALID_PORT_ID: &str = "wasm.invalid";
-const DAO_ADDR: &str = "wasm.address_dao";
+
 const DENOM: &str = "denom";
+const DAO_CONNECTION_ID: &str = "connection-1";
+const DAO_PORT_ID: &str = "wasm.dao";
+const DAO_ADDR: &str = "wasm.address_dao";
+const DAO_CHANNEL_ID: &str = "channel-1";
+
+const OTHER_CONNECTION_ID: &str = "connection-1";
+const OTHER_TRANSFER_PORT_ID: &str = "wasm.ibc_module";
+const OTHER_CHANNEL_ID: &str = "channel-2";
 
 fn mock_ibc_channel_open_init(
     connection_id: &str,
@@ -58,13 +62,28 @@ fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let mut deps = mock_dependencies();
     let info = mock_info("address", &[]);
     let env = mock_env();
+    let dao_config = DaoConfig {
+        addr: DAO_ADDR.to_string(),
+        dao_tunnel_port_id: DAO_PORT_ID.to_string(),
+        connection_id: DAO_CONNECTION_ID.to_string(),
+        dao_tunnel_channel: None,
+    };
+    let chain_config = ChainConfig {
+        remote_factory: None,
+        demon: "cosm".to_string(),
+    };
 
     let instantiate_msg = InstantiateMsg {
-        connection_id: CONNECTION_ID.to_string(),
-        dao_tunnel_port_id: DAO_PORT_ID.to_string(),
-        ibc_transfer_port_id: IBC_TRANSFER_PORT_ID.to_string(),
-        dao_addr: DAO_ADDR.to_string(),
+        dao_config,
+        chain_config,
         denom: DENOM.to_string(),
+        init_ibc_transfer_mod: Some(IbcTransferChannels {
+            endpoints: vec![(
+                OTHER_CONNECTION_ID.to_string(),
+                OTHER_TRANSFER_PORT_ID.to_string(),
+                None,
+            )],
+        }),
     };
 
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -74,25 +93,57 @@ fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     deps
 }
 
-fn connect(mut deps: DepsMut, channel_id: &str) {
-    let handshake_open = mock_ibc_channel_open_init(
-        CONNECTION_ID,
-        DAO_PORT_ID,
-        channel_id,
-        APP_ORDER,
-        IBC_APP_VERSION,
-    );
+// util to add `DAO_TUNNEL_CHANNEL` and `IBC_TRANSFER_PORT_ID`
+fn connect(mut deps: DepsMut, dao_channel_id: &str, ibc_transfer_channel_id: &str) {
+    if let IbcChannelConnectMsg::OpenAck {
+        mut channel,
+        counterparty_version,
+    } = mock_ibc_channel_connect_ack(dao_channel_id, APP_ORDER, IBC_APP_VERSION)
+    {
+        // add dao tunnel
+        channel.counterparty_endpoint.port_id = DAO_PORT_ID.to_string();
+        channel.connection_id = DAO_CONNECTION_ID.to_string();
+        let res = ibc_channel_connect(
+            deps.branch(),
+            mock_env(),
+            IbcChannelConnectMsg::OpenAck {
+                channel: channel.clone(),
+                counterparty_version: counterparty_version.clone(),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            res.attributes,
+            vec![
+                Attribute::new("action", "ibc_connect"),
+                Attribute::new("SAVED local dao_tunnel channel_id", dao_channel_id),
+                Attribute::new("dao_tunnel_port_id", DAO_PORT_ID)
+            ]
+        );
 
-    ibc_channel_open(deps.branch(), mock_env(), handshake_open).unwrap();
+        // add ibc transfer
+        channel.counterparty_endpoint.port_id = OTHER_TRANSFER_PORT_ID.to_string();
+        channel.endpoint.channel_id = ibc_transfer_channel_id.to_string();
+        channel.connection_id = OTHER_CONNECTION_ID.to_string();
 
-    let handshake_connect = mock_ibc_channel_connect_ack(channel_id, APP_ORDER, IBC_APP_VERSION);
-
-    let res = ibc_channel_connect(deps.branch(), mock_env(), handshake_connect).unwrap();
-
-    assert_eq!(
-        res.attributes,
-        vec![("action", "ibc_connect"), ("channel_id", channel_id)]
-    );
+        let res = ibc_channel_connect(
+            deps,
+            mock_env(),
+            IbcChannelConnectMsg::OpenAck {
+                channel: channel.clone(),
+                counterparty_version: counterparty_version.clone(),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            res.attributes,
+            vec![
+                Attribute::new("action", "ibc_connect"),
+                Attribute::new("SAVED new ibc_transfer_channel_id", ibc_transfer_channel_id),
+                Attribute::new("ibc_transfer_port_id", OTHER_TRANSFER_PORT_ID)
+            ]
+        );
+    }
 }
 
 #[test]
@@ -100,9 +151,9 @@ fn channel_open_only_right_version_order() {
     let mut deps = do_instantiate();
     // Wrong order
     let handshake_open = mock_ibc_channel_open_init(
-        CONNECTION_ID,
+        DAO_CONNECTION_ID,
         DAO_PORT_ID,
-        CHANNEL_ID,
+        DAO_CHANNEL_ID,
         IbcOrder::Ordered,
         IBC_APP_VERSION,
     );
@@ -113,9 +164,9 @@ fn channel_open_only_right_version_order() {
 
     // Wrong version
     let handshake_open = mock_ibc_channel_open_try(
-        CONNECTION_ID,
+        DAO_CONNECTION_ID,
         DAO_PORT_ID,
-        CHANNEL_ID,
+        DAO_CHANNEL_ID,
         APP_ORDER,
         "wrong-version",
     );
@@ -125,9 +176,9 @@ fn channel_open_only_right_version_order() {
     assert_eq!(res, ContractError::IbcError(err_msg));
 
     let handshake_open = mock_ibc_channel_open_init(
-        CONNECTION_ID,
+        DAO_CONNECTION_ID,
         DAO_PORT_ID,
-        CHANNEL_ID,
+        DAO_CHANNEL_ID,
         APP_ORDER,
         IBC_APP_VERSION,
     );
@@ -149,11 +200,11 @@ fn only_approved_endpoint_can_open_and_connect() {
     if let IbcChannelConnectMsg::OpenAck {
         mut channel,
         counterparty_version,
-    } = mock_ibc_channel_connect_ack(CHANNEL_ID, APP_ORDER, IBC_APP_VERSION)
+    } = mock_ibc_channel_connect_ack(DAO_CHANNEL_ID, APP_ORDER, IBC_APP_VERSION)
     {
         // try to connect with port id not added as dao_tunnel or ibc_transfer
         channel.counterparty_endpoint.port_id = INVALID_PORT_ID.to_string();
-        channel.connection_id = CONNECTION_ID.to_string();
+        channel.connection_id = OTHER_CONNECTION_ID.to_string();
         let err = ibc_channel_connect(
             deps.as_mut(),
             mock_env(),
@@ -166,7 +217,7 @@ fn only_approved_endpoint_can_open_and_connect() {
         assert_eq!(
             err,
             StdError::GenericErr {
-                msg: "Invalid source endpoint".to_string()
+                msg: ContractError::Unauthorized.to_string()
             }
         );
 
@@ -185,13 +236,13 @@ fn only_approved_endpoint_can_open_and_connect() {
         assert_eq!(
             err,
             StdError::GenericErr {
-                msg: "Invalid source endpoint".to_string()
+                msg: ContractError::Unauthorized.to_string()
             }
         );
 
         // connect  port id is added to as dao_tunnel
         channel.counterparty_endpoint.port_id = DAO_PORT_ID.to_string();
-        channel.connection_id = CONNECTION_ID.to_string();
+        channel.connection_id = DAO_CONNECTION_ID.to_string();
         let res = ibc_channel_connect(
             deps.as_mut(),
             mock_env(),
@@ -205,14 +256,15 @@ fn only_approved_endpoint_can_open_and_connect() {
             res.attributes,
             vec![
                 Attribute::new("action", "ibc_connect"),
-                Attribute::new("SAVED dao_tunnel_channel_id", CHANNEL_ID),
+                Attribute::new("SAVED local dao_tunnel channel_id", DAO_CHANNEL_ID),
                 Attribute::new("dao_tunnel_port_id", DAO_PORT_ID)
             ]
         );
 
         // connect port id is added as IBC_TRANSFER
-        channel.counterparty_endpoint.port_id = IBC_TRANSFER_PORT_ID.to_string();
-        channel.connection_id = CONNECTION_ID.to_string();
+        channel.counterparty_endpoint.port_id = OTHER_TRANSFER_PORT_ID.to_string();
+        channel.endpoint.channel_id = OTHER_CHANNEL_ID.to_string();
+        channel.connection_id = OTHER_CONNECTION_ID.to_string();
         let res = ibc_channel_connect(
             deps.as_mut(),
             mock_env(),
@@ -226,69 +278,122 @@ fn only_approved_endpoint_can_open_and_connect() {
             res.attributes,
             vec![
                 Attribute::new("action", "ibc_connect"),
-                Attribute::new("SAVED ibc_transfer_channel_id", CHANNEL_ID),
-                Attribute::new("ibc_transfer_port_id", IBC_TRANSFER_PORT_ID)
+                Attribute::new("SAVED new ibc_transfer_channel_id", OTHER_CHANNEL_ID),
+                Attribute::new("ibc_transfer_port_id", OTHER_TRANSFER_PORT_ID)
             ]
         );
     } else {
         assert!(false)
     };
 }
-// #[test]
-// fn handle_factory_packet() {
-//     let mut deps = do_instantiate();
-//     let channel_id = "channel-123";
-//
-//     // invalid packet format on registered channel also returns error
-//     let msg = mock_ibc_packet_recv(channel_id, &()).unwrap();
-//     ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap_err();
-//
-//     let msg = FactoryInstantiateMsg {
-//         proxy_multisig_code_id: 13,
-//         addr_prefix: "prefix".to_string(),
-//         govec_minter: None,
-//         proxy_code_id: 13,
-//         wallet_fee: Coin {
-//             amount: Uint128::one(),
-//             denom: "denom".to_string(),
-//         },
-//     };
-//
-//     let ibc_msg = PacketMsg::InstantiateFactory { code_id: 13, msg };
-//
-//     connect(deps.as_mut(), channel_id);
-//
-//     let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
-//     let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
-//
-//     // assert app-level success
-//     let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
-//     ack.unwrap();
-//
-//     assert_eq!(1, res.messages.len());
-//
-//     assert_eq!(FACTORY_CALLBACK_ID, res.messages[0].id.clone());
-//
-//     // ock factory response
-//     let contract_address = "fake_addr";
-//
-//     let mut encoded = vec![0x0a, contract_address.len() as u8];
-//     encoded.extend(contract_address.as_bytes());
-//
-//     let response = Reply {
-//         id: res.messages[0].id,
-//         result: SubMsgResult::Ok(SubMsgResponse {
-//             events: vec![],
-//             data: Some(Binary::from(encoded)),
-//         }),
-//     };
-//
-//     reply(deps.as_mut(), mock_env(), response).unwrap();
-//     let res: Option<Addr> =
-//         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Factory {}).unwrap()).unwrap();
-//
-//     assert_eq!(contract_address.to_string(), res.unwrap());
-// }
+
+// Tests for `ibc_packet_receive`
+
+#[test]
+fn returns_ack_failure_when_invalid_ibc_packet_msg() {
+    let mut deps = do_instantiate();
+    connect(deps.as_mut(), DAO_CHANNEL_ID, OTHER_CHANNEL_ID);
+
+    let incorrect_ibc_msg = &[2; 12];
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &incorrect_ibc_msg).unwrap();
+    // This function cannot error
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+    if let StdAck::Error(m) = from_binary(&res.acknowledgement).unwrap() {
+        assert_eq!(
+            m,
+            format!("IBC Packet Error: {}", IbcError::InvalidPacketMsg)
+        );
+    } else {
+        assert!(false)
+    }
+}
+
+#[test]
+fn returns_ack_failure_when_invalid_inner_remote_tunnel_msg() {
+    let mut deps = do_instantiate();
+    connect(deps.as_mut(), DAO_CHANNEL_ID, OTHER_CHANNEL_ID);
+    let incorrect_inner_msg = PacketMsg {
+        sender: "Sender".to_string(),
+        job_id: 1,
+        // remote tunnel expects DaoTunnelPacketMsg
+        msg: to_binary(&[2; 0]).unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &incorrect_inner_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+    if let StdAck::Error(m) = from_binary(&res.acknowledgement).unwrap() {
+        assert_eq!(
+            m,
+            format!("IBC Packet Error: {}", IbcError::InvalidInnerMsg)
+        );
+    } else {
+        assert!(false)
+    }
+}
+
+#[test]
+fn handle_factory_packet() {
+    let mut deps = do_instantiate();
+    let job_id = 123;
+
+    // This sets states so that ibc packet can be received
+    connect(deps.as_mut(), DAO_CHANNEL_ID, OTHER_CHANNEL_ID);
+
+    let factory_msg = FactoryInstantiateMsg {
+        proxy_multisig_code_id: 19,
+        addr_prefix: "prefix".to_string(),
+        govec_minter: None,
+        proxy_code_id: 13,
+        wallet_fee: Coin {
+            amount: Uint128::one(),
+            denom: "denom".to_string(),
+        },
+    };
+
+    let ibc_msg = PacketMsg {
+        sender: DAO_ADDR.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::InstantiateFactory {
+            code_id: 123,
+            msg: factory_msg,
+        })
+        .unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+
+    assert_eq!(1, res.messages.len());
+
+    assert_eq!(FACTORY_CALLBACK_ID, res.messages[0].id.clone());
+
+    // ock factory response
+    let contract_address = "fake_addr";
+
+    let mut encoded = vec![0x0a, contract_address.len() as u8];
+    encoded.extend(contract_address.as_bytes());
+
+    let response = Reply {
+        id: res.messages[0].id,
+        result: SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: Some(Binary::from(encoded)),
+        }),
+    };
+
+    reply(deps.as_mut(), mock_env(), response).unwrap();
+
+    let res: ChainConfig =
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::ChainConfig {}).unwrap()).unwrap();
+
+    assert_eq!(
+        contract_address.to_string(),
+        deps.api
+            .addr_humanize(&res.remote_factory.unwrap())
+            .unwrap()
+    );
+}
 //
 // #[test]
 // fn handle_dispatch_packet() {

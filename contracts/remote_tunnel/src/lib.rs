@@ -10,4 +10,4 @@ mod tests;
 pub use crate::error::ContractError;
 
 pub const FACTORY_CALLBACK_ID: u64 = 7890;
-pub const MINT_GOVEC_JOB_ID: u64 = 0;
+pub const DISPATCH_CALLBACK_ID: u64 = 7891;

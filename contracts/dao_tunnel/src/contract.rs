@@ -5,7 +5,8 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use vectis_wallet::{
-    DaoTunnelPacketMsg, PacketMsg, StdAck, WalletFactoryInstantiateMsg, PACKET_LIFETIME,
+    DaoTunnelPacketMsg, PacketMsg, StdAck, WalletFactoryInstantiateMsg, DEFAULT_LIMIT, MAX_LIMIT,
+    PACKET_LIFETIME,
 };
 
 use crate::error::ContractError;
@@ -15,10 +16,6 @@ use std::convert::Into;
 
 const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-// settings for pagination
-const MAX_LIMIT: u32 = 30;
-const DEFAULT_LIMIT: u32 = 10;
 
 #[entry_point]
 pub fn instantiate(
@@ -48,16 +45,16 @@ pub fn execute(
         ExecuteMsg::AddApprovedController {
             connection_id,
             port_id,
-        } => execute_add_approved_controller(deps, info, connection_id, port_id),
-        ExecuteMsg::InstantiateRemoteFactory {
+        } => execute_add_approved_controller(deps, info, connection_id, port_id, true),
+        ExecuteMsg::RemoveApprovedController {
+            connection_id,
+            port_id,
+        } => execute_add_approved_controller(deps, info, connection_id, port_id, false),
+        ExecuteMsg::DispatchActionOnRemoteTunnel {
             job_id,
-            code_id,
             msg,
             channel_id,
-        } => execute_instantiate_remote_factory(deps, env, info, job_id, code_id, msg, channel_id),
-        ExecuteMsg::UpdateRemoteTunnelChannel { job_id, channel_id } => {
-            execute_update_remote_tunnel_channel(deps, env, info, job_id, channel_id)
-        }
+        } => execute_dispatch_to_remote_tunnel(deps, env, info, job_id, msg, channel_id),
     }
 }
 
@@ -66,17 +63,25 @@ fn execute_add_approved_controller(
     info: MessageInfo,
     connection_id: String,
     port_id: String,
+    to_add: bool,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
-    IBC_TUNNELS
-        .save(deps.storage, (connection_id.clone(), port_id.clone()), &())
-        .unwrap();
+    if to_add {
+        IBC_TUNNELS.save(deps.storage, (connection_id.clone(), port_id.clone()), &())?;
 
-    Ok(Response::new()
-        .add_attribute("action", "add_approved_controller")
-        .add_attribute("connection_id", connection_id)
-        .add_attribute("port_id", port_id))
+        Ok(Response::new()
+            .add_attribute("action", "add_approved_controller")
+            .add_attribute("connection_id", connection_id)
+            .add_attribute("port_id", port_id))
+    } else {
+        IBC_TUNNELS.remove(deps.storage, (connection_id.clone(), port_id.clone()));
+
+        Ok(Response::new()
+            .add_attribute("action", "remove_approved_controller")
+            .add_attribute("connection_id", connection_id)
+            .add_attribute("port_id", port_id))
+    }
 }
 
 fn execute_instantiate_remote_factory(
@@ -107,11 +112,12 @@ fn execute_instantiate_remote_factory(
         .add_attribute("action", "execute_instantiate_remote_factory"))
 }
 
-fn execute_update_remote_tunnel_channel(
+fn execute_dispatch_to_remote_tunnel(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     job_id: u64,
+    msg: DaoTunnelPacketMsg,
     sending_channel_id: String,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
@@ -119,7 +125,7 @@ fn execute_update_remote_tunnel_channel(
     let packet = PacketMsg {
         sender: env.contract.address.to_string(),
         job_id,
-        msg: to_binary(&DaoTunnelPacketMsg::UpdateChannel)?,
+        msg: to_binary(&msg)?,
     };
 
     let msg = IbcMsg::SendPacket {
@@ -153,15 +159,17 @@ pub fn query_govec(deps: Deps) -> StdResult<Option<Addr>> {
 
 pub fn query_controllers(
     deps: Deps,
-    start_after: Option<String>,
+    start_after: Option<(String, String)>,
     limit: Option<u32>,
 ) -> StdResult<RemoteTunnels> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
+    let start = start_after.map(|s| Bound::exclusive((s.0, s.1)));
 
     let tunnels: StdResult<Vec<(String, String)>> = IBC_TUNNELS
-        .keys(deps.storage, start, None, Order::Ascending)
+        .sub_prefix(())
+        .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
+        .map(|e| -> StdResult<(String, String)> { Ok(e?.0) })
         .collect();
 
     Ok(RemoteTunnels { tunnels: tunnels? })

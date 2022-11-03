@@ -15,10 +15,14 @@ pub enum ContractError {
     ParseReply(#[from] ParseReplyError),
     #[error("Invalid reply id")]
     InvalidReplyId,
-    #[error("{0} not found")]
-    NotFound(String),
+    #[error("DAO channel not found")]
+    DaoChannelNotFound,
+    #[error("Channel not found for connection_id: {0} and port_id {1}")]
+    ChannelNotFound(String, String),
     #[error("Unauthorized")]
     Unauthorized,
+    #[error("Factory contract not available")]
+    FactoryNotAvailable,
     #[error("Empty Funds")]
     EmptyFund {},
 }

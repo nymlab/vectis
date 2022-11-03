@@ -87,7 +87,7 @@ fn add_mock_controller(mut deps: DepsMut, src_port_id: &str) {
 
 // Tests for contract ExecuteMsg functions
 #[test]
-fn only_admin_can_add_controllers() {
+fn only_admin_can_add_and_query_controllers() {
     let mut deps = do_instantiate();
 
     let err = execute(
@@ -125,123 +125,151 @@ fn only_admin_can_add_controllers() {
         },
         res
     );
-}
 
-#[test]
-fn only_admin_can_update_remote_tunnel_channel() {
-    let mut deps = do_instantiate();
-    let env = mock_env();
-    let invalid_sender = "RANDOM_ADDR";
-    let valid_sender = ADMIN_ADDR;
-    let channel_id = "new_channel_id";
-
-    let err = execute(
+    execute(
         deps.as_mut(),
-        env.clone(),
-        mock_info(invalid_sender, &[]),
-        ExecuteMsg::UpdateRemoteTunnelChannel {
-            channel_id: channel_id.to_string(),
-            job_id: UPDATE_CHANNEL_JOB_ID,
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized);
-
-    let res = execute(
-        deps.as_mut(),
-        env.clone(),
-        mock_info(valid_sender, &[]),
-        ExecuteMsg::UpdateRemoteTunnelChannel {
-            channel_id: channel_id.to_string(),
-            job_id: UPDATE_CHANNEL_JOB_ID,
-        },
-    )
-    .unwrap();
-    let msg: CosmosMsg<Empty> = CosmosMsg::Ibc(IbcMsg::SendPacket {
-        channel_id: channel_id.to_string(),
-        data: to_binary(&PacketMsg {
-            // This should be the contract address
-            sender: env.contract.address.to_string(),
-            job_id: UPDATE_CHANNEL_JOB_ID,
-            msg: to_binary(&DaoTunnelPacketMsg::UpdateChannel {}).unwrap(),
-        })
-        .unwrap(),
-        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-    });
-
-    assert_eq!(res.messages[0].msg, msg);
-    assert_eq!(
-        res.attributes,
-        vec![("action", "update_remote_tunnel_channel"),]
-    )
-}
-
-#[test]
-fn only_admin_can_instantiate_factory() {
-    let mut deps = do_instantiate();
-    let env = mock_env();
-    let invalid_sender = "RANDOM_ADDR";
-    let valid_sender = ADMIN_ADDR;
-
-    let instantiation_msg = FactoryInstantiateMsg {
-        addr_prefix: "prefix".to_string(),
-        govec_minter: None,
-        proxy_code_id: 45,
-        proxy_multisig_code_id: 23,
-        wallet_fee: Coin {
-            denom: "denom".to_string(),
-            amount: Uint128::MAX,
-        },
-    };
-
-    let err = execute(
-        deps.as_mut(),
-        env.clone(),
-        mock_info(invalid_sender, &[]),
-        ExecuteMsg::InstantiateRemoteFactory {
-            job_id: INST_FACTORY_JOB_ID,
-            code_id: 45,
-            msg: instantiation_msg.clone(),
-            channel_id: CHANNEL_ID.to_string(),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized);
-
-    let res = execute(
-        deps.as_mut(),
-        env.clone(),
-        mock_info(valid_sender, &[]),
-        ExecuteMsg::InstantiateRemoteFactory {
-            job_id: INST_FACTORY_JOB_ID,
-            code_id: 45,
-            msg: instantiation_msg.clone(),
-            channel_id: CHANNEL_ID.to_string(),
+        mock_env(),
+        mock_info(ADMIN_ADDR, &[]),
+        ExecuteMsg::AddApprovedController {
+            connection_id: "ANOTHER".to_string(),
+            port_id: "ANOTHER_PORT".to_string(),
         },
     )
     .unwrap();
 
-    let msg = CosmosMsg::Ibc(IbcMsg::SendPacket {
-        channel_id: CHANNEL_ID.to_string(),
-        data: to_binary(&PacketMsg {
-            job_id: INST_FACTORY_JOB_ID,
-            sender: env.contract.address.to_string(),
-            msg: to_binary(&DaoTunnelPacketMsg::InstantiateFactory {
-                code_id: 45,
-                msg: instantiation_msg,
-            })
-            .unwrap(),
-        })
-        .unwrap(),
-        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-    });
-
-    assert_eq!(res.messages[0].msg, msg);
-    assert_eq!(
-        res.attributes,
-        vec![("action", "execute_instantiate_remote_factory")]
+    let res = query_controllers(
+        deps.as_ref(),
+        Some(("ANOTHER".to_string(), "ANOTHER_PORT".to_string())),
+        None,
     )
+    .unwrap();
+
+    assert_eq!(
+        RemoteTunnels {
+            tunnels: vec![(
+                TEST_CONNECTION_ID.to_string(),
+                SRC_PORT_ID_CONNECT.to_string()
+            )]
+        },
+        res
+    );
 }
+
+// #[test]
+// fn only_admin_can_update_remote_tunnel_channel() {
+//     let mut deps = do_instantiate();
+//     let env = mock_env();
+//     let invalid_sender = "RANDOM_ADDR";
+//     let valid_sender = ADMIN_ADDR;
+//     let channel_id = "new_channel_id";
+//
+//     let err = execute(
+//         deps.as_mut(),
+//         env.clone(),
+//         mock_info(invalid_sender, &[]),
+//         ExecuteMsg::UpdateRemoteTunnelChannel {
+//             channel_id: channel_id.to_string(),
+//             job_id: UPDATE_CHANNEL_JOB_ID,
+//         },
+//     )
+//     .unwrap_err();
+//     assert_eq!(err, ContractError::Unauthorized);
+//
+//     let res = execute(
+//         deps.as_mut(),
+//         env.clone(),
+//         mock_info(valid_sender, &[]),
+//         ExecuteMsg::UpdateRemoteTunnelChannel {
+//             channel_id: channel_id.to_string(),
+//             job_id: UPDATE_CHANNEL_JOB_ID,
+//         },
+//     )
+//     .unwrap();
+//     let msg: CosmosMsg<Empty> = CosmosMsg::Ibc(IbcMsg::SendPacket {
+//         channel_id: channel_id.to_string(),
+//         data: to_binary(&PacketMsg {
+//             // This should be the contract address
+//             sender: env.contract.address.to_string(),
+//             job_id: UPDATE_CHANNEL_JOB_ID,
+//             msg: to_binary(&DaoTunnelPacketMsg::UpdateDaoChannel {}).unwrap(),
+//         })
+//         .unwrap(),
+//         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
+//     });
+//
+//     assert_eq!(res.messages[0].msg, msg);
+//     assert_eq!(
+//         res.attributes,
+//         vec![("action", "update_remote_tunnel_channel"),]
+//     )
+// }
+//
+// #[test]
+// fn only_admin_can_instantiate_factory() {
+//     let mut deps = do_instantiate();
+//     let env = mock_env();
+//     let invalid_sender = "RANDOM_ADDR";
+//     let valid_sender = ADMIN_ADDR;
+//
+//     let instantiation_msg = FactoryInstantiateMsg {
+//         addr_prefix: "prefix".to_string(),
+//         govec_minter: None,
+//         proxy_code_id: 45,
+//         proxy_multisig_code_id: 23,
+//         wallet_fee: Coin {
+//             denom: "denom".to_string(),
+//             amount: Uint128::MAX,
+//         },
+//     };
+//
+//     let err = execute(
+//         deps.as_mut(),
+//         env.clone(),
+//         mock_info(invalid_sender, &[]),
+//         ExecuteMsg::InstantiateRemoteFactory {
+//             job_id: INST_FACTORY_JOB_ID,
+//             code_id: 45,
+//             msg: instantiation_msg.clone(),
+//             channel_id: CHANNEL_ID.to_string(),
+//         },
+//     )
+//     .unwrap_err();
+//     assert_eq!(err, ContractError::Unauthorized);
+//
+//     let res = execute(
+//         deps.as_mut(),
+//         env.clone(),
+//         mock_info(valid_sender, &[]),
+//         ExecuteMsg::InstantiateRemoteFactory {
+//             job_id: INST_FACTORY_JOB_ID,
+//             code_id: 45,
+//             msg: instantiation_msg.clone(),
+//             channel_id: CHANNEL_ID.to_string(),
+//         },
+//     )
+//     .unwrap();
+//
+//     let msg = CosmosMsg::Ibc(IbcMsg::SendPacket {
+//         channel_id: CHANNEL_ID.to_string(),
+//         data: to_binary(&PacketMsg {
+//             job_id: INST_FACTORY_JOB_ID,
+//             sender: env.contract.address.to_string(),
+//             msg: to_binary(&DaoTunnelPacketMsg::InstantiateFactory {
+//                 code_id: 45,
+//                 msg: instantiation_msg,
+//             })
+//             .unwrap(),
+//         })
+//         .unwrap(),
+//         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
+//     });
+//
+//     assert_eq!(res.messages[0].msg, msg);
+//     assert_eq!(
+//         res.attributes,
+//         vec![("action", "execute_instantiate_remote_factory")]
+//     )
+// }
 
 // Tests for `ibc_channel_open`
 
@@ -368,7 +396,7 @@ fn returns_ack_failure_when_invalid_ibc_packet_msg() {
     let mut deps = do_instantiate();
     add_mock_controller(deps.as_mut(), SRC_PORT_ID_RCV);
 
-    let incorrect_ibc_msg = DaoTunnelPacketMsg::UpdateChannel {};
+    let incorrect_ibc_msg = &[1; 11];
 
     let msg = mock_ibc_packet_recv(CHANNEL_ID, &incorrect_ibc_msg).unwrap();
     // This function cannot error
@@ -390,7 +418,7 @@ fn returns_ack_failure_when_invalid_inner_remote_tunnel_msg() {
     let incorrect_inner_msg = PacketMsg {
         sender: ADMIN_ADDR.to_string(),
         job_id: 1,
-        // remote tunnel expects DaoTunnelPacketMsg
+        // dao tunnel expects RemoteTunnelPacketMsg
         msg: to_binary(&[2; 0]).unwrap(),
     };
 
