@@ -21,7 +21,6 @@ use {
     cosmwasm_std::Env,
     cw_utils::{Expiration, DAY},
     std::ops::{Add, Mul},
-    vectis_remote_tunnel::msg::ExecuteMsg::IbcTransfer,
     vectis_wallet::{RemoteTunnelPacketMsg, GOVEC_CLAIM_DURATION_DAY_MUL},
 };
 #[cfg(feature = "dao-chain")]
@@ -193,21 +192,21 @@ pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
     })))
 }
 
-#[cfg(feature = "remote")]
-pub fn create_ibc_transfer_msg(
-    deps: Deps,
-    amount: Coin,
-    addr: Option<String>,
-) -> StdResult<SubMsg> {
-    Ok(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: deps
-            .api
-            .addr_humanize(&DAO.load(deps.storage)?)?
-            .to_string(),
-        msg: to_binary(&IbcTransfer { addr })?,
-        funds: vec![amount],
-    })))
-}
+// #[cfg(feature = "remote")]
+// pub fn create_ibc_transfer_msg(
+//     deps: Deps,
+//     amount: Coin,
+//     addr: Option<String>,
+// ) -> StdResult<SubMsg> {
+//     Ok(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+//         contract_addr: deps
+//             .api
+//             .addr_humanize(&DAO.load(deps.storage)?)?
+//             .to_string(),
+//         msg: to_binary(&IbcTransfer { addr })?,
+//         funds: vec![amount],
+//     })))
+// }
 
 #[cfg(feature = "dao-chain")]
 pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, ContractError> {

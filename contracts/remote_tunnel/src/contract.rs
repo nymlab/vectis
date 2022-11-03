@@ -1,18 +1,20 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response,
+    coin, to_binary, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response,
     StdResult, Uint128,
 };
+use cw_storage_plus::Bound;
 
 use cw_utils::parse_reply_instantiate_data;
-use vectis_wallet::{PacketMsg, RemoteTunnelPacketMsg, StdAck, PACKET_LIFETIME};
-
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{
-    Config, CONFIG, DAO, DAO_TUNNEL_CHANNEL, DENOM, FACTORY, IBC_TRANSFER_CHANNEL, JOB_ID,
+use vectis_wallet::{
+    ChainConfig, DaoConfig, PacketMsg, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
+    DEFAULT_LIMIT, MAX_LIMIT, PACKET_LIFETIME,
 };
-use crate::{ContractError, FACTORY_CALLBACK_ID};
+
+use crate::msg::{ExecuteMsg, IbcTransferChannels, InstantiateMsg, QueryMsg, Receiver};
+use crate::state::{CHAIN_CONFIG, DAO_CONFIG, IBC_TRANSFER_MODULES, JOB_ID};
+use crate::{ContractError, DISPATCH_CALLBACK_ID, FACTORY_CALLBACK_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -21,13 +23,14 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    let cfg = Config {
-        connection_id: msg.connection_id,
-        ibc_transfer_port_id: msg.ibc_transfer_port_id,
-        dao_tunnel_port_id: msg.dao_tunnel_port_id,
-    };
-    CONFIG.save(deps.storage, &cfg)?;
-    DENOM.save(deps.storage, &msg.denom)?;
+    DAO_CONFIG.save(deps.storage, &msg.dao_config)?;
+    CHAIN_CONFIG.save(deps.storage, &msg.chain_config)?;
+    if let Some(init_ibc_transfer_mods) = msg.init_ibc_transfer_mod {
+        for module in init_ibc_transfer_mods.endpoints {
+            // Ignore the unestablished channel_id
+            IBC_TRANSFER_MODULES.save(deps.storage, (module.0, module.1), &None)?;
+        }
+    }
 
     Ok(Response::new().add_attribute("vectis-remote-tunnel instantiated", env.contract.address))
 }
@@ -41,7 +44,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::DaoActions { msg } => execute_dispatch(deps, env, info, msg),
-        ExecuteMsg::IbcTransfer { addr } => execute_ibc_transfer(deps, env, info, addr),
+        ExecuteMsg::IbcTransfer { receiver } => execute_ibc_transfer(deps, env, info, receiver),
     }
 }
 
@@ -51,9 +54,10 @@ pub fn execute_mint_govec(
     info: MessageInfo,
     wallet_addr: String,
 ) -> Result<Response, ContractError> {
-    let factory_addr = FACTORY
-        .may_load(deps.storage)?
-        .ok_or(ContractError::NotFound("Factory".to_string()))?;
+    let factory_addr = CHAIN_CONFIG
+        .load(deps.storage)?
+        .remote_factory
+        .ok_or(ContractError::FactoryNotAvailable)?;
 
     if deps.api.addr_humanize(&factory_addr)? != info.sender {
         return Err(ContractError::Unauthorized);
@@ -70,7 +74,10 @@ pub fn execute_mint_govec(
         msg: to_binary(&mint_govec_msg)?,
     };
 
-    let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
+    let channel_id = DAO_CONFIG
+        .load(deps.storage)?
+        .dao_tunnel_channel
+        .ok_or(ContractError::DaoChannelNotFound)?;
 
     let msg = IbcMsg::SendPacket {
         channel_id,
@@ -101,7 +108,10 @@ pub fn execute_dispatch(
             job_id,
             msg: to_binary(&msg)?,
         };
-        let channel_id = DAO_TUNNEL_CHANNEL.load(deps.storage)?;
+        let channel_id = DAO_CONFIG
+            .load(deps.storage)?
+            .dao_tunnel_channel
+            .ok_or(ContractError::DaoChannelNotFound)?;
 
         let msg = IbcMsg::SendPacket {
             channel_id,
@@ -122,15 +132,35 @@ pub fn execute_ibc_transfer(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    to_address: Option<String>,
+    receiver: Receiver,
 ) -> Result<Response, ContractError> {
-    let channel_id = IBC_TRANSFER_CHANNEL.load(deps.storage)?;
-    // if to_address is none, it goes to the DAO
-    let to_address = to_address.unwrap_or(DAO.load(deps.storage)?);
+    let (channel_id, addr) = match receiver {
+        Receiver::Dao => {
+            let dao_config = DAO_CONFIG.load(deps.storage)?;
+            let channel_id = dao_config
+                .dao_tunnel_channel
+                .ok_or(ContractError::DaoChannelNotFound)?;
+            (channel_id, dao_config.addr)
+        }
+        Receiver::Other {
+            connection_id,
+            port_id,
+            addr,
+        } => {
+            let channel_id = IBC_TRANSFER_MODULES
+                .load(deps.storage, (connection_id.clone(), port_id.clone()))?;
+            if let Some(channel_id) = channel_id {
+                (channel_id, addr)
+            } else {
+                return Err(ContractError::ChannelNotFound(connection_id, port_id));
+            }
+        }
+    };
     if info.funds.is_empty() {
         return Err(ContractError::EmptyFund {});
     }
-    let denom = DENOM.load(deps.storage)?;
+    // only one type of coin supported in IBC transfer
+    let denom = CHAIN_CONFIG.load(deps.storage)?.demon;
     let fund_amount = info.funds.iter().try_fold(Uint128::zero(), |acc, c| {
         if c.denom == denom {
             Ok(acc + c.amount)
@@ -140,62 +170,93 @@ pub fn execute_ibc_transfer(
     })?;
 
     let msg = IbcMsg::Transfer {
-        channel_id,
-        to_address: to_address.clone(),
+        channel_id: channel_id.clone(),
+        to_address: addr.clone(),
         amount: coin(fund_amount.u128(), denom),
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
     Ok(Response::new()
         .add_message(msg)
         .add_attribute("action", "execute_ibc_transfer")
-        .add_attribute("to", to_address))
+        .add_attribute("to", addr)
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("amount", fund_amount))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
     match msg {
-        QueryMsg::Factory {} => to_binary(&query_factory(deps)?),
-        QueryMsg::Channel {} => to_binary(&query_channel(deps)?),
+        QueryMsg::DaoConfig {} => to_binary(&query_dao_config(deps)?),
+        QueryMsg::ChainConfig {} => to_binary(&query_chain_config(deps)?),
+        QueryMsg::IbcTransferChannels { start_from, limit } => {
+            to_binary(&query_channels(deps, start_from, limit)?)
+        }
+        QueryMsg::NextJobId {} => to_binary(&query_job_id(deps)?),
     }
 }
 
-pub fn query_factory(deps: Deps) -> StdResult<Option<Addr>> {
-    let addr = match FACTORY.may_load(deps.storage)? {
-        Some(c) => Some(deps.api.addr_humanize(&c)?),
-        _ => None,
-    };
-    Ok(addr)
+pub fn query_dao_config(deps: Deps) -> StdResult<DaoConfig> {
+    Ok(DAO_CONFIG.load(deps.storage)?)
 }
 
-pub fn query_channel(deps: Deps) -> StdResult<Option<String>> {
-    let channel = DAO_TUNNEL_CHANNEL.may_load(deps.storage)?;
-    Ok(channel)
+pub fn query_chain_config(deps: Deps) -> StdResult<ChainConfig> {
+    Ok(CHAIN_CONFIG.load(deps.storage)?)
+}
+
+pub fn query_job_id(deps: Deps) -> StdResult<u64> {
+    Ok(JOB_ID.load(deps.storage)?)
+}
+
+pub fn query_channels(
+    deps: Deps,
+    start_after: Option<(String, String)>,
+    limit: Option<u32>,
+) -> StdResult<IbcTransferChannels> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = start_after.map(|s| Bound::exclusive((s.0, s.1)));
+
+    let endpoints: StdResult<Vec<_>> = IBC_TRANSFER_MODULES
+        .sub_prefix(())
+        .range(deps.storage, start, None, cosmwasm_std::Order::Descending)
+        .take(limit)
+        .map(|m| -> StdResult<_> {
+            let ele = m?;
+            Ok((ele.0 .0, ele.0 .1, ele.1))
+        })
+        .collect();
+
+    Ok(IbcTransferChannels {
+        endpoints: endpoints?,
+    })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         FACTORY_CALLBACK_ID => reply_inst_callback(deps, reply),
+        DISPATCH_CALLBACK_ID => reply_dispatch_callback(reply),
         _ => Err(ContractError::InvalidReplyId),
     }
 }
 
 pub fn reply_inst_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
-    let reply = parse_reply_instantiate_data(reply)?;
-    let addr = deps.api.addr_canonicalize(&reply.contract_address)?;
-
-    FACTORY.save(deps.storage, &addr)?;
-    Ok(Response::new().set_data(StdAck::success(&())))
+    match parse_reply_instantiate_data(reply) {
+        Ok(reply) => {
+            let addr = deps.api.addr_canonicalize(&reply.contract_address)?;
+            CHAIN_CONFIG.update(deps.storage, |mut c| -> StdResult<_> {
+                c.remote_factory = Some(addr);
+                Ok(c)
+            })?;
+            Ok(Response::new().set_data(StdAck::success(
+                VectisDaoActionIds::FactoryInstantiated as u64,
+            )))
+        }
+        Err(e) => Ok(Response::new().set_data(StdAck::fail(e.to_string()))),
+    }
 }
-
-// TODO
-// pub fn reply_dispatch_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
-//     // add the new result to the current tracker
-//     let mut results = RESULTS.load(deps.storage)?;
-//     results.push(reply.result.unwrap().data.unwrap_or_default());
-//     RESULTS.save(deps.storage, &results)?;
-//
-//     // update result data if this is the last
-//     let data = StdAck::success(&DispatchResponse { results });
-//     Ok(Response::new().set_data(data))
-// }
+/// Callback function for receive_dispatch_actions
+/// submessages only reply on error
+pub fn reply_dispatch_callback(reply: Reply) -> Result<Response, ContractError> {
+    let err = reply.result.unwrap_err();
+    Ok(Response::new().set_data(StdAck::fail(err)))
+}

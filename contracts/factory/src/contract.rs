@@ -32,10 +32,7 @@ use {
     cosmwasm_std::{from_binary, BankMsg},
 };
 #[cfg(feature = "remote")]
-use {
-    crate::helpers::{create_ibc_transfer_msg, handle_govec_mint_failed},
-    cosmwasm_std::StdError,
-};
+use {crate::helpers::handle_govec_mint_failed, cosmwasm_std::StdError};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
@@ -169,13 +166,13 @@ fn create_wallet(
                 });
                 return Ok(res.add_message(bank_msg));
             }
-            #[cfg(feature = "remote")]
-            {
-                // Send to get relayed by remote-tunnel to the DAO
-                // This does not need
-                let msg_to_remote_tunnel = create_ibc_transfer_msg(deps.as_ref(), fee, None)?;
-                return Ok(res.add_submessage(msg_to_remote_tunnel));
-            }
+            // #[cfg(feature = "remote")]
+            // {
+            //     // Send to get relayed by remote-tunnel to the DAO
+            //     // This does not need
+            //     let msg_to_remote_tunnel = create_ibc_transfer_msg(deps.as_ref(), fee, None)?;
+            //     return Ok(res.add_submessage(msg_to_remote_tunnel));
+            // }
         }
         Ok(res)
     } else {

@@ -1,5 +1,7 @@
 use cosmwasm_schema::{cw_serde, schemars, serde};
-use cosmwasm_std::{from_slice, to_binary, Binary, CosmosMsg, IbcOrder, StdResult, WasmMsg};
+use cosmwasm_std::{
+    from_slice, to_binary, Binary, CanonicalAddr, CosmosMsg, IbcOrder, StdResult, WasmMsg,
+};
 use std::convert::TryFrom;
 
 pub use crate::{GovecExecuteMsg, IbcError, WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg};
@@ -20,6 +22,7 @@ pub enum VectisDaoActionIds {
     ProposalPropose,
     ProposalVote,
     ProposalExecute,
+    FactoryInstantiated,
 }
 
 impl TryFrom<u64> for VectisDaoActionIds {
@@ -35,6 +38,7 @@ impl TryFrom<u64> for VectisDaoActionIds {
             16 => Ok(Self::ProposalPropose),
             17 => Ok(Self::ProposalVote),
             18 => Ok(Self::ProposalExecute),
+            19 => Ok(Self::FactoryInstantiated),
             _ => Err(IbcError::InvalidDaoActionId {}),
         }
     }
@@ -51,11 +55,55 @@ pub struct PacketMsg {
 /// The IBC Packet Msg allowed dispatched by dao-tunnel
 #[cw_serde]
 pub enum DaoTunnelPacketMsg {
-    UpdateChannel,
+    UpdateDaoConfig {
+        new_config: DaoConfig,
+    },
+    UpdateChainConfig {
+        new_config: ChainConfig,
+    },
     InstantiateFactory {
         code_id: u64,
         msg: WalletFactoryInstantiateMsg,
     },
+    UpdateIbcTransferRecieverChannel {
+        connection_id: String,
+        port_id: String,
+        // Some(new-channel-id)
+        // None: if new endpoint, add to `IBC_TRANSFER_MODULES`
+        // None: if already exists, delete it
+        channel: Option<String>,
+    },
+    /// Other actions that are dispatched from dao-tunnel
+    /// these do not affect the state of the remote-tunnel contract
+    /// i.e. staking / unstaking native tokens
+    DispatchActions {
+        msgs: Vec<CosmosMsg>,
+    },
+}
+
+#[cw_serde]
+pub struct DaoConfig {
+    /// DAO addr on dao chain
+    pub addr: String,
+    /// The src.port_id from the connection
+    /// This is bounded to the contract address on the remote chain
+    /// `wasm.<contract_address>`, i.e. the dao-tunnel contract address
+    pub dao_tunnel_port_id: String,
+    /// The local connection_id that is bounded to the remote chain light client
+    /// This can be queried by the using the `IbcPacket` when receiving the ibc message
+    /// IbcPacket.dest.channel_id and IbcPacket.dest.port_id
+    pub connection_id: String,
+    /// The channel_id to be used to call to the dao-tunnel contract on dao-chain
+    /// This can be updated by the dao-tunnel forwarding message from the DAO
+    pub dao_tunnel_channel: Option<String>,
+}
+
+#[cw_serde]
+pub struct ChainConfig {
+    /// The Factory that has the remote features on the local chain
+    pub remote_factory: Option<CanonicalAddr>,
+    /// Denom of the current chain
+    pub demon: String,
 }
 
 /// The IBC Packet Msg allowed dispatched by remote-tunnel
