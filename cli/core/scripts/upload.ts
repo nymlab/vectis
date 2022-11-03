@@ -5,7 +5,7 @@ import { uploadCode } from "../utils/upload";
 const upload = async () => {
     const [hostChain, remoteChain] = process.argv.slice(2) as Chains[];
 
-    const contracts = uploadCode(hostChain, remoteChain);
+    const contracts = await uploadCode(hostChain, remoteChain);
 
     writeInCacheFolder("uploadInfo.json", JSON.stringify(contracts, null, 2));
 };
