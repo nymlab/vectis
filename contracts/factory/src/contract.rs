@@ -8,12 +8,12 @@ use crate::state::{
     ADDR_PREFIX, DAO, FEE, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
 };
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
-use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Expiration, DAY};
+use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
 pub use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
@@ -27,9 +27,8 @@ use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as Proxy
 use cosmwasm_std::entry_point;
 #[cfg(feature = "dao-chain")]
 use {
-    crate::helpers::ensure_has_govec,
-    crate::state::GOVEC_MINTER,
-    cosmwasm_std::{from_binary, BankMsg},
+    crate::helpers::ensure_has_govec, crate::state::GOVEC_MINTER, cosmwasm_std::from_binary,
+    cw_utils::parse_reply_execute_data,
 };
 #[cfg(feature = "remote")]
 use {crate::helpers::handle_govec_mint_failed, cosmwasm_std::StdError};
@@ -43,8 +42,6 @@ const DEFAULT_LIMIT: u32 = 50;
 /// Dao Chain govec contract reply
 #[cfg(feature = "dao-chain")]
 pub const GOVEC_REPLY_ID: u64 = u64::MIN;
-#[cfg(feature = "remote")]
-pub const IBC_TRANSFER_ERR_REPLY_ID: u64 = u64::MIN + 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -152,27 +149,17 @@ fn create_wallet(
 
         // Send native tokens to DAO to join the DAO
         if fee.amount != Uint128::zero() {
-            #[cfg(feature = "dao-chain")]
-            {
-                let to_address = deps
-                    .api
-                    .addr_humanize(&DAO.load(deps.storage)?)?
-                    .to_string();
+            let to_address = deps
+                .api
+                .addr_humanize(&DAO.load(deps.storage)?)?
+                .to_string();
 
-                // Direct transfer to DAO
-                let bank_msg = CosmosMsg::Bank(BankMsg::Send {
-                    to_address,
-                    amount: vec![fee],
-                });
-                return Ok(res.add_message(bank_msg));
-            }
-            // #[cfg(feature = "remote")]
-            // {
-            //     // Send to get relayed by remote-tunnel to the DAO
-            //     // This does not need
-            //     let msg_to_remote_tunnel = create_ibc_transfer_msg(deps.as_ref(), fee, None)?;
-            //     return Ok(res.add_submessage(msg_to_remote_tunnel));
-            // }
+            // Direct transfer to DAO / remote_tunnel
+            let bank_msg = CosmosMsg::Bank(BankMsg::Send {
+                to_address,
+                amount: vec![fee],
+            });
+            return Ok(res.add_message(bank_msg));
         }
         Ok(res)
     } else {
@@ -406,45 +393,41 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     // NOTE: Error returned in `reply` is equivalent to contract error, all states revert,
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
 
-    if let Some(expected_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
-        if reply.id == expected_id {
-            if let Ok(res) = parse_reply_instantiate_data(reply) {
-                let wallet_addr: CanonicalAddr =
-                    deps.api.addr_canonicalize(&res.contract_address)?;
-                let expiration = Expiration::AtTime(env.block.time)
-                    .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
-                    .expect("error defining activate_at");
+    let expected_id = TOTAL_CREATED
+        .load(deps.storage)?
+        .checked_add(1)
+        .ok_or(ContractError::OverFlow {})?;
 
-                GOVEC_CLAIM_LIST.save(deps.storage, wallet_addr.to_vec(), &expiration)?;
+    if reply.id == expected_id {
+        if let Ok(res) = parse_reply_instantiate_data(reply) {
+            let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&res.contract_address)?;
+            let expiration = Expiration::AtTime(env.block.time)
+                .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
+                .expect("error defining activate_at");
 
-                let res = Response::new()
-                    .add_attribute("action", "Govec claim list updated")
-                    .add_attribute("proxy_address", res.contract_address);
-                return Ok(res);
+            GOVEC_CLAIM_LIST.save(deps.storage, wallet_addr.to_vec(), &expiration)?;
+
+            let res = Response::new()
+                .add_attribute("action", "Govec claim list updated")
+                .add_attribute("proxy_address", res.contract_address);
+            return Ok(res);
+        } else {
+            return Err(ContractError::ProxyInstantiationError {});
+        }
+    } else {
+        #[cfg(feature = "dao-chain")]
+        if reply.id == GOVEC_REPLY_ID {
+            let res = parse_reply_execute_data(reply)?;
+            if let Some(b) = res.data {
+                let addr: String = from_binary(&b)?;
+                return handle_govec_minted(deps, addr);
             } else {
-                return Err(ContractError::ProxyInstantiationError {});
+                return Err(ContractError::InvalidReplyFromGovec {});
             }
         }
-    }
 
-    #[cfg(feature = "dao-chain")]
-    if reply.id == GOVEC_REPLY_ID {
-        let res = parse_reply_execute_data(reply)?;
-        if let Some(b) = res.data {
-            let addr: String = from_binary(&b)?;
-            return handle_govec_minted(deps, addr);
-        } else {
-            return Err(ContractError::InvalidReplyFromGovec {});
-        }
+        return Err(ContractError::InvalidReplyId {});
     }
-
-    #[cfg(feature = "remote")]
-    if reply.id == IBC_TRANSFER_ERR_REPLY_ID {
-        // This is expected to be be an error
-        parse_reply_execute_data(reply).map(|_| ())?
-    }
-
-    Err(ContractError::InvalidReplyId {})
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
