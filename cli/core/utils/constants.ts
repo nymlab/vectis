@@ -15,7 +15,7 @@ export const contractsFileNames = {
     vectis_factory: `vectis_factory${archSuffix}.wasm`,
     vectis_govec: `vectis_govec${archSuffix}.wasm`,
     vectis_remote_tunnel: "vectis_remote_tunnel.wasm",
-    vectis_remote_proxy: "vectis_remote_proxy.wasm",
+    vectis_remote_proxy: "vectis_proxy.wasm",
     vectis_remote_factory: "vectis_remote_factory.wasm",
     cw3_mutltisig: "cw3_fixed_multisig.wasm",
     cw20_base: "cw20_base.wasm",
