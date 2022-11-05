@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response,
+    to_binary, Coin, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response,
     StdResult, Uint128,
 };
 use cw_storage_plus::Bound;
@@ -132,54 +132,46 @@ pub fn execute_ibc_transfer(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    receiver: Receiver,
+    rcv: Receiver,
 ) -> Result<Response, ContractError> {
-    let (channel_id, addr) = match receiver {
-        Receiver::Dao => {
-            let dao_config = DAO_CONFIG.load(deps.storage)?;
-            let channel_id = dao_config
-                .dao_tunnel_channel
-                .ok_or(ContractError::DaoChannelNotFound)?;
-            (channel_id, dao_config.addr)
-        }
-        Receiver::Other {
-            connection_id,
-            port_id,
-            addr,
-        } => {
-            let channel_id = IBC_TRANSFER_MODULES.load(deps.storage, (&connection_id, &port_id))?;
-            if let Some(channel_id) = channel_id {
-                (channel_id, addr)
-            } else {
-                return Err(ContractError::ChannelNotFound(connection_id, port_id));
-            }
-        }
-    };
     if info.funds.is_empty() {
-        return Err(ContractError::EmptyFund {});
+        return Err(ContractError::EmptyFund);
     }
-    // only one type of coin supported in IBC transfer
     let denom = CHAIN_CONFIG.load(deps.storage)?.demon;
-    let fund_amount = info.funds.iter().try_fold(Uint128::zero(), |acc, c| {
+    let amount = info.funds.iter().fold(Uint128::zero(), |acc, c| {
         if c.denom == denom {
-            Ok(acc + c.amount)
+            acc + c.amount
         } else {
-            return Err(ContractError::EmptyFund {});
+            acc
         }
-    })?;
+    });
+    if amount.is_zero() {
+        return Err(ContractError::EmptyFund);
+    };
+
+    let channel_id = IBC_TRANSFER_MODULES
+        .load(deps.storage, (&rcv.connection_id, &rcv.port_id))?
+        .ok_or(ContractError::ChannelNotFound(
+            rcv.connection_id,
+            rcv.port_id,
+        ))?;
+    // only one type of coin supported in IBC transfer
 
     let msg = IbcMsg::Transfer {
         channel_id: channel_id.clone(),
-        to_address: addr.clone(),
-        amount: coin(fund_amount.u128(), denom),
+        to_address: rcv.addr.clone(),
+        amount: Coin {
+            denom: denom.clone(),
+            amount,
+        },
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
     Ok(Response::new()
         .add_message(msg)
         .add_attribute("action", "execute_ibc_transfer")
-        .add_attribute("to", addr)
+        .add_attribute("to", rcv.addr)
         .add_attribute("channel_id", channel_id)
-        .add_attribute("amount", fund_amount))
+        .add_attribute("amount", Coin { denom, amount }.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -203,7 +195,7 @@ pub fn query_chain_config(deps: Deps) -> StdResult<ChainConfig> {
 }
 
 pub fn query_job_id(deps: Deps) -> StdResult<u64> {
-    Ok(JOB_ID.load(deps.storage)?)
+    Ok(JOB_ID.load(deps.storage).unwrap_or(0))
 }
 
 pub fn query_channels(

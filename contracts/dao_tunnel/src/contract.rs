@@ -30,6 +30,11 @@ pub fn instantiate(
         .addr_canonicalize(deps.api.addr_validate(&msg.govec_minter)?.as_str())?;
     GOVEC.save(deps.storage, &govec_addr)?;
     ADMIN.save(deps.storage, &admin_addr)?;
+    if let Some(init_tunnels) = msg.init_remote_tunnels {
+        for tunnel in init_tunnels.tunnels {
+            IBC_TUNNELS.save(deps.storage, tunnel, &())?;
+        }
+    }
     Ok(Response::new().add_attribute("Vectis DAO-Tunnel instantiated", env.contract.address))
 }
 

@@ -6,6 +6,7 @@ use vectis_wallet::DaoTunnelPacketMsg;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub govec_minter: String,
+    pub init_remote_tunnels: Option<RemoteTunnels>,
 }
 
 #[cw_serde]

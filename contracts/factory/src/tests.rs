@@ -1,6 +1,7 @@
 #[cfg(test)]
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Coin, DepsMut};
+use vectis_proxy::contract::reply;
 
 #[cfg(feature = "dao-chain")]
 use crate::contract::query_govec_addr;
@@ -12,6 +13,8 @@ use crate::{
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, UnclaimedWalletList},
 };
+
+const GOVEC_ADDR: &str = "govec_minter";
 // this will set up the instantiation for other tests
 fn do_instantiate(
     mut deps: DepsMut,
@@ -19,7 +22,7 @@ fn do_instantiate(
     proxy_multisig_code_id: u64,
     addr_prefix: &str,
     wallet_fee: Coin,
-    govec_minter: Option<String>,
+    govec_minter: Option<&str>,
 ) {
     // we do not do integrated tests here so code ids are arbitrary
     let instantiate_msg = InstantiateMsg {
@@ -27,7 +30,7 @@ fn do_instantiate(
         proxy_multisig_code_id,
         addr_prefix: addr_prefix.to_string(),
         wallet_fee,
-        govec_minter,
+        govec_minter: govec_minter.map(|s| s.to_string()),
     };
     let info = mock_info("admin", &[]);
     let env = mock_env();
