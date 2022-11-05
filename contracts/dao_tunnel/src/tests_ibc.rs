@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::mock_ibc_channel_close_init, wasm_execute, IbcChannelCloseMsg, IbcReceiveResponse,
-    Response, SubMsg,
+    Response,
 };
 
 use crate::{ibc::ibc_channel_close, tests::*};

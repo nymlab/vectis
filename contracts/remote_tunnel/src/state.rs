@@ -8,12 +8,11 @@ pub const CHAIN_CONFIG: Item<ChainConfig> = Item::new("chain_config");
 
 /// We store approved IBC transfer module connections:
 /// local connection_id: the light client of the remote chain
-/// caller port id: bounded to the wasm contract addr on the remote chain
+/// we don't track caller port id as it is bounded to the ibctransfer module on the remote chain
 ///
-/// This allows for multiple channels to be created between dao and remote tunnels
-/// This will include the transfer module on the dao chain
-pub const IBC_TRANSFER_MODULES: Map<(&str, &str), Option<String>> =
-    Map::new("ibc_transfer_modules");
+/// This just tracks existing connections of ibctransfer modules on this chain
+/// and other chains, specified by the connection_id
+pub const IBC_TRANSFER_MODULES: Map<&str, String> = Map::new("ibc_transfer_modules");
 
 /// Job Id for current dispatch,
 /// used for listening for callbacks for users.

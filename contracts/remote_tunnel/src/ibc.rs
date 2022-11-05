@@ -72,25 +72,9 @@ pub fn ibc_channel_connect(
                 .add_attribute("dao_tunnel_port_id", &remote_port_id))
         }
     } else {
-        // As long as it is the port of the remote ibc transfer module,
-        // we can save it as we are not expecting messages to come from this
-        IBC_TRANSFER_MODULES
-            .update(
-                deps.storage,
-                (&channel.connection_id, &remote_port_id),
-                |m| -> Result<Option<String>, ContractError> {
-                    match m {
-                        None => Err(ContractError::Unauthorized),
-                        Some(_) => Ok(Some(local_channel_id.clone())),
-                    }
-                },
-            )
-            .map_err(|e| StdError::generic_err(e.to_string()))?;
-
-        Ok(IbcBasicResponse::new()
-            .add_attribute("action", "ibc_connect")
-            .add_attribute("SAVED new ibc_transfer_channel_id", &local_channel_id)
-            .add_attribute("ibc_transfer_port_id", &remote_port_id))
+        Err(StdError::GenericErr {
+            msg: ContractError::Unauthorized.to_string(),
+        })
     }
 }
 
@@ -104,16 +88,15 @@ pub fn ibc_channel_close(
     let mut dao_config = DAO_CONFIG.load(deps.storage)?;
     let channel = msg.channel();
     let connection_id = channel.connection_id.clone();
-    let counterparty_port_id = channel.counterparty_endpoint.port_id.clone();
 
-    if IBC_TRANSFER_MODULES.has(deps.storage, (&connection_id, &counterparty_port_id)) {
-        IBC_TRANSFER_MODULES.save(deps.storage, (&connection_id, &counterparty_port_id), &None)?;
+    if let Some(current_channel) = dao_config.dao_tunnel_channel {
+        if channel.endpoint.channel_id == current_channel {
+            dao_config.dao_tunnel_channel = None;
+            DAO_CONFIG.save(deps.storage, &dao_config)?;
+        }
     } else {
-        if let Some(current_channel) = dao_config.dao_tunnel_channel {
-            if channel.endpoint.channel_id == current_channel {
-                dao_config.dao_tunnel_channel = None;
-                DAO_CONFIG.save(deps.storage, &dao_config)?;
-            }
+        if IBC_TRANSFER_MODULES.has(deps.storage, &connection_id) {
+            IBC_TRANSFER_MODULES.remove(deps.storage, &connection_id);
         }
     }
 
@@ -156,12 +139,10 @@ pub fn ibc_packet_receive(
                 }
                 DaoTunnelPacketMsg::UpdateIbcTransferRecieverChannel {
                     connection_id,
-                    port_id,
                     channel,
                 } => receive_update_ibc_transfer_modules(
                     deps,
                     connection_id,
-                    port_id,
                     channel,
                     packet_msg.job_id,
                 ),
@@ -225,13 +206,35 @@ pub fn ibc_packet_ack(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-/// we just ignore these temporally. shall we store some info?
+/// revert the state of minting govec
+/// return transfers
 pub fn ibc_packet_timeout(
     _deps: DepsMut,
     _env: Env,
-    _msg: IbcPacketTimeoutMsg,
+    msg: IbcPacketTimeoutMsg,
 ) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
+    let res = IbcBasicResponse::new();
+    let original_packet: PacketMsg = from_binary(&msg.packet.data)?;
+
+    if let RemoteTunnelPacketMsg::MintGovec { wallet_addr } = from_binary(&original_packet.msg)? {
+        let submsg = SubMsg::new(WasmMsg::Execute {
+            contract_addr: original_packet.sender,
+            msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
+                success: false,
+                wallet_addr,
+            })?,
+            funds: vec![],
+        });
+
+        Ok(res
+            .add_attribute("job_id", original_packet.job_id.to_string())
+            .add_attribute("action", "Mint Govec Timeout: revert")
+            .add_submessage(submsg))
+    } else {
+        Ok(res
+            .add_attribute("job_id", original_packet.job_id.to_string())
+            .add_attribute("action", "Timeout"))
+    }
 }
 
 // Recieve handlers
@@ -283,31 +286,22 @@ pub fn receive_instantiate(
 pub fn receive_update_ibc_transfer_modules(
     deps: DepsMut,
     connection_id: String,
-    port_id: String,
     channel: Option<String>,
     job_id: u64,
 ) -> Result<IbcReceiveResponse, ContractError> {
+    match channel {
+        Some(c) => {
+            // Update the channel
+            IBC_TRANSFER_MODULES.save(deps.storage, &connection_id, &c)?;
+        }
+        None => {
+            // Remove it
+            IBC_TRANSFER_MODULES.remove(deps.storage, &connection_id);
+        }
+    }
     let res = IbcReceiveResponse::new()
         .set_ack(StdAck::success(job_id))
         .add_attribute("action", "ibc transfer module updated");
-    match channel {
-        Some(_) => {
-            // Update the channel
-            IBC_TRANSFER_MODULES.save(deps.storage, (&connection_id, &port_id), &channel)?;
-        }
-        None => {
-            if IBC_TRANSFER_MODULES
-                .load(deps.storage, (&connection_id, &port_id))
-                .is_ok()
-            {
-                // Already exists, this removes it
-                IBC_TRANSFER_MODULES.remove(deps.storage, (&connection_id, &port_id));
-            } else {
-                // Does not exist, so we add it to be updated during connection
-                IBC_TRANSFER_MODULES.save(deps.storage, (&connection_id, &port_id), &channel)?;
-            };
-        }
-    }
     Ok(res)
 }
 

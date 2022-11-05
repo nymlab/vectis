@@ -1,6 +1,7 @@
 pub use cosmwasm_std::testing::{
-    mock_dependencies, mock_env, mock_ibc_channel, mock_ibc_channel_connect_ack,
-    mock_ibc_packet_ack, mock_ibc_packet_recv, mock_info, MockApi, MockQuerier, MockStorage,
+    mock_dependencies, mock_env, mock_ibc_channel, mock_ibc_channel_close_init,
+    mock_ibc_channel_connect_ack, mock_ibc_packet_ack, mock_ibc_packet_recv, mock_info, MockApi,
+    MockQuerier, MockStorage,
 };
 pub use cosmwasm_std::{
     from_binary, to_binary, Attribute, Binary, CanonicalAddr, Coin, CosmosMsg, DepsMut, Empty,

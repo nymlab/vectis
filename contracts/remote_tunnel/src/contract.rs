@@ -28,7 +28,7 @@ pub fn instantiate(
     if let Some(init_ibc_transfer_mods) = msg.init_ibc_transfer_mod {
         for module in init_ibc_transfer_mods.endpoints {
             // Ignore the unestablished channel_id
-            IBC_TRANSFER_MODULES.save(deps.storage, (&module.0, &module.1), &None)?;
+            IBC_TRANSFER_MODULES.save(deps.storage, &module.0, &module.1)?;
         }
     }
 
@@ -150,13 +150,10 @@ pub fn execute_ibc_transfer(
     };
 
     let channel_id = IBC_TRANSFER_MODULES
-        .load(deps.storage, (&rcv.connection_id, &rcv.port_id))?
-        .ok_or(ContractError::ChannelNotFound(
-            rcv.connection_id,
-            rcv.port_id,
-        ))?;
-    // only one type of coin supported in IBC transfer
+        .load(deps.storage, &rcv.connection_id)
+        .map_err(|_| ContractError::ChannelNotFound(rcv.connection_id))?;
 
+    // only one type of coin supported in IBC transfer
     let msg = IbcMsg::Transfer {
         channel_id: channel_id.clone(),
         to_address: rcv.addr.clone(),
@@ -209,14 +206,14 @@ pub fn query_channels(
             .sub_prefix(())
             .range(
                 deps.storage,
-                Some(Bound::exclusive((key.0.as_str(), key.1.as_str()))),
+                Some(Bound::exclusive(key.0.as_str())),
                 None,
                 cosmwasm_std::Order::Descending,
             )
             .take(limit)
             .map(|m| -> StdResult<_> {
                 let ele = m?;
-                Ok((ele.0 .0, ele.0 .1, ele.1))
+                Ok((ele.0, ele.1))
             })
             .collect(),
         None => IBC_TRANSFER_MODULES
@@ -225,7 +222,7 @@ pub fn query_channels(
             .take(limit)
             .map(|m| -> StdResult<_> {
                 let ele = m?;
-                Ok((ele.0 .0, ele.0 .1, ele.1))
+                Ok((ele.0, ele.1))
             })
             .collect(),
     };

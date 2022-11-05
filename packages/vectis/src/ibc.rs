@@ -69,7 +69,6 @@ pub enum DaoTunnelPacketMsg {
     },
     UpdateIbcTransferRecieverChannel {
         connection_id: String,
-        port_id: String,
         // Some(new-channel-id)
         // None: if new endpoint, add to `IBC_TRANSFER_MODULES`
         // None: if already exists, delete it

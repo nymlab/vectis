@@ -21,7 +21,6 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct Receiver {
     pub connection_id: String,
-    pub port_id: String,
     pub addr: String,
 }
 
@@ -43,7 +42,7 @@ pub enum QueryMsg {
 
 #[cw_serde]
 pub struct IbcTransferChannels {
-    /// (connection_id, port_id, channel_id)
-    /// when using for instantiation, channel_id is ignored
-    pub endpoints: Vec<(String, String, Option<String>)>,
+    /// (connection_id, channel_id)
+    /// The channel_id are for channel already established
+    pub endpoints: Vec<(String, String)>,
 }
