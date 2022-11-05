@@ -11,7 +11,7 @@ pub const CHAIN_CONFIG: Item<ChainConfig> = Item::new("chain_config");
 /// caller port id: bounded to the wasm contract addr on the remote chain
 ///
 /// This allows for multiple channels to be created between dao and remote tunnels
-pub const IBC_TRANSFER_MODULES: Map<(String, String), Option<String>> =
+pub const IBC_TRANSFER_MODULES: Map<(&str, &str), Option<String>> =
     Map::new("ibc_transfer_modules");
 
 /// Job Id for current dispatch,

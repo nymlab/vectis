@@ -24,6 +24,12 @@ pub enum ExecuteMsg {
         /// The port of the remote-tunnel in the IbcChannel endpoint
         port_id: String,
     },
+    UpdateDaoAddr {
+        new_addr: String,
+    },
+    UpdateGovecAddr {
+        new_addr: String,
+    },
     DispatchActionOnRemoteTunnel {
         /// Identifier used in the acknowledgement message
         job_id: u64,
@@ -44,6 +50,8 @@ pub enum QueryMsg {
     },
     #[returns(Option<Addr>)]
     Govec {},
+    #[returns(Option<Addr>)]
+    Dao {},
 }
 
 #[cw_serde]

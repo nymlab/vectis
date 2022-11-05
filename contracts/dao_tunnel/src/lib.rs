@@ -10,3 +10,5 @@ pub const MINT_DISPATCH_ID: u64 = 0;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_ibc;

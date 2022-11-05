@@ -6,6 +6,8 @@ pub mod state;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_ibc;
 
 pub use crate::error::ContractError;
 

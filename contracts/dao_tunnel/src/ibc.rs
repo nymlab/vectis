@@ -47,6 +47,7 @@ pub fn ibc_channel_connect(
     msg: IbcChannelConnectMsg,
 ) -> StdResult<IbcBasicResponse> {
     // We currently do not save the channel_id to call the remote_tunnels
+    // This is because dao-tunnel mainly relay actions from remote-tunnels
     let channel = msg.channel();
     if IBC_TUNNELS
         .may_load(
@@ -69,7 +70,7 @@ pub fn ibc_channel_connect(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-/// Multiple channels are supported so this is something to observe
+/// Multiple channels are supported so this is is just observed
 pub fn ibc_channel_close(
     _deps: DepsMut,
     _env: Env,
@@ -317,6 +318,17 @@ pub fn receive_proposal_actions(
             WasmMsg::Execute {
                 contract_addr: prop_module_addr.clone(),
                 msg: to_binary(&ProposalExecuteMsg::Execute {
+                    proposal_id,
+                    relayed_from: Some(sender),
+                })?,
+                funds: vec![],
+            },
+            VectisDaoActionIds::ProposalExecute as u64,
+        ),
+        ProposalExecuteMsg::Close { proposal_id, .. } => SubMsg::reply_always(
+            WasmMsg::Execute {
+                contract_addr: prop_module_addr.clone(),
+                msg: to_binary(&ProposalExecuteMsg::Close {
                     proposal_id,
                     relayed_from: Some(sender),
                 })?,
