@@ -28,7 +28,7 @@ pub fn instantiate(
     if let Some(init_ibc_transfer_mods) = msg.init_ibc_transfer_mod {
         for module in init_ibc_transfer_mods.endpoints {
             // Ignore the unestablished channel_id
-            IBC_TRANSFER_MODULES.save(deps.storage, &module.0, &module.1)?;
+            IBC_TRANSFER_MODULES.save(deps.storage, module.0, &module.1)?;
         }
     }
 
@@ -137,7 +137,7 @@ pub fn execute_ibc_transfer(
     if info.funds.is_empty() {
         return Err(ContractError::EmptyFund);
     }
-    let denom = CHAIN_CONFIG.load(deps.storage)?.demon;
+    let denom = CHAIN_CONFIG.load(deps.storage)?.denom;
     let amount = info.funds.iter().fold(Uint128::zero(), |acc, c| {
         if c.denom == denom {
             acc + c.amount
@@ -150,7 +150,7 @@ pub fn execute_ibc_transfer(
     };
 
     let channel_id = IBC_TRANSFER_MODULES
-        .load(deps.storage, &rcv.connection_id)
+        .load(deps.storage, rcv.connection_id.clone())
         .map_err(|_| ContractError::ChannelNotFound(rcv.connection_id))?;
 
     // only one type of coin supported in IBC transfer
@@ -197,35 +197,20 @@ pub fn query_job_id(deps: Deps) -> StdResult<u64> {
 
 pub fn query_channels(
     deps: Deps,
-    start_after: Option<(String, String)>,
+    start_after: Option<String>,
     limit: Option<u32>,
 ) -> StdResult<IbcTransferChannels> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let endpoints: StdResult<Vec<_>> = match start_after {
-        Some(key) => IBC_TRANSFER_MODULES
-            .sub_prefix(())
-            .range(
-                deps.storage,
-                Some(Bound::exclusive(key.0.as_str())),
-                None,
-                cosmwasm_std::Order::Descending,
-            )
-            .take(limit)
-            .map(|m| -> StdResult<_> {
-                let ele = m?;
-                Ok((ele.0, ele.1))
-            })
-            .collect(),
-        None => IBC_TRANSFER_MODULES
-            .sub_prefix(())
-            .range(deps.storage, None, None, cosmwasm_std::Order::Descending)
-            .take(limit)
-            .map(|m| -> StdResult<_> {
-                let ele = m?;
-                Ok((ele.0, ele.1))
-            })
-            .collect(),
-    };
+    let start = start_after.map(|e| Bound::exclusive(e));
+    let endpoints: StdResult<Vec<_>> = IBC_TRANSFER_MODULES
+        .prefix(())
+        .range(deps.storage, start, None, cosmwasm_std::Order::Descending)
+        .take(limit)
+        .map(|m| -> StdResult<_> {
+            let ele = m?;
+            Ok((ele.0, ele.1))
+        })
+        .collect();
 
     Ok(IbcTransferChannels {
         endpoints: endpoints?,
