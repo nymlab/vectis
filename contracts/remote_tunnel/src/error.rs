@@ -24,5 +24,5 @@ pub enum ContractError {
     #[error("Factory contract not available")]
     FactoryNotAvailable,
     #[error("Empty Funds")]
-    EmptyFund {},
+    EmptyFund,
 }

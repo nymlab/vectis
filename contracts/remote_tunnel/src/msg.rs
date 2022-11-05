@@ -15,18 +15,14 @@ pub enum ExecuteMsg {
     DaoActions { msg: RemoteTunnelPacketMsg },
     /// Transfer native tokens to another chain
     /// Fund amount is forward from the MessageInfo.funds
-    /// if `addr = None`, funds is transfer to the DAO
     IbcTransfer { receiver: Receiver },
 }
 
 #[cw_serde]
-pub enum Receiver {
-    Dao,
-    Other {
-        connection_id: String,
-        port_id: String,
-        addr: String,
-    },
+pub struct Receiver {
+    pub connection_id: String,
+    pub port_id: String,
+    pub addr: String,
 }
 
 #[cw_serde]

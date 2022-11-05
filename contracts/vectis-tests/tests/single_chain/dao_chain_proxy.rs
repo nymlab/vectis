@@ -10,6 +10,20 @@ use vectis_wallet::{MultiSig, WalletInfo};
 
 use crate::common::*;
 
+// TODO
+// TEST
+//     ClaimGovec {},
+//     GovecMinted {
+//         success: bool,
+//         wallet_addr: String,
+//     },
+//     PurgeExpiredClaims {
+//         // Address string to start after
+//         start_after: Option<String>,
+//         // Max is 30 and default is 10
+//         limit: Option<u32>,
+//     },
+
 #[test]
 fn create_new_proxy() {
     let init_wallet_fund: Coin = coin(100, "ucosm");

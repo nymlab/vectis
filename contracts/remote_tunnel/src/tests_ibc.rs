@@ -1,6 +1,6 @@
 use crate::tests::*;
 
-fn mock_ibc_channel_open_init(
+pub fn mock_ibc_channel_open_init(
     connection_id: &str,
     port_id: &str,
     channel_id: &str,
@@ -13,7 +13,7 @@ fn mock_ibc_channel_open_init(
     IbcChannelOpenMsg::new_init(channel)
 }
 
-fn mock_ibc_channel_open_try(
+pub fn mock_ibc_channel_open_try(
     connection_id: &str,
     port_id: &str,
     channel_id: &str,
@@ -26,43 +26,8 @@ fn mock_ibc_channel_open_try(
     IbcChannelOpenMsg::new_try(channel, counterparty_version)
 }
 
-fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
-    let mut deps = mock_dependencies();
-    let info = mock_info("address", &[]);
-    let env = mock_env();
-    let dao_config = DaoConfig {
-        addr: DAO_ADDR.to_string(),
-        dao_tunnel_port_id: DAO_PORT_ID.to_string(),
-        connection_id: DAO_CONNECTION_ID.to_string(),
-        dao_tunnel_channel: None,
-    };
-    let chain_config = ChainConfig {
-        remote_factory: None,
-        demon: "cosm".to_string(),
-    };
-
-    let instantiate_msg = InstantiateMsg {
-        dao_config,
-        chain_config,
-        denom: DENOM.to_string(),
-        init_ibc_transfer_mod: Some(IbcTransferChannels {
-            endpoints: vec![(
-                OTHER_CONNECTION_ID.to_string(),
-                OTHER_TRANSFER_PORT_ID.to_string(),
-                None,
-            )],
-        }),
-    };
-
-    let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-
-    assert_eq!(res.attributes[0].key, "vectis-remote-tunnel instantiated");
-
-    deps
-}
-
 // util to add `DAO_TUNNEL_CHANNEL` and `IBC_TRANSFER_PORT_ID`
-fn connect(mut deps: DepsMut, dao_channel_id: &str, ibc_transfer_channel_id: &str) {
+pub fn connect(mut deps: DepsMut, dao_channel_id: &str, ibc_transfer_channel_id: &str) {
     if let IbcChannelConnectMsg::OpenAck {
         mut channel,
         counterparty_version,
@@ -114,6 +79,7 @@ fn connect(mut deps: DepsMut, dao_channel_id: &str, ibc_transfer_channel_id: &st
     }
 }
 
+// Tests `ibc_channel_open`
 #[test]
 fn channel_open_only_right_version_order() {
     let mut deps = do_instantiate();
@@ -161,8 +127,9 @@ fn channel_open_only_right_version_order() {
     );
 }
 
+// Tests `ibc_channel_connect`
 #[test]
-fn only_approved_endpoint_can_open_and_connect() {
+fn only_approved_endpoint_can_connect() {
     let mut deps = do_instantiate();
 
     if let IbcChannelConnectMsg::OpenAck {

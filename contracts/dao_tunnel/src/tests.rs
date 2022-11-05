@@ -45,6 +45,7 @@ pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
 
     let instantiate_msg = InstantiateMsg {
         govec_minter: GOVEC_ADDR.to_string(),
+        init_remote_tunnels: None,
     };
 
     instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
