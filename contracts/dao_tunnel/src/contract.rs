@@ -5,8 +5,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use vectis_wallet::{
-    DaoTunnelPacketMsg, PacketMsg, StdAck, WalletFactoryInstantiateMsg, DEFAULT_LIMIT, MAX_LIMIT,
-    PACKET_LIFETIME,
+    DaoTunnelPacketMsg, PacketMsg, StdAck, DEFAULT_LIMIT, MAX_LIMIT, PACKET_LIFETIME,
 };
 
 use crate::error::ContractError;
@@ -50,6 +49,8 @@ pub fn execute(
             connection_id,
             port_id,
         } => execute_add_approved_controller(deps, info, connection_id, port_id, false),
+        ExecuteMsg::UpdateDaoAddr { new_addr } => execute_update_dao(deps, info, new_addr),
+        ExecuteMsg::UpdateGovecAddr { new_addr } => execute_update_govec(deps, info, new_addr),
         ExecuteMsg::DispatchActionOnRemoteTunnel {
             job_id,
             msg,
@@ -83,33 +84,30 @@ fn execute_add_approved_controller(
             .add_attribute("port_id", port_id))
     }
 }
-
-fn execute_instantiate_remote_factory(
+fn execute_update_dao(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
-    job_id: u64,
-    code_id: u64,
-    msg: WalletFactoryInstantiateMsg,
-    channel_id: String,
+    new_addr: String,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
-
-    let packet = PacketMsg {
-        sender: env.contract.address.to_string(),
-        job_id,
-        msg: to_binary(&DaoTunnelPacketMsg::InstantiateFactory { code_id, msg })?,
-    };
-
-    let msg = IbcMsg::SendPacket {
-        channel_id,
-        data: to_binary(&packet)?,
-        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-    };
-
+    let addr = deps.api.addr_validate(&new_addr)?;
+    ADMIN.save(deps.storage, &deps.api.addr_canonicalize(addr.as_str())?)?;
     Ok(Response::new()
-        .add_message(msg)
-        .add_attribute("action", "execute_instantiate_remote_factory"))
+        .add_attribute("config", "DAO Addr")
+        .add_attribute("new addr", addr))
+}
+
+fn execute_update_govec(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_addr: String,
+) -> Result<Response, ContractError> {
+    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    let addr = deps.api.addr_validate(&new_addr)?;
+    GOVEC.save(deps.storage, &deps.api.addr_canonicalize(addr.as_str())?)?;
+    Ok(Response::new()
+        .add_attribute("config", "GOVEC Addr")
+        .add_attribute("new addr", addr))
 }
 
 fn execute_dispatch_to_remote_tunnel(
@@ -136,13 +134,16 @@ fn execute_dispatch_to_remote_tunnel(
 
     Ok(Response::new()
         .add_message(msg)
-        .add_attribute("action", "update_remote_tunnel_channel"))
+        .add_attribute("action", "dispatch_actions_to_remote_tunnel")
+        .add_attribute("channel", sending_channel_id)
+        .add_attribute("job_id", job_id.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Govec {} => to_binary(&query_govec(deps)?),
+        QueryMsg::Dao {} => to_binary(&query_dao(deps)?),
         QueryMsg::Controllers { start_after, limit } => {
             to_binary(&query_controllers(deps, start_after, limit)?)
         }
@@ -151,6 +152,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 pub fn query_govec(deps: Deps) -> StdResult<Option<Addr>> {
     let addr = match GOVEC.may_load(deps.storage)? {
+        Some(c) => Some(deps.api.addr_humanize(&c)?),
+        _ => None,
+    };
+    Ok(addr)
+}
+
+pub fn query_dao(deps: Deps) -> StdResult<Option<Addr>> {
+    let addr = match ADMIN.may_load(deps.storage)? {
         Some(c) => Some(deps.api.addr_humanize(&c)?),
         _ => None,
     };
@@ -180,8 +189,8 @@ pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contra
     match reply.id {
         // All possible DAO actions
         // VectisDaoActionIds::GovecMint = 10
-        // VectisDaoActionIds::ProposalExecute = 18
-        10..=18 => reply_dao_actions(reply),
+        // VectisDaoActionIds::ProposalClose = 19
+        10..=19 => reply_dao_actions(reply),
         _ => Err(ContractError::InvalidReplyId {}),
     }
 }

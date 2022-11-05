@@ -22,6 +22,7 @@ pub enum VectisDaoActionIds {
     ProposalPropose,
     ProposalVote,
     ProposalExecute,
+    ProposalClose,
     FactoryInstantiated,
 }
 
@@ -38,7 +39,8 @@ impl TryFrom<u64> for VectisDaoActionIds {
             16 => Ok(Self::ProposalPropose),
             17 => Ok(Self::ProposalVote),
             18 => Ok(Self::ProposalExecute),
-            19 => Ok(Self::FactoryInstantiated),
+            19 => Ok(Self::ProposalClose),
+            20 => Ok(Self::FactoryInstantiated),
             _ => Err(IbcError::InvalidDaoActionId {}),
         }
     }
