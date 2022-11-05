@@ -104,7 +104,7 @@ pub struct ChainConfig {
     /// The Factory that has the remote features on the local chain
     pub remote_factory: Option<CanonicalAddr>,
     /// Denom of the current chain
-    pub demon: String,
+    pub denom: String,
 }
 
 /// The IBC Packet Msg allowed dispatched by remote-tunnel

@@ -10,9 +10,9 @@ pub const CHAIN_CONFIG: Item<ChainConfig> = Item::new("chain_config");
 /// local connection_id: the light client of the remote chain
 /// we don't track caller port id as it is bounded to the ibctransfer module on the remote chain
 ///
-/// This just tracks existing connections of ibctransfer modules on this chain
-/// and other chains, specified by the connection_id
-pub const IBC_TRANSFER_MODULES: Map<&str, String> = Map::new("ibc_transfer_modules");
+/// This just tracks existing channels, mainly to be used by the dao
+/// to send funds from this contract out
+pub const IBC_TRANSFER_MODULES: Map<String, String> = Map::new("ibc_transfer_modules");
 
 /// Job Id for current dispatch,
 /// used for listening for callbacks for users.

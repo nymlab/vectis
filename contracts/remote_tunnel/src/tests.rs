@@ -50,7 +50,7 @@ pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     };
     let chain_config = ChainConfig {
         remote_factory: None,
-        demon: DENOM.to_string(),
+        denom: DENOM.to_string(),
     };
 
     let instantiate_msg = InstantiateMsg {
@@ -87,18 +87,14 @@ fn queries_works() {
     };
     let expected_chain_config = ChainConfig {
         remote_factory: None,
-        demon: DENOM.to_string(),
+        denom: DENOM.to_string(),
     };
     let dao_config = query_dao_config(deps.as_ref()).unwrap();
     let chain_config = query_chain_config(deps.as_ref()).unwrap();
 
     let all_tunnels = query_channels(deps.as_ref(), None, None).unwrap();
-    let last_tunnel = query_channels(
-        deps.as_ref(),
-        Some(("connection-one".to_string(), "port-one".to_string())),
-        None,
-    )
-    .unwrap();
+    let last_tunnel =
+        query_channels(deps.as_ref(), Some("connection-one".to_string()), None).unwrap();
 
     assert_eq!(expected_dao_config, dao_config);
     assert_eq!(expected_chain_config, chain_config);

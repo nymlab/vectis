@@ -1,4 +1,4 @@
-use crate::tests::*;
+use crate::{contract::query_channels, tests::*};
 
 pub fn mock_ibc_channel_open_init(
     connection_id: &str,
@@ -246,7 +246,7 @@ fn close_channels_reset_states() {
 }
 
 #[test]
-fn handle_factory_packet() {
+fn handle_inst_factory_packet() {
     let mut deps = do_instantiate();
     let job_id = 123;
 
@@ -281,7 +281,7 @@ fn handle_factory_packet() {
 
     assert_eq!(FACTORY_CALLBACK_ID, res.messages[0].id.clone());
 
-    // ock factory response
+    // ack factory response
     let contract_address = "fake_addr";
 
     let mut encoded = vec![0x0a, contract_address.len() as u8];
@@ -307,224 +307,141 @@ fn handle_factory_packet() {
             .unwrap()
     );
 }
-//
-// #[test]
-// fn handle_dispatch_packet() {
-//     let mut deps = do_instantiate();
-//     let channel_id = "channel-123";
-//
-//     let dispatch_msg = CosmosMsg::Bank(BankMsg::Send {
-//         to_address: "test".to_string(),
-//         amount: vec![],
-//     });
-//
-//     let msgs = vec![dispatch_msg];
-//
-//     let ibc_msg = PacketMsg::Dispatch {
-//         msgs: msgs.clone(),
-//         sender: "sender".to_string(),
-//         job_id: Some("my_job_id".to_string()),
-//     };
-//
-//     // register the channel
-//     connect(deps.as_mut(), channel_id);
-//
-//     let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
-//     let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
-//
-//     // assert app-level success
-//     let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
-//     ack.unwrap();
-//
-//     assert_eq!(msgs.len(), res.messages.len());
-//
-//     assert_eq!(RECEIVE_DISPATCH_ID, res.messages[0].id.clone());
-//
-//     let data = "string";
-//
-//     let mut encoded = vec![0x0a, data.len() as u8];
-//     encoded.extend(data.as_bytes());
-//
-//     let msg = WasmMsg::Execute {
-//         contract_addr: "address".to_string(),
-//         msg: to_binary(&()).unwrap(),
-//         funds: vec![],
-//     };
-//
-//     let response = Reply {
-//         id: res.messages[0].id,
-//         result: SubMsgResult::Ok(SubMsgResponse {
-//             events: vec![],
-//             data: Some(to_binary(&msg).unwrap()),
-//         }),
-//     };
-//
-//     let res = reply(deps.as_mut(), mock_env(), response).unwrap();
-//     let ack: StdAck = from_binary(&res.data.unwrap()).unwrap();
-//     let response: DispatchResponse = from_binary(&ack.unwrap()).unwrap();
-//
-//     let result: WasmMsg = from_binary(&response.results[0]).unwrap();
-//
-//     let state = RESULTS.load(&deps.storage).unwrap();
-//     let storage_result: WasmMsg = from_binary(&state[0]).unwrap();
-//
-//     assert_eq!(storage_result, result);
-// }
-//
-// #[test]
-// fn handle_update_packet() {
-//     let mut deps = do_instantiate();
-//     let channel_id = "channel-123";
-//
-//     let ibc_msg = PacketMsg::UpdateChannel;
-//
-//     connect(deps.as_mut(), channel_id);
-//
-//     let res: Option<String> =
-//         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel {}).unwrap()).unwrap();
-//
-//     assert!(res.is_none());
-//
-//     let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
-//     let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
-//
-//     // assert app-level success
-//     let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
-//     ack.unwrap();
-//
-//     let res: Option<String> =
-//         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Channel {}).unwrap()).unwrap();
-//
-//     assert_eq!(channel_id.to_string(), res.unwrap());
-// }
-//
-// #[test]
-// fn handle_mint_govec_packet() {
-//     let mut deps = do_instantiate();
-//     let channel_id = "channel-123";
-//     let factory_addr = "fake_addr";
-//     let wallet_addr = "user_address";
-//
-//     let mut encoded = vec![0x0a, factory_addr.len() as u8];
-//     encoded.extend(factory_addr.as_bytes());
-//
-//     let response = Reply {
-//         id: FACTORY_CALLBACK_ID,
-//         result: SubMsgResult::Ok(SubMsgResponse {
-//             events: vec![],
-//             data: Some(Binary::from(encoded)),
-//         }),
-//     };
-//
-//     reply(deps.as_mut(), mock_env(), response).unwrap();
-//
-//     let ibc_msg = PacketMsg::MintGovec {
-//         wallet_addr: wallet_addr.to_string(),
-//     };
-//
-//     connect(deps.as_mut(), channel_id);
-//
-//     let msg = mock_ibc_packet_recv(channel_id, &ibc_msg).unwrap();
-//     let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
-//
-//     // assert app-level success
-//     let ack: StdAck = from_slice(&res.acknowledgement).unwrap();
-//     ack.unwrap();
-//
-//     assert_eq!(
-//         CosmosMsg::Wasm(WasmMsg::Execute {
-//             contract_addr: factory_addr.to_string(),
-//             msg: to_binary(&WalletFactoryExecuteMsg::GovecMinted {
-//                 wallet: wallet_addr.to_string(),
-//             })
-//             .unwrap(),
-//             funds: vec![],
-//         }),
-//         res.messages[0].msg
-//     )
-// }
-//
-// #[test]
-// fn handle_execute_mint_govec() {
-//     let mut deps = do_instantiate();
-//     let factory_addr = "factory_addr";
-//     let cannonical_fact_addr = deps.as_mut().api.addr_canonicalize(factory_addr).unwrap();
-//     let wallet_addr = "wallet_addr";
-//     let info = mock_info("sender", &vec![]);
-//     let env = mock_env();
-//
-//     DAO_TUNNEL_CHANNEL
-//         .save(deps.as_mut().storage, &CHANNEL_ID.to_string())
-//         .unwrap();
-//
-//     // should expect err because there is not factory in the state
-//     let res = execute_mint_govec(
-//         deps.as_mut(),
-//         env.clone(),
-//         info.clone(),
-//         wallet_addr.to_string(),
-//     )
-//     .unwrap_err();
-//     assert_eq!(res, ContractError::NotFound("Factory".to_string()));
-//
-//     FACTORY
-//         .save(deps.as_mut().storage, &cannonical_fact_addr)
-//         .unwrap();
-//
-//     // should expect err because factory addr is different
-//     let res = execute_mint_govec(
-//         deps.as_mut(),
-//         env.clone(),
-//         info.clone(),
-//         wallet_addr.to_string(),
-//     )
-//     .unwrap_err();
-//     assert_eq!(res, ContractError::Unauthorized);
-//
-//     let res = execute_mint_govec(
-//         deps.as_mut(),
-//         env.clone(),
-//         mock_info(factory_addr, &vec![]),
-//         wallet_addr.to_string(),
-//     )
-//     .unwrap();
-//
-//     let packet = PacketMsg::MintGovec {
-//         wallet_addr: wallet_addr.to_string(),
-//     };
-//
-//     let msg = CosmosMsg::Ibc(IbcMsg::SendPacket {
-//         channel_id: CHANNEL_ID.to_string(),
-//         data: to_binary(&packet).unwrap(),
-//         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-//     });
-//
-//     assert_eq!(res.messages[0].msg, msg);
-// }
-//
-// #[test]
-// fn handle_execute_dispatch() {
-//     let mut deps = do_instantiate();
-//     let info = mock_info("sender", &vec![]);
-//     let env = mock_env();
-//
-//     DAO_TUNNEL_CHANNEL
-//         .save(deps.as_mut().storage, &CHANNEL_ID.to_string())
-//         .unwrap();
-//
-//     let res = execute_dispatch(deps.as_mut(), env.clone(), info.clone(), vec![], None).unwrap();
-//
-//     let packet = PacketMsg::Dispatch {
-//         sender: info.sender.to_string(),
-//         job_id: None,
-//         msgs: vec![],
-//     };
-//
-//     let msg = CosmosMsg::Ibc(IbcMsg::SendPacket {
-//         channel_id: CHANNEL_ID.to_string(),
-//         data: to_binary(&packet).unwrap(),
-//         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
-//     });
-//
-//     assert_eq!(res.messages[0].msg, msg);
-// }
+
+#[test]
+fn handle_update_dao_config() {
+    let mut deps = do_instantiate();
+    let job_id = 123;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+
+    let new_config = DaoConfig {
+        addr: "new_dao".to_string(),
+        dao_tunnel_port_id: "new_port".to_string(),
+        connection_id: "new_connection".to_string(),
+        dao_tunnel_channel: None,
+    };
+    let ibc_msg = PacketMsg {
+        sender: DAO_ADDR.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::UpdateDaoConfig {
+            new_config: new_config.clone(),
+        })
+        .unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+    let ack: StdAck = from_binary(&res.acknowledgement).unwrap();
+
+    let actual_config = query(deps.as_ref(), mock_env(), QueryMsg::DaoConfig {}).unwrap();
+    assert_eq!(new_config, from_binary(&actual_config).unwrap());
+
+    assert_eq!(0, res.messages.len());
+    assert_eq!(res.attributes, vec![("action", "dao config updated")]);
+    assert_eq!(ack, StdAck::Result(to_binary(&job_id).unwrap()))
+}
+
+#[test]
+fn handle_update_chain_config() {
+    let mut deps = do_instantiate();
+    let job_id = 123;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+
+    let ibc_msg = PacketMsg {
+        sender: DAO_ADDR.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::UpdateChainConfig {
+            new_config: ChainConfig {
+                remote_factory: None,
+                denom: "new_denom".to_string(),
+            },
+        })
+        .unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+    let ack: StdAck = from_binary(&res.acknowledgement).unwrap();
+
+    let actual_config = query(deps.as_ref(), mock_env(), QueryMsg::ChainConfig {}).unwrap();
+    assert_eq!(
+        ChainConfig {
+            remote_factory: None,
+            denom: "new_denom".to_string(),
+        },
+        from_binary(&actual_config).unwrap()
+    );
+
+    assert_eq!(0, res.messages.len());
+    assert_eq!(res.attributes, vec![("action", "chain config updated")]);
+    assert_eq!(ack, StdAck::Result(to_binary(&job_id).unwrap()))
+}
+
+#[test]
+fn handle_ibc_transfer_receiver() {
+    let mut deps = do_instantiate();
+    let job_id = 123;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+
+    let ibc_msg = PacketMsg {
+        sender: DAO_ADDR.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::UpdateIbcTransferRecieverChannel {
+            connection_id: "NEW CHANNEL".to_string(),
+            channel: Some("newchannel".to_string()),
+        })
+        .unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+    let ack: StdAck = from_binary(&res.acknowledgement).unwrap();
+
+    let channels = query_channels(deps.as_ref(), None, None).unwrap();
+    assert_eq!(
+        channels,
+        IbcTransferChannels {
+            endpoints: vec![
+                ("connection-two".to_string(), "chan-two".to_string()),
+                ("connection-one".to_string(), "chan-one".to_string()),
+                (
+                    OTHER_CONNECTION_ID.to_string(),
+                    OTHER_CHANNEL_ID.to_string(),
+                ),
+                ("NEW CHANNEL".to_string(), "newchannel".to_string())
+            ]
+        }
+    );
+
+    assert_eq!(0, res.messages.len());
+    assert_eq!(
+        res.attributes,
+        vec![("action", "ibc transfer module updated")]
+    );
+    assert_eq!(ack, StdAck::Result(to_binary(&job_id).unwrap()));
+
+    // remove
+    let ibc_msg = PacketMsg {
+        sender: DAO_ADDR.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::UpdateIbcTransferRecieverChannel {
+            connection_id: OTHER_CONNECTION_ID.to_string(),
+            channel: None,
+        })
+        .unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &ibc_msg).unwrap();
+    ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+    let channels = query_channels(deps.as_ref(), None, None).unwrap();
+    assert_eq!(
+        channels,
+        IbcTransferChannels {
+            endpoints: vec![
+                ("connection-two".to_string(), "chan-two".to_string()),
+                ("connection-one".to_string(), "chan-one".to_string()),
+                ("NEW CHANNEL".to_string(), "newchannel".to_string())
+            ]
+        }
+    );
+}

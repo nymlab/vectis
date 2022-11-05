@@ -95,9 +95,7 @@ pub fn ibc_channel_close(
             DAO_CONFIG.save(deps.storage, &dao_config)?;
         }
     } else {
-        if IBC_TRANSFER_MODULES.has(deps.storage, &connection_id) {
-            IBC_TRANSFER_MODULES.remove(deps.storage, &connection_id);
-        }
+        IBC_TRANSFER_MODULES.remove(deps.storage, connection_id);
     }
 
     Ok(IbcBasicResponse::new()
@@ -292,11 +290,11 @@ pub fn receive_update_ibc_transfer_modules(
     match channel {
         Some(c) => {
             // Update the channel
-            IBC_TRANSFER_MODULES.save(deps.storage, &connection_id, &c)?;
+            IBC_TRANSFER_MODULES.save(deps.storage, connection_id, &c)?;
         }
         None => {
             // Remove it
-            IBC_TRANSFER_MODULES.remove(deps.storage, &connection_id);
+            IBC_TRANSFER_MODULES.remove(deps.storage, connection_id);
         }
     }
     let res = IbcReceiveResponse::new()
