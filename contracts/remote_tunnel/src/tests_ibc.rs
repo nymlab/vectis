@@ -27,7 +27,7 @@ pub fn mock_ibc_channel_open_try(
 }
 
 // util to add `DAO_TUNNEL_CHANNEL` and `IBC_TRANSFER_PORT_ID`
-pub fn connect(mut deps: DepsMut, dao_channel_id: &str, ibc_transfer_channel_id: &str) {
+pub fn connect(mut deps: DepsMut, dao_channel_id: &str) {
     if let IbcChannelConnectMsg::OpenAck {
         mut channel,
         counterparty_version,
@@ -51,29 +51,6 @@ pub fn connect(mut deps: DepsMut, dao_channel_id: &str, ibc_transfer_channel_id:
                 Attribute::new("action", "ibc_connect"),
                 Attribute::new("SAVED local dao_tunnel channel_id", dao_channel_id),
                 Attribute::new("dao_tunnel_port_id", DAO_PORT_ID)
-            ]
-        );
-
-        // add ibc transfer
-        channel.counterparty_endpoint.port_id = OTHER_TRANSFER_PORT_ID.to_string();
-        channel.endpoint.channel_id = ibc_transfer_channel_id.to_string();
-        channel.connection_id = OTHER_CONNECTION_ID.to_string();
-
-        let res = ibc_channel_connect(
-            deps,
-            mock_env(),
-            IbcChannelConnectMsg::OpenAck {
-                channel: channel.clone(),
-                counterparty_version: counterparty_version.clone(),
-            },
-        )
-        .unwrap();
-        assert_eq!(
-            res.attributes,
-            vec![
-                Attribute::new("action", "ibc_connect"),
-                Attribute::new("SAVED new ibc_transfer_channel_id", ibc_transfer_channel_id),
-                Attribute::new("ibc_transfer_port_id", OTHER_TRANSFER_PORT_ID)
             ]
         );
     }
@@ -139,7 +116,7 @@ fn only_approved_endpoint_can_connect() {
     {
         // try to connect with port id not added as dao_tunnel or ibc_transfer
         channel.counterparty_endpoint.port_id = INVALID_PORT_ID.to_string();
-        channel.connection_id = OTHER_CONNECTION_ID.to_string();
+        channel.connection_id = DAO_CONNECTION_ID.to_string();
         let err = ibc_channel_connect(
             deps.as_mut(),
             mock_env(),
@@ -195,28 +172,6 @@ fn only_approved_endpoint_can_connect() {
                 Attribute::new("dao_tunnel_port_id", DAO_PORT_ID)
             ]
         );
-
-        // connect port id is added as IBC_TRANSFER
-        channel.counterparty_endpoint.port_id = OTHER_TRANSFER_PORT_ID.to_string();
-        channel.endpoint.channel_id = OTHER_CHANNEL_ID.to_string();
-        channel.connection_id = OTHER_CONNECTION_ID.to_string();
-        let res = ibc_channel_connect(
-            deps.as_mut(),
-            mock_env(),
-            IbcChannelConnectMsg::OpenAck {
-                channel,
-                counterparty_version,
-            },
-        )
-        .unwrap();
-        assert_eq!(
-            res.attributes,
-            vec![
-                Attribute::new("action", "ibc_connect"),
-                Attribute::new("SAVED new ibc_transfer_channel_id", OTHER_CHANNEL_ID),
-                Attribute::new("ibc_transfer_port_id", OTHER_TRANSFER_PORT_ID)
-            ]
-        );
     } else {
         assert!(false)
     };
@@ -227,7 +182,7 @@ fn only_approved_endpoint_can_connect() {
 #[test]
 fn returns_ack_failure_when_invalid_ibc_packet_msg() {
     let mut deps = do_instantiate();
-    connect(deps.as_mut(), DAO_CHANNEL_ID, OTHER_CHANNEL_ID);
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
 
     let incorrect_ibc_msg = &[2; 12];
 
@@ -247,7 +202,7 @@ fn returns_ack_failure_when_invalid_ibc_packet_msg() {
 #[test]
 fn returns_ack_failure_when_invalid_inner_remote_tunnel_msg() {
     let mut deps = do_instantiate();
-    connect(deps.as_mut(), DAO_CHANNEL_ID, OTHER_CHANNEL_ID);
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
     let incorrect_inner_msg = PacketMsg {
         sender: "Sender".to_string(),
         job_id: 1,
@@ -268,12 +223,35 @@ fn returns_ack_failure_when_invalid_inner_remote_tunnel_msg() {
 }
 
 #[test]
+fn close_channels_reset_states() {
+    let mut deps = do_instantiate();
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+
+    let init_msg = mock_ibc_channel_close_confirm(DAO_CHANNEL_ID, APP_ORDER, IBC_APP_VERSION);
+    let mut channel = init_msg.channel().to_owned();
+    channel.connection_id = DAO_CONNECTION_ID.to_string();
+    channel.endpoint.channel_id = DAO_CHANNEL_ID.to_string();
+    channel.counterparty_endpoint.port_id = DAO_PORT_ID.to_string();
+    let msg = IbcChannelCloseMsg::new_confirm(channel);
+    let res = ibc_channel_close(deps.as_mut(), mock_env(), msg).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("action", "ibc_close"),
+            ("channel_id", DAO_CHANNEL_ID),
+            ("src_port_id", DAO_PORT_ID),
+            ("connection_id", DAO_CONNECTION_ID)
+        ]
+    )
+}
+
+#[test]
 fn handle_factory_packet() {
     let mut deps = do_instantiate();
     let job_id = 123;
 
     // This sets states so that ibc packet can be received
-    connect(deps.as_mut(), DAO_CHANNEL_ID, OTHER_CHANNEL_ID);
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
 
     let factory_msg = FactoryInstantiateMsg {
         proxy_multisig_code_id: 19,

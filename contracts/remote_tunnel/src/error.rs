@@ -17,8 +17,8 @@ pub enum ContractError {
     InvalidReplyId,
     #[error("DAO channel not found")]
     DaoChannelNotFound,
-    #[error("Channel not found for connection_id: {0} and port_id {1}")]
-    ChannelNotFound(String, String),
+    #[error("Channel not found for connection_id: {0}")]
+    ChannelNotFound(String),
     #[error("Unauthorized")]
     Unauthorized,
     #[error("Factory contract not available")]

@@ -1,12 +1,14 @@
 use cosmwasm_std::coin;
 pub use cosmwasm_std::testing::{
-    mock_dependencies, mock_env, mock_ibc_channel, mock_ibc_channel_connect_ack,
-    mock_ibc_packet_recv, mock_info, MockApi, MockQuerier, MockStorage,
+    mock_dependencies, mock_env, mock_ibc_channel, mock_ibc_channel_close_confirm,
+    mock_ibc_channel_connect_ack, mock_ibc_packet_recv, mock_info, MockApi, MockQuerier,
+    MockStorage,
 };
 pub use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Attribute, BankMsg, Binary, Coin, CosmosMsg,
-    DepsMut, Ibc3ChannelOpenResponse, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcMsg, IbcOrder,
-    OwnedDeps, Reply, StdError, SubMsg, SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
+    DepsMut, Ibc3ChannelOpenResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
+    IbcMsg, IbcOrder, OwnedDeps, Reply, StdError, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
+    WasmMsg,
 };
 
 pub use vectis_wallet::{
@@ -19,7 +21,9 @@ pub use crate::contract::{execute_dispatch, execute_mint_govec, instantiate, que
 use crate::contract::{
     execute_ibc_transfer, query_chain_config, query_channels, query_dao_config, query_job_id,
 };
-pub use crate::ibc::{ibc_channel_connect, ibc_channel_open, ibc_packet_receive};
+pub use crate::ibc::{
+    ibc_channel_close, ibc_channel_connect, ibc_channel_open, ibc_packet_ack, ibc_packet_receive,
+};
 pub use crate::msg::{IbcTransferChannels, InstantiateMsg, QueryMsg};
 pub use crate::state::{CHAIN_CONFIG, DAO_CONFIG, JOB_ID};
 use crate::tests_ibc::connect;
@@ -32,7 +36,6 @@ pub const DAO_PORT_ID: &str = "wasm.dao";
 pub const DAO_ADDR: &str = "wasm.address_dao";
 pub const DAO_CHANNEL_ID: &str = "channel-1";
 pub const OTHER_CONNECTION_ID: &str = "connection-1";
-pub const OTHER_TRANSFER_PORT_ID: &str = "wasm.ibc_module";
 pub const OTHER_CHANNEL_ID: &str = "channel-2";
 
 pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
@@ -58,19 +61,10 @@ pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
             endpoints: vec![
                 (
                     OTHER_CONNECTION_ID.to_string(),
-                    OTHER_TRANSFER_PORT_ID.to_string(),
-                    None,
+                    OTHER_CHANNEL_ID.to_string(),
                 ),
-                (
-                    "connection-one".to_string(),
-                    "port-one".to_string(),
-                    Some("channel-one".to_string()),
-                ),
-                (
-                    "connection-two".to_string(),
-                    "port-two".to_string(),
-                    Some("channel-two".to_string()),
-                ),
+                ("connection-one".to_string(), "chan-one".to_string()),
+                ("connection-two".to_string(), "chan-two".to_string()),
             ],
         }),
     };
@@ -108,18 +102,15 @@ fn queries_works() {
 
     assert_eq!(expected_dao_config, dao_config);
     assert_eq!(expected_chain_config, chain_config);
-    // Ensure when we add init ibc tunnels,
-    // they do not have a channel at instantiation
     assert_eq!(
         all_tunnels,
         IbcTransferChannels {
             endpoints: vec![
-                ("connection-two".to_string(), "port-two".to_string(), None),
-                ("connection-one".to_string(), "port-one".to_string(), None),
+                ("connection-two".to_string(), "chan-two".to_string()),
+                ("connection-one".to_string(), "chan-one".to_string()),
                 (
                     OTHER_CONNECTION_ID.to_string(),
-                    OTHER_TRANSFER_PORT_ID.to_string(),
-                    None,
+                    OTHER_CHANNEL_ID.to_string(),
                 ),
             ]
         }
@@ -127,7 +118,7 @@ fn queries_works() {
     assert_eq!(
         last_tunnel,
         IbcTransferChannels {
-            endpoints: vec![("connection-two".to_string(), "port-two".to_string(), None),]
+            endpoints: vec![("connection-two".to_string(), "chan-two".to_string()),]
         }
     );
 }
@@ -173,19 +164,14 @@ fn ibc_transfer_fails_without_channel() {
         env.clone(),
         mock_info("sender", &[coin(11u128, DENOM), coin(22u128, DENOM)]),
         crate::msg::Receiver {
-            connection_id: OTHER_CONNECTION_ID.to_string(),
-            port_id: OTHER_TRANSFER_PORT_ID.to_string(),
+            connection_id: "NOT_VALID_CONNECTION".to_string(),
             addr: "receiver".to_string(),
         },
     )
     .unwrap_err();
-
     assert_eq!(
         err,
-        ContractError::ChannelNotFound(
-            OTHER_CONNECTION_ID.to_string(),
-            OTHER_TRANSFER_PORT_ID.to_string()
-        )
+        ContractError::ChannelNotFound("NOT_VALID_CONNECTION".to_string())
     )
 }
 
@@ -199,7 +185,6 @@ fn ibc_transfer_fails_without_funds() {
         mock_info("sender", &[]),
         crate::msg::Receiver {
             connection_id: OTHER_CONNECTION_ID.to_string(),
-            port_id: OTHER_TRANSFER_PORT_ID.to_string(),
             addr: "receiver".to_string(),
         },
     )
@@ -213,7 +198,6 @@ fn ibc_transfer_fails_without_funds() {
         mock_info("sender", &[coin(11u128, "some_other_denom")]),
         crate::msg::Receiver {
             connection_id: OTHER_CONNECTION_ID.to_string(),
-            port_id: OTHER_TRANSFER_PORT_ID.to_string(),
             addr: "receiver".to_string(),
         },
     )
@@ -227,7 +211,7 @@ fn dao_actions_works_with_connected_channel() {
     // Tests that the message is fired and correct events are emitted
     let mut deps = do_instantiate();
     let env = mock_env();
-    connect(deps.as_mut(), "dao_channel_id", "ibc_transfer_channel_id");
+    connect(deps.as_mut(), "dao_channel_id");
     let job_id = query_job_id(deps.as_ref()).unwrap();
     let msg = RemoteTunnelPacketMsg::StakeActions(vectis_wallet::StakeExecuteMsg::Claim {
         relayed_from: None,
@@ -265,14 +249,13 @@ fn dao_actions_works_with_connected_channel() {
 fn ibc_transfer_works_with_channel_connected() {
     let mut deps = do_instantiate();
     let env = mock_env();
-    connect(deps.as_mut(), DAO_CHANNEL_ID, OTHER_CHANNEL_ID);
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
     let res = execute_ibc_transfer(
         deps.as_mut(),
         env.clone(),
         mock_info("sender", &[coin(11u128, DENOM), coin(22u128, DENOM)]),
         crate::msg::Receiver {
             connection_id: OTHER_CONNECTION_ID.to_string(),
-            port_id: OTHER_TRANSFER_PORT_ID.to_string(),
             addr: "receiver".to_string(),
         },
     )
