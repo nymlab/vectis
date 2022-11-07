@@ -68,7 +68,9 @@ class DaoClient {
     }
 
     async queryProposals() {
-        return await this.client.queryContractSmart(this.proposalAddr, { list_proposals: {} });
+        return await this.client.queryContractSmart(this.proposalAddr, {
+            list_proposals: {},
+        });
     }
 
     async createProposal(title: string, description: string, msgs: Record<string, unknown>[]) {
@@ -144,15 +146,26 @@ class DaoClient {
             "auto"
         );
 
-        const voteAddr = await client.queryContractSmart(daoAddr, { voting_module: {} });
-        const [proposalAddr] = await client.queryContractSmart(daoAddr, { proposal_modules: {} });
-        const stakingAddr = await client.queryContractSmart(voteAddr, { staking_contract: {} });
+        const voteAddr = await client.queryContractSmart(daoAddr, {
+            voting_module: {},
+        });
+        const [proposalAddr] = await client.queryContractSmart(daoAddr, {
+            proposal_modules: {},
+        });
+        const stakingAddr = await client.queryContractSmart(voteAddr, {
+            staking_contract: {},
+        });
         console.log("Instantiated DAO at: ", daoAddr);
         console.log("Instantiated Vote at: ", voteAddr);
         console.log("Instantiated proposal at: ", proposalAddr);
         console.log("Instantiated staking at: ", stakingAddr);
 
-        return new DaoClient(client, { daoAddr, voteAddr, proposalAddr, stakingAddr });
+        return new DaoClient(client, {
+            daoAddr,
+            voteAddr,
+            proposalAddr,
+            stakingAddr,
+        });
     }
 
     static createGovModInstInfo(proposalCodeId: number, propInstMsg: CwPropSingleInstantiateMsg) {

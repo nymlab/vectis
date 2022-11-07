@@ -19,7 +19,7 @@ import {
 
 import type { ContractsResult } from "../interfaces/contracts";
 
-async function uploadCode() {
+(async function uploadCode() {
     if (!areContractsDownloaded()) await downloadContracts();
 
     const daoClient = await CosmWasmClient.connectWithAccount(hostChain, "admin");
@@ -28,12 +28,15 @@ async function uploadCode() {
     const remoteClient = await CosmWasmClient.connectWithAccount(remoteChain, "admin");
     const uploadRemoteRes = await remoteClient.uploadRemoteContracts();
 
-    const results = { host: { ...uploadHostRes }, remote: { ...uploadRemoteRes } } as ContractsResult;
+    const results = {
+        host: { ...uploadHostRes },
+        remote: { ...uploadRemoteRes },
+    } as ContractsResult;
 
     await verifyUpload(results);
 
     writeInCacheFolder("uploadInfo.json", JSON.stringify(results, null, 2));
-}
+})();
 
 async function verifyUpload({ host, remote }: ContractsResult) {
     const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes } = host;
@@ -94,5 +97,3 @@ async function verifyUpload({ host, remote }: ContractsResult) {
     assert.strictEqual(remoteMultisig.compressedSize < remoteMultisigCode.length * 0.5, true);
     assert.strictEqual(remoteMultisig.codeId >= 1, true);
 }
-
-uploadCode();

@@ -42,7 +42,7 @@ export const cw20VotingDownloadLink = `https://github.com/DA0-DA0/dao-contracts/
 export const cw20ProposalSingleDownloadLink = `https://github.com/DA0-DA0/dao-contracts/releases/download/${daodaoReleaseVer}/cw_proposal_single.wasm`;
 
 // Paths
-export const cachePath = path.join(__dirname, "..", "..", ".cache");
+export const cachePath = path.join(__dirname, "../.cache");
 export const downloadContractPath = path.join(cachePath, "/contracts");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
 export const deployReportPath = path.join(cachePath, "deployInfo.json");
