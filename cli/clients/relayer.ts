@@ -74,7 +74,12 @@ class RelayerClient {
         const hostClient = await this.createIbcClient(this.hostChainName);
         const remoteClient = await this.createIbcClient(this.remoteChainName);
         // TODO: Recover from json file
-        this.link = await Link.createWithExistingConnections(hostClient, remoteClient, "A", "B");
+        this.link = await Link.createWithExistingConnections(
+            hostClient,
+            remoteClient,
+            "connection-16",
+            "connection-18"
+        );
     }
 }
 

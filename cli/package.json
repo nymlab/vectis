@@ -2,29 +2,73 @@
     "name": "vectis-cli",
     "version": "1.0.0",
     "license": "Apache 2.0",
-    "description": "CLI tool for Vectis smart contract wallet",
-    "workspaces": [
-        "types",
-        "tests",
-        "core"
+    "authors": [
+        "bwty <whalelephant@users.noreply.github.com>",
+        "giovanni-orciuolo <giovanni@orciuolo.it>",
+        "j0nl1 <jonlitech@gmail.com>"
     ],
+    "description": "CLI tool for Vectis smart contract wallet",
     "scripts": {
-        "upload": "npm run upload -w @vectis/core",
-        "test": "npm test -w @vectis/tests",
+        "upload": "ts-node scripts/upload.ts",
+        "types:gen": "ts-node scripts/types.ts",
+        "deploy:dao": "ts-node scripts/deploy.ts",
+        "publish:dev": "tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
+        "publish:prod": "tsc && cp package.json build/package.json && cd build && npm publish",
+        "generate": "npm run types && npm version patch",
+        "types": "node ./scripts/gen-contracts.js",
+        "test": "jest --runInBand",
         "test:ci": "npm run upload && npm test",
-        "deploy:dao": "npm run deploy:dao -w @vectis/core",
         "build:docker": "npm run upload && npm run deploy:dao",
         "generate:types": "npm run generate -w @vectis/types",
         "prepare": "cd .. && ./cli/node_modules/.bin/husky install cli/.husky"
     },
     "devDependencies": {
+        "@confio/relayer": "^0.7.0",
+        "@cosmjs/amino": "^0.29.2",
+        "@cosmjs/cosmwasm-stargate": "^0.29.2",
+        "@cosmjs/crypto": "^0.29.2",
+        "@cosmjs/encoding": "^0.29.2",
+        "@cosmjs/proto-signing": "^0.29.2",
+        "@cosmjs/stargate": "^0.29.2",
+        "@cosmjs/tendermint-rpc": "^0.29.2",
         "@types/node": "^17.0.38",
+        "axios": "^0.27.2",
+        "dotenv": "^16.0.1",
         "husky": ">=6",
         "lint-staged": ">=10",
         "prettier": "^2.6.2",
-        "typescript": "^4.4.4"
+        "@dao-dao/types": "^1.1.0",
+        "@types/jest": "^27.5.2",
+        "jest": "^28.1.0",
+        "ts-jest": "^28.0.3",
+        "sinon": "^14.0.1",
+        "ts-node": "^10.8.0",
+        "typescript": "^4.4.4",
+        "@cosmwasm/ts-codegen": "^0.20.0"
     },
     "lint-staged": {
         "*.{ts}": "./cli/node_modules/.bin/prettier --write"
+    },
+    "jest": {
+        "globalSetup": "./setup.ts",
+        "testRegex": "\\.spec\\.ts$",
+        "testTimeout": 600000,
+        "moduleFileExtensions": [
+            "ts",
+            "js"
+        ],
+        "transform": {
+            ".ts": "ts-jest"
+        },
+        "collectCoverageFrom": [
+            "**/*.ts",
+            "!**/node_modules/**"
+        ],
+        "coverageDirectory": "coverage",
+        "coveragePathIgnorePatterns": [
+            "node_modules",
+            "utils"
+        ],
+        "verbose": true
     }
 }

@@ -1,5 +1,5 @@
 import CWClient from "./cosmwasm";
-import { GovecClient as GovecC, GovecT } from "@vectis/types";
+import { GovecClient as GovecC, GovecT } from "../interfaces";
 
 export const marketingProject = "https://vectis.nymlab.it";
 export const marketingDescription = `Govec is the governance token for Vectis DAO. One token is assigned to a Vectis wallet upon creation.`;
