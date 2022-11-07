@@ -8,11 +8,10 @@ export type CanonicalAddr = string;
 export interface InstantiateMsg {
     chain_config: ChainConfig;
     dao_config: DaoConfig;
-    denom: string;
     init_ibc_transfer_mod?: IbcTransferChannels | null;
 }
 export interface ChainConfig {
-    demon: string;
+    denom: string;
     remote_factory?: CanonicalAddr | null;
 }
 export interface DaoConfig {
@@ -22,7 +21,7 @@ export interface DaoConfig {
     dao_tunnel_port_id: string;
 }
 export interface IbcTransferChannels {
-    endpoints: [string, string, string | null][];
+    endpoints: [string, string][];
 }
 export type ExecuteMsg =
     | {
@@ -172,20 +171,15 @@ export type Duration =
     | {
           time: number;
       };
-export type Receiver =
-    | "dao"
-    | {
-          other: {
-              addr: string;
-              connection_id: string;
-              port_id: string;
-          };
-      };
 export interface Cw20ReceiveMsg {
     amount: Uint128;
     msg: Binary;
     sender: string;
     [k: string]: unknown;
+}
+export interface Receiver {
+    addr: string;
+    connection_id: string;
 }
 export type QueryMsg =
     | {
@@ -197,7 +191,7 @@ export type QueryMsg =
     | {
           ibc_transfer_channels: {
               limit?: number | null;
-              start_from?: [string, string] | null;
+              start_from?: string | null;
           };
       }
     | {

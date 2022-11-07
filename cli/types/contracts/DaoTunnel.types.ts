@@ -6,6 +6,10 @@
 
 export interface InstantiateMsg {
     govec_minter: string;
+    init_remote_tunnels?: RemoteTunnels | null;
+}
+export interface RemoteTunnels {
+    tunnels: [string, string][];
 }
 export type ExecuteMsg =
     | {
@@ -18,6 +22,16 @@ export type ExecuteMsg =
           remove_approved_controller: {
               connection_id: string;
               port_id: string;
+          };
+      }
+    | {
+          update_dao_addr: {
+              new_addr: string;
+          };
+      }
+    | {
+          update_govec_addr: {
+              new_addr: string;
           };
       }
     | {
@@ -48,7 +62,6 @@ export type DaoTunnelPacketMsg =
           update_ibc_transfer_reciever_channel: {
               channel?: string | null;
               connection_id: string;
-              port_id: string;
           };
       }
     | {
@@ -177,7 +190,7 @@ export interface DaoConfig {
     dao_tunnel_port_id: string;
 }
 export interface ChainConfig {
-    demon: string;
+    denom: string;
     remote_factory?: CanonicalAddr | null;
 }
 export interface WalletFactoryInstantiateMsg {
@@ -214,9 +227,9 @@ export type QueryMsg =
       }
     | {
           govec: {};
+      }
+    | {
+          dao: {};
       };
-export interface RemoteTunnels {
-    tunnels: [string, string][];
-}
 export type Nullable_Addr = Addr | null;
 export type Addr = string;

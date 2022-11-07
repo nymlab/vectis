@@ -12,9 +12,46 @@
     "properties": {
       "govec_minter": {
         "type": "string"
+      },
+      "init_remote_tunnels": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/RemoteTunnels"
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "definitions": {
+      "RemoteTunnels": {
+        "type": "object",
+        "required": [
+          "tunnels"
+        ],
+        "properties": {
+          "tunnels": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
   },
   "execute": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -67,6 +104,48 @@
               },
               "port_id": {
                 "description": "The port of the remote-tunnel in the IbcChannel endpoint",
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_dao_addr"
+        ],
+        "properties": {
+          "update_dao_addr": {
+            "type": "object",
+            "required": [
+              "new_addr"
+            ],
+            "properties": {
+              "new_addr": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_govec_addr"
+        ],
+        "properties": {
+          "update_govec_addr": {
+            "type": "object",
+            "required": [
+              "new_addr"
+            ],
+            "properties": {
+              "new_addr": {
                 "type": "string"
               }
             },
@@ -177,10 +256,10 @@
       "ChainConfig": {
         "type": "object",
         "required": [
-          "demon"
+          "denom"
         ],
         "properties": {
-          "demon": {
+          "denom": {
             "description": "Denom of the current chain",
             "type": "string"
           },
@@ -413,8 +492,7 @@
               "update_ibc_transfer_reciever_channel": {
                 "type": "object",
                 "required": [
-                  "connection_id",
-                  "port_id"
+                  "connection_id"
                 ],
                 "properties": {
                   "channel": {
@@ -424,9 +502,6 @@
                     ]
                   },
                   "connection_id": {
-                    "type": "string"
-                  },
-                  "port_id": {
                     "type": "string"
                   }
                 },
@@ -950,6 +1025,19 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "dao"
+        ],
+        "properties": {
+          "dao": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ]
   },
@@ -982,6 +1070,24 @@
         }
       },
       "additionalProperties": false
+    },
+    "dao": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Nullable_Addr",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        }
+      }
     },
     "govec": {
       "$schema": "http://json-schema.org/draft-07/schema#",
