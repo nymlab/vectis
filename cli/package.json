@@ -9,18 +9,13 @@
     ],
     "description": "CLI tool for Vectis smart contract wallet",
     "scripts": {
-        "upload": "ts-node scripts/upload.ts",
-        "types:gen": "ts-node scripts/types.ts",
-        "deploy:dao": "ts-node scripts/deploy.ts",
-        "publish:dev": "tsc && cp package.json build/package.json && cd build && npm publish --dry-run",
-        "publish:prod": "tsc && cp package.json build/package.json && cd build && npm publish",
-        "generate": "npm run types && npm version patch",
-        "types": "node ./scripts/gen-contracts.js",
+        "dev": "npm run upload && npm run deploy:dao",
         "test": "jest --runInBand",
         "test:ci": "npm run upload && npm test",
-        "build:docker": "npm run upload && npm run deploy:dao",
-        "generate:types": "npm run generate -w @vectis/types",
-        "prepare": "cd .. && ./cli/node_modules/.bin/husky install cli/.husky"
+        "upload": "ts-node scripts/upload.ts",
+        "deploy:dao": "ts-node scripts/deploy.ts",
+        "generate:types": "ts-node scripts/types.ts",
+        "prettier": "prettier --write \"**/*.{js,ts}\""
     },
     "devDependencies": {
         "@confio/relayer": "^0.7.0",
@@ -50,7 +45,6 @@
         "*.{ts}": "./cli/node_modules/.bin/prettier --write"
     },
     "jest": {
-        "globalSetup": "./setup.ts",
         "testRegex": "\\.spec\\.ts$",
         "testTimeout": 600000,
         "moduleFileExtensions": [
@@ -60,15 +54,6 @@
         "transform": {
             ".ts": "ts-jest"
         },
-        "collectCoverageFrom": [
-            "**/*.ts",
-            "!**/node_modules/**"
-        ],
-        "coverageDirectory": "coverage",
-        "coveragePathIgnorePatterns": [
-            "node_modules",
-            "utils"
-        ],
         "verbose": true
     }
 }

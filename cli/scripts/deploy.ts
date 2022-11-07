@@ -1,4 +1,6 @@
+import assert from "assert";
 import { FactoryClient, GovecClient, DaoClient, RelayerClient, CWClient } from "../clients";
+import { marketingDescription, marketingProject } from "../clients/govec";
 import RemoteTunnelClient from "../clients/remote-tunnel";
 
 import { delay } from "../utils/promises";
@@ -32,7 +34,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 // 11. Admin unstakes and burn its govec (exits system)
 //
 
-async function deploy() {
+(async function deploy() {
     const { host, remote } = await import(uploadReportPath);
     const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes } = host;
     const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
@@ -63,8 +65,14 @@ async function deploy() {
     const daoClient = await DaoClient.instantiate(adminHostClient, govecAddr);
 
     // Admin stake initial balance to prepare for proposal
-    await govecClient.updateConfigAddr({ newAddr: { staking: daoClient.stakingAddr } });
-    await govecClient.send({ amount: "1", contract: daoClient.stakingAddr, msg: toCosmosMsg({ stake: {} }) });
+    await govecClient.updateConfigAddr({
+        newAddr: { staking: daoClient.stakingAddr },
+    });
+    await govecClient.send({
+        amount: "1",
+        contract: daoClient.stakingAddr,
+        msg: toCosmosMsg({ stake: {} }),
+    });
     await delay(10000);
 
     // Admin propose and execute dao deploy factory
@@ -213,19 +221,27 @@ async function deploy() {
     console.log("\nRemote Factory Addr: ", remoteFactoryAddr);
 
     // Update marketing address on Govec
-    let res = await govecClient.updateMarketing({ marketing: daoClient.daoAddr });
+    let res = await govecClient.updateMarketing({
+        marketing: daoClient.daoAddr,
+    });
     console.log("\n\nUpdated Marketing Address on Govec\n", JSON.stringify(res));
 
     // Add factory address to Govec
-    res = await govecClient.updateConfigAddr({ newAddr: { factory: factoryAddr } });
+    res = await govecClient.updateConfigAddr({
+        newAddr: { factory: factoryAddr },
+    });
     console.log("\n\nUpdated Factory Address on Govec\n", JSON.stringify(res));
 
     // Add dao_tunnel address to Govec
-    res = await govecClient.updateConfigAddr({ newAddr: { dao_tunnel: daoTunnelAddr } });
+    res = await govecClient.updateConfigAddr({
+        newAddr: { dao_tunnel: daoTunnelAddr },
+    });
     console.log("\n\nUpdated DaoTunnel Address on Govec\n", JSON.stringify(res));
 
     // Update DAO address on Govec
-    res = await govecClient.updateConfigAddr({ newAddr: { dao: daoClient.daoAddr } });
+    res = await govecClient.updateConfigAddr({
+        newAddr: { dao: daoClient.daoAddr },
+    });
     console.log("\n\nUpdated Dao Address on Govec\n", JSON.stringify(res));
 
     res = await adminHostClient.updateAdmin(adminHostClient.sender, govecAddr, daoClient.daoAddr, "auto");
@@ -257,8 +273,69 @@ async function deploy() {
     await verifyDeploy(contracts);
 
     writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
+})();
+
+async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
+    const adminHostClient = await CWClient.connectWithAccount(hostChainName, "admin");
+    const govecClient = new GovecClient(adminHostClient, adminHostClient.sender, addrs.govecAddr);
+    const factoryClient = new FactoryClient(adminHostClient, adminHostClient.sender, addrs.factoryAddr);
+    const daoClient = new DaoClient(adminHostClient, {
+        daoAddr: addrs.daoAddr,
+        proposalAddr: addrs.proposalAddr,
+        stakingAddr: addrs.stakingAddr,
+        voteAddr: addrs.voteAddr,
+    });
+
+    // Deployer account should not have any govec token.
+    const { balance } = await govecClient.balance({
+        address: adminHostClient.sender,
+    });
+    assert.strictEqual(balance, "0");
+
+    // DAO should have not admin
+    let contract = await adminHostClient.getContract(addrs.daoAddr);
+    assert.strictEqual(contract.admin, undefined);
+
+    // DAO Supply should be 0
+    const tokenInfo = await govecClient.tokenInfo();
+    assert.strictEqual(tokenInfo.total_supply, "0");
+
+    // DAO should have 4 proposals executed
+    const { proposals } = await daoClient.queryProposals();
+    assert.strictEqual(proposals.length, 4);
+
+    // Govec, dao_tunnel, host_factory, cw20_stake, cw20_stake_balance_voting, Proposal Contracts should have DAO as admin
+    contract = await adminHostClient.getContract(addrs.factoryAddr);
+    assert.strictEqual(contract.admin, addrs.daoAddr);
+    contract = await adminHostClient.getContract(addrs.govecAddr);
+    assert.strictEqual(contract.admin, addrs.daoAddr);
+    contract = await adminHostClient.getContract(addrs.stakingAddr);
+    assert.strictEqual(contract.admin, addrs.daoAddr);
+    contract = await adminHostClient.getContract(addrs.voteAddr);
+    assert.strictEqual(contract.admin, addrs.daoAddr);
+    contract = await adminHostClient.getContract(addrs.proposalAddr);
+    assert.strictEqual(contract.admin, addrs.daoAddr);
+    contract = await adminHostClient.getContract(addrs.daoTunnelAddr);
+    assert.strictEqual(contract.admin, addrs.daoAddr);
+
+    // Govec should be set on the factory
+    const govecAddr = await factoryClient.govecAddr();
+    assert.strictEqual(govecAddr, addrs.govecAddr);
+
+    // Govec should have stakingAddr as the stakingAddr
+    const stakingAddr = await govecClient.staking();
+    assert.strictEqual(stakingAddr, addrs.stakingAddr);
+
+    // Govec should have daoAddr as the dao
+    const daoAddr = await govecClient.dao();
+    assert.strictEqual(daoAddr, addrs.daoAddr);
+
+    // Govec should have factory addr and dao_tunnel addr
+    const { minters } = await govecClient.minters();
+    assert.deepStrictEqual(minters, [addrs.daoTunnelAddr, addrs.factoryAddr]);
+
+    // Govec should have have vectis project and description
+    const marketingInfo = await govecClient.marketingInfo();
+    assert.strictEqual(marketingInfo.project, marketingProject);
+    assert.strictEqual(marketingInfo.description, marketingDescription);
 }
-
-async function verifyDeploy(contracts: VectisDaoContractsAddrs) {}
-
-deploy();
