@@ -147,9 +147,12 @@ pub fn ibc_packet_ack(
 pub fn ibc_packet_timeout(
     _deps: DepsMut,
     _env: Env,
-    _msg: IbcPacketTimeoutMsg,
+    msg: IbcPacketTimeoutMsg,
 ) -> StdResult<IbcBasicResponse> {
-    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
+    let original_packet: PacketMsg = from_binary(&msg.packet.data)?;
+    Ok(IbcBasicResponse::new()
+        .add_attribute("job_id", original_packet.job_id.to_string())
+        .add_attribute("action", "Ibc Timeout"))
 }
 
 // Utils for dao-actions

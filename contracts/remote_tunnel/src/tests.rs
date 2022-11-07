@@ -1,20 +1,21 @@
 use cosmwasm_std::coin;
 pub use cosmwasm_std::testing::{
     mock_dependencies, mock_env, mock_ibc_channel, mock_ibc_channel_close_confirm,
-    mock_ibc_channel_connect_ack, mock_ibc_packet_recv, mock_info, MockApi, MockQuerier,
-    MockStorage,
+    mock_ibc_channel_connect_ack, mock_ibc_packet_ack, mock_ibc_packet_recv, mock_info, MockApi,
+    MockQuerier, MockStorage,
 };
 pub use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Attribute, BankMsg, Binary, Coin, CosmosMsg,
-    DepsMut, Ibc3ChannelOpenResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
-    IbcMsg, IbcOrder, OwnedDeps, Reply, StdError, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
-    WasmMsg,
+    DepsMut, Ibc3ChannelOpenResponse, IbcAcknowledgement, IbcChannelCloseMsg, IbcChannelConnectMsg,
+    IbcChannelOpenMsg, IbcMsg, IbcOrder, OwnedDeps, Reply, StdError, SubMsg, SubMsgResponse,
+    SubMsgResult, Uint128, WasmMsg,
 };
 
 pub use vectis_wallet::{
     ChainConfig, DaoConfig, DaoTunnelPacketMsg, IbcError, PacketMsg, RemoteTunnelPacketMsg, StdAck,
-    WalletFactoryExecuteMsg, WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER,
-    IBC_APP_VERSION, PACKET_LIFETIME,
+    VectisDaoActionIds, WalletFactoryExecuteMsg,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
+    PACKET_LIFETIME,
 };
 
 pub use crate::contract::{execute_dispatch, execute_mint_govec, instantiate, query, reply};
@@ -27,7 +28,7 @@ pub use crate::ibc::{
 pub use crate::msg::{IbcTransferChannels, InstantiateMsg, QueryMsg};
 pub use crate::state::{CHAIN_CONFIG, DAO_CONFIG, JOB_ID};
 use crate::tests_ibc::connect;
-pub use crate::{ContractError, FACTORY_CALLBACK_ID};
+pub use crate::{ContractError, DISPATCH_CALLBACK_ID, FACTORY_CALLBACK_ID};
 
 pub const INVALID_PORT_ID: &str = "wasm.invalid";
 pub const DENOM: &str = "denom";
@@ -91,6 +92,7 @@ fn queries_works() {
     };
     let dao_config = query_dao_config(deps.as_ref()).unwrap();
     let chain_config = query_chain_config(deps.as_ref()).unwrap();
+    let next_job_id = query_job_id(deps.as_ref()).unwrap();
 
     let all_tunnels = query_channels(deps.as_ref(), None, None).unwrap();
     let last_tunnel =
@@ -98,6 +100,7 @@ fn queries_works() {
 
     assert_eq!(expected_dao_config, dao_config);
     assert_eq!(expected_chain_config, chain_config);
+    assert_eq!(next_job_id, 0);
     assert_eq!(
         all_tunnels,
         IbcTransferChannels {
@@ -238,7 +241,10 @@ fn dao_actions_works_with_connected_channel() {
             ("action", "dispatched DAO actions"),
             ("job_id", &job_id.to_string())
         ]
-    )
+    );
+
+    let next_job_id = query_job_id(deps.as_ref()).unwrap();
+    assert_eq!(next_job_id, job_id + 1);
 }
 
 #[test]

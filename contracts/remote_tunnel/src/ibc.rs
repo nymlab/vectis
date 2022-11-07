@@ -231,7 +231,7 @@ pub fn ibc_packet_timeout(
     } else {
         Ok(res
             .add_attribute("job_id", original_packet.job_id.to_string())
-            .add_attribute("action", "Timeout"))
+            .add_attribute("action", "Ibc Timeout"))
     }
 }
 
