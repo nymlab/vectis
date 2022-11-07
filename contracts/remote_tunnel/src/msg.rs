@@ -5,7 +5,6 @@ use vectis_wallet::{ChainConfig, DaoConfig, RemoteTunnelPacketMsg};
 pub struct InstantiateMsg {
     pub dao_config: DaoConfig,
     pub chain_config: ChainConfig,
-    pub denom: String,
     pub init_ibc_transfer_mod: Option<IbcTransferChannels>,
 }
 

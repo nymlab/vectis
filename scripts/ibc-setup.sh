@@ -25,7 +25,6 @@ fi
 echo "⚙️  Running juno_local on Docker..."
 
 docker run -d \
---platform linux/amd64 \
 --name juno_local \
 -p 1317:1317 \
 -p 26656:26656 \

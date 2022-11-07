@@ -22,8 +22,8 @@ import {
     EmbeddedLogo,
     ExecuteMsg1,
     Duration,
-    Receiver,
     Cw20ReceiveMsg,
+    Receiver,
     QueryMsg,
     Uint64,
 } from "./RemoteTunnel.types";
@@ -31,13 +31,7 @@ export interface RemoteTunnelReadOnlyInterface {
     contractAddress: string;
     daoConfig: () => Promise<DaoConfig>;
     chainConfig: () => Promise<ChainConfig>;
-    ibcTransferChannels: ({
-        limit,
-        startFrom,
-    }: {
-        limit?: number;
-        startFrom?: string[][];
-    }) => Promise<IbcTransferChannels>;
+    ibcTransferChannels: ({ limit, startFrom }: { limit?: number; startFrom?: string }) => Promise<IbcTransferChannels>;
     nextJobId: () => Promise<Uint64>;
 }
 export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
@@ -68,7 +62,7 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
         startFrom,
     }: {
         limit?: number;
-        startFrom?: string[][];
+        startFrom?: string;
     }): Promise<IbcTransferChannels> => {
         return this.client.queryContractSmart(this.contractAddress, {
             ibc_transfer_channels: {

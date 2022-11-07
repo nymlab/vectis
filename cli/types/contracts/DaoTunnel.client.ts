@@ -8,6 +8,7 @@ import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/co
 import { StdFee } from "@cosmjs/amino";
 import {
     InstantiateMsg,
+    RemoteTunnels,
     ExecuteMsg,
     DaoTunnelPacketMsg,
     CanonicalAddr,
@@ -29,7 +30,6 @@ import {
     IbcTimeout,
     IbcTimeoutBlock,
     QueryMsg,
-    RemoteTunnels,
     Nullable_Addr,
     Addr,
 } from "./DaoTunnel.types";
@@ -37,6 +37,7 @@ export interface DaoTunnelReadOnlyInterface {
     contractAddress: string;
     controllers: ({ limit, startAfter }: { limit?: number; startAfter?: string[][] }) => Promise<RemoteTunnels>;
     govec: () => Promise<Nullable_Addr>;
+    dao: () => Promise<Nullable_Addr>;
 }
 export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
     client: CosmWasmClient;
@@ -47,6 +48,7 @@ export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
         this.contractAddress = contractAddress;
         this.controllers = this.controllers.bind(this);
         this.govec = this.govec.bind(this);
+        this.dao = this.dao.bind(this);
     }
 
     controllers = async ({
@@ -66,6 +68,11 @@ export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
     govec = async (): Promise<Nullable_Addr> => {
         return this.client.queryContractSmart(this.contractAddress, {
             govec: {},
+        });
+    };
+    dao = async (): Promise<Nullable_Addr> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            dao: {},
         });
     };
 }
@@ -91,6 +98,26 @@ export interface DaoTunnelInterface extends DaoTunnelReadOnlyInterface {
         }: {
             connectionId: string;
             portId: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    updateDaoAddr: (
+        {
+            newAddr,
+        }: {
+            newAddr: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    updateGovecAddr: (
+        {
+            newAddr,
+        }: {
+            newAddr: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -123,6 +150,8 @@ export class DaoTunnelClient extends DaoTunnelQueryClient implements DaoTunnelIn
         this.contractAddress = contractAddress;
         this.addApprovedController = this.addApprovedController.bind(this);
         this.removeApprovedController = this.removeApprovedController.bind(this);
+        this.updateDaoAddr = this.updateDaoAddr.bind(this);
+        this.updateGovecAddr = this.updateGovecAddr.bind(this);
         this.dispatchActionOnRemoteTunnel = this.dispatchActionOnRemoteTunnel.bind(this);
     }
 
@@ -171,6 +200,52 @@ export class DaoTunnelClient extends DaoTunnelQueryClient implements DaoTunnelIn
                 remove_approved_controller: {
                     connection_id: connectionId,
                     port_id: portId,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateDaoAddr = async (
+        {
+            newAddr,
+        }: {
+            newAddr: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_dao_addr: {
+                    new_addr: newAddr,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateGovecAddr = async (
+        {
+            newAddr,
+        }: {
+            newAddr: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_govec_addr: {
+                    new_addr: newAddr,
                 },
             },
             fee,

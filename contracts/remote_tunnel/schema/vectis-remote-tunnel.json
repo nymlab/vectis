@@ -8,8 +8,7 @@
     "type": "object",
     "required": [
       "chain_config",
-      "dao_config",
-      "denom"
+      "dao_config"
     ],
     "properties": {
       "chain_config": {
@@ -17,9 +16,6 @@
       },
       "dao_config": {
         "$ref": "#/definitions/DaoConfig"
-      },
-      "denom": {
-        "type": "string"
       },
       "init_ibc_transfer_mod": {
         "anyOf": [
@@ -44,10 +40,10 @@
       "ChainConfig": {
         "type": "object",
         "required": [
-          "demon"
+          "denom"
         ],
         "properties": {
-          "demon": {
+          "denom": {
             "description": "Denom of the current chain",
             "type": "string"
           },
@@ -102,7 +98,7 @@
         ],
         "properties": {
           "endpoints": {
-            "description": "(connection_id, port_id, channel_id) when using for instantiation, channel_id is ignored",
+            "description": "(connection_id, channel_id) The channel_id are for channel already established",
             "type": "array",
             "items": {
               "type": "array",
@@ -112,16 +108,10 @@
                 },
                 {
                   "type": "string"
-                },
-                {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
                 }
               ],
-              "maxItems": 3,
-              "minItems": 3
+              "maxItems": 2,
+              "minItems": 2
             }
           }
         },
@@ -156,7 +146,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Transfer native tokens to another chain Fund amount is forward from the MessageInfo.funds if `addr = None`, funds is transfer to the DAO",
+        "description": "Transfer native tokens to another chain Fund amount is forward from the MessageInfo.funds",
         "type": "object",
         "required": [
           "ibc_transfer"
@@ -652,43 +642,20 @@
         ]
       },
       "Receiver": {
-        "oneOf": [
-          {
-            "type": "string",
-            "enum": [
-              "dao"
-            ]
+        "type": "object",
+        "required": [
+          "addr",
+          "connection_id"
+        ],
+        "properties": {
+          "addr": {
+            "type": "string"
           },
-          {
-            "type": "object",
-            "required": [
-              "other"
-            ],
-            "properties": {
-              "other": {
-                "type": "object",
-                "required": [
-                  "addr",
-                  "connection_id",
-                  "port_id"
-                ],
-                "properties": {
-                  "addr": {
-                    "type": "string"
-                  },
-                  "connection_id": {
-                    "type": "string"
-                  },
-                  "port_id": {
-                    "type": "string"
-                  }
-                },
-                "additionalProperties": false
-              }
-            },
-            "additionalProperties": false
+          "connection_id": {
+            "type": "string"
           }
-        ]
+        },
+        "additionalProperties": false
       },
       "RemoteTunnelPacketMsg": {
         "description": "The IBC Packet Msg allowed dispatched by remote-tunnel",
@@ -873,19 +840,9 @@
               },
               "start_from": {
                 "type": [
-                  "array",
+                  "string",
                   "null"
-                ],
-                "items": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
-                "maxItems": 2,
-                "minItems": 2
+                ]
               }
             },
             "additionalProperties": false
@@ -916,10 +873,10 @@
       "title": "ChainConfig",
       "type": "object",
       "required": [
-        "demon"
+        "denom"
       ],
       "properties": {
-        "demon": {
+        "denom": {
           "description": "Denom of the current chain",
           "type": "string"
         },
@@ -987,7 +944,7 @@
       ],
       "properties": {
         "endpoints": {
-          "description": "(connection_id, port_id, channel_id) when using for instantiation, channel_id is ignored",
+          "description": "(connection_id, channel_id) The channel_id are for channel already established",
           "type": "array",
           "items": {
             "type": "array",
@@ -997,16 +954,10 @@
               },
               {
                 "type": "string"
-              },
-              {
-                "type": [
-                  "string",
-                  "null"
-                ]
               }
             ],
-            "maxItems": 3,
-            "minItems": 3
+            "maxItems": 2,
+            "minItems": 2
           }
         }
       },

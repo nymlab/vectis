@@ -20,7 +20,7 @@ pub use vectis_wallet::{
     WalletAddr, WalletInfo, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 // use stake_cw20::msg::InstantiateMsg as StakingInstantiateMsg;
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
 use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
 #[cfg(not(feature = "library"))]
@@ -145,7 +145,7 @@ fn create_wallet(
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
         let res = Response::new().add_submessage(msg);
 
-        TOTAL_CREATED.save(deps.storage, &next_id)?;
+        TOTAL_CREATED.save(deps.storage, &next_id.sub(1))?;
 
         // Send native tokens to DAO to join the DAO
         if fee.amount != Uint128::zero() {
