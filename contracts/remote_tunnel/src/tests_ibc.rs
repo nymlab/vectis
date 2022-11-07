@@ -1,4 +1,11 @@
-use crate::{contract::query_channels, tests::*};
+use cosmwasm_std::testing::mock_ibc_packet_timeout;
+
+use crate::{
+    contract::{query_channels, query_dao_config},
+    ibc::ibc_packet_timeout,
+    msg::{ExecuteMsg, Receiver},
+    tests::*,
+};
 
 pub fn mock_ibc_channel_open_init(
     connection_id: &str,
@@ -227,6 +234,10 @@ fn close_channels_reset_states() {
     let mut deps = do_instantiate();
     connect(deps.as_mut(), DAO_CHANNEL_ID);
 
+    // connected in the previous step
+    let dao_config = query_dao_config(deps.as_ref()).unwrap();
+    assert!(dao_config.dao_tunnel_channel.is_some());
+
     let init_msg = mock_ibc_channel_close_confirm(DAO_CHANNEL_ID, APP_ORDER, IBC_APP_VERSION);
     let mut channel = init_msg.channel().to_owned();
     channel.connection_id = DAO_CONNECTION_ID.to_string();
@@ -242,7 +253,11 @@ fn close_channels_reset_states() {
             ("src_port_id", DAO_PORT_ID),
             ("connection_id", DAO_CONNECTION_ID)
         ]
-    )
+    );
+
+    // removed channel_id
+    let dao_config = query_dao_config(deps.as_ref()).unwrap();
+    assert_eq!(dao_config.dao_tunnel_channel, None);
 }
 
 #[test]
@@ -444,4 +459,307 @@ fn handle_ibc_transfer_receiver() {
             ]
         }
     );
+}
+
+#[test]
+fn handle_dispatch_actions_ack_with_job_id() {
+    let mut deps = do_instantiate();
+    let env = mock_env();
+    let job_id = 222;
+
+    // This sets states so that ibc packet can be received
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+    let coin = Coin {
+        amount: Uint128::from(11u32),
+        denom: DENOM.to_string(),
+    };
+
+    let dispatch_bank = CosmosMsg::Bank(BankMsg::Send {
+        to_address: "to_address".to_string(),
+        amount: vec![coin.clone()],
+    });
+
+    let dispatch_self_ibc_transfer = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::IbcTransfer {
+            receiver: Receiver {
+                connection_id: OTHER_CONNECTION_ID.to_string(),
+                addr: DAO_ADDR.to_string(),
+            },
+        })
+        .unwrap(),
+        funds: vec![coin],
+    });
+    let dispatch_msgs = vec![dispatch_bank, dispatch_self_ibc_transfer];
+
+    let ibc_msg = PacketMsg {
+        sender: DAO_ADDR.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::DispatchActions {
+            msgs: dispatch_msgs,
+        })
+        .unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+    let ack: StdAck = from_binary(&res.acknowledgement).unwrap();
+
+    assert_eq!(DISPATCH_CALLBACK_ID, res.messages[0].id.clone());
+    assert_eq!(DISPATCH_CALLBACK_ID, res.messages[1].id.clone());
+    assert_eq!(ack, StdAck::Result(to_binary(&job_id).unwrap()));
+}
+
+#[test]
+fn handle_dispatch_actions_ack_failure() {
+    let mut deps = do_instantiate();
+    let env = mock_env();
+    let job_id = 222;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+
+    // this should fail as no fund is given
+    let dispatch_self_ibc_transfer = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::IbcTransfer {
+            receiver: Receiver {
+                connection_id: "notset".to_string(),
+                addr: DAO_ADDR.to_string(),
+            },
+        })
+        .unwrap(),
+        funds: vec![],
+    });
+
+    let ibc_msg = PacketMsg {
+        sender: DAO_ADDR.to_string(),
+        job_id,
+        msg: to_binary(&DaoTunnelPacketMsg::DispatchActions {
+            msgs: vec![dispatch_self_ibc_transfer],
+        })
+        .unwrap(),
+    };
+
+    let msg = mock_ibc_packet_recv(DAO_CHANNEL_ID, &ibc_msg).unwrap();
+    let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
+
+    let response = Reply {
+        id: res.messages[0].id,
+        result: SubMsgResult::Err("reply err".to_string()),
+    };
+
+    let res = reply(deps.as_mut(), mock_env(), response).unwrap();
+
+    let ack: StdAck = from_binary(&res.data.unwrap()).unwrap();
+
+    // reply only on error for DISPATCH_CALLBACK_ID
+    assert_eq!(ack, StdAck::Error("reply err".to_string()));
+}
+
+// Test `ibc_packet_ack`
+#[test]
+fn mint_govec_packet_ack_sends_msg_to_factory() {
+    let mut deps = do_instantiate();
+    let job_id = 2901;
+    let action_id = 10;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+    let env = mock_env();
+
+    // in the case of success
+    let wallet_msg = WalletFactoryExecuteMsg::GovecMinted {
+        success: true,
+        wallet_addr: "wallet".to_string(),
+    };
+    let ack = StdAck::success(action_id);
+    let original_ibc_msg = PacketMsg {
+        sender: env.clone().contract.address.to_string(),
+        job_id,
+        msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
+            wallet_addr: "wallet".to_string(),
+        })
+        .unwrap(),
+    };
+
+    let ibc_ack = mock_ibc_packet_ack(
+        DAO_CHANNEL_ID,
+        &original_ibc_msg,
+        IbcAcknowledgement::new(ack),
+    )
+    .unwrap();
+    let res = ibc_packet_ack(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("job_id", job_id.to_string()),
+            ("action", "Mint Govec Ack".to_string()),
+            ("success", true.to_string())
+        ]
+    );
+
+    let sub_msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&wallet_msg).unwrap(),
+        funds: vec![],
+    };
+    assert_eq!(res.messages[0], SubMsg::new(sub_msg));
+
+    // in the case of failure
+    let ack = StdAck::fail("some error".to_string());
+    let original_ibc_msg = PacketMsg {
+        sender: env.clone().contract.address.to_string(),
+        job_id,
+        msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
+            wallet_addr: "wallet".to_string(),
+        })
+        .unwrap(),
+    };
+
+    let ibc_ack = mock_ibc_packet_ack(
+        DAO_CHANNEL_ID,
+        &original_ibc_msg,
+        IbcAcknowledgement::new(ack),
+    )
+    .unwrap();
+    let res = ibc_packet_ack(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("job_id", job_id.to_string()),
+            ("action", "Mint Govec Ack".to_string()),
+            ("success", false.to_string())
+        ]
+    );
+
+    let wallet_msg = WalletFactoryExecuteMsg::GovecMinted {
+        success: false,
+        wallet_addr: "wallet".to_string(),
+    };
+    let sub_msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&wallet_msg).unwrap(),
+        funds: vec![],
+    };
+    assert_eq!(res.messages[0], SubMsg::new(sub_msg))
+}
+
+#[test]
+fn handle_ack_for_non_govec_minting_packets() {
+    let mut deps = do_instantiate();
+    let job_id = 2901;
+    let action_id = VectisDaoActionIds::GovecBurn;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+    let env = mock_env();
+
+    // In the case of success
+    let ack = StdAck::success(action_id as u64);
+    let original_ibc_msg = PacketMsg {
+        sender: env.clone().contract.address.to_string(),
+        job_id,
+        msg: to_binary(&RemoteTunnelPacketMsg::GovecActions(
+            vectis_wallet::GovecExecuteMsg::Burn {
+                relayed_from: Some("proxy".to_string()),
+            },
+        ))
+        .unwrap(),
+    };
+
+    let ibc_ack = mock_ibc_packet_ack(
+        DAO_CHANNEL_ID,
+        &original_ibc_msg,
+        IbcAcknowledgement::new(ack),
+    )
+    .unwrap();
+    let res = ibc_packet_ack(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("job_id", job_id.to_string()),
+            ("result", format!("{:?}", action_id))
+        ]
+    );
+
+    // In the case of failure
+    let ack = StdAck::fail("failed msg".to_string());
+    let ibc_ack = mock_ibc_packet_ack(
+        DAO_CHANNEL_ID,
+        &original_ibc_msg,
+        IbcAcknowledgement::new(ack),
+    )
+    .unwrap();
+    let res = ibc_packet_ack(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("job_id", job_id.to_string()),
+            ("result", "failed msg".to_string())
+        ]
+    )
+}
+
+#[test]
+fn handle_timeout_for_govec_minting() {
+    let mut deps = do_instantiate();
+    let job_id = 2901;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+    let env = mock_env();
+
+    let original_ibc_msg = PacketMsg {
+        sender: env.clone().contract.address.to_string(),
+        job_id,
+        msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
+            wallet_addr: "wallet".to_string(),
+        })
+        .unwrap(),
+    };
+
+    let ibc_ack = mock_ibc_packet_timeout(DAO_CHANNEL_ID, &original_ibc_msg).unwrap();
+    let res = ibc_packet_timeout(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("job_id", job_id.to_string()),
+            ("action", "Mint Govec Timeout: revert".to_string())
+        ]
+    );
+
+    let wallet_msg = WalletFactoryExecuteMsg::GovecMinted {
+        success: false,
+        wallet_addr: "wallet".to_string(),
+    };
+    let sub_msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&wallet_msg).unwrap(),
+        funds: vec![],
+    };
+    assert_eq!(res.messages[0], SubMsg::new(sub_msg));
+}
+
+#[test]
+fn handle_timeout_for_non_govec_minting_packets() {
+    let mut deps = do_instantiate();
+    let job_id = 2901;
+    connect(deps.as_mut(), DAO_CHANNEL_ID);
+    let env = mock_env();
+
+    let original_ibc_msg = PacketMsg {
+        sender: env.clone().contract.address.to_string(),
+        job_id,
+        msg: to_binary(&RemoteTunnelPacketMsg::GovecActions(
+            vectis_wallet::GovecExecuteMsg::Burn {
+                relayed_from: Some("proxy".to_string()),
+            },
+        ))
+        .unwrap(),
+    };
+
+    let ibc_ack = mock_ibc_packet_timeout(DAO_CHANNEL_ID, &original_ibc_msg).unwrap();
+    let res = ibc_packet_timeout(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("job_id", job_id.to_string()),
+            ("action", "Ibc Timeout".to_string())
+        ]
+    )
 }

@@ -665,3 +665,26 @@ fn ack_emits_reply_id() {
     assert_eq!(res.attributes[0].value, job_id.to_string());
     assert_eq!(res.attributes[1].value, format!("Success: {}", reply_id));
 }
+
+#[test]
+fn handle_timeout() {
+    let mut deps = do_instantiate();
+    let job_id = 2901;
+    let env = mock_env();
+
+    let original_ibc_msg = PacketMsg {
+        sender: env.clone().contract.address.to_string(),
+        job_id,
+        msg: to_binary(&[1; 1]).unwrap(),
+    };
+
+    let ibc_ack = mock_ibc_packet_timeout(CHANNEL_ID, &original_ibc_msg).unwrap();
+    let res = ibc_packet_timeout(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("job_id", job_id.to_string()),
+            ("action", "Ibc Timeout".to_string())
+        ]
+    )
+}

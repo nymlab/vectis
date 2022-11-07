@@ -1,7 +1,7 @@
 pub use cosmwasm_std::testing::{
-    mock_dependencies, mock_env, mock_ibc_channel, mock_ibc_channel_close_init,
-    mock_ibc_channel_connect_ack, mock_ibc_packet_ack, mock_ibc_packet_recv, mock_info, MockApi,
-    MockQuerier, MockStorage,
+    mock_dependencies, mock_env, mock_ibc_channel, mock_ibc_channel_close_confirm,
+    mock_ibc_channel_connect_ack, mock_ibc_packet_ack, mock_ibc_packet_recv,
+    mock_ibc_packet_timeout, mock_info, MockApi, MockQuerier, MockStorage,
 };
 pub use cosmwasm_std::{
     from_binary, to_binary, Attribute, Binary, CanonicalAddr, Coin, CosmosMsg, DepsMut, Empty,
@@ -18,7 +18,9 @@ pub use vectis_wallet::{
 pub use voting::Vote;
 
 pub use crate::contract::{execute, instantiate, query_controllers, query_dao, query_govec, reply};
-pub use crate::ibc::{ibc_channel_connect, ibc_channel_open, ibc_packet_ack, ibc_packet_receive};
+pub use crate::ibc::{
+    ibc_channel_connect, ibc_channel_open, ibc_packet_ack, ibc_packet_receive, ibc_packet_timeout,
+};
 pub use crate::msg::{ExecuteMsg, InstantiateMsg, RemoteTunnels};
 pub use crate::state::ADMIN;
 pub use crate::ContractError;
@@ -260,7 +262,7 @@ fn default_update_chain_config_msg() -> DaoTunnelPacketMsg {
     DaoTunnelPacketMsg::UpdateChainConfig {
         new_config: ChainConfig {
             remote_factory: Some(CanonicalAddr::from(encoded_factory)),
-            demon: DENOM.to_string(),
+            denom: DENOM.to_string(),
         },
     }
 }
