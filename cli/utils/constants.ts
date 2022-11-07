@@ -1,12 +1,14 @@
 import path from "path";
 import * as dotenv from "dotenv";
-import { coin } from "@cosmjs/stargate";
+import { Chains } from "../config/chains";
 
-const envPath = `${__dirname}/../../../.env`;
-dotenv.config({ path: envPath });
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
 // Arch
 const archSuffix = ""; //process.arch === "arm64" ? "-aarch64" : "";
+
+export const hostChain = (process.env.HOST_CHAIN as Chains) || "juno_localnet";
+export const remoteChain = (process.env.HOST_CHAIN as Chains) || "wasm_localnet";
 
 // Contracts Filenames
 export const contractsFileNames = {

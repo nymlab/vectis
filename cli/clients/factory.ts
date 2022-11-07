@@ -1,12 +1,12 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { FactoryClient as FactoryC } from "@vectis/types";
+import { FactoryClient as FactoryC } from "../interfaces";
 import { coin } from "@cosmjs/stargate";
 
 import CWClient from "./cosmwasm";
 import * as CHAINS from "../config/chains";
 
 import type { Chains } from "../config/chains";
-import type { FactoryT } from "@vectis/types";
+import type { FactoryT } from "../interfaces";
 
 class FactoryClient extends FactoryC {
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {

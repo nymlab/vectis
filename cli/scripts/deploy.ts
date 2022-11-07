@@ -1,16 +1,13 @@
-import FactoryClient from "@vectis/core/clients/factory";
-import GovecClient from "@vectis/core/clients/govec";
-import DaoClient from "@vectis/core/clients/dao";
-import { toCosmosMsg } from "@vectis/core/utils/enconding";
-import { uploadReportPath } from "../utils/constants";
+import { FactoryClient, GovecClient, DaoClient, RelayerClient, CWClient } from "../clients";
+import RemoteTunnelClient from "../clients/remote-tunnel";
 
-import RelayerClient from "@vectis/core/clients/relayer";
-import CWClient from "@vectis/core/clients/cosmwasm";
-
-import { DaoTunnelT, GovecT, ProxyT } from "@vectis/types";
-import type { Chains } from "../config/chains";
 import { delay } from "../utils/promises";
-import { VectisDaoContractsAddrs } from "../interfaces/dao";
+import { toCosmosMsg } from "../utils/enconding";
+import { writeInCacheFolder } from "../utils/fs";
+import { hostChain as hostChainName, remoteChain as remoteChainName, uploadReportPath } from "../utils/constants";
+
+import type { DaoTunnelT, GovecT, ProxyT } from "../interfaces";
+import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
 // Deployment
 // The deployment of the DAO on the host chain has the following steps:
@@ -35,14 +32,10 @@ import { VectisDaoContractsAddrs } from "../interfaces/dao";
 // 11. Admin unstakes and burn its govec (exits system)
 //
 
-export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<VectisDaoContractsAddrs> {
-    console.log(hostName, remoteName);
+async function deploy() {
     const { host, remote } = await import(uploadReportPath);
     const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes } = host;
     const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
-
-    const hostChainName = hostName ? hostName : (process.argv.slice(2)[0] as Chains);
-    const remoteChainName = remoteName ? remoteName : (process.argv.slice(2)[1] as Chains);
 
     const relayerClient = new RelayerClient(hostChainName, remoteChainName);
     const connection = await relayerClient.createConnection();
@@ -106,7 +99,10 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
     const factoryAddr = CWClient.getContractAddrFromResult(factoryInstRes, "Vectis Factory instantiated");
 
     // Admin propose and execute dao deploy dao tunnel
-    const daoTunnelInstMsg: DaoTunnelT.InstantiateMsg = { govec_minter: govecAddr };
+    const daoTunnelInstMsg: DaoTunnelT.InstantiateMsg = {
+        govec_minter: govecAddr,
+        init_remote_tunnels: { tunnels: [] },
+    };
 
     const deployDaoTunnelMsg: ProxyT.CosmosMsgForEmpty = {
         wasm: {
@@ -132,36 +128,28 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
 
     const daoTunnelAddr = CWClient.getContractAddrFromResult(daoTunnelInstRes, "Vectis DAO-Tunnel instantiated");
 
-    ///// Remote chain
     // Instantiate Remote Tunnel
-    const { contractAddress: remoteTunnelAddr } = await adminRemoteClient.instantiate(
-        adminRemoteClient.sender,
-        remoteTunnel.codeId,
-        {
-            connection_id: relayerClient.connections.remoteConnection,
+    const remoteTunnelClient = await RemoteTunnelClient.instantiate(adminRemoteClient, remoteTunnel.codeId, {
+        dao_config: {
+            addr: daoClient.daoAddr,
             dao_tunnel_port_id: `wasm.${daoTunnelAddr}`,
-            ibc_transfer_port_id: "",
+            connection_id: relayerClient.connections.remoteConnection,
+        },
+        chain_config: {
+            remote_factory: null,
             denom: "",
         },
-        "Vectis Remote tunnel",
-        "auto"
-    );
+        init_ibc_transfer_mod: null,
+    });
+
+    const remoteTunnelAddr = remoteTunnelClient.contractAddress;
 
     // Admin propose and execute add connection to dao tunnel
-    const daoTunnelApproveControllerMsg: ProxyT.CosmosMsgForEmpty = {
-        wasm: {
-            execute: {
-                contract_addr: daoTunnelAddr,
-                funds: [],
-                msg: toCosmosMsg({
-                    add_approved_controller: {
-                        connection_id: relayerClient.connections.hostConnection,
-                        port_id: `wasm.${remoteTunnelAddr}`,
-                    },
-                }),
-            },
-        },
-    };
+    const daoTunnelApproveControllerMsg = daoClient.createApprovedControllerMsg(
+        daoTunnelAddr,
+        relayerClient.connections.hostConnection,
+        `wasm.${remoteTunnelAddr}`
+    );
 
     // Allow connection to remote tunnel
     await daoClient.createProposal("Allow connection in DAO Tunnel", "Allow connection in DAO Tunnel", [
@@ -174,7 +162,7 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
     await daoClient.voteProposal(approveControllerProposalId, "yes");
     await delay(10000);
     await daoClient.executeProposal(approveControllerProposalId);
-    await delay(15000);
+    await delay(10000);
 
     // Instantiate Factory in remote chain
 
@@ -185,9 +173,14 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
 
     // Admin propose and execute dao deploy factory remote
     const createRemoteFactoryMsg: DaoTunnelT.ExecuteMsg = {
-        instantiate_remote_factory: {
-            code_id: remoteFactory.codeId,
-            msg: FactoryClient.createFactoryInstMsg(remoteChainName, remoteProxy.codeId, remoteMultisig.codeId),
+        dispatch_action_on_remote_tunnel: {
+            job_id: 1,
+            msg: {
+                instantiate_factory: {
+                    code_id: remoteFactory.codeId,
+                    msg: FactoryClient.createFactoryInstMsg(remoteChainName, remoteProxy.codeId, remoteMultisig.codeId),
+                },
+            },
             channel_id: channels.hostChannel,
         },
     };
@@ -214,9 +207,10 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
 
     // Relay packets and acknowledge
     await relayerClient.relayAll();
-    await delay(15000);
+    await delay(10000);
 
-    const remoteFactoryAddr = await adminRemoteClient.queryContractSmart(remoteTunnelAddr, { factory: {} });
+    const { remote_factory: remoteFactoryAddr } = await remoteTunnelClient.chainConfig();
+    console.log("\nRemote Factory Addr: ", remoteFactoryAddr);
 
     // Update marketing address on Govec
     let res = await govecClient.updateMarketing({ marketing: daoClient.daoAddr });
@@ -245,16 +239,11 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
     );
     console.log("\n\nAdmin unstakes \n", JSON.stringify(res));
 
-    //// Below is only needed if theres is an unstake period
-    // delay(10000);
-    // res = await adminHostClient.execute(adminAddr!, stakingAddr, { claim: {} }, defaultExecuteFee);
-    // console.log("\n\nAdmin claim \n", JSON.stringify(res));
-
     res = await adminHostClient.execute(adminHostClient.sender, govecAddr, { burn: {} }, "auto");
     console.log("\n\nAdmin burns the one govec\n", JSON.stringify(res));
 
-    return {
-        remoteFactoryAddr,
+    const contracts = {
+        remoteFactoryAddr: remoteFactoryAddr as string,
         remoteTunnelAddr,
         daoTunnelAddr,
         govecAddr,
@@ -264,4 +253,12 @@ export async function deploy(hostName?: Chains, remoteName?: Chains): Promise<Ve
         proposalAddr: daoClient.proposalAddr,
         voteAddr: daoClient.voteAddr,
     };
+
+    await verifyDeploy(contracts);
+
+    writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
 }
+
+async function verifyDeploy(contracts: VectisDaoContractsAddrs) {}
+
+deploy();

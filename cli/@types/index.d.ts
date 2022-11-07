@@ -1,4 +1,4 @@
-import { VectisDaoContractsAddrs } from "@vectis/core/interfaces/dao";
+import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
 declare global {
     var contracts: VectisDaoContractsAddrs;

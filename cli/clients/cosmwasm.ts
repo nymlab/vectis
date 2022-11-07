@@ -32,9 +32,9 @@ import {
     remoteFactoryCodePath,
 } from "../utils/constants";
 import { longToByteArray } from "../utils/enconding";
-import { ProxyT, FactoryT } from "@vectis/types";
+import { ProxyT, FactoryT } from "../interfaces";
 import { downloadContract, getContract } from "../utils/fs";
-import { DaoDaoContracts } from "@vectis/core/interfaces/dao";
+import { DaoDaoContracts } from "../interfaces/contracts";
 import CODES from "../config/onchain-codes.json";
 import * as ACCOUNTS from "../config/accounts";
 import type { Accounts } from "../config/accounts";

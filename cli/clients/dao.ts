@@ -1,18 +1,20 @@
-import { InstantiateMsg as Cw20SBVInstantiateMsg } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import {
+import CWClient from "./cosmwasm";
+import { toCosmosMsg } from "../utils/enconding";
+import { uploadReportPath } from "../utils/constants";
+
+import type {
     InstantiateMsg as CwPropSingleInstantiateMsg,
+    ExecuteMsg as CwPropSingleExecuteMsg,
+    Vote,
     DepositInfo,
     Duration,
     Threshold,
 } from "@dao-dao/types/contracts/cw-proposal-single";
-import { TokenInfo } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import { toCosmosMsg } from "@vectis/core/utils/enconding";
-import CWClient from "./cosmwasm";
-
-import { Duration as StakeDuration } from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-import { uploadReportPath } from "@vectis/core/utils/constants";
-import { ExecuteMsg as CwPropSingleExecuteMsg, Vote } from "@dao-dao/types/contracts/cw-proposal-single";
-
+import type {
+    InstantiateMsg as Cw20SBVInstantiateMsg,
+    TokenInfo,
+    Duration as StakeDuration,
+} from "@dao-dao/types/contracts/cw20-staked-balance-voting";
 // Proposal
 //
 // Cool down period for unstaking, time in seconds
@@ -244,6 +246,26 @@ class DaoClient {
             /// expiration.
             allow_revoting: allow_revoting,
         };
+    }
+    static createApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
+        return {
+            wasm: {
+                execute: {
+                    contract_addr: daoTunnelAddr,
+                    funds: [],
+                    msg: toCosmosMsg({
+                        add_approved_controller: {
+                            connection_id: connectId,
+                            port_id: portId,
+                        },
+                    }),
+                },
+            },
+        };
+    }
+
+    createApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
+        return DaoClient.createApprovedControllerMsg(daoTunnelAddr, connectId, portId);
     }
 }
 
