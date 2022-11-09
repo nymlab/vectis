@@ -126,7 +126,7 @@ fn create_wallet(
         &info.funds,
     )?;
 
-    // reply_id starts at 2 as 0 and 1 are occupied by consts
+    // reply_id starts at 1  as 0 occupied by const GOVEC_REPLY_ID
     if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
         proxy_init_funds.append(&mut multisig_initial_funds);
         // The wasm message containing the `wallet_proxy` instantiation message
@@ -145,7 +145,7 @@ fn create_wallet(
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
         let res = Response::new().add_submessage(msg);
 
-        TOTAL_CREATED.save(deps.storage, &next_id.sub(1))?;
+        TOTAL_CREATED.save(deps.storage, &next_id)?;
 
         // Send native tokens to DAO to join the DAO
         if fee.amount != Uint128::zero() {
