@@ -5,7 +5,10 @@ use vectis_wallet::DaoTunnelPacketMsg;
 
 #[cw_serde]
 pub struct InstantiateMsg {
+    /// Govec contract address
     pub govec_minter: String,
+    /// Any remote tunnel endpoints to be included initially
+    /// No channels has been established
     pub init_remote_tunnels: Option<RemoteTunnels>,
 }
 
@@ -57,5 +60,7 @@ pub enum QueryMsg {
 
 #[cw_serde]
 pub struct RemoteTunnels {
+    /// These are endpoints to other remote-tunnel contracts
+    /// (connection_id, port_id)
     pub tunnels: Vec<(String, String)>,
 }
