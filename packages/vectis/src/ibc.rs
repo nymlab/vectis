@@ -107,6 +107,21 @@ pub struct ChainConfig {
     pub denom: String,
 }
 
+#[cw_serde]
+pub enum RemoteTunnelExecuteMsg {
+    /// Executed by proxy wallets for Dao actions
+    DaoActions { msg: RemoteTunnelPacketMsg },
+    /// Transfer native tokens to another chain
+    /// Fund amount is forward from the MessageInfo.funds
+    IbcTransfer { receiver: Receiver },
+}
+
+#[cw_serde]
+pub struct Receiver {
+    pub connection_id: String,
+    pub addr: String,
+}
+
 /// The IBC Packet Msg allowed dispatched by remote-tunnel
 #[cw_serde]
 pub enum RemoteTunnelPacketMsg {

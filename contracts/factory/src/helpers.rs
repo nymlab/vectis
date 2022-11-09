@@ -21,7 +21,7 @@ use {
     cosmwasm_std::Env,
     cw_utils::{Expiration, DAY},
     std::ops::{Add, Mul},
-    vectis_wallet::{RemoteTunnelPacketMsg, GOVEC_CLAIM_DURATION_DAY_MUL},
+    vectis_wallet::{RemoteTunnelExecuteMsg, RemoteTunnelPacketMsg, GOVEC_CLAIM_DURATION_DAY_MUL},
 };
 #[cfg(feature = "dao-chain")]
 use {cosmwasm_std::CanonicalAddr, vectis_govec::msg::ExecuteMsg::Mint};
@@ -185,8 +185,10 @@ pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
             .api
             .addr_humanize(&DAO.load(deps.storage)?)?
             .to_string(),
-        msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
-            wallet_addr: wallet,
+        msg: to_binary(&RemoteTunnelExecuteMsg::DaoActions {
+            msg: RemoteTunnelPacketMsg::MintGovec {
+                wallet_addr: wallet,
+            },
         })?,
         funds: vec![],
     })))
