@@ -14,6 +14,7 @@ pub enum UpdateAddrReq {
     DaoTunnel(String),
     Factory(String),
     Staking(String),
+    Proposal(String),
 }
 
 #[cw_serde]
@@ -23,6 +24,14 @@ pub enum GovecExecuteMsg {
         recipient: String,
         amount: Uint128,
         relayed_from: Option<String>,
+    },
+    /// This is implemented such that the sender MUST be a DAO proposal module
+    /// The recipient will always be the sender
+    /// This matches the cw_proposal_single `get_deposit_msg` required interface
+    TransferFrom {
+        owner: String,
+        recipient: String,
+        amount: Uint128,
     },
     /// Burn is a base message to destroy tokens forever
     /// Logic checks that caller only has exactly 1 vote token in their balance
