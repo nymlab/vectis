@@ -488,6 +488,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20-staked-balance-voting"
+version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=b82db3243688a5e6ad#b82db3243688a5e6adae1ef9846b2061439d372e"
+dependencies = [
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-core-interface",
+ "cw-core-macros",
+ "cw-storage-plus 0.13.4",
+ "cw-utils 0.13.4",
+ "cw2 0.13.4",
+ "cw20",
+ "cw20-base",
+ "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=b82db3243688a5e6ad)",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "cw3"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1113,12 +1133,16 @@ dependencies = [
  "assert_matches",
  "cosmwasm-schema",
  "cosmwasm-std",
+ "cw-core",
  "cw-multi-test",
+ "cw-proposal-single",
  "cw-storage-plus 0.13.4",
  "cw-utils 0.13.4",
  "cw1",
  "cw2 0.13.4",
- "cw20-stake 0.2.6 (git+https://github.com/DA0-DA0/dao-contracts.git?tag=v1.0.0)",
+ "cw20",
+ "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=b82db3243688a5e6ad)",
+ "cw20-staked-balance-voting",
  "cw3",
  "cw3-fixed-multisig",
  "derivative",
@@ -1134,6 +1158,7 @@ dependencies = [
  "vectis-proxy",
  "vectis-remote-tunnel",
  "vectis-wallet",
+ "voting",
 ]
 
 [[package]]
