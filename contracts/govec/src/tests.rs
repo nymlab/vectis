@@ -327,7 +327,7 @@ fn can_mint_by_minter() {
 
     let genesis = String::from("genesis");
     let amount = Uint128::new(0);
-    let limit = Uint128::new(2);
+    let limit = Uint128::from(MINT_AMOUNT * 2);
 
     do_instantiate(
         deps.as_mut(),
@@ -357,7 +357,10 @@ fn can_mint_by_minter() {
     let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(get_balance(deps.as_ref(), genesis.clone()), amount);
-    assert_eq!(get_balance(deps.as_ref(), winner.clone()), Uint128::new(1));
+    assert_eq!(
+        get_balance(deps.as_ref(), winner.clone()),
+        Uint128::from(MINT_AMOUNT)
+    );
 
     // DAO Tunnel can also mint
     let info = mock_info(DAO_TUNNEL, &[]);
@@ -365,7 +368,10 @@ fn can_mint_by_minter() {
     let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(get_balance(deps.as_ref(), genesis), amount);
-    assert_eq!(get_balance(deps.as_ref(), winner.clone()), Uint128::new(2));
+    assert_eq!(
+        get_balance(deps.as_ref(), winner.clone()),
+        Uint128::from(MINT_AMOUNT * 2)
+    );
 
     // but if it exceeds cap, it fails cap is enforced
     let info = mock_info(FACTORY, &[]);
@@ -535,9 +541,9 @@ fn burn() {
     let addr1 = String::from("addr0001");
     let addr2 = String::from("addr0002");
     let addr3 = String::from("addr0003");
-    let right_amount = Uint128::from(1u8);
+    let right_amount = Uint128::from(MINT_AMOUNT);
     let too_little = Uint128::zero();
-    let too_much = Uint128::from(2u8);
+    let too_much = Uint128::from(MINT_AMOUNT + 1);
 
     do_instantiate(
         deps.as_mut(),
@@ -863,7 +869,7 @@ fn execute_update_marketing_works() {
     let project = "new-website".to_string();
     let description = "new-description".to_string();
 
-    let res = execute_update_marketing(
+    let res = govec_execute_update_marketing(
         deps.as_mut(),
         env,
         info,
@@ -912,7 +918,7 @@ fn execute_update_logo_works() {
 
     let logo = Logo::Url("website".to_string());
 
-    let res = execute_upload_logo(deps.as_mut(), env, info, logo).unwrap();
+    let res = govec_execute_upload_logo(deps.as_mut(), env, info, logo).unwrap();
 
     assert_eq!(res.attributes, [("action", "upload_logo")]);
 

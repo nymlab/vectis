@@ -15,14 +15,21 @@ use crate::error::ContractError;
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_CAP, STAKING_ADDR,
-    TOKEN_INFO,
+    TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_CAP, PROP_MODULES,
+    STAKING_ADDR, TOKEN_INFO,
+};
+use cw20_stake::{
+    contract::{
+        execute_update_marketing, execute_upload_logo, query_download_logo, query_marketing_info,
+    },
+    ContractError::Cw20Error,
 };
 use vectis_wallet::{MintResponse, UpdateAddrReq};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const MINT_AMOUNT: u8 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -110,7 +117,12 @@ pub fn execute(
             recipient,
             amount,
             relayed_from,
-        } => execute_transfer(deps, env, info, recipient, amount, relayed_from),
+        } => execute_transfer(deps, info, recipient, amount, relayed_from),
+        ExecuteMsg::TransferFrom {
+            owner,
+            recipient: _recipient,
+            amount,
+        } => execute_transfer_from(deps, info, owner, amount),
         ExecuteMsg::Burn { relayed_from } => execute_burn(deps, env, info, relayed_from),
         ExecuteMsg::Send {
             contract,
@@ -129,14 +141,13 @@ pub fn execute(
             project,
             description,
             marketing,
-        } => execute_update_marketing(deps, env, info, project, description, marketing),
-        ExecuteMsg::UploadLogo(logo) => execute_upload_logo(deps, env, info, logo),
+        } => govec_execute_update_marketing(deps, env, info, project, description, marketing),
+        ExecuteMsg::UploadLogo(logo) => govec_execute_upload_logo(deps, env, info, logo),
     }
 }
 
 pub fn execute_transfer(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     recipient: String,
     amount: Uint128,
@@ -182,6 +193,44 @@ pub fn execute_transfer(
     Ok(res)
 }
 
+/// In this version this is exclusive used by proposers
+pub fn execute_transfer_from(
+    deps: DepsMut,
+    info: MessageInfo,
+    proposer: String,
+    amount: Uint128,
+) -> Result<Response, ContractError> {
+    if amount == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+    if PROP_MODULES.load(deps.storage, info.sender.clone()).is_ok() {
+        let prop = Addr::unchecked(&proposer);
+        BALANCES.update(
+            deps.storage,
+            &prop,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            },
+        )?;
+        BALANCES.update(
+            deps.storage,
+            &info.sender,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default().checked_add(amount)?)
+            },
+        )?;
+
+        let res = Response::new()
+            .add_attribute("action", "proposal tranfer")
+            .add_attribute("from", proposer)
+            .add_attribute("to", info.sender)
+            .add_attribute("amount", amount);
+        Ok(res)
+    } else {
+        Err(ContractError::Unauthorized {})
+    }
+}
+
 /// Burning of the vote, this can only be used by the approved list of SCW
 ///
 /// Only exactly 1 vote can be burnt per wallet and is executed during destroy of the wallet,
@@ -192,7 +241,7 @@ pub fn execute_burn(
     info: MessageInfo,
     relayed_from: Option<String>,
 ) -> Result<Response, ContractError> {
-    let to_burn = Uint128::from(1u8);
+    let to_burn = Uint128::from(MINT_AMOUNT);
     let from = match relayed_from {
         Some(remote) => {
             ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
@@ -254,7 +303,7 @@ pub fn execute_mint(
     let caller = ensure_is_minter(deps.as_ref(), info.sender)?;
 
     let mut config = TOKEN_INFO.load(deps.storage)?;
-    config.total_supply += Uint128::from(1u8);
+    config.total_supply += Uint128::from(MINT_AMOUNT);
     if let Some(limit) = MINT_CAP.may_load(deps.storage)? {
         if config.total_supply > limit {
             return Err(ContractError::CannotExceedCap {});
@@ -274,7 +323,7 @@ pub fn execute_mint(
         deps.storage,
         &rcpt_addr,
         |balance: Option<Uint128>| -> StdResult<_> {
-            Ok(balance.unwrap_or_default() + Uint128::from(1u8))
+            Ok(balance.unwrap_or_default() + Uint128::from(MINT_AMOUNT))
         },
     )?;
 
@@ -447,12 +496,29 @@ pub fn execute_update_config_addr(
                 .add_attribute("action", "update_staking")
                 .add_attribute("new_addr", addr)
         }
+        UpdateAddrReq::Proposal(addr) => {
+            let prop = deps.api.addr_validate(&addr)?;
+            match PROP_MODULES.may_load(deps.storage, prop.clone())? {
+                Some(_) => {
+                    PROP_MODULES.remove(deps.storage, prop.clone());
+                    Response::new()
+                        .add_attribute("action", "removed proposal module")
+                        .add_attribute("addr", prop)
+                }
+                None => {
+                    PROP_MODULES.save(deps.storage, prop.clone(), &())?;
+                    Response::new()
+                        .add_attribute("action", "added proposal module")
+                        .add_attribute("addr", prop)
+                }
+            }
+        }
     };
 
     Ok(res)
 }
 
-pub fn execute_update_marketing(
+pub fn govec_execute_update_marketing(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -460,32 +526,21 @@ pub fn execute_update_marketing(
     description: Option<String>,
     marketing: Option<String>,
 ) -> Result<Response, ContractError> {
-    match cw20_stake::contract::execute_update_marketing(
-        deps,
-        env,
-        info,
-        project,
-        description,
-        marketing,
-    ) {
+    match execute_update_marketing(deps, env, info, project, description, marketing) {
         Ok(res) => Ok(res),
-        Err(res) => Err(ContractError::Cw20Stake(
-            cw20_stake::ContractError::Cw20Error(res),
-        )),
+        Err(res) => Err(ContractError::Cw20Stake(Cw20Error(res))),
     }
 }
 
-pub fn execute_upload_logo(
+pub fn govec_execute_upload_logo(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     logo: Logo,
 ) -> Result<Response, ContractError> {
-    match cw20_stake::contract::execute_upload_logo(deps, env, info, logo) {
+    match execute_upload_logo(deps, env, info, logo) {
         Ok(res) => Ok(res),
-        Err(err) => Err(ContractError::Cw20Stake(
-            cw20_stake::ContractError::Cw20Error(err),
-        )),
+        Err(err) => Err(ContractError::Cw20Stake(Cw20Error(err))),
     }
 }
 
@@ -533,8 +588,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AllAccounts { start_after, limit } => {
             to_binary(&query_all_accounts(deps, start_after, limit)?)
         }
-        QueryMsg::MarketingInfo {} => to_binary(&cw20_stake::contract::query_marketing_info(deps)?),
-        QueryMsg::DownloadLogo {} => to_binary(&cw20_stake::contract::query_download_logo(deps)?),
+        QueryMsg::MarketingInfo {} => to_binary(&query_marketing_info(deps)?),
+        QueryMsg::DownloadLogo {} => to_binary(&query_download_logo(deps)?),
     }
 }
 

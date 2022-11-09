@@ -78,7 +78,7 @@ fn burn() {
     do_instantiate(
         deps.as_mut(),
         vec![remote_addr.as_str(), dao_addr.as_str()],
-        vec![Uint128::one(), Uint128::zero()],
+        vec![Uint128::from(MINT_AMOUNT), Uint128::zero()],
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
@@ -95,7 +95,9 @@ fn burn() {
     let res = execute(deps.as_mut(), env.clone(), info, msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
 
-    let remainder = initial_total_supply.checked_sub(Uint128::new(1)).unwrap();
+    let remainder = initial_total_supply
+        .checked_sub(Uint128::from(MINT_AMOUNT))
+        .unwrap();
     assert_eq!(
         query_token_info(deps.as_ref()).unwrap().total_supply,
         remainder
