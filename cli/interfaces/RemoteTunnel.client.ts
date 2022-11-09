@@ -25,12 +25,14 @@ import {
     Cw20ReceiveMsg,
     Receiver,
     QueryMsg,
+    Addr,
+    ChainConfigResponse,
     Uint64,
 } from "./RemoteTunnel.types";
 export interface RemoteTunnelReadOnlyInterface {
     contractAddress: string;
     daoConfig: () => Promise<DaoConfig>;
-    chainConfig: () => Promise<ChainConfig>;
+    chainConfig: () => Promise<ChainConfigResponse>;
     ibcTransferChannels: ({ limit, startFrom }: { limit?: number; startFrom?: string }) => Promise<IbcTransferChannels>;
     nextJobId: () => Promise<Uint64>;
 }
@@ -52,7 +54,7 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
             dao_config: {},
         });
     };
-    chainConfig = async (): Promise<ChainConfig> => {
+    chainConfig = async (): Promise<ChainConfigResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             chain_config: {},
         });

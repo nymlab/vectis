@@ -10,8 +10,9 @@ pub use crate::govec::{
 pub use crate::guardians::*;
 pub use crate::ibc::{
     check_order, check_version, ChainConfig, DaoConfig, DaoTunnelPacketMsg, PacketMsg,
-    ProposalExecuteMsg, ReceiveIbcResponseMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck,
-    VectisDaoActionIds, APP_ORDER, IBC_APP_VERSION, PACKET_LIFETIME,
+    ProposalExecuteMsg, ReceiveIbcResponseMsg, Receiver, RemoteTunnelExecuteMsg,
+    RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, VectisDaoActionIds, APP_ORDER, IBC_APP_VERSION,
+    PACKET_LIFETIME,
 };
 pub use crate::pubkey::pub_key_to_address;
 pub use crate::signature::query_verify_cosmos;

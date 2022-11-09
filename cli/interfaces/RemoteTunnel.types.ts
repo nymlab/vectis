@@ -61,6 +61,13 @@ export type GovecExecuteMsg =
           };
       }
     | {
+          transfer_from: {
+              amount: Uint128;
+              owner: string;
+              recipient: string;
+          };
+      }
+    | {
           burn: {
               relayed_from?: string | null;
           };
@@ -112,6 +119,9 @@ export type UpdateAddrReq =
       }
     | {
           staking: string;
+      }
+    | {
+          proposal: string;
       };
 export type Logo =
     | {
@@ -197,4 +207,9 @@ export type QueryMsg =
     | {
           next_job_id: {};
       };
+export type Addr = string;
+export interface ChainConfigResponse {
+    denom: string;
+    remote_factory?: Addr | null;
+}
 export type Uint64 = number;
