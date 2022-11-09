@@ -1,8 +1,8 @@
 import { coin } from "@cosmjs/stargate";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
-import { uploadReportPath } from "@vectis/core/utils/constants";
-import { CWClient, FactoryClient, GovecClient } from "@vectis/core/clients";
+import { uploadReportPath } from "../utils/constants";
+import { CWClient, FactoryClient, GovecClient } from "../clients";
 import {
     HOST_ACCOUNTS,
     HOST_CHAIN,
@@ -10,7 +10,7 @@ import {
     walletInitialFunds,
     getDefaultWalletCreationFee,
 } from "./mocks/constants";
-import { FactoryT } from "@vectis/types";
+import { FactoryT } from "../interfaces";
 
 /**
  * This suite tests Factory contract methods
@@ -42,7 +42,9 @@ describe("Factory Suite: ", () => {
             initial_balances: [],
         });
 
-        await factoryClient.updateGovecAddr({ addr: govecClient.contractAddress });
+        await factoryClient.updateGovecAddr({
+            addr: govecClient.contractAddress,
+        });
         const govec = await factoryClient.govecAddr();
 
         expect(govec).toEqual(govecClient.contractAddress);

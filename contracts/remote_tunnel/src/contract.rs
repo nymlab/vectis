@@ -12,7 +12,9 @@ use vectis_wallet::{
     DEFAULT_LIMIT, MAX_LIMIT, PACKET_LIFETIME,
 };
 
-use crate::msg::{ExecuteMsg, IbcTransferChannels, InstantiateMsg, QueryMsg, Receiver};
+use crate::msg::{
+    ChainConfigResponse, ExecuteMsg, IbcTransferChannels, InstantiateMsg, QueryMsg, Receiver,
+};
 use crate::state::{CHAIN_CONFIG, DAO_CONFIG, IBC_TRANSFER_MODULES, JOB_ID};
 use crate::{ContractError, DISPATCH_CALLBACK_ID, FACTORY_CALLBACK_ID};
 
@@ -187,8 +189,14 @@ pub fn query_dao_config(deps: Deps) -> StdResult<DaoConfig> {
     Ok(DAO_CONFIG.load(deps.storage)?)
 }
 
-pub fn query_chain_config(deps: Deps) -> StdResult<ChainConfig> {
-    Ok(CHAIN_CONFIG.load(deps.storage)?)
+pub fn query_chain_config(deps: Deps) -> StdResult<ChainConfigResponse> {
+    let config = CHAIN_CONFIG.load(deps.storage)?;
+    Ok(ChainConfigResponse {
+        denom: config.denom,
+        remote_factory: config
+            .remote_factory
+            .and_then(|addr| deps.api.addr_humanize(&addr).ok()),
+    })
 }
 
 pub fn query_job_id(deps: Deps) -> StdResult<u64> {

@@ -10,6 +10,7 @@ import { AccountData, DirectSecp256k1HdWallet, OfflineSigner } from "@cosmjs/pro
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
+import { GasPrice } from "@cosmjs/stargate";
 import {
     factoryCodePath,
     proxyCodePath,
@@ -30,17 +31,20 @@ import {
     remoteTunnelCodePath,
     remoteProxyCodePath,
     remoteFactoryCodePath,
+    hostChain,
+    hostAccounts,
+    remoteAccounts,
+    remoteChain,
+    hostChainName,
 } from "../utils/constants";
-import { longToByteArray } from "../utils/enconding";
-import { ProxyT, FactoryT } from "../interfaces";
 import { downloadContract, getContract } from "../utils/fs";
-import { DaoDaoContracts } from "../interfaces/contracts";
+import { longToByteArray } from "../utils/enconding";
 import CODES from "../config/onchain-codes.json";
-import * as ACCOUNTS from "../config/accounts";
-import type { Accounts } from "../config/accounts";
-import * as CHAINS from "../config/chains";
-import type { Chains } from "../config/chains";
-import { GasPrice } from "@cosmjs/stargate";
+
+import type { ProxyT, FactoryT } from "../interfaces";
+import type { DaoDaoContracts } from "../interfaces/contracts";
+import type { Accounts, Account } from "../config/accounts";
+import type { Chains, Chain } from "../config/chains";
 
 class CWClient extends SigningCosmWasmClient {
     constructor(
@@ -52,19 +56,14 @@ class CWClient extends SigningCosmWasmClient {
         super(tmClient, signer, options);
     }
 
-    static async connectWithAccount(chain: Chains, account: Accounts) {
-        const { addressPrefix, rpcUrl, gasPrice, feeToken } = CHAINS[chain];
+    static async connectHostWithAccount(account: Accounts) {
+        const acc = hostAccounts[account] as Account;
+        return await this.connectWithAccount(hostChain, acc);
+    }
 
-        const signer = await CWClient.getSignerWithAccount(chain, account);
-        const [{ address }] = await signer.getAccounts();
-
-        const tmClient = await Tendermint34Client.connect(rpcUrl);
-        return new CWClient(tmClient, address, signer, {
-            broadcastPollIntervalMs: 300,
-            broadcastTimeoutMs: 8_000,
-            gasPrice: GasPrice.fromString(gasPrice + feeToken),
-            prefix: addressPrefix,
-        });
+    static async connectRemoteWithAccount(account: Accounts) {
+        const acc = remoteAccounts[account] as Account;
+        return await this.connectWithAccount(remoteChain, acc);
     }
 
     static async createRelayTransaction(
@@ -91,12 +90,8 @@ class CWClient extends SigningCosmWasmClient {
         return factoryEvent?.value as string;
     }
 
-    static async getSignerWithAccount(chain: Chains, account: Accounts): Promise<DirectSecp256k1HdWallet> {
-        const accounts = ACCOUNTS[chain as keyof typeof ACCOUNTS];
-        const { mnemonic } = accounts[account as keyof typeof accounts];
-
-        const { addressPrefix } = CHAINS[chain];
-        return await DirectSecp256k1HdWallet.fromMnemonic(mnemonic as string, {
+    static async getSignerWithMnemonic({ addressPrefix }: Chain, mnemonic: string): Promise<DirectSecp256k1HdWallet> {
+        return await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
             prefix: addressPrefix,
         });
     }
@@ -106,11 +101,6 @@ class CWClient extends SigningCosmWasmClient {
         const seed = await Bip39.mnemonicToSeed(m);
         const { privkey } = Slip10.derivePath(Slip10Curve.Secp256k1, seed, makeCosmoshubPath(0) as any);
         return await Secp256k1.makeKeypair(privkey);
-    }
-
-    async getAccounts(): Promise<AccountData[]> {
-        // @ts-ignore;
-        return await this.signer.getAccounts();
     }
 
     async getOnchainContracts(codeId: number): Promise<Code> {
@@ -152,7 +142,7 @@ class CWClient extends SigningCosmWasmClient {
      *  Current version of DAO contracts: 60b710df2f3abb8ca275ad16a86ce3b0c265a339 (on testnet)
      *
      */
-    async uploadHostContracts(chain: Chains): Promise<{
+    async uploadHostContracts(): Promise<{
         daoTunnelRes: UploadResult;
         factoryRes: UploadResult;
         proxyRes: UploadResult;
@@ -170,7 +160,7 @@ class CWClient extends SigningCosmWasmClient {
         const multisigRes = await this.uploadContract(fixMultiSigCodePath);
         const govecRes = await this.uploadContract(govecCodePath);
 
-        const daodaoCodes = CODES[chain as keyof typeof CODES];
+        const daodaoCodes = CODES[hostChainName as keyof typeof CODES];
 
         const { staking, dao, vote, proposalSingle } = daodaoCodes
             ? await this.getDaoDaoOnChainContracts(daodaoCodes)
@@ -210,6 +200,21 @@ class CWClient extends SigningCosmWasmClient {
         const proposalSingle = await this.uploadContract(proposalSingleCodePath);
 
         return { staking, dao, vote, proposalSingle };
+    }
+
+    private static async connectWithAccount(chain: Chain, { mnemonic }: Account) {
+        const { addressPrefix, rpcUrl, gasPrice, feeToken } = chain;
+
+        const signer = await CWClient.getSignerWithMnemonic(chain, mnemonic);
+        const [{ address }] = await signer.getAccounts();
+
+        const tmClient = await Tendermint34Client.connect(rpcUrl);
+        return new CWClient(tmClient, address, signer, {
+            broadcastPollIntervalMs: 300,
+            broadcastTimeoutMs: 8_000,
+            gasPrice: GasPrice.fromString(gasPrice + feeToken),
+            prefix: addressPrefix,
+        });
     }
 }
 

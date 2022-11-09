@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import { cachePath, downloadContractPath, contractsFileNames } from "./constants";
+import { cachePath, downloadContractPath, contractsFileNames, configPath } from "./constants";
 
 export function getContract(path: string): Uint8Array {
     return fs.readFileSync(path);
@@ -10,6 +10,10 @@ export function getContract(path: string): Uint8Array {
 export function writeInCacheFolder(fileName: string, content: string, encoding: BufferEncoding = "utf8"): void {
     if (!fs.existsSync(cachePath)) fs.mkdirSync(cachePath);
     fs.writeFileSync(path.join(cachePath, fileName), content, { encoding });
+}
+
+export function writeRelayerConfig(data: unknown, fileName: string): void {
+    fs.writeFileSync(path.join(configPath, "/relayer", fileName), JSON.stringify(data, null, 2));
 }
 
 export async function downloadFile(url: string, fileName: string): Promise<void> {

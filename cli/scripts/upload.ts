@@ -9,9 +9,7 @@ import {
     factoryCodePath,
     fixMultiSigCodePath,
     govecCodePath,
-    hostChain,
     proxyCodePath,
-    remoteChain,
     remoteFactoryCodePath,
     remoteProxyCodePath,
     remoteTunnelCodePath,
@@ -22,10 +20,10 @@ import type { ContractsResult } from "../interfaces/contracts";
 (async function uploadCode() {
     if (!areContractsDownloaded()) await downloadContracts();
 
-    const daoClient = await CosmWasmClient.connectWithAccount(hostChain, "admin");
-    const uploadHostRes = await daoClient.uploadHostContracts(hostChain);
+    const daoClient = await CosmWasmClient.connectHostWithAccount("admin");
+    const uploadHostRes = await daoClient.uploadHostContracts();
 
-    const remoteClient = await CosmWasmClient.connectWithAccount(remoteChain, "admin");
+    const remoteClient = await CosmWasmClient.connectRemoteWithAccount("admin");
     const uploadRemoteRes = await remoteClient.uploadRemoteContracts();
 
     const results = {

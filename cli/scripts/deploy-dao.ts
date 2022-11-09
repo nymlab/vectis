@@ -6,7 +6,7 @@ import RemoteTunnelClient from "../clients/remote-tunnel";
 import { delay } from "../utils/promises";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeInCacheFolder } from "../utils/fs";
-import { hostChain as hostChainName, remoteChain as remoteChainName, uploadReportPath } from "../utils/constants";
+import { hostChainName, remoteChainName, uploadReportPath } from "../utils/constants";
 
 import type { DaoTunnelT, GovecT, ProxyT } from "../interfaces";
 import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -39,12 +39,12 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes } = host;
     const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
 
-    const relayerClient = new RelayerClient(hostChainName, remoteChainName);
-    const connection = await relayerClient.createConnection();
+    const relayerClient = new RelayerClient();
+    const connection = await relayerClient.connect();
     console.log(connection);
 
-    const adminHostClient = await CWClient.connectWithAccount(hostChainName, "admin");
-    const adminRemoteClient = await CWClient.connectWithAccount(remoteChainName, "admin");
+    const adminHostClient = await CWClient.connectHostWithAccount("admin");
+    const adminRemoteClient = await CWClient.connectRemoteWithAccount("admin");
 
     const initial_balances: GovecT.Cw20Coin[] = [
         {
@@ -276,7 +276,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 })();
 
 async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
-    const adminHostClient = await CWClient.connectWithAccount(hostChainName, "admin");
+    const adminHostClient = await CWClient.connectHostWithAccount("admin");
     const govecClient = new GovecClient(adminHostClient, adminHostClient.sender, addrs.govecAddr);
     const factoryClient = new FactoryClient(adminHostClient, adminHostClient.sender, addrs.factoryAddr);
     const daoClient = new DaoClient(adminHostClient, {

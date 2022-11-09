@@ -1,13 +1,7 @@
-import { juno_localnet as junoAccounts, wasm_localnet as wasmAccounts } from "@vectis/core/config/accounts";
-import * as CHAINS from "@vectis/core/config/chains";
 import { coin, calculateFee, GasPrice } from "@cosmjs/stargate";
-import { Coin } from "@vectis/types/contracts/Factory.types";
-import { Chain } from "@vectis/core/interfaces/chain";
+import { Coin } from "../interfaces/Factory.types";
+import type { Chain } from "../config/chains";
 
-export const HOST_CHAIN = CHAINS.juno_localnet;
-export const REMOTE_CHAIN = CHAINS.wasm_localnet;
-export const HOST_ACCOUNTS = junoAccounts;
-export const REMOTE_ACCOUNTS = wasmAccounts;
 export const getDefaultGasPrice = (chain: Chain) => GasPrice.fromString(chain.gasPrice + chain.feeToken);
 
 export const getInitialFactoryBalance = (chain: Chain) => coin(1_000_000, chain.feeToken) as Coin;

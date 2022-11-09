@@ -1,4 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Addr;
 use vectis_wallet::{ChainConfig, DaoConfig, RemoteTunnelPacketMsg};
 
 #[cw_serde]
@@ -28,7 +29,7 @@ pub struct Receiver {
 pub enum QueryMsg {
     #[returns(DaoConfig)]
     DaoConfig {},
-    #[returns(ChainConfig)]
+    #[returns(ChainConfigResponse)]
     ChainConfig {},
     #[returns(IbcTransferChannels)]
     IbcTransferChannels {
@@ -44,4 +45,10 @@ pub struct IbcTransferChannels {
     /// (connection_id, channel_id)
     /// The channel_id are for channel already established
     pub endpoints: Vec<(String, String)>,
+}
+
+#[cw_serde]
+pub struct ChainConfigResponse {
+    pub remote_factory: Option<Addr>,
+    pub denom: String,
 }
