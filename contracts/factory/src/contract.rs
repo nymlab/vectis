@@ -127,7 +127,7 @@ fn create_wallet(
     )?;
 
     // reply_id starts at 2 as 0 and 1 are occupied by consts
-    if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(2) {
+    if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
         proxy_init_funds.append(&mut multisig_initial_funds);
         // The wasm message containing the `wallet_proxy` instantiation message
         let instantiate_msg = WasmMsg::Instantiate {
@@ -393,10 +393,7 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     // NOTE: Error returned in `reply` is equivalent to contract error, all states revert,
     // specifically, the TOTAL_CREATED incremented in `create_wallet` will revert
 
-    let expected_id = TOTAL_CREATED
-        .load(deps.storage)?
-        .checked_add(1)
-        .ok_or(ContractError::OverFlow {})?;
+    let expected_id = TOTAL_CREATED.load(deps.storage)?;
 
     if reply.id == expected_id {
         if let Ok(res) = parse_reply_instantiate_data(reply) {
