@@ -77,6 +77,4 @@ fn with_govec_can_propose() {
             &[],
         )
         .unwrap();
-
-    println!("res {:?}", res);
 }

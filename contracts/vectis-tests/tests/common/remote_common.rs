@@ -37,9 +37,7 @@ impl RemoteChainSuite {
         let sc_factory_id = app.store_code(contract_factory());
         let sc_proxy_id = app.store_code(contract_proxy());
         let sc_proxy_multisig_code_id = app.store_code(contract_multisig());
-        let govec_id = app.store_code(contract_govec());
-        let stake_id = app.store_code(contract_stake());
-        let dao_tunnel_id = app.store_code(contract_dao_tunnel());
+        let remote_tunnel_id = app.store_code(contract_remote_tunnel());
 
         let govec_addr = app
             .instantiate_contract(

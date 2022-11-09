@@ -264,6 +264,7 @@ impl DaoChainSuite {
         })
     }
 
+    // Create wallet
     pub fn create_new_proxy_without_guardians(
         &mut self,
         user: Addr,
