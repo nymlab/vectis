@@ -14,6 +14,7 @@ pub enum UpdateAddrReq {
     DaoTunnel(String),
     Factory(String),
     Staking(String),
+    // if addr already exists; this will remove it
     Proposal(String),
 }
 
