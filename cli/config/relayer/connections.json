@@ -1,0 +1,8 @@
+{
+  "juno_localnet": {
+    "wasm_localnet": {
+      "src": "connection-39",
+      "dest": "connection-41"
+    }
+  }
+}

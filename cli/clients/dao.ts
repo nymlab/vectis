@@ -115,7 +115,6 @@ class DaoClient {
     static async instantiate(client: CWClient, govecAddr: string) {
         const { host } = await import(uploadReportPath);
         const { stakingRes, voteRes, daoRes, proposalSingleRes } = host;
-        const [{ address }] = await client.getAccounts();
 
         const tokenInfo = DaoClient.createTokenInfo(govecAddr, stakingRes.codeId, unstakeDuration);
         const voteInstMsg = DaoClient.createVoteInstMsg(tokenInfo);
@@ -139,7 +138,7 @@ class DaoClient {
         console.log("dao code id: ", daoRes.codeId);
 
         const { contractAddress: daoAddr } = await client.instantiate(
-            address,
+            client.sender,
             daoRes.codeId,
             daoInstMsg,
             "VectisDAO",

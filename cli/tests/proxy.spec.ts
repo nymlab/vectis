@@ -2,36 +2,30 @@ import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
-import { Addr, CosmosMsgForEmpty as CosmosMsg, BankMsg, Coin } from "@vectis/types/contracts/Proxy.types";
-import { FactoryClient, GovecClient } from "@vectis/core/clients";
+import { Addr, CosmosMsgForEmpty as CosmosMsg, BankMsg, Coin } from "../interfaces/Proxy.types";
+import { FactoryClient } from "../clients";
 import { coin } from "@cosmjs/stargate";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
-import { getContract } from "@vectis/core/utils/fs";
+import { getContract } from "../utils/fs";
 
-import { cw20CodePath, uploadReportPath } from "@vectis/core/utils/constants";
+import { cw20CodePath, deployReportPath, hostAccounts, hostChain } from "../utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
-import { CWClient } from "@vectis/core/clients";
-import {
-    getDefaultRelayFee,
-    getDefaultSendFee,
-    getDefaultUploadFee,
-    HOST_ACCOUNTS,
-    HOST_CHAIN,
-    getInitialFactoryBalance,
-} from "./mocks/constants";
-import { ProxyClient } from "@vectis/types";
+import { CWClient } from "../clients";
+import { getDefaultRelayFee, getDefaultSendFee, getDefaultUploadFee } from "../utils/fees";
+import { ProxyClient } from "../interfaces";
+import { delay } from "../utils/promises";
 
 /**
  * This suite tests Proxy contract methods
  */
 describe("Proxy Suite: ", () => {
-    let userClient: CWClient;
-    let guardianClient: CWClient;
-    let adminClient: CWClient;
-    let client: CosmWasmClient;
+    let hostUserClient: CWClient;
+    let hostGuardianClient: CWClient;
+    let hostAdminClient: CWClient;
+    let hostClient: CosmWasmClient;
     let proxyWalletAddress: Addr;
     let proxyWalletMultisigAddress: Addr;
 
@@ -40,61 +34,46 @@ describe("Proxy Suite: ", () => {
     let guardianProxyClient: ProxyClient;
 
     beforeAll(async () => {
-        const { host } = await import(uploadReportPath);
-        const { factoryRes, govecRes, proxyRes, multisigRes } = host;
+        const { factoryAddr } = await import(deployReportPath);
 
-        userClient = await CWClient.connectWithAccount("juno_localnet", "user");
-        adminClient = await CWClient.connectWithAccount("juno_localnet", "admin");
-        guardianClient = await CWClient.connectWithAccount("juno_localnet", "guardian_1");
-        client = await CosmWasmClient.connect(HOST_CHAIN.rpcUrl);
+        hostUserClient = await CWClient.connectHostWithAccount("user");
+        hostAdminClient = await CWClient.connectHostWithAccount("admin");
+        hostGuardianClient = await CWClient.connectHostWithAccount("guardian_1");
+        hostClient = await CosmWasmClient.connect(hostChain.rpcUrl);
 
-        factoryClient = await FactoryClient.instantiate(
-            adminClient,
-            factoryRes.codeId,
-            FactoryClient.createFactoryInstMsg("juno_localnet", proxyRes.codeId, multisigRes.codeId),
-            [getInitialFactoryBalance(HOST_CHAIN)]
-        );
-
-        const govecClient = await GovecClient.instantiate(adminClient, govecRes.codeId, {
-            factory: factoryClient.contractAddress,
-            initial_balances: [],
-        });
-
-        await factoryClient.updateGovecAddr({ addr: govecClient.contractAddress });
-
-        const govec = await factoryClient.govecAddr();
-        expect(govec).toEqual(govecClient.contractAddress);
+        factoryClient = new FactoryClient(hostAdminClient, hostAdminClient.sender, factoryAddr);
 
         const [walletAddr, walletMSAddr] = await createTestProxyWallets(factoryClient);
+        console.log(walletAddr, walletMSAddr);
         proxyWalletAddress = walletAddr;
         proxyWalletMultisigAddress = walletMSAddr;
 
-        proxyClient = new ProxyClient(userClient, userClient.sender, proxyWalletAddress);
-        guardianProxyClient = new ProxyClient(guardianClient, guardianClient.sender, proxyWalletAddress);
+        proxyClient = new ProxyClient(hostUserClient, hostUserClient.sender, proxyWalletAddress);
+        guardianProxyClient = new ProxyClient(hostGuardianClient, hostGuardianClient.sender, proxyWalletAddress);
     });
 
     it("Should get correct info from proxy wallet", async () => {
         const info = await proxyClient.info();
-        expect(info.guardians).toContain(HOST_ACCOUNTS.guardian_1.address);
-        expect(info.guardians).toContain(HOST_ACCOUNTS.guardian_2.address);
-        expect(info.relayers).toContain(HOST_ACCOUNTS.relayer_1.address);
-        expect(info.relayers).toContain(HOST_ACCOUNTS.relayer_2.address);
+        expect(info.guardians).toContain(hostAccounts.guardian_1.address);
+        expect(info.guardians).toContain(hostAccounts.guardian_2.address);
+        expect(info.relayers).toContain(hostAccounts.relayer_1.address);
+        expect(info.relayers).toContain(hostAccounts.relayer_2.address);
         expect(info.is_frozen).toEqual(false);
         expect(info.multisig_address).toBeFalsy();
         expect(info.nonce).toEqual(0);
     });
 
     it("Should be able to use wallet to send funds as user", async () => {
-        const sendAmount = coin(2, HOST_CHAIN.feeToken);
+        const sendAmount = coin(2, hostChain.feeToken);
         const sendMsg: BankMsg = {
             send: {
-                to_address: HOST_ACCOUNTS.admin.address,
+                to_address: hostAccounts.admin.address,
                 amount: [sendAmount as Coin],
             },
         };
 
-        const walletBalanceBefore = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken);
-        const adminBalanceBefore = await client.getBalance(HOST_ACCOUNTS.admin.address, HOST_CHAIN.feeToken);
+        const walletBalanceBefore = await hostClient.getBalance(proxyWalletAddress, hostChain.feeToken);
+        const adminBalanceBefore = await hostClient.getBalance(hostAccounts.admin.address, hostChain.feeToken);
         await proxyClient.execute({
             msgs: [
                 {
@@ -102,8 +81,8 @@ describe("Proxy Suite: ", () => {
                 },
             ],
         });
-        const walletBalanceAfter = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken);
-        const adminBalanceAfter = await client.getBalance(HOST_ACCOUNTS.admin.address, HOST_CHAIN.feeToken);
+        const walletBalanceAfter = await hostClient.getBalance(proxyWalletAddress, hostChain.feeToken);
+        const adminBalanceAfter = await hostClient.getBalance(hostAccounts.admin.address, hostChain.feeToken);
 
         const walletDiff = Number(walletBalanceBefore.amount) - Number(walletBalanceAfter.amount);
         const adminDiff = Number(adminBalanceBefore.amount) - Number(adminBalanceAfter.amount);
@@ -113,17 +92,17 @@ describe("Proxy Suite: ", () => {
     });
 
     it("Should be able to send funds to wallet as user", async () => {
-        const sendAmount = coin(10_000, HOST_CHAIN.feeToken);
-        const userBalanceBefore = await client.getBalance(HOST_ACCOUNTS.user.address, HOST_CHAIN.feeToken!);
-        const walletBalanceBefore = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken);
-        await userClient.sendTokens(
-            HOST_ACCOUNTS.user.address,
+        const sendAmount = coin(10_000, hostChain.feeToken);
+        const userBalanceBefore = await hostClient.getBalance(hostAccounts.user.address, hostChain.feeToken!);
+        const walletBalanceBefore = await hostClient.getBalance(proxyWalletAddress, hostChain.feeToken);
+        await hostUserClient.sendTokens(
+            hostAccounts.user.address,
             proxyWalletAddress,
             [sendAmount],
-            getDefaultSendFee(HOST_CHAIN)
+            getDefaultSendFee(hostChain)
         );
-        const userBalanceAfter = await client.getBalance(HOST_ACCOUNTS.user.address, HOST_CHAIN.feeToken);
-        const walletBalanceAfter = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken);
+        const userBalanceAfter = await hostClient.getBalance(hostAccounts.user.address, hostChain.feeToken);
+        const walletBalanceAfter = await hostClient.getBalance(proxyWalletAddress, hostChain.feeToken);
 
         const userDiff = Number(userBalanceBefore.amount) - Number(userBalanceAfter.amount);
         const walletDiff = Number(walletBalanceBefore.amount) - Number(walletBalanceAfter.amount);
@@ -157,8 +136,8 @@ describe("Proxy Suite: ", () => {
         try {
             const sendMsg: BankMsg = {
                 send: {
-                    to_address: HOST_ACCOUNTS.admin.address,
-                    amount: [coin(2, HOST_CHAIN.feeToken!) as Coin],
+                    to_address: hostAccounts.admin.address,
+                    amount: [coin(2, hostChain.feeToken!) as Coin],
                 },
             };
             await proxyClient.execute({
@@ -185,23 +164,23 @@ describe("Proxy Suite: ", () => {
 
         // New owner is admin
         await guardianProxyClient.rotateUserKey({
-            newUserAddress: HOST_ACCOUNTS.admin.address,
+            newUserAddress: hostAccounts.admin.address,
         });
 
         /*  // User (old wallet owner) shouldn't have the wallet anymore
-        const { wallets: userWallets } = await factoryClient.walletsOf({ user: HOST_ACCOUNTS.user.address! });
+        const { wallets: userWallets } = await factoryClient.walletsOf({ user: hostAccounts.user.address! });
         expect(userWallets).not.toContain(proxyWalletAddress);
 
         // Admin (admin wallet owner) should have the wallet
-        const { wallets: adminWallets } = await factoryClient.walletsOf({ user: HOST_ACCOUNTS.admin.address });
+        const { wallets: adminWallets } = await factoryClient.walletsOf({ user: hostAccounts.admin.address });
         expect(adminWallets).toContain(proxyWalletAddress);
  */
         // Shouldn't be able to perform operations as user since it's not his wallet anymore
         try {
             const sendMsg: BankMsg = {
                 send: {
-                    to_address: HOST_ACCOUNTS.admin.address,
-                    amount: [coin(2, HOST_CHAIN.feeToken!) as Coin],
+                    to_address: hostAccounts.admin.address,
+                    amount: [coin(2, hostChain.feeToken!) as Coin],
                 },
             };
             await proxyClient.execute({
@@ -221,16 +200,20 @@ describe("Proxy Suite: ", () => {
 
         // Return wallet to the user
         await guardianProxyClient.rotateUserKey({
-            newUserAddress: HOST_ACCOUNTS.user.address,
+            newUserAddress: hostAccounts.user.address,
         });
     });
 
     it("Should be able to rotate key of multisig wallet", async () => {
-        const clientG1 = await CWClient.connectWithAccount("juno_localnet", "guardian_1");
-        const clientG2 = await CWClient.connectWithAccount("juno_localnet", "guardian_2");
+        const clientG1 = await CWClient.connectHostWithAccount("guardian_1");
+        const clientG2 = await CWClient.connectHostWithAccount("guardian_2");
 
         try {
-            const msProxyClient = new ProxyClient(userClient, HOST_ACCOUNTS.user.address!, proxyWalletMultisigAddress);
+            const msProxyClient = new ProxyClient(
+                hostUserClient,
+                hostAccounts.user.address!,
+                proxyWalletMultisigAddress
+            );
             const { multisig_address } = await msProxyClient.info();
 
             const rotateUserKey: CosmosMsg = {
@@ -240,7 +223,9 @@ describe("Proxy Suite: ", () => {
                         msg: toBase64(
                             toUtf8(
                                 JSON.stringify({
-                                    rotate_user_key: { new_user_address: HOST_ACCOUNTS.admin.address },
+                                    rotate_user_key: {
+                                        new_user_address: hostAccounts.admin.address,
+                                    },
                                 })
                             )
                         ),
@@ -256,7 +241,7 @@ describe("Proxy Suite: ", () => {
                     latest: null,
                 },
             };
-            await clientG1.execute(clientG1.sender, multisig_address!, proposal, getDefaultRelayFee(HOST_CHAIN));
+            await clientG1.execute(clientG1.sender, multisig_address!, proposal, getDefaultRelayFee(hostChain));
 
             // Should have proposal in the list
             const queryProps: ProposalQueryMsg = { list_proposals: {} };
@@ -285,7 +270,7 @@ describe("Proxy Suite: ", () => {
 
             // At this point, the wallet should be frozen
             const { user_addr } = await msProxyClient.info();
-            expect(user_addr).toEqual(HOST_ACCOUNTS.admin.address);
+            expect(user_addr).toEqual(hostAccounts.admin.address);
         } catch (err) {
             throw err;
         } finally {
@@ -295,11 +280,11 @@ describe("Proxy Suite: ", () => {
     });
 
     it("Should be able to freeze multisig wallet", async () => {
-        const clientG1 = await CWClient.connectWithAccount("juno_localnet", "guardian_1");
-        const clientG2 = await CWClient.connectWithAccount("juno_localnet", "guardian_2");
+        const clientG1 = await CWClient.connectHostWithAccount("guardian_1");
+        const clientG2 = await CWClient.connectHostWithAccount("guardian_2");
 
         try {
-            const msProxyClient = new ProxyClient(userClient, userClient.sender, proxyWalletMultisigAddress);
+            const msProxyClient = new ProxyClient(hostUserClient, hostUserClient.sender, proxyWalletMultisigAddress);
             const { multisig_address } = await msProxyClient.info();
 
             // Propose freezing of multisig wallet
@@ -326,7 +311,7 @@ describe("Proxy Suite: ", () => {
                     latest: null,
                 },
             };
-            await clientG1.execute(clientG1.sender, multisig_address!, proposal, getDefaultRelayFee(HOST_CHAIN));
+            await clientG1.execute(clientG1.sender, multisig_address!, proposal, getDefaultRelayFee(hostChain));
 
             // Should have proposal in the list
             const queryProps: ProposalQueryMsg = { list_proposals: {} };
@@ -367,27 +352,27 @@ describe("Proxy Suite: ", () => {
     });
 
     it("Should relay bank message as a relayer", async () => {
-        const relayerClient = await CWClient.connectWithAccount("juno_localnet", "relayer_1");
-        // We should use HOST_ACCOUNTS.user.address here
+        const relayerClient = await CWClient.connectHostWithAccount("relayer_1");
+        // We should use hostAccounts.user.address here
         const relayerProxyClient = new ProxyClient(relayerClient, relayerClient.sender, proxyWalletAddress);
         const info = await relayerProxyClient.info();
 
-        const sendAmount = coin(10_000, HOST_CHAIN.feeToken!);
+        const sendAmount = coin(10_000, hostChain.feeToken!);
         const sendMsg: CosmosMsg = {
             bank: {
                 send: {
-                    to_address: HOST_ACCOUNTS.admin.address,
+                    to_address: hostAccounts.admin.address,
                     amount: [sendAmount as Coin],
                 },
             },
         };
 
         const relayTransaction = await CWClient.createRelayTransaction(
-            HOST_ACCOUNTS.user.mnemonic,
+            hostAccounts.user.mnemonic,
             info.nonce,
             JSON.stringify(sendMsg)
         );
-        const walletBalanceBefore = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken!);
+        const walletBalanceBefore = await hostClient.getBalance(proxyWalletAddress, hostChain.feeToken!);
 
         await relayerProxyClient.relay(
             {
@@ -396,7 +381,7 @@ describe("Proxy Suite: ", () => {
             "auto"
         );
 
-        const walletBalanceAfter = await client.getBalance(proxyWalletAddress, HOST_CHAIN.feeToken!);
+        const walletBalanceAfter = await hostClient.getBalance(proxyWalletAddress, hostChain.feeToken!);
         const diff = Number(walletBalanceBefore.amount) - Number(walletBalanceAfter.amount);
 
         expect(sendAmount.amount).toEqual(String(diff));
@@ -404,20 +389,20 @@ describe("Proxy Suite: ", () => {
     });
 
     it("Should relay WASM message as a relayer", async () => {
-        const relayerClient = await CWClient.connectWithAccount("juno_localnet", "relayer_1");
+        const relayerClient = await CWClient.connectHostWithAccount("relayer_1");
         const relayerProxyClient = new ProxyClient(relayerClient, relayerClient.sender, proxyWalletAddress);
 
         // Instantiate a new CW20 contract giving the wallet some funds
         const cw20Code = getContract(cw20CodePath!);
-        const cw20Res = await adminClient.upload(
-            HOST_ACCOUNTS.admin.address,
+        const cw20Res = await hostAdminClient.upload(
+            hostAccounts.admin.address,
             cw20Code,
-            getDefaultUploadFee(HOST_CHAIN)
+            getDefaultUploadFee(hostChain)
         );
 
         const initAmount = "1000";
-        const cw20contract = await adminClient.instantiate(
-            HOST_ACCOUNTS.admin.address,
+        const cw20contract = await hostAdminClient.instantiate(
+            hostAccounts.admin.address,
             cw20Res.codeId,
             {
                 name: "scw-test",
@@ -435,7 +420,10 @@ describe("Proxy Suite: ", () => {
         );
         const transferAmount = "100";
         const transferMsg = {
-            transfer: { recipient: HOST_ACCOUNTS.guardian_1.address, amount: transferAmount },
+            transfer: {
+                recipient: hostAccounts.guardian_1.address,
+                amount: transferAmount,
+            },
         };
 
         const cosmosWasmMsg: CosmosMsg = {
@@ -449,7 +437,7 @@ describe("Proxy Suite: ", () => {
         };
 
         const relayTransaction = await CWClient.createRelayTransaction(
-            HOST_ACCOUNTS.user.mnemonic,
+            hostAccounts.user.mnemonic,
             1,
             JSON.stringify(cosmosWasmMsg)
         );
@@ -459,6 +447,7 @@ describe("Proxy Suite: ", () => {
             },
             "auto"
         );
+        await delay(5000);
 
         const postFund = await relayerClient.queryContractSmart(cw20contract.contractAddress, {
             balance: { address: proxyWalletAddress },
@@ -469,9 +458,9 @@ describe("Proxy Suite: ", () => {
     });
 
     afterAll(() => {
-        adminClient?.disconnect();
-        userClient?.disconnect();
-        guardianClient?.disconnect();
-        client?.disconnect();
+        hostAdminClient?.disconnect();
+        hostUserClient?.disconnect();
+        hostGuardianClient?.disconnect();
+        hostClient?.disconnect();
     });
 });

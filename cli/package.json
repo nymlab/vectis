@@ -13,7 +13,7 @@
         "test": "jest --runInBand",
         "test:ci": "npm run upload && npm test",
         "upload": "ts-node scripts/upload.ts",
-        "deploy:dao": "ts-node scripts/deploy.ts",
+        "deploy:dao": "ts-node scripts/deploy-dao.ts",
         "generate:types": "ts-node scripts/types.ts",
         "prettier": "prettier --write \"**/*.{js,ts}\""
     },

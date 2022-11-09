@@ -3,18 +3,23 @@ import { IbcClient, Link } from "@confio/relayer";
 import { GasPrice } from "@cosmjs/stargate";
 
 import CWClient from "./cosmwasm";
-import * as CHAINS from "../config/chains";
+import {
+    hostAccounts,
+    hostChain,
+    hostChainName,
+    remoteAccounts,
+    remoteChain,
+    remoteChainName,
+} from "../utils/constants";
 
-import type { Chains } from "../config/chains";
+import type { Chain } from "../config/chains";
+import connections from "../config/relayer/connections.json";
+import { writeRelayerConfig } from "../utils/fs";
 
 class RelayerClient {
-    hostChainName: Chains;
-    remoteChainName: Chains;
     link: Link | null;
     channel: ChannelPair | null;
-    constructor(hostChainName: Chains, remoteChainName: Chains) {
-        this.hostChainName = hostChainName;
-        this.remoteChainName = remoteChainName;
+    constructor() {
         this.link = null;
         this.channel = null;
     }
@@ -37,27 +42,50 @@ class RelayerClient {
         };
     }
 
+    backup() {
+        if (!this.link) throw new Error("Link not initialized");
+        const relayerConfig = {
+            [hostChainName]: {
+                [remoteChainName]: {
+                    src: this.link.endA.connectionID,
+                    dest: this.link.endB.connectionID,
+                },
+            },
+        };
+
+        writeRelayerConfig(Object.assign(connections, relayerConfig), "connections.json");
+    }
+
     async relayAll() {
         if (!this.link) throw new Error("Link not initialized");
         return await this.link.relayAll();
     }
 
+    async connect() {
+        const hostConnections = connections[hostChainName as keyof typeof connections] || {};
+        const connectionsId = hostConnections[remoteChainName as keyof typeof hostConnections] as
+            | { src: string; dest: string }
+            | undefined;
+        return connectionsId ? this.recoverConnection(connectionsId.src, connectionsId.dest) : this.createConnection();
+    }
+
     async createConnection() {
-        const hostClient = await this.createIbcClient(this.hostChainName);
-        const remoteClient = await this.createIbcClient(this.remoteChainName);
+        const hostClient = await this.createIbcClient(hostChain, hostAccounts.admin.mnemonic as string);
+        const remoteClient = await this.createIbcClient(remoteChain, remoteAccounts.admin.mnemonic as string);
 
         this.link = await Link.createWithNewConnections(hostClient, remoteClient);
+        this.backup();
         return this.connections;
     }
 
-    async createIbcClient(chainName: Chains): Promise<IbcClient> {
-        const signer = await CWClient.getSignerWithAccount(chainName, "admin");
+    async createIbcClient(chain: Chain, mnemonic: string): Promise<IbcClient> {
+        const signer = await CWClient.getSignerWithMnemonic(chain, mnemonic);
         const [{ address }] = await signer.getAccounts();
 
-        const { rpcUrl, feeToken, gasPrice, estimatedBlockTime, estimatedIndexerTime } = CHAINS[chainName];
+        const { rpcUrl, feeToken, gasPrice, estimatedBlockTime, estimatedIndexerTime } = chain;
 
         return await IbcClient.connectWithSigner(rpcUrl, signer, address, {
-            gasPrice: GasPrice.fromString(gasPrice + feeToken) as any,
+            gasPrice: GasPrice.fromString(gasPrice + feeToken),
             estimatedBlockTime,
             estimatedIndexerTime,
         });
@@ -70,16 +98,12 @@ class RelayerClient {
         return this.channels;
     }
 
-    async recoverConnection() {
-        const hostClient = await this.createIbcClient(this.hostChainName);
-        const remoteClient = await this.createIbcClient(this.remoteChainName);
-        // TODO: Recover from json file
-        this.link = await Link.createWithExistingConnections(
-            hostClient,
-            remoteClient,
-            "connection-16",
-            "connection-18"
-        );
+    async recoverConnection(connA: string, connB: string) {
+        const hostClient = await this.createIbcClient(hostChain, hostAccounts.admin.mnemonic as string);
+        const remoteClient = await this.createIbcClient(remoteChain, remoteAccounts.admin.mnemonic as string);
+
+        this.link = await Link.createWithExistingConnections(hostClient, remoteClient, connA, connB);
+        return this.connections;
     }
 }
 

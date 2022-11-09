@@ -32,6 +32,7 @@ const common = {
 };
 
 export const juno_mainnet = {
+    ...common,
     admin: {
         mnemonic: process.env.JUNO_ADMIN_MNEMONIC,
         address: process.env.JUNO_ADMIN_ADDRESS,

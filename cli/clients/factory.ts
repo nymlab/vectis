@@ -35,10 +35,8 @@ class FactoryClient extends FactoryC {
         msg: FactoryT.InstantiateMsg,
         initialFunds: FactoryT.Coin[]
     ) {
-        const [{ address }] = await client.getAccounts();
-
         const { contractAddress } = await client.instantiate(
-            address,
+            client.sender,
             codeId,
             msg as unknown as Record<string, string>,
             "Wallet Factory",
@@ -48,7 +46,7 @@ class FactoryClient extends FactoryC {
             }
         );
 
-        return new FactoryClient(client, address, contractAddress);
+        return new FactoryClient(client, client.sender, contractAddress);
     }
 }
 

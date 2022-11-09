@@ -1,14 +1,20 @@
 import path from "path";
 import * as dotenv from "dotenv";
-import { Chains } from "../config/chains";
+import * as accounts from "../config/accounts";
+import * as chains from "../config/chains";
+import type { Chains } from "../config/chains";
 
 dotenv.config({ path: path.join(__dirname, "../.env") });
 
 // Arch
 const archSuffix = ""; //process.arch === "arm64" ? "-aarch64" : "";
 
-export const hostChain = (process.env.HOST_CHAIN as Chains) || "juno_localnet";
-export const remoteChain = (process.env.HOST_CHAIN as Chains) || "wasm_localnet";
+export const hostChainName = (process.env.HOST_CHAIN || "juno_localnet") as Chains;
+export const hostChain = chains[hostChainName as keyof typeof chains];
+export const remoteChainName = (process.env.REMOTE_CHAIN || "wasm_localnet") as Chains;
+export const remoteChain = chains[remoteChainName as keyof typeof chains];
+export const hostAccounts = accounts[hostChainName as keyof typeof accounts];
+export const remoteAccounts = accounts[remoteChainName as keyof typeof accounts];
 
 // Contracts Filenames
 export const contractsFileNames = {
@@ -43,6 +49,7 @@ export const cw20ProposalSingleDownloadLink = `https://github.com/DA0-DA0/dao-co
 
 // Paths
 export const cachePath = path.join(__dirname, "../.cache");
+export const configPath = path.join(__dirname, "../config");
 export const downloadContractPath = path.join(cachePath, "/contracts");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
 export const deployReportPath = path.join(cachePath, "deployInfo.json");
