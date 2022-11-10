@@ -1,7 +1,6 @@
 #[cfg(test)]
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Coin, DepsMut};
-use vectis_proxy::contract::reply;
 
 #[cfg(feature = "dao-chain")]
 use crate::contract::query_govec_addr;
@@ -14,7 +13,6 @@ use crate::{
     msg::{ExecuteMsg, InstantiateMsg, UnclaimedWalletList},
 };
 
-const GOVEC_ADDR: &str = "govec_minter";
 // this will set up the instantiation for other tests
 fn do_instantiate(
     mut deps: DepsMut,

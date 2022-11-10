@@ -129,6 +129,12 @@ fn create_wallet(
     // reply_id starts at 1  as 0 occupied by const GOVEC_REPLY_ID
     if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
         proxy_init_funds.append(&mut multisig_initial_funds);
+        let funds = if proxy_init_funds.is_empty() {
+            vec![]
+        } else {
+            proxy_init_funds
+        };
+
         // The wasm message containing the `wallet_proxy` instantiation message
         let instantiate_msg = WasmMsg::Instantiate {
             admin: Some(env.contract.address.to_string()),
@@ -139,7 +145,7 @@ fn create_wallet(
                 code_id: PROXY_CODE_ID.load(deps.storage)?,
                 addr_prefix: ADDR_PREFIX.load(deps.storage)?,
             })?,
-            funds: proxy_init_funds.to_owned(),
+            funds,
             label: "Wallet-Proxy".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, next_id);
