@@ -2,6 +2,7 @@ use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info}
 use cosmwasm_std::{
     coins, to_binary, Addr, BankMsg, Binary, BlockInfo, CosmosMsg, DepsMut, StdError, Timestamp,
 };
+use cw2::ContractVersion;
 
 use crate::contract::{
     execute, execute_relay, instantiate, query_guardian_update_request, query_info,
@@ -14,7 +15,7 @@ use secp256k1::bitcoin_hashes::sha256;
 use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
 use vectis_wallet::{
     pub_key_to_address, CreateWalletMsg, Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest,
-    RelayTransaction, RelayTxError,
+    RelayTransaction, RelayTxError, WalletInfo,
 };
 
 const GUARD1: &str = "guardian1";
@@ -78,6 +79,26 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
 
     let address = pub_key_to_address(&deps.as_ref(), "wasm", &public_key_serialized).unwrap();
     instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
+    let info = query_info(deps.as_ref()).unwrap();
+
+    let expected_info = WalletInfo {
+        user_addr: address.clone(),
+        factory: Addr::unchecked("creator"),
+        nonce: 0,
+        version: ContractVersion {
+            contract: "crates.io:smart-contract-wallet-proxy".to_string(),
+            version: "0.1.0".to_string(),
+        },
+        code_id: 0,
+        multisig_code_id: MULTISIG_CODE_ID,
+        guardians: vec![Addr::unchecked(GUARD2), Addr::unchecked(GUARD1)],
+        relayers: vec![Addr::unchecked(RELAYER2), Addr::unchecked(RELAYER1)],
+        is_frozen: false,
+        multisig_address: None,
+        label: "initial label".to_string(),
+    };
+
+    assert_eq!(expected_info, info);
     address
 }
 
