@@ -8,8 +8,8 @@ use cw_storage_plus::Bound;
 
 use cw_utils::parse_reply_instantiate_data;
 use vectis_wallet::{
-    ChainConfig, DaoConfig, PacketMsg, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
-    DEFAULT_LIMIT, MAX_LIMIT, PACKET_LIFETIME,
+    DaoConfig, PacketMsg, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds, DEFAULT_LIMIT,
+    MAX_LIMIT, PACKET_LIFETIME,
 };
 
 use crate::msg::{
