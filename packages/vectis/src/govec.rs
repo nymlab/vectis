@@ -26,13 +26,9 @@ pub enum GovecExecuteMsg {
         relayed_from: Option<String>,
     },
     /// This is implemented such that the sender MUST be a DAO proposal module
-    /// The recipient will always be the sender
-    /// This matches the cw_proposal_single `get_deposit_msg` required interface
-    TransferFrom {
-        owner: String,
-        recipient: String,
-        amount: Uint128,
-    },
+    /// The recipient will always be the sender, aka the proposal contract
+    /// called by `get_deposit_msg` required interface in proposal_single
+    ProposalTransfer { proposer: String, deposit: Uint128 },
     /// Burn is a base message to destroy tokens forever
     /// Logic checks that caller only has exactly 1 vote token in their balance
     Burn { relayed_from: Option<String> },
