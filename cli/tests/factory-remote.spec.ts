@@ -9,6 +9,7 @@ import { toCosmosMsg } from "../utils/enconding";
 
 describe("Remote Factory Suite:", () => {
     let userClient: CWClient;
+    let hostUserClient: CWClient;
     let factoryClient: FactoryClient;
     let proxyClient: ProxyClient;
     let govecClient: GovecClient;
@@ -17,8 +18,9 @@ describe("Remote Factory Suite:", () => {
         const { remoteFactoryAddr, govecAddr } = await import(deployReportPath);
         await relayerClient.connect();
         userClient = await CWClient.connectRemoteWithAccount("user");
+        hostUserClient = await CWClient.connectHostWithAccount("user");
         factoryClient = new FactoryClient(userClient, userClient.sender, remoteFactoryAddr);
-        govecClient = new GovecClient(userClient, userClient.sender, govecAddr);
+        govecClient = new GovecClient(hostUserClient, hostUserClient.sender, govecAddr);
     });
     it("should create a proxy wallet", async () => {
         const initialFunds = walletInitialFunds(remoteChain);
@@ -51,7 +53,7 @@ describe("Remote Factory Suite:", () => {
 
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });
-    it("should create a proxy wallet and it would", async () => {
+    it("should be able to mint govec tokens", async () => {
         let res = await factoryClient.unclaimedGovecWallets({});
         let targetWallet = res.wallets.find(([w]: [string, Expiration]) => w === proxyClient.contractAddress);
 
@@ -72,12 +74,14 @@ describe("Remote Factory Suite:", () => {
         });
 
         await relayerClient.relayAll();
+
         res = await factoryClient.unclaimedGovecWallets({});
+
         targetWallet = res.wallets.find(([w]: [string, Expiration]) => w === proxyClient.contractAddress);
         expect(targetWallet).toBeUndefined();
         const { balance } = await govecClient.balance({
             address: proxyClient.contractAddress,
         });
-        expect(balance).toBe("1");
+        expect(balance).toBe("2");
     });
 });

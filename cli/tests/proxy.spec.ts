@@ -111,6 +111,27 @@ describe("Proxy Suite: ", () => {
         expect(walletDiff).toEqual(-Number(sendAmount.amount));
     });
 
+    it("should let user change their label", async () => {
+        const newLabel = "test-label";
+        await proxyClient.updateLabel({ newLabel });
+
+        const info = await proxyClient.info();
+        expect(info.label).toEqual(newLabel);
+    });
+
+    it("should accept request for updating guardians", async () => {
+        const newGuardians = [hostAccounts.guardian_1.address];
+        let res = await proxyClient.guardiansUpdateRequest();
+        expect(res).toEqual(null);
+
+        await proxyClient.requestUpdateGuardians({
+            request: { guardians: { addresses: newGuardians } },
+        });
+
+        res = await proxyClient.guardiansUpdateRequest();
+        expect(res?.guardians.addresses).toEqual(newGuardians);
+    });
+
     it("Should be able to freeze and unfreeze wallet as guardian", async () => {
         assert(guardianProxyClient, "guardianProxyClient is not defined");
         let is_frozen: boolean = false;
@@ -167,14 +188,6 @@ describe("Proxy Suite: ", () => {
             newUserAddress: hostAccounts.admin.address,
         });
 
-        /*  // User (old wallet owner) shouldn't have the wallet anymore
-        const { wallets: userWallets } = await factoryClient.walletsOf({ user: hostAccounts.user.address! });
-        expect(userWallets).not.toContain(proxyWalletAddress);
-
-        // Admin (admin wallet owner) should have the wallet
-        const { wallets: adminWallets } = await factoryClient.walletsOf({ user: hostAccounts.admin.address });
-        expect(adminWallets).toContain(proxyWalletAddress);
- */
         // Shouldn't be able to perform operations as user since it's not his wallet anymore
         try {
             const sendMsg: BankMsg = {
@@ -388,7 +401,7 @@ describe("Proxy Suite: ", () => {
         relayerClient.disconnect();
     });
 
-    it("Should relay WASM message as a relayer", async () => {
+    it.skip("Should relay WASM message as a relayer", async () => {
         const relayerClient = await CWClient.connectHostWithAccount("relayer_1");
         const relayerProxyClient = new ProxyClient(relayerClient, relayerClient.sender, proxyWalletAddress);
 
@@ -447,7 +460,6 @@ describe("Proxy Suite: ", () => {
             },
             "auto"
         );
-        await delay(5000);
 
         const postFund = await relayerClient.queryContractSmart(cw20contract.contractAddress, {
             balance: { address: proxyWalletAddress },

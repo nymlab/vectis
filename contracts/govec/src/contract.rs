@@ -604,9 +604,8 @@ pub fn query_contract_addr(env: Env) -> Addr {
 }
 
 pub fn query_balance_joined(deps: Deps, address: String) -> StdResult<Option<BalanceResponse>> {
-    let address = deps.api.addr_validate(&address)?;
     Ok(BALANCES
-        .load(deps.storage, &address)
+        .load(deps.storage, &Addr::unchecked(address))
         .map(|balance| BalanceResponse { balance })
         .ok())
 }
