@@ -137,6 +137,96 @@ describe("DAO Suite:", () => {
         expect(tunnels.length - 1).toBe(res.tunnels.length);
     });
 
+    it("DAO should be able to update proxy code id in factory", async () => {
+        const codeId = 0;
+        const oldCodeId = await factoryClient.codeId({ ty: "proxy" });
+
+        expect(oldCodeId).not.toBe(codeId);
+
+        const msg = daoClient.executeMsg(addrs.factoryAddr, {
+            update_code_id: {
+                new_code_id: codeId,
+                ty: "proxy",
+            },
+        });
+
+        await proxyClient.createProposal(daoClient.proposalAddr, "Update proxy code id", "Update proxy code id", [msg]);
+        await delay(10000);
+
+        const { proposals } = await daoClient.queryProposals();
+        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
+        await delay(10000);
+
+        await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
+        await delay(10000);
+
+        const newCodeId = await factoryClient.codeId({ ty: "proxy" });
+
+        expect(newCodeId).toBe(codeId);
+    });
+
+    it("DAO should be able to update wallet fee in factory", async () => {
+        const fee = coin(1000, hostChain.feeToken);
+        const oldFee = await factoryClient.fee();
+
+        expect(oldFee).not.toBe(fee);
+
+        const msg = daoClient.executeMsg(addrs.factoryAddr, {
+            update_wallet_fee: {
+                new_fee: fee,
+            },
+        });
+
+        await proxyClient.createProposal(daoClient.proposalAddr, "Update wallet fee", "Update wallet fee", [msg]);
+        await delay(10000);
+
+        const { proposals } = await daoClient.queryProposals();
+        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
+        await delay(10000);
+
+        await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
+        await delay(10000);
+
+        const newFee = await factoryClient.fee();
+
+        expect(newFee).toBe(fee);
+    });
+
+    it("DAO should be able to govec addr in factory", async () => {
+        const account = await CWClient.generateRandomAccount(hostChain.addressPrefix);
+        const [{ address }] = await account.getAccounts();
+        const govecAddr = address;
+        const oldGovec = await factoryClient.govecAddr();
+
+        expect(oldGovec).not.toBe(govecAddr);
+
+        const msg = daoClient.executeMsg(addrs.factoryAddr, {
+            update_govec_addr: {
+                addr: govecAddr,
+            },
+        });
+
+        await proxyClient.createProposal(daoClient.proposalAddr, "Update govec addr", "Update govec addr", [msg]);
+        await delay(10000);
+
+        const { proposals } = await daoClient.queryProposals();
+        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
+        await delay(10000);
+
+        await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
+        await delay(10000);
+
+        const newGovec = await factoryClient.govecAddr();
+
+        expect(newGovec).toBe(govecAddr);
+    });
+
     afterAll(async () => {
         await proxyClient.unstakeGovec(addrs.stakingAddr, "2");
         await proxyClient.burnGovec(addrs.govecAddr);
