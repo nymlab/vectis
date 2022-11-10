@@ -20,7 +20,7 @@ pub enum QueryMsg {
     ChainConfig {},
     #[returns(IbcTransferChannels)]
     IbcTransferChannels {
-        start_from: Option<String>,
+        start_after: Option<String>,
         limit: Option<u32>,
     },
     #[returns(u64)]
