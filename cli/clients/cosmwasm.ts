@@ -56,6 +56,12 @@ class CWClient extends SigningCosmWasmClient {
         super(tmClient, signer, options);
     }
 
+    static async generateRandomAccount(prefix: string) {
+        return await DirectSecp256k1HdWallet.generate(12, {
+            prefix,
+        });
+    }
+
     static async connectHostWithAccount(account: Accounts) {
         const acc = hostAccounts[account] as Account;
         return await this.connectWithAccount(hostChain, acc);

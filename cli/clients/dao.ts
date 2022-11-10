@@ -293,11 +293,27 @@ class DaoClient {
         };
     }
 
+    static executeMsg(contractAddr: string, msg: unknown) {
+        return {
+            wasm: {
+                execute: {
+                    contract_addr: contractAddr,
+                    funds: [],
+                    msg: toCosmosMsg(msg),
+                },
+            },
+        };
+    }
+
     addApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
         return DaoClient.addApprovedControllerMsg(daoTunnelAddr, connectId, portId);
     }
     removeApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
         return DaoClient.removeApprovedControllerMsg(daoTunnelAddr, connectId, portId);
+    }
+
+    executeMsg(contractAddr: string, msg: unknown) {
+        return DaoClient.executeMsg(contractAddr, msg);
     }
 }
 
