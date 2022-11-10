@@ -1,8 +1,8 @@
 pub use anyhow::{anyhow, Result};
 pub use cosmwasm_std::testing::mock_dependencies;
 pub use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, BlockInfo, Coin, CosmosMsg, Empty, Event, QueryRequest,
-    StdError, Uint128, WasmMsg, WasmQuery,
+    coin, to_binary, Addr, Binary, BlockInfo, CanonicalAddr, Coin, CosmosMsg, Empty, Event,
+    QueryRequest, StdError, Uint128, WasmMsg, WasmQuery,
 };
 pub use cw20::BalanceResponse;
 pub use cw3::VoterListResponse;
@@ -78,7 +78,10 @@ pub use vectis_factory::{
     },
 };
 pub use vectis_govec::{
-    contract::{execute as govec_execute, instantiate as govec_instantiate, query as govec_query},
+    contract::{
+        execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
+        MINT_AMOUNT,
+    },
     msg::{
         ExecuteMsg as GovecExecuteMsg, InstantiateMsg as GovecInstantiateMsg,
         QueryMsg as GovecQueryMsg,
@@ -96,7 +99,7 @@ pub use vectis_proxy::{
 pub use vectis_wallet::{
     pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
     GuardiansUpdateRequest, MultiSig, ProposalExecuteMsg, RelayTransaction, StakeExecuteMsg,
-    ThresholdAbsoluteCount, GOVEC_CLAIM_DURATION_DAY_MUL,
+    ThresholdAbsoluteCount, WalletFactoryExecuteMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
 pub const WALLET_FEE: u128 = 10u128;

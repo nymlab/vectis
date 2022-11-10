@@ -52,8 +52,7 @@ impl DaoChainSuite {
                 .init_balance(storage, &deployer, genesis_funds)
                 .unwrap();
         });
-        let for_user = vec![coin(50000, "ucosm")];
-        app.send_tokens(deployer.clone(), user, &for_user)?;
+        app.send_tokens(deployer.clone(), user, &[coin(50000, "ucosm")])?;
 
         let dao_id = app.store_code(contract_dao());
         let vote_id = app.store_code(contract_vote());
@@ -174,7 +173,7 @@ impl DaoChainSuite {
         let factory = app
             .instantiate_contract(
                 factory_id,
-                deployer.clone(),
+                dao.clone(),
                 &InstantiateMsg {
                     proxy_code_id: proxy_id,
                     proxy_multisig_code_id: proxy_multisig_id,
@@ -186,22 +185,22 @@ impl DaoChainSuite {
                     govec_minter: Some(govec.to_string()),
                 },
                 &[],
-                "wallet-factory", // label: human readible name for contract
-                Some(deployer.to_string()), // admin: Option<String>, will need this for upgrading
+                "wallet-factory",      // label: human readible name for contract
+                Some(dao.to_string()), // admin: Option<String>, will need this for upgrading
             )
             .unwrap();
 
         let dao_tunnel = app
             .instantiate_contract(
                 dao_tunnel_id,
-                deployer.clone(),
+                dao.clone(),
                 &DTunnelInstanstiateMsg {
                     govec_minter: govec.to_string(),
                     init_remote_tunnels: None,
                 },
                 &[],
-                "dao-tunnel",               // label: human readible name for contract
-                Some(deployer.to_string()), // admin: Option<String>, will need this for upgrading
+                "dao-tunnel",          // label: human readible name for contract
+                Some(dao.to_string()), // admin: Option<String>, will need this for upgrading
             )
             .unwrap();
 
@@ -394,7 +393,7 @@ impl DaoChainSuite {
     pub fn update_proxy_code_id(&mut self, new_code_id: u64, factory: Addr) -> Result<AppResponse> {
         self.app
             .execute_contract(
-                self.deployer.clone(),
+                self.dao.clone(),
                 factory,
                 &FactoryExecuteMsg::UpdateCodeId {
                     ty: CodeIdType::Proxy,
@@ -412,7 +411,7 @@ impl DaoChainSuite {
     ) -> Result<AppResponse> {
         self.app
             .execute_contract(
-                self.deployer.clone(),
+                self.dao.clone(),
                 factory,
                 &FactoryExecuteMsg::UpdateCodeId {
                     ty: CodeIdType::Multisig,
@@ -549,8 +548,8 @@ impl DaoChainSuite {
         }))
     }
 
-    pub fn query_balance(&self, addr: &Addr, denom: String) -> Result<Coin> {
-        Ok(self.app.wrap().query_balance(addr.as_str(), denom)?)
+    pub fn query_balance(&self, addr: &Addr) -> Result<Coin> {
+        Ok(self.app.wrap().query_balance(addr.as_str(), "ucosm")?)
     }
 
     pub fn query_govec_balance(&self, proxy: &Addr) -> Result<BalanceResponse, StdError> {
