@@ -20,7 +20,7 @@ pub use vectis_wallet::{
     WalletAddr, WalletInfo, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 // use stake_cw20::msg::InstantiateMsg as StakingInstantiateMsg;
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul};
 use vectis_proxy::msg::{InstantiateMsg as ProxyInstantiateMsg, QueryMsg as ProxyQueryMsg};
 
 #[cfg(not(feature = "library"))]
