@@ -5,12 +5,12 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use vectis_wallet::{
-    DaoTunnelPacketMsg, PacketMsg, StdAck, DEFAULT_LIMIT, MAX_LIMIT, PACKET_LIFETIME,
+    DaoTunnelPacketMsg, PacketMsg, Receiver, StdAck, DEFAULT_LIMIT, MAX_LIMIT, PACKET_LIFETIME,
 };
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
-use crate::state::{ADMIN, GOVEC, IBC_TUNNELS};
+use crate::state::{ADMIN, GOVEC, IBC_TRANSFER_MODULES, IBC_TUNNELS};
 use std::convert::Into;
 
 const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
@@ -56,6 +56,7 @@ pub fn execute(
         } => execute_add_approved_controller(deps, info, connection_id, port_id, false),
         ExecuteMsg::UpdateDaoAddr { new_addr } => execute_update_dao(deps, info, new_addr),
         ExecuteMsg::UpdateGovecAddr { new_addr } => execute_update_govec(deps, info, new_addr),
+        ExecuteMsg::IbcTransfer { receiver } => execute_ibc_transfer(deps, env, info, receiver),
         ExecuteMsg::DispatchActionOnRemoteTunnel {
             job_id,
             msg,
@@ -142,6 +143,49 @@ fn execute_dispatch_to_remote_tunnel(
         .add_attribute("action", "dispatch_actions_to_remote_tunnel")
         .add_attribute("channel", sending_channel_id)
         .add_attribute("job_id", job_id.to_string()))
+}
+
+pub fn execute_ibc_transfer(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    rcv: Receiver,
+) -> Result<Response, ContractError> {
+    if info.funds.is_empty() {
+        return Err(ContractError::EmptyFund);
+    }
+    let denom = CHAIN_CONFIG.load(deps.storage)?.denom;
+    let amount = info.funds.iter().fold(Uint128::zero(), |acc, c| {
+        if c.denom == denom {
+            acc + c.amount
+        } else {
+            acc
+        }
+    });
+    if amount.is_zero() {
+        return Err(ContractError::EmptyFund);
+    };
+
+    let channel_id = IBC_TRANSFER_MODULES
+        .load(deps.storage, rcv.connection_id.clone())
+        .map_err(|_| ContractError::ChannelNotFound(rcv.connection_id))?;
+
+    // only one type of coin supported in IBC transfer
+    let msg = IbcMsg::Transfer {
+        channel_id: channel_id.clone(),
+        to_address: rcv.addr.clone(),
+        amount: Coin {
+            denom: denom.clone(),
+            amount,
+        },
+        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
+    };
+    Ok(Response::new()
+        .add_message(msg)
+        .add_attribute("action", "execute_ibc_transfer")
+        .add_attribute("to", rcv.addr)
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("amount", Coin { denom, amount }.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

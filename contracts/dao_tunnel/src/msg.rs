@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
-use vectis_wallet::DaoTunnelPacketMsg;
+use vectis_wallet::{DaoTunnelPacketMsg, Receiver};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -33,6 +33,11 @@ pub enum ExecuteMsg {
     },
     UpdateGovecAddr {
         new_addr: String,
+    },
+    /// Transfer native tokens to another chain
+    /// Fund amount is forward from the MessageInfo.funds
+    IbcTransfer {
+        receiver: Receiver,
     },
     DispatchActionOnRemoteTunnel {
         /// Identifier used in the acknowledgement message
