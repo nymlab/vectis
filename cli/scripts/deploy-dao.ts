@@ -49,7 +49,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     const initial_balances: GovecT.Cw20Coin[] = [
         {
             address: adminHostClient.sender,
-            amount: "1",
+            amount: "2",
         },
     ];
 
@@ -69,7 +69,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         newAddr: { staking: daoClient.stakingAddr },
     });
     await govecClient.send({
-        amount: "1",
+        amount: "2",
         contract: daoClient.stakingAddr,
         msg: toCosmosMsg({ stake: {} }),
     });
@@ -250,7 +250,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     res = await adminHostClient.execute(
         adminHostClient.sender,
         daoClient.stakingAddr,
-        { unstake: { amount: "1" } },
+        { unstake: { amount: "2" } },
         "auto"
     );
     console.log("\n\nAdmin unstakes \n", JSON.stringify(res));
