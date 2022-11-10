@@ -570,7 +570,7 @@ fn ensure_is_staking_or_wallet(deps: Deps, contract: &Addr) -> Result<(), Contra
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
         QueryMsg::Joined { address } => to_binary(&query_balance_joined(deps, address)?),
@@ -585,7 +585,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::MarketingInfo {} => to_binary(&query_marketing_info(deps)?),
         QueryMsg::DownloadLogo {} => to_binary(&query_download_logo(deps)?),
+        QueryMsg::TokenContract {} => to_binary(&query_contract_addr(env)),
     }
+}
+pub fn query_contract_addr(env: Env) -> Addr {
+    env.contract.address
 }
 
 pub fn query_balance_joined(deps: Deps, address: String) -> StdResult<Option<BalanceResponse>> {

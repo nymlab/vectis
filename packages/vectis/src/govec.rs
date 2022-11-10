@@ -120,4 +120,8 @@ pub enum GovecQueryMsg {
     /// Return type: DownloadLogoResponse.
     #[returns(DownloadLogoResponse)]
     DownloadLogo {},
+    /// Required by `cw-proposal-single` for instantiation if deposit for proposal is required
+    /// see https://github.com/nymlab/dao-contracts/tree/v1.0.0-vectis/contracts/cw-proposal-single#proposal-deposits
+    #[returns(String)]
+    TokenContract {},
 }
