@@ -2,7 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 use vectis_wallet::{ChainConfig, DaoConfig};
 
-pub use vectis_wallet::{Receiver, RemoteTunnelExecuteMsg as ExecuteMsg};
+pub use vectis_wallet::{IbcTransferChannels, Receiver, RemoteTunnelExecuteMsg as ExecuteMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -25,13 +25,6 @@ pub enum QueryMsg {
     },
     #[returns(u64)]
     NextJobId {},
-}
-
-#[cw_serde]
-pub struct IbcTransferChannels {
-    /// (connection_id, channel_id)
-    /// The channel_id are for channel already established
-    pub endpoints: Vec<(String, String)>,
 }
 
 #[cw_serde]

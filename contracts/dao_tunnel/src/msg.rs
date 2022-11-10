@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
-use vectis_wallet::{DaoTunnelPacketMsg, Receiver};
+use vectis_wallet::{DaoTunnelPacketMsg, IbcTransferChannels, Receiver};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -10,6 +10,8 @@ pub struct InstantiateMsg {
     /// Any remote tunnel endpoints to be included initially
     /// No channels has been established
     pub init_remote_tunnels: Option<RemoteTunnels>,
+    pub init_ibc_transfer_mods: Option<IbcTransferChannels>,
+    pub denom: String,
 }
 
 #[cw_serde]
@@ -33,6 +35,12 @@ pub enum ExecuteMsg {
     },
     UpdateGovecAddr {
         new_addr: String,
+    },
+    /// The connections and channel_id this chain supports
+    /// and voted in by the DAO
+    UpdateIbcTransferRecieverChannel {
+        connection_id: String,
+        channel_id: Option<String>,
     },
     /// Transfer native tokens to another chain
     /// Fund amount is forward from the MessageInfo.funds
@@ -61,6 +69,11 @@ pub enum QueryMsg {
     Govec {},
     #[returns(Option<Addr>)]
     Dao {},
+    #[returns(IbcTransferChannels)]
+    IbcTransferChannels {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
 }
 
 #[cw_serde]

@@ -4,20 +4,22 @@ pub use cosmwasm_std::testing::{
     mock_ibc_packet_timeout, mock_info, MockApi, MockQuerier, MockStorage,
 };
 pub use cosmwasm_std::{
-    from_binary, to_binary, Attribute, Binary, CanonicalAddr, Coin, CosmosMsg, DepsMut, Empty,
-    Ibc3ChannelOpenResponse, IbcAcknowledgement, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcMsg,
-    IbcOrder, OwnedDeps, Reply, StdError, SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
+    coin, from_binary, to_binary, Attribute, Binary, CanonicalAddr, Coin, CosmosMsg, DepsMut,
+    Empty, Ibc3ChannelOpenResponse, IbcAcknowledgement, IbcChannelConnectMsg, IbcChannelOpenMsg,
+    IbcMsg, IbcOrder, OwnedDeps, Reply, StdError, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
+    WasmMsg,
 };
 
 pub use vectis_wallet::{
-    ChainConfig, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, PacketMsg, ProposalExecuteMsg,
-    RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
+    ChainConfig, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, IbcTransferChannels, PacketMsg,
+    ProposalExecuteMsg, Receiver, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
     WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
     PACKET_LIFETIME,
 };
 pub use voting::Vote;
 
 pub use crate::contract::{execute, instantiate, query_controllers, query_dao, query_govec, reply};
+use crate::contract::{execute_ibc_transfer, query_channels};
 pub use crate::ibc::{
     ibc_channel_connect, ibc_channel_open, ibc_packet_ack, ibc_packet_receive, ibc_packet_timeout,
 };
@@ -49,6 +51,8 @@ pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let instantiate_msg = InstantiateMsg {
         govec_minter: GOVEC_ADDR.to_string(),
         init_remote_tunnels: None,
+        init_ibc_transfer_mods: None,
+        denom: DENOM.to_string(),
     };
 
     instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -255,6 +259,41 @@ fn only_admin_can_update_selfaddr() {
     assert_eq!(res.as_str(), "new_dao");
 }
 
+#[test]
+fn only_admin_can_update_ibc_transfer_modules() {
+    let mut deps = do_instantiate();
+    let conn = String::from("connection_id");
+    let chan = String::from("channel_id");
+    let msg = ExecuteMsg::UpdateIbcTransferRecieverChannel {
+        connection_id: conn.clone(),
+        channel_id: Some(chan.clone()),
+    };
+    // Not admin fails
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        mock_info("RANDOM", &[]),
+        msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Update with admin
+    let res = execute(deps.as_mut(), mock_env(), mock_info(ADMIN_ADDR, &[]), msg).unwrap();
+
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("config", "IBC_TRANSFER_MODULES"),
+            ("connection_id", &conn),
+            ("new channel", &chan)
+        ]
+    );
+
+    let res: IbcTransferChannels = query_channels(deps.as_ref(), None, None).unwrap();
+    assert_eq!(res.endpoints, vec![(conn, chan)]);
+}
+
 fn default_update_chain_config_msg() -> DaoTunnelPacketMsg {
     let mut encoded_factory = vec![0x0a, FACTORY_ADDR.len() as u8];
     encoded_factory.extend(FACTORY_ADDR.as_bytes());
@@ -321,6 +360,49 @@ fn only_admin_can_send_actions_to_remote_tunnel_channel() {
             ("action", "dispatch_actions_to_remote_tunnel"),
             ("channel", CHANNEL_ID),
             ("job_id", &JOB_ID.to_string())
+        ]
+    )
+}
+
+#[test]
+fn ibc_transfer_works_with_channel_connected() {
+    let mut deps = do_instantiate();
+    let env = mock_env();
+    let conn = String::from("connection_id");
+    let chan = String::from("channel_id");
+    let msg = ExecuteMsg::UpdateIbcTransferRecieverChannel {
+        connection_id: conn.clone(),
+        channel_id: Some(chan.clone()),
+    };
+    execute(deps.as_mut(), mock_env(), mock_info(ADMIN_ADDR, &[]), msg).unwrap();
+
+    let res = execute_ibc_transfer(
+        deps.as_mut(),
+        env.clone(),
+        mock_info("sender", &[coin(11u128, DENOM), coin(22u128, DENOM)]),
+        Receiver {
+            connection_id: conn.clone(),
+            addr: "receiver".to_string(),
+        },
+    )
+    .unwrap();
+
+    let total_fund = coin(33u128, DENOM);
+    let msg = IbcMsg::Transfer {
+        channel_id: chan.clone(),
+        to_address: "receiver".to_string(),
+        amount: total_fund.clone(),
+        timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
+    };
+    assert_eq!(res.messages[0], SubMsg::new(msg));
+
+    assert_eq!(
+        res.attributes,
+        vec![
+            ("action", "execute_ibc_transfer"),
+            ("to", "receiver"),
+            ("channel_id", &chan),
+            ("amount", &total_fund.to_string()),
         ]
     )
 }
