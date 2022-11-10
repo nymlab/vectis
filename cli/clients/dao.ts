@@ -259,7 +259,7 @@ class DaoClient {
             allow_revoting: allow_revoting,
         };
     }
-    static createApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
+    static addApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
         return {
             wasm: {
                 execute: {
@@ -276,8 +276,28 @@ class DaoClient {
         };
     }
 
-    createApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
-        return DaoClient.createApprovedControllerMsg(daoTunnelAddr, connectId, portId);
+    static removeApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
+        return {
+            wasm: {
+                execute: {
+                    contract_addr: daoTunnelAddr,
+                    funds: [],
+                    msg: toCosmosMsg({
+                        remove_approved_controller: {
+                            connection_id: connectId,
+                            port_id: portId,
+                        },
+                    }),
+                },
+            },
+        };
+    }
+
+    addApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
+        return DaoClient.addApprovedControllerMsg(daoTunnelAddr, connectId, portId);
+    }
+    removeApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
+        return DaoClient.removeApprovedControllerMsg(daoTunnelAddr, connectId, portId);
     }
 }
 
