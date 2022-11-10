@@ -118,11 +118,9 @@ pub fn execute(
             amount,
             relayed_from,
         } => execute_transfer(deps, info, recipient, amount, relayed_from),
-        ExecuteMsg::TransferFrom {
-            owner,
-            recipient: _recipient,
-            amount,
-        } => execute_transfer_from(deps, info, owner, amount),
+        ExecuteMsg::ProposalTransfer { proposer, deposit } => {
+            execute_transfer_deposit(deps, info, proposer, deposit)
+        }
         ExecuteMsg::Burn { relayed_from } => execute_burn(deps, env, info, relayed_from),
         ExecuteMsg::Send {
             contract,
@@ -193,30 +191,27 @@ pub fn execute_transfer(
     Ok(res)
 }
 
-/// In this version this is exclusive used by proposers
-pub fn execute_transfer_from(
+/// This is exclusive used by proposal module
+pub fn execute_transfer_deposit(
     deps: DepsMut,
     info: MessageInfo,
     proposer: String,
-    amount: Uint128,
+    deposit: Uint128,
 ) -> Result<Response, ContractError> {
-    if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
-    }
     if PROP_MODULES.load(deps.storage, info.sender.clone()).is_ok() {
         let prop = Addr::unchecked(&proposer);
         BALANCES.update(
             deps.storage,
             &prop,
             |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+                Ok(balance.unwrap_or_default().checked_sub(deposit)?)
             },
         )?;
         BALANCES.update(
             deps.storage,
             &info.sender,
             |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_add(amount)?)
+                Ok(balance.unwrap_or_default().checked_add(deposit)?)
             },
         )?;
 
@@ -224,7 +219,7 @@ pub fn execute_transfer_from(
             .add_attribute("action", "proposal tranfer")
             .add_attribute("from", proposer)
             .add_attribute("to", info.sender)
-            .add_attribute("amount", amount);
+            .add_attribute("amount", deposit);
         Ok(res)
     } else {
         Err(ContractError::Unauthorized {})
