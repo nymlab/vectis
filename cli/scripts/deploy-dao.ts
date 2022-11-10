@@ -153,7 +153,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     const remoteTunnelAddr = remoteTunnelClient.contractAddress;
 
     // Admin propose and execute add connection to dao tunnel
-    const daoTunnelApproveControllerMsg = daoClient.createApprovedControllerMsg(
+    const daoTunnelApproveControllerMsg = daoClient.addApprovedControllerMsg(
         daoTunnelAddr,
         relayerClient.connections.hostConnection,
         `wasm.${remoteTunnelAddr}`
@@ -225,6 +225,12 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         marketing: daoClient.daoAddr,
     });
     console.log("\n\nUpdated Marketing Address on Govec\n", JSON.stringify(res));
+
+    // Update Proposal address
+    res = await govecClient.updateConfigAddr({
+        newAddr: { proposal: daoClient.proposalAddr },
+    });
+    console.log("\n\nUpdated Proposal Address on Govec\n", JSON.stringify(res));
 
     // Add factory address to Govec
     res = await govecClient.updateConfigAddr({

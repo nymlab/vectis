@@ -92,6 +92,9 @@ export type UpdateAddrReq =
       }
     | {
           staking: string;
+      }
+    | {
+          proposal: string;
       };
 export type Logo =
     | {

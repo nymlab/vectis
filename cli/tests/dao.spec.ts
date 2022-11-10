@@ -13,6 +13,7 @@ import { delay } from "../utils/promises";
  */
 
 describe("DAO Suite:", () => {
+    const randomConnection = "connection-" + Math.random().toString(36).slice(2, 9);
     let addrs: VectisDaoContractsAddrs;
     let adminClient: CWClient;
     let userClient: CWClient;
@@ -61,7 +62,8 @@ describe("DAO Suite:", () => {
         const walletAddr = wallets[0][0];
         proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
         await proxyClient.mintGovec(addrs.factoryAddr);
-        await proxyClient.stakeGovec(addrs.govecAddr, addrs.stakingAddr, "1");
+        await proxyClient.stakeGovec(addrs.govecAddr, addrs.stakingAddr, "2");
+        await delay(10000);
     });
 
     it("DAO should be the only one authorized for communicate with dao_tunnel", async () => {
@@ -77,32 +79,71 @@ describe("DAO Suite:", () => {
             .catch((err: Error) => expect(err).toBeInstanceOf(Error));
     });
 
-    it.skip("DAO should be able to add approved controllers in dao_tunnel", async () => {
+    it("DAO should be able to add approved controllers in dao_tunnel", async () => {
         const { tunnels } = await daoTunnelClient.controllers({});
 
-        const daoTunnelApproveControllerMsg = daoClient.createApprovedControllerMsg(
+        const daoTunnelApproveControllerMsg = daoClient.addApprovedControllerMsg(
             addrs.daoTunnelAddr,
-            "1",
+            randomConnection,
             `wasm.addr`
         );
-        await daoClient.createProposal("Allow connection in DAO Tunnel", "Allow connection in DAO Tunnel", [
-            daoTunnelApproveControllerMsg,
-        ]);
-        const { proposals } = await daoClient.queryProposals();
-        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.createProposal(
+            daoClient.proposalAddr,
+            "Allow connection in DAO Tunnel",
+            "Allow connection in DAO Tunnel",
+            [daoTunnelApproveControllerMsg]
+        );
         await delay(10000);
 
-        await daoClient.voteProposal(approveControllerProposalId, "yes");
+        const { proposals } = await daoClient.queryProposals();
+        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
         await delay(10000);
-        await daoClient.executeProposal(approveControllerProposalId);
+
+        await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
         await delay(10000);
 
         let res = await daoTunnelClient.controllers({});
 
-        expect(tunnels.length).toBe(res.tunnels.length + 1);
+        expect(tunnels.length + 1).toBe(res.tunnels.length);
     });
 
-    afterAll(() => {
+    it("DAO should be able to remove approved controllers in dao_tunnel", async () => {
+        const { tunnels } = await daoTunnelClient.controllers({});
+
+        const msg = daoClient.removeApprovedControllerMsg(addrs.daoTunnelAddr, randomConnection, `wasm.addr`);
+
+        await proxyClient.createProposal(
+            daoClient.proposalAddr,
+            "Remove connection in DAO Tunnel",
+            "Remove connection in DAO Tunnel",
+            [msg]
+        );
+        await delay(10000);
+
+        const { proposals } = await daoClient.queryProposals();
+        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
+        await delay(10000);
+
+        await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
+        await delay(10000);
+
+        let res = await daoTunnelClient.controllers({});
+
+        expect(tunnels.length - 1).toBe(res.tunnels.length);
+    });
+
+    afterAll(async () => {
+        await proxyClient.unstakeGovec(addrs.stakingAddr, "2");
+        await proxyClient.burnGovec(addrs.govecAddr);
+        const { balance } = await govecClient.balance({
+            address: proxyClient.contractAddress,
+        });
+        expect(balance).toBe("0");
         adminClient?.disconnect();
     });
 });
