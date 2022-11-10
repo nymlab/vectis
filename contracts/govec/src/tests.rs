@@ -136,6 +136,53 @@ fn can_instantiate_accounts() {
 }
 
 #[test]
+fn dao_can_receive_govec() {
+    let mut deps = mock_dependencies();
+    let amount = Uint128::new(11223344);
+    let limit = Uint128::new(511223344);
+    let instantiate_msg = InstantiateMsg {
+        name: "Cash Token".to_string(),
+        symbol: "CASH".to_string(),
+        initial_balances: vec![Cw20Coin {
+            address: "addr0000".into(),
+            amount,
+        }],
+        staking_addr: None,
+        factory: None,
+        dao_tunnel: None,
+        mint_cap: Some(limit),
+        marketing: None,
+    };
+    let info = mock_info("dao", &[]);
+    let env = mock_env();
+    instantiate(deps.as_mut(), env.clone(), info, instantiate_msg).unwrap();
+
+    assert!(query_balance_joined(deps.as_ref(), "dao".to_string())
+        .unwrap()
+        .is_some());
+    assert_eq!(get_balance(deps.as_ref(), "addr0000"), amount);
+
+    execute(
+        deps.as_mut(),
+        env,
+        mock_info("addr0000".into(), &[]),
+        ExecuteMsg::Transfer {
+            recipient: "dao".into(),
+            amount,
+            relayed_from: None,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        query_balance(deps.as_ref(), "dao".to_string())
+            .unwrap()
+            .balance,
+        amount
+    );
+}
+
+#[test]
 fn cannot_mint_over_cap() {
     let mut deps = mock_dependencies();
     let amount = Uint128::new(11223344);
@@ -733,7 +780,13 @@ fn query_all_accounts_works() {
     let acct2 = String::from("zebra");
     let acct3 = String::from("nice");
     let acct4 = String::from("aaaardvark");
-    let expected_order = [acct4.clone(), acct1.clone(), acct3.clone(), acct2.clone()];
+    let expected_order = [
+        acct4.clone(),
+        acct1.clone(),
+        "dao".to_string(),
+        acct3.clone(),
+        acct2.clone(),
+    ];
 
     do_instantiate(
         deps.as_mut(),

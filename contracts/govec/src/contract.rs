@@ -92,6 +92,12 @@ pub fn instantiate(
     if let Some(amount) = msg.mint_cap {
         MINT_CAP.save(deps.storage, &amount)?;
     }
+
+    // ensure that the DAO can recieve Govec if it does not have initial balance
+    if BALANCES.may_load(deps.storage, &info.sender)?.is_none() {
+        BALANCES.save(deps.storage, &info.sender, &Uint128::zero())?;
+    }
+
     Ok(Response::default())
 }
 

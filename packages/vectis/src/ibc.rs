@@ -122,6 +122,14 @@ pub struct Receiver {
     pub addr: String,
 }
 
+/// Returned when IBC_TRANSFER_MODULES are queried
+#[cw_serde]
+pub struct IbcTransferChannels {
+    /// (connection_id, channel_id)
+    /// The channel_id are for channel already established
+    pub endpoints: Vec<(String, String)>,
+}
+
 /// The IBC Packet Msg allowed dispatched by remote-tunnel
 #[cw_serde]
 pub enum RemoteTunnelPacketMsg {

@@ -1,16 +1,17 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, IbcMsg, MessageInfo, Order, Reply,
-    Response, StdResult, SubMsgResult,
+    entry_point, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, IbcMsg, MessageInfo, Order,
+    Reply, Response, StdResult, SubMsgResult, Uint128,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use vectis_wallet::{
-    DaoTunnelPacketMsg, PacketMsg, Receiver, StdAck, DEFAULT_LIMIT, MAX_LIMIT, PACKET_LIFETIME,
+    DaoTunnelPacketMsg, IbcTransferChannels, PacketMsg, Receiver, StdAck, DEFAULT_LIMIT, MAX_LIMIT,
+    PACKET_LIFETIME,
 };
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
-use crate::state::{ADMIN, GOVEC, IBC_TRANSFER_MODULES, IBC_TUNNELS};
+use crate::state::{ADMIN, DENOM, GOVEC, IBC_TRANSFER_MODULES, IBC_TUNNELS};
 use std::convert::Into;
 
 const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
@@ -29,12 +30,19 @@ pub fn instantiate(
         .api
         .addr_canonicalize(deps.api.addr_validate(&msg.govec_minter)?.as_str())?;
     GOVEC.save(deps.storage, &govec_addr)?;
+    DENOM.save(deps.storage, &msg.denom)?;
     ADMIN.save(deps.storage, &admin_addr)?;
     if let Some(init_tunnels) = msg.init_remote_tunnels {
         for tunnel in init_tunnels.tunnels {
             IBC_TUNNELS.save(deps.storage, tunnel, &())?;
         }
     }
+    if let Some(init_ibc_mods) = msg.init_ibc_transfer_mods {
+        for module in init_ibc_mods.endpoints {
+            IBC_TRANSFER_MODULES.save(deps.storage, module.0, &module.1)?;
+        }
+    }
+
     Ok(Response::new().add_attribute("Vectis DAO-Tunnel instantiated", env.contract.address))
 }
 
@@ -56,6 +64,10 @@ pub fn execute(
         } => execute_add_approved_controller(deps, info, connection_id, port_id, false),
         ExecuteMsg::UpdateDaoAddr { new_addr } => execute_update_dao(deps, info, new_addr),
         ExecuteMsg::UpdateGovecAddr { new_addr } => execute_update_govec(deps, info, new_addr),
+        ExecuteMsg::UpdateIbcTransferRecieverChannel {
+            connection_id,
+            channel_id,
+        } => execute_update_ibc_transfer_channel(deps, info, connection_id, channel_id),
         ExecuteMsg::IbcTransfer { receiver } => execute_ibc_transfer(deps, env, info, receiver),
         ExecuteMsg::DispatchActionOnRemoteTunnel {
             job_id,
@@ -116,6 +128,33 @@ fn execute_update_govec(
         .add_attribute("new addr", addr))
 }
 
+fn execute_update_ibc_transfer_channel(
+    deps: DepsMut,
+    info: MessageInfo,
+    connection_id: String,
+    channel: Option<String>,
+) -> Result<Response, ContractError> {
+    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    match channel {
+        Some(c) => {
+            // Update the channel
+            IBC_TRANSFER_MODULES.save(deps.storage, connection_id.to_owned(), &c)?;
+            Ok(Response::new()
+                .add_attribute("config", "IBC_TRANSFER_MODULES")
+                .add_attribute("connection_id", &connection_id)
+                .add_attribute("new channel", c))
+        }
+        None => {
+            // Remove it
+            IBC_TRANSFER_MODULES.remove(deps.storage, connection_id.to_owned());
+            Ok(Response::new()
+                .add_attribute("config", "IBC_TRANSFER_MODULES")
+                .add_attribute("connection_id", &connection_id)
+                .add_attribute("new channel", ""))
+        }
+    }
+}
+
 fn execute_dispatch_to_remote_tunnel(
     deps: DepsMut,
     env: Env,
@@ -154,7 +193,7 @@ pub fn execute_ibc_transfer(
     if info.funds.is_empty() {
         return Err(ContractError::EmptyFund);
     }
-    let denom = CHAIN_CONFIG.load(deps.storage)?.denom;
+    let denom = DENOM.load(deps.storage)?;
     let amount = info.funds.iter().fold(Uint128::zero(), |acc, c| {
         if c.denom == denom {
             acc + c.amount
@@ -196,7 +235,32 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Controllers { start_after, limit } => {
             to_binary(&query_controllers(deps, start_after, limit)?)
         }
+        QueryMsg::IbcTransferChannels { start_after, limit } => {
+            to_binary(&query_channels(deps, start_after, limit)?)
+        }
     }
+}
+
+pub fn query_channels(
+    deps: Deps,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> StdResult<IbcTransferChannels> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = start_after.map(|e| Bound::exclusive(e));
+    let endpoints: StdResult<Vec<_>> = IBC_TRANSFER_MODULES
+        .prefix(())
+        .range(deps.storage, start, None, cosmwasm_std::Order::Descending)
+        .take(limit)
+        .map(|m| -> StdResult<_> {
+            let ele = m?;
+            Ok((ele.0, ele.1))
+        })
+        .collect();
+
+    Ok(IbcTransferChannels {
+        endpoints: endpoints?,
+    })
 }
 
 pub fn query_govec(deps: Deps) -> StdResult<Option<Addr>> {
