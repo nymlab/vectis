@@ -1,12 +1,45 @@
-use cw20::Cw20ReceiveMsg;
-
 use crate::common::common::*;
 use crate::common::dao_common::*;
 
 #[test]
+fn cannot_propose_without_govec() {
+    let mut suite = DaoChainSuite::init().unwrap();
+    // Create a new wallet
+    let wallet_addr = suite
+        .create_new_proxy(
+            suite.user.clone(),
+            suite.factory.clone(),
+            vec![],
+            None,
+            WALLET_FEE,
+        )
+        .unwrap();
+
+    // User propose with wallet
+    let propose_msg = ProposalExecuteMsg::Propose {
+        title: String::from("title"),
+        description: String::from("des"),
+        msgs: vec![CosmosMsg::Bank(cosmwasm_std::BankMsg::Send {
+            to_address: "some_addr".to_string(),
+            amount: vec![coin(123, "ucosm")],
+        })],
+        relayed_from: None,
+    };
+
+    suite
+        .app
+        .execute_contract(
+            suite.user.clone(),
+            wallet_addr.clone(),
+            &proxy_exec(&suite.proposal, &propose_msg, vec![]),
+            &[],
+        )
+        .unwrap_err();
+}
+
+#[test]
 fn with_govec_can_propose() {
     let mut suite = DaoChainSuite::init().unwrap();
-
     // Create a new wallet
     let wallet_addr = suite
         .create_new_proxy(
@@ -26,14 +59,17 @@ fn with_govec_can_propose() {
     });
 
     // User execute proxy to claim govec
-    let res = suite.app.execute_contract(
-        suite.user.clone(),
-        wallet_addr.clone(),
-        &ProxyExecuteMsg::Execute {
-            msgs: vec![mint_govec_msg],
-        },
-        &[],
-    );
+    suite
+        .app
+        .execute_contract(
+            suite.user.clone(),
+            wallet_addr.clone(),
+            &ProxyExecuteMsg::Execute {
+                msgs: vec![mint_govec_msg],
+            },
+            &[],
+        )
+        .unwrap();
 
     let user_govec_balance = suite.query_govec_balance(&wallet_addr).unwrap();
     assert_eq!(user_govec_balance.balance, Uint128::from(2u8));
@@ -45,7 +81,7 @@ fn with_govec_can_propose() {
     };
 
     // User stakes wallet govec
-    let res = suite
+    suite
         .app
         .execute_contract(
             suite.user.clone(),
@@ -68,7 +104,7 @@ fn with_govec_can_propose() {
         relayed_from: None,
     };
 
-    let res = suite
+    suite
         .app
         .execute_contract(
             suite.user.clone(),
