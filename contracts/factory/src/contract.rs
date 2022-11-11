@@ -9,7 +9,7 @@ use crate::state::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
@@ -31,7 +31,7 @@ use {
     cw_utils::parse_reply_execute_data,
 };
 #[cfg(feature = "remote")]
-use {crate::helpers::handle_govec_mint_failed, cosmwasm_std::StdError};
+use {crate::helpers::handle_govec_mint_failed, crate::state::PENDING_CLAIM_LIST};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-factory";
@@ -323,6 +323,12 @@ fn claim_govec_or_remove_from_list(
         GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user);
         Err(ContractError::ClaimExpired {})
     } else {
+        #[cfg(feature = "remote")]
+        {
+            GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user.clone());
+            PENDING_CLAIM_LIST.save(deps.storage, claiming_user, &())?;
+        }
+
         let mint_msg = create_mint_msg(deps.as_ref(), info.sender.to_string())?;
         let res = Response::new()
             .add_submessage(mint_msg)
@@ -439,6 +445,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::UnclaimedGovecWallets { start_after, limit } => {
             to_binary(&query_unclaim_wallet_list(deps, start_after, limit)?)
         }
+        QueryMsg::PendingGovecClaimWallets { start_after, limit } => to_binary(
+            &query_pending_unclaim_wallet_list(deps, start_after, limit)?,
+        ),
         QueryMsg::ClaimExpiration { wallet } => {
             to_binary(&query_wallet_claim_expiration(deps, wallet)?)
         }
@@ -455,7 +464,7 @@ pub fn query_fee(deps: Deps) -> StdResult<Coin> {
     FEE.load(deps.storage)
 }
 
-/// Returns wallets created with limit
+/// Returns wallets with Govec to claim with limit
 pub fn query_unclaim_wallet_list(
     deps: Deps,
     start_after: Option<String>,
@@ -481,6 +490,46 @@ pub fn query_unclaim_wallet_list(
 
     Ok(UnclaimedWalletList { wallets: wallets? })
 }
+
+/// Returns wallets on remote waiting for ibc ack
+#[cfg(feature = "remote")]
+pub fn query_pending_unclaim_wallet_list(
+    deps: Deps,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> StdResult<Vec<Addr>> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = match start_after {
+        Some(s) => {
+            let wallet_addr = deps.api.addr_canonicalize(&s)?.to_vec();
+            Some(Bound::exclusive(wallet_addr))
+        }
+        None => None,
+    };
+    let wallets: StdResult<Vec<Addr>> = PENDING_CLAIM_LIST
+        .prefix(())
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|w| -> StdResult<Addr> {
+            let ww = w?;
+            Ok(deps.api.addr_humanize(&CanonicalAddr::from(ww.0))?)
+        })
+        .collect();
+
+    Ok(wallets?)
+}
+
+#[cfg(feature = "dao-chain")]
+pub fn query_pending_unclaim_wallet_list(
+    _deps: Deps,
+    _start_after: Option<String>,
+    _limit: Option<u32>,
+) -> StdResult<UnclaimedWalletList> {
+    Err(StdError::GenericErr {
+        msg: String::from("Not supported"),
+    })
+}
+
 /// Returns wallets of user
 pub fn query_wallet_claim_expiration(deps: Deps, wallet: String) -> StdResult<Option<Expiration>> {
     GOVEC_CLAIM_LIST.may_load(deps.storage, deps.api.addr_canonicalize(&wallet)?.to_vec())

@@ -28,4 +28,4 @@ pub const GOVEC_MINTER: Item<CanonicalAddr> = Item::new("govec-minter");
 /// A temp storage for remote chains only, to ensure actually minted on dao-chain
 /// `Expiration` is updated so that users can try to mint again if failed
 #[cfg(feature = "remote")]
-pub const PENDING_CLAIM_LIST: Map<Vec<u8>, Expiration> = Map::new("govec-claim-list");
+pub const PENDING_CLAIM_LIST: Map<Vec<u8>, ()> = Map::new("govec-pending-claim-list");
