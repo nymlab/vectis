@@ -129,6 +129,13 @@ pub enum WalletFactoryQueryMsg {
         // Max is 100 and default is 50
         limit: Option<u32>,
     },
+    #[returns(Vec<Addr>)]
+    PendingGovecClaimWallets {
+        // Address string to start after
+        start_after: Option<String>,
+        // Max is 100 and default is 50
+        limit: Option<u32>,
+    },
     /// Returns the expiration date for claiming Govec if not yet claimed or expired
     #[returns(Expiration)]
     ClaimExpiration { wallet: String },
