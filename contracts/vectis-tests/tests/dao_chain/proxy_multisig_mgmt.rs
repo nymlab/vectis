@@ -18,23 +18,14 @@ fn user_can_update_proxy_multisig_with_direct_message() {
         multisig_initial_funds: vec![init_multisig_fund.clone()],
     };
 
-    suite
+    let wallet_address = suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            suite.factory.clone(),
             vec![init_proxy_fund.clone()],
             Some(multisig.clone()),
             WALLET_FEE + init_proxy_fund.amount.u128() + init_multisig_fund.amount.u128(),
         )
         .unwrap();
-
-    let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
@@ -74,25 +65,11 @@ fn user_can_update_proxy_multisig_with_direct_message() {
 }
 
 #[test]
-fn user_without_multisig_can_instantiate_new_multisig_guardian() {
+fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
     let mut suite = DaoChainSuite::init().unwrap();
-    suite
-        .create_new_proxy(
-            Addr::unchecked(USER_ADDR),
-            suite.factory.clone(),
-            vec![],
-            None,
-            WALLET_FEE,
-        )
-        .unwrap();
-
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert_eq!(w.multisig_address, None);
@@ -130,23 +107,14 @@ fn user_can_remove_multisig_for_guardians() {
         multisig_initial_funds: vec![],
     };
 
-    suite
+    let wallet_address = suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            suite.factory.clone(),
             vec![],
             Some(multisig.clone()),
             WALLET_FEE,
         )
         .unwrap();
-
-    let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert!(w.multisig_address.is_some());
@@ -177,23 +145,14 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
         multisig_initial_funds: vec![],
     };
 
-    suite
+    let wallet_address = suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            suite.factory.clone(),
             vec![],
             Some(multisig.clone()),
             WALLET_FEE,
         )
         .unwrap();
-
-    let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
@@ -253,10 +212,9 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
 #[test]
 fn non_user_update_proxy_multisig_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
-    suite
+    let wallet_address = suite
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
-            suite.factory.clone(),
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -265,14 +223,6 @@ fn non_user_update_proxy_multisig_fails() {
             WALLET_FEE,
         )
         .unwrap();
-
-    let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
 
     let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {};
 
@@ -293,23 +243,9 @@ fn non_user_update_proxy_multisig_fails() {
 #[test]
 fn relayer_update_proxy_multisig_with_non_user_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
-    suite
-        .create_new_proxy(
-            Addr::unchecked(USER_ADDR),
-            suite.factory.clone(),
-            vec![],
-            None,
-            WALLET_FEE,
-        )
-        .unwrap();
-
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();

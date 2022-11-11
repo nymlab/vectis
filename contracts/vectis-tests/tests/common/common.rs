@@ -31,6 +31,7 @@ pub use cw_proposal_single::{
         reply as prop_reply,
     },
     msg::{DepositInfo, DepositToken, InstantiateMsg as PropInstMsg, QueryMsg as PropQueryMsg},
+    query::{ProposalListResponse, ProposalResponse},
 };
 
 pub use cw20_staked_balance_voting::{

@@ -197,6 +197,8 @@ impl DaoChainSuite {
                 &DTunnelInstanstiateMsg {
                     govec_minter: govec.to_string(),
                     init_remote_tunnels: None,
+                    init_ibc_transfer_mods: None,
+                    denom: "ucosm".to_string(),
                 },
                 &[],
                 "dao-tunnel",          // label: human readible name for contract
@@ -287,7 +289,6 @@ impl DaoChainSuite {
     pub fn create_new_proxy(
         &mut self,
         user: Addr,
-        factory: Addr,
         proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
         // This is both the initial proxy wallet initial balance
@@ -298,7 +299,7 @@ impl DaoChainSuite {
         let g2 = GUARD2.to_owned();
         self._create_new_proxy(
             user,
-            factory,
+            self.factory.clone(),
             proxy_initial_funds,
             guardians_multisig,
             vec![g1, g2],
@@ -561,6 +562,31 @@ impl DaoChainSuite {
                 msg: to_binary(&GovecQueryMsg::Balance {
                     address: proxy.to_string(),
                 })?,
+            }))?;
+        Ok(r)
+    }
+
+    pub fn query_proposals(&self) -> Result<ProposalListResponse, StdError> {
+        let r = self
+            .app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: self.proposal.to_string(),
+                msg: to_binary(&PropQueryMsg::ListProposals {
+                    start_after: None,
+                    limit: None,
+                })?,
+            }))?;
+        Ok(r)
+    }
+
+    pub fn query_proposal(&self, id: u64) -> Result<ProposalResponse, StdError> {
+        let r = self
+            .app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: self.proposal.to_string(),
+                msg: to_binary(&PropQueryMsg::Proposal { proposal_id: id })?,
             }))?;
         Ok(r)
     }
