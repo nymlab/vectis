@@ -178,8 +178,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
     match msg {
         QueryMsg::DaoConfig {} => to_binary(&query_dao_config(deps)?),
         QueryMsg::ChainConfig {} => to_binary(&query_chain_config(deps)?),
-        QueryMsg::IbcTransferChannels { start_from, limit } => {
-            to_binary(&query_channels(deps, start_from, limit)?)
+        QueryMsg::IbcTransferChannels { start_after, limit } => {
+            to_binary(&query_channels(deps, start_after, limit)?)
         }
         QueryMsg::NextJobId {} => to_binary(&query_job_id(deps)?),
     }
