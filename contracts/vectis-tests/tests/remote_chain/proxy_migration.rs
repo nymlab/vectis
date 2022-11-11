@@ -4,28 +4,22 @@ use vectis_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{ProxyMigrateMsg, ProxyMigrationTxMsg, WalletAddr, WalletInfo};
 
-use crate::common::dao_common::*;
+use crate::common::common::*;
+use crate::common::remote_common::*;
 
 #[test]
 fn user_can_migrate_proxy_with_direct_message() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(90, "ucosm");
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![init_proxy_fund.clone()],
-        None,
-        WALLET_FEE + init_proxy_fund.amount.u128(),
-    );
-    assert!(create_proxy_rsp.is_ok());
-
+    let mut suite = RemoteChainSuite::init().unwrap();
+    let init_proxy_fund: Coin = coin(90, "uremote");
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(
+            suite.user.clone(),
+            vec![init_proxy_fund.clone()],
+            None,
+            WALLET_FEE + init_proxy_fund.amount.u128(),
+        )
+        .unwrap();
+
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let user = w.user_addr;
     let old_code_id = w.code_id;
@@ -61,7 +55,7 @@ fn user_can_migrate_proxy_with_direct_message() {
     assert_ne!(new_code_id, old_code_id);
 
     // user can execute message after migration
-    let send_amount: Coin = coin(10, "ucosm");
+    let send_amount: Coin = coin(10, "uremote");
     let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
         to_address: suite.factory.to_string(),
         amount: vec![send_amount.clone()],
@@ -85,23 +79,10 @@ fn user_can_migrate_proxy_with_direct_message() {
 
 #[test]
 fn relayer_can_migrate_proxy_with_user_signature() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-
-    assert!(create_proxy_rsp.is_ok());
+    let mut suite = RemoteChainSuite::init().unwrap();
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let old_code_id = w.code_id;
@@ -137,24 +118,10 @@ fn relayer_can_migrate_proxy_with_user_signature() {
 
 #[test]
 fn user_cannot_migrate_others_wallet() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-
-    assert!(create_proxy_rsp.is_ok());
-
+    let mut suite = RemoteChainSuite::init().unwrap();
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let code_id = w.code_id;
@@ -191,23 +158,10 @@ fn user_cannot_migrate_others_wallet() {
 
 #[test]
 fn user_cannot_migrate_with_mismatched_code_id() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-    assert!(create_proxy_rsp.is_ok());
-
+    let mut suite = RemoteChainSuite::init().unwrap();
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let code_id = w.code_id;
@@ -246,22 +200,10 @@ fn user_cannot_migrate_with_mismatched_code_id() {
 
 #[test]
 fn user_cannot_migrate_with_invalid_wasm_msg() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-    assert!(create_proxy_rsp.is_ok());
+    let mut suite = RemoteChainSuite::init().unwrap();
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
@@ -291,23 +233,10 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
 
 #[test]
 fn relayer_cannot_migrate_others_wallet() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-
-    assert!(create_proxy_rsp.is_ok());
+    let mut suite = RemoteChainSuite::init().unwrap();
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();
@@ -342,23 +271,10 @@ fn relayer_cannot_migrate_others_wallet() {
 
 #[test]
 fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-
-    assert!(create_proxy_rsp.is_ok());
+    let mut suite = RemoteChainSuite::init().unwrap();
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();
@@ -396,23 +312,10 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
 
 #[test]
 fn relayer_cannot_migrate_proxy_with_invalid_signature() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let create_proxy_rsp = suite.create_new_proxy(
-        Addr::unchecked(USER_ADDR),
-        suite.factory.clone(),
-        vec![],
-        None,
-        WALLET_FEE,
-    );
-
-    assert!(create_proxy_rsp.is_ok());
+    let mut suite = RemoteChainSuite::init().unwrap();
     let wallet_address = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap()
-        .wallets
-        .pop()
-        .unwrap()
-        .0;
+        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let relayer = w.relayers.pop().unwrap();

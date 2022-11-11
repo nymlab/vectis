@@ -6,13 +6,7 @@ fn cannot_propose_without_govec() {
     let mut suite = DaoChainSuite::init().unwrap();
     // Create a new wallet
     let wallet_addr = suite
-        .create_new_proxy(
-            suite.user.clone(),
-            suite.factory.clone(),
-            vec![],
-            None,
-            WALLET_FEE,
-        )
+        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
     // User propose with wallet
@@ -42,13 +36,7 @@ fn with_govec_can_propose() {
     let mut suite = DaoChainSuite::init().unwrap();
     // Create a new wallet
     let wallet_addr = suite
-        .create_new_proxy(
-            suite.user.clone(),
-            suite.factory.clone(),
-            vec![],
-            None,
-            WALLET_FEE,
-        )
+        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
     // user mint govec
@@ -113,4 +101,9 @@ fn with_govec_can_propose() {
             &[],
         )
         .unwrap();
+
+    let proposals = suite.query_proposals().unwrap();
+    assert_eq!(proposals.proposals.len(), 1);
+    let proposal = suite.query_proposal(proposals.proposals[0].id).unwrap();
+    assert_eq!(proposal.proposal.title, "title");
 }

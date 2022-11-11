@@ -8,16 +8,16 @@ use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{MultiSig, WalletInfo};
 
 use crate::common::common::*;
-use crate::common::dao_common::*;
+use crate::common::remote_common::*;
 
 #[test]
 fn create_new_proxy() {
-    let init_wallet_fund: Coin = coin(100, "ucosm");
+    let init_wallet_fund: Coin = coin(100, "uremote");
 
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = RemoteChainSuite::init().unwrap();
 
     let init_user_fund = suite.query_balance(&suite.user).unwrap();
-    let init_dao_fund = suite.query_balance(&suite.dao).unwrap();
+    let init_dao_fund = suite.query_balance(&suite.remote_tunnel).unwrap();
 
     let wallet_addr = suite
         .create_new_proxy(
@@ -46,7 +46,7 @@ fn create_new_proxy() {
     let factory_fund = suite.query_balance(&suite.factory).unwrap();
     let wallet_fund = suite.query_balance(&wallet_addr).unwrap();
     let post_user_fund = suite.query_balance(&suite.user.clone()).unwrap();
-    let post_dao_fund = suite.query_balance(&suite.dao).unwrap();
+    let post_dao_fund = suite.query_balance(&suite.remote_tunnel).unwrap();
 
     // factory fund does not change
     assert_eq!(Uint128::zero(), factory_fund.amount,);
@@ -72,7 +72,7 @@ fn create_new_proxy() {
 fn cannot_create_new_proxy_without_payment() {
     let no_wallet_fee = 0u128;
 
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = RemoteChainSuite::init().unwrap();
     suite
         .create_new_proxy(suite.user.clone(), vec![], None, no_wallet_fee)
         .unwrap();
@@ -80,7 +80,7 @@ fn cannot_create_new_proxy_without_payment() {
 
 #[test]
 fn create_new_proxy_without_guardians() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = RemoteChainSuite::init().unwrap();
     suite
         .create_new_proxy_without_guardians(
             suite.user.clone(),
@@ -94,7 +94,7 @@ fn create_new_proxy_without_guardians() {
 
 #[test]
 fn user_can_rotate_keys() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = RemoteChainSuite::init().unwrap();
 
     let wallet_address = suite
         .create_new_proxy_without_guardians(
@@ -125,7 +125,7 @@ fn user_can_rotate_keys() {
 
 #[test]
 fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = RemoteChainSuite::init().unwrap();
     let multisig = MultiSig {
         threshold_absolute_count: 0,
         multisig_initial_funds: vec![],
@@ -151,8 +151,8 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
 
 #[test]
 fn user_can_execute_messages() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let init_wallet_fund: Coin = coin(100, "ucosm");
+    let mut suite = RemoteChainSuite::init().unwrap();
+    let init_wallet_fund: Coin = coin(100, "uremote");
     let wallet_address = suite
         .create_new_proxy(
             suite.user.clone(),
@@ -166,7 +166,7 @@ fn user_can_execute_messages() {
     let user = w.user_addr;
 
     // Can execute Bank msgs
-    let send_amount: Coin = coin(10, "ucosm");
+    let send_amount: Coin = coin(10, "uremote");
     let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
         to_address: suite.factory.to_string(),
         amount: vec![send_amount.clone()],
@@ -192,7 +192,7 @@ fn user_can_execute_messages() {
 
 #[test]
 fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = RemoteChainSuite::init().unwrap();
 
     let wallet_addr = suite
         .create_new_proxy(
@@ -274,9 +274,9 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 
 #[test]
 fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
-    let mut suite = DaoChainSuite::init().unwrap();
-    let init_multisig_fund: Coin = coin(200, "ucosm");
-    let init_proxy_fund: Coin = coin(100, "ucosm");
+    let mut suite = RemoteChainSuite::init().unwrap();
+    let init_multisig_fund: Coin = coin(200, "uremote");
+    let init_proxy_fund: Coin = coin(100, "uremote");
     let init_user_balance = suite.query_balance(&suite.user.clone());
 
     let proxy_addr = suite
@@ -308,7 +308,7 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
 
 #[test]
 fn query_all_unclaimed_wallets_works() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = RemoteChainSuite::init().unwrap();
 
     // Create a few wallets
     suite
