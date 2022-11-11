@@ -57,13 +57,7 @@ pub fn instantiate(
         .verify_guardians(&addr_human)?;
 
     let addr = deps.api.addr_canonicalize(addr_human.as_str())?;
-    USER.save(
-        deps.storage,
-        &User {
-            addr: addr.clone(),
-            nonce: 0,
-        },
-    )?;
+    USER.save(deps.storage, &User { addr, nonce: 0 })?;
 
     FROZEN.save(deps.storage, &false)?;
     FACTORY.save(
@@ -108,11 +102,8 @@ pub fn instantiate(
         Response::new()
             .add_submessage(msg)
             .add_attribute("user", addr_human)
-            .set_data(addr.0)
     } else {
-        Response::new()
-            .add_attribute("user", addr_human)
-            .set_data(addr.0)
+        Response::new().add_attribute("user", addr_human)
     };
 
     Ok(resp)
