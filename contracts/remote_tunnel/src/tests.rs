@@ -25,6 +25,7 @@ use crate::contract::{
 pub use crate::ibc::{
     ibc_channel_close, ibc_channel_connect, ibc_channel_open, ibc_packet_ack, ibc_packet_receive,
 };
+use crate::msg::ChainConfigResponse;
 pub use crate::msg::{IbcTransferChannels, InstantiateMsg, QueryMsg};
 pub use crate::state::{CHAIN_CONFIG, DAO_CONFIG, JOB_ID};
 use crate::tests_ibc::connect;
@@ -57,7 +58,6 @@ pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let instantiate_msg = InstantiateMsg {
         dao_config,
         chain_config,
-        denom: DENOM.to_string(),
         init_ibc_transfer_mod: Some(IbcTransferChannels {
             endpoints: vec![
                 (
@@ -86,7 +86,7 @@ fn queries_works() {
         connection_id: DAO_CONNECTION_ID.to_string(),
         dao_tunnel_channel: None,
     };
-    let expected_chain_config = ChainConfig {
+    let expected_chain_config = ChainConfigResponse {
         remote_factory: None,
         denom: DENOM.to_string(),
     };

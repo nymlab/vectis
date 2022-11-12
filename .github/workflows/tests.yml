@@ -53,18 +53,13 @@ jobs:
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract proxy dao chain 
-        run: cargo wasm-proxy-dao-chain --locked
-        env:
-          RUSTFLAGS: "-C link-arg=-s"
-
       - name: Compile WASM contract factory remote chain
         run: cargo wasm-factory-remote-chain --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract proxy remote chain
-        run: cargo wasm-proxy-remote-chain --locked
+      - name: Compile WASM contract proxy
+        run: cargo wasm-proxy --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
