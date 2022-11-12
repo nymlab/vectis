@@ -47,8 +47,8 @@ pub fn connect(mut deps: DepsMut, dao_channel_id: &str) {
             deps.branch(),
             mock_env(),
             IbcChannelConnectMsg::OpenAck {
-                channel: channel.clone(),
-                counterparty_version: counterparty_version.clone(),
+                channel,
+                counterparty_version,
             },
         )
         .unwrap();
@@ -166,8 +166,8 @@ fn only_approved_endpoint_can_connect() {
             deps.as_mut(),
             mock_env(),
             IbcChannelConnectMsg::OpenAck {
-                channel: channel.clone(),
-                counterparty_version: counterparty_version.clone(),
+                channel,
+                counterparty_version,
             },
         )
         .unwrap();
@@ -566,7 +566,7 @@ fn mint_govec_packet_ack_sends_msg_to_factory() {
     };
     let ack = StdAck::success(action_id);
     let original_ibc_msg = PacketMsg {
-        sender: env.clone().contract.address.to_string(),
+        sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
             wallet_addr: "wallet".to_string(),
@@ -601,7 +601,7 @@ fn mint_govec_packet_ack_sends_msg_to_factory() {
     // in the case of failure
     let ack = StdAck::fail("some error".to_string());
     let original_ibc_msg = PacketMsg {
-        sender: env.clone().contract.address.to_string(),
+        sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
             wallet_addr: "wallet".to_string(),
@@ -649,7 +649,7 @@ fn handle_ack_for_non_govec_minting_packets() {
     // In the case of success
     let ack = StdAck::success(action_id as u64);
     let original_ibc_msg = PacketMsg {
-        sender: env.clone().contract.address.to_string(),
+        sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::GovecActions(
             vectis_wallet::GovecExecuteMsg::Burn {
@@ -682,7 +682,7 @@ fn handle_ack_for_non_govec_minting_packets() {
         IbcAcknowledgement::new(ack),
     )
     .unwrap();
-    let res = ibc_packet_ack(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    let res = ibc_packet_ack(deps.as_mut(), env, ibc_ack).unwrap();
     assert_eq!(
         res.attributes,
         vec![
@@ -700,7 +700,7 @@ fn handle_timeout_for_govec_minting() {
     let env = mock_env();
 
     let original_ibc_msg = PacketMsg {
-        sender: env.clone().contract.address.to_string(),
+        sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::MintGovec {
             wallet_addr: "wallet".to_string(),
@@ -738,7 +738,7 @@ fn handle_timeout_for_non_govec_minting_packets() {
     let env = mock_env();
 
     let original_ibc_msg = PacketMsg {
-        sender: env.clone().contract.address.to_string(),
+        sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::GovecActions(
             vectis_wallet::GovecExecuteMsg::Burn {
@@ -749,7 +749,7 @@ fn handle_timeout_for_non_govec_minting_packets() {
     };
 
     let ibc_ack = mock_ibc_packet_timeout(DAO_CHANNEL_ID, &original_ibc_msg).unwrap();
-    let res = ibc_packet_timeout(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    let res = ibc_packet_timeout(deps.as_mut(), env, ibc_ack).unwrap();
     assert_eq!(
         res.attributes,
         vec![

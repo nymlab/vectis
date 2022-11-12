@@ -381,7 +381,7 @@ fn ibc_transfer_works_with_channel_connected() {
         env.clone(),
         mock_info("sender", &[coin(11u128, DENOM), coin(22u128, DENOM)]),
         Receiver {
-            connection_id: conn.clone(),
+            connection_id: conn,
             addr: "receiver".to_string(),
         },
     )

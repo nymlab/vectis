@@ -10,7 +10,7 @@ pub fn add_mock_controller(mut deps: DepsMut, src_port_id: &str) {
     let env = mock_env();
     execute(
         deps.branch(),
-        env.clone(),
+        env,
         mock_info(ADMIN_ADDR, &[]),
         ExecuteMsg::AddApprovedController {
             connection_id: TEST_CONNECTION_ID.to_string(),
@@ -484,7 +484,7 @@ fn invalid_proposal_action_fails() {
     };
     let ibc_propose = RemoteTunnelPacketMsg::ProposalActions {
         prop_module_addr: prop_module_addr.to_string(),
-        msg: prop_msg.clone(),
+        msg: prop_msg,
     };
 
     let rec_res = test_rec_ibc_package(deps.as_mut(), &ibc_propose, JOB_ID).unwrap();
@@ -673,13 +673,13 @@ fn handle_timeout() {
     let env = mock_env();
 
     let original_ibc_msg = PacketMsg {
-        sender: env.clone().contract.address.to_string(),
+        sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&[1; 1]).unwrap(),
     };
 
     let ibc_ack = mock_ibc_packet_timeout(CHANNEL_ID, &original_ibc_msg).unwrap();
-    let res = ibc_packet_timeout(deps.as_mut(), env.clone(), ibc_ack).unwrap();
+    let res = ibc_packet_timeout(deps.as_mut(), env, ibc_ack).unwrap();
     assert_eq!(
         res.attributes,
         vec![

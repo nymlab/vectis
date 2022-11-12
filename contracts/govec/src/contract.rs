@@ -163,7 +163,7 @@ pub fn execute_transfer(
 
     let from = match relayed_from {
         Some(remote) => {
-            ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
+            ensure_is_dao_tunnel(deps.as_ref(), info.sender)?;
             Addr::unchecked(remote)
         }
         None => info.sender,
@@ -245,7 +245,7 @@ pub fn execute_burn(
     let to_burn = Uint128::from(MINT_AMOUNT);
     let from = match relayed_from {
         Some(remote) => {
-            ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
+            ensure_is_dao_tunnel(deps.as_ref(), info.sender)?;
             Addr::unchecked(remote)
         }
         None => info.sender,
@@ -313,7 +313,7 @@ pub fn execute_mint(
     TOKEN_INFO.save(deps.storage, &config)?;
 
     let rcpt_addr = match caller {
-        Role::Factory => deps.api.addr_validate(&new_wallet.clone())?,
+        Role::Factory => deps.api.addr_validate(&new_wallet)?,
         // We do validate remote wallet address with Bech32 as prefix will be different
         // Validation is done on the remote-tunnel channel
         Role::DaoTunnel => Addr::unchecked(new_wallet.clone()),
@@ -352,7 +352,7 @@ pub fn execute_send(
     }
     let from = match relayed_from {
         Some(remote) => {
-            ensure_is_dao_tunnel(deps.as_ref(), info.sender.clone())?;
+            ensure_is_dao_tunnel(deps.as_ref(), info.sender)?;
             Addr::unchecked(remote)
         }
         None => info.sender,

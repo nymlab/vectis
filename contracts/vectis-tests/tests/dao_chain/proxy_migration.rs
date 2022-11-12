@@ -208,7 +208,7 @@ fn user_cannot_migrate_with_invalid_wasm_msg() {
 
     // User migrates their wallet to the new code id
     let migrate_wallet_msg = FactoryExecuteMsg::MigrateWallet {
-        wallet_address: WalletAddr::Addr(wallet_address.clone()),
+        wallet_address: WalletAddr::Addr(wallet_address),
         migration_msg: ProxyMigrationTxMsg::DirectMigrationMsg(
             to_binary(&CosmosMsg::<()>::Wasm(WasmMsg::ClearAdmin {
                 contract_addr: String::from("randomaddr"),
@@ -254,7 +254,7 @@ fn relayer_cannot_migrate_others_wallet() {
             relayer,
             suite.factory.clone(),
             &FactoryExecuteMsg::MigrateWallet {
-                wallet_address: WalletAddr::Addr(wallet_address.clone()),
+                wallet_address: WalletAddr::Addr(wallet_address),
                 migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
             },
             &[],
@@ -295,7 +295,7 @@ fn relayer_cannot_migrate_proxy_with_mismatch_user_addr() {
             relayer,
             suite.factory.clone(),
             &FactoryExecuteMsg::MigrateWallet {
-                wallet_address: WalletAddr::Addr(wallet_address.clone()),
+                wallet_address: WalletAddr::Addr(wallet_address),
                 migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
             },
             &[],
@@ -344,7 +344,7 @@ fn relayer_cannot_migrate_proxy_with_invalid_signature() {
             relayer,
             suite.factory.clone(),
             &FactoryExecuteMsg::MigrateWallet {
-                wallet_address: WalletAddr::Addr(wallet_address.clone()),
+                wallet_address: WalletAddr::Addr(wallet_address),
                 migration_msg: ProxyMigrationTxMsg::RelayTx(relay_transaction),
             },
             &[],

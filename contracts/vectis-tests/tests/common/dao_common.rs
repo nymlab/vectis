@@ -349,13 +349,9 @@ impl DaoChainSuite {
             .collect();
 
         // This event
-        let ev = wasm_events.iter().find(|event| {
-            event
-                .attributes
-                .iter()
-                .find(|at| at.key == "proxy_address")
-                .is_some()
-        });
+        let ev = wasm_events
+            .iter()
+            .find(|event| event.attributes.iter().any(|at| at.key == "proxy_address"));
 
         let proxy = &ev.unwrap().attributes[2].value;
 

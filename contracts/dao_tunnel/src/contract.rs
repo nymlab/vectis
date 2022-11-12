@@ -247,7 +247,7 @@ pub fn query_channels(
     limit: Option<u32>,
 ) -> StdResult<IbcTransferChannels> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start = start_after.map(|e| Bound::exclusive(e));
+    let start = start_after.map(Bound::exclusive);
     let endpoints: StdResult<Vec<_>> = IBC_TRANSFER_MODULES
         .prefix(())
         .range(deps.storage, start, None, cosmwasm_std::Order::Descending)

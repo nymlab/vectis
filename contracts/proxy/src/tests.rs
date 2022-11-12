@@ -209,7 +209,7 @@ fn frozen_contract_user_cannot_rotate_guardians_or_user() {
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
-    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    execute(deps.as_mut(), env, info, msg).unwrap();
 
     let info = mock_info(user_addr.as_str(), &[]);
     let env = mock_env();
@@ -223,7 +223,7 @@ fn frozen_contract_user_cannot_rotate_guardians_or_user() {
         new_user_address: "new user".into(),
     };
 
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Frozen {});
 }
 
@@ -235,7 +235,7 @@ fn frozen_contract_guardians_can_rotate_user_key() {
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
-    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    execute(deps.as_mut(), env, info, msg).unwrap();
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(wallet_info.is_frozen);
 
@@ -246,7 +246,7 @@ fn frozen_contract_guardians_can_rotate_user_key() {
         new_user_address: "new user123".into(),
     };
 
-    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    execute(deps.as_mut(), env, info, msg).unwrap();
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert_ne!(wallet_info.user_addr, user_addr);
 }
@@ -259,7 +259,7 @@ fn frozen_contract_cannot_create_update_guardians_request() {
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
-    execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    execute(deps.as_mut(), env, info, msg).unwrap();
 
     let info = mock_info(user_addr.as_str(), &[]);
     let env = mock_env();
@@ -273,10 +273,10 @@ fn frozen_contract_cannot_create_update_guardians_request() {
     };
 
     let msg = ExecuteMsg::RequestUpdateGuardians {
-        request: Some(request.clone()),
+        request: Some(request),
     };
 
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Frozen {});
 }
 
@@ -307,7 +307,7 @@ fn user_cannot_create_update_guardians_request_to_include_self() {
         request: Some(request),
     };
 
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(
         err,
         ContractError::Std(StdError::generic_err("user cannot be a guardian"))
@@ -334,7 +334,7 @@ fn user_cannot_execute_not_active_request() {
 
     let msg = ExecuteMsg::UpdateGuardians {};
 
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::GuardianRequestNotExecutable {});
 }
 
@@ -348,7 +348,7 @@ fn user_cannot_execute_update_guardian_when_no_request() {
 
     let msg = ExecuteMsg::UpdateGuardians {};
 
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::GuardianRequestNotFound {});
 }
 
@@ -378,7 +378,7 @@ fn user_can_execute_active_guardian_request() {
 
     let msg = ExecuteMsg::UpdateGuardians {};
 
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.attributes,
         [("action", "Updated wallet guardians: Non-Multisig")]
@@ -405,7 +405,7 @@ fn user_can_create_update_guardians_request() {
         request: Some(request.clone()),
     };
 
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.attributes,
         [("action", "Request to update guardians created")]
@@ -428,7 +428,7 @@ fn user_can_remove_update_guardians_request() {
 
     let msg = ExecuteMsg::RequestUpdateGuardians { request: None };
 
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.attributes,
         [("action", "Removed request to update guardians")]
@@ -455,7 +455,7 @@ fn user_can_add_relayer() {
         new_relayer_address: new_relayer_address.clone(),
     };
 
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.attributes,
         [("action", format!("Relayer {:?} added", new_relayer_address))]
@@ -482,17 +482,15 @@ fn user_can_remove_relayer() {
         relayer_address: relayer_address.clone(),
     };
 
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.attributes,
         [("action", format!("Relayer {:?} removed", relayer_address))]
     );
 
-    wallet_info.relayers = wallet_info
+    wallet_info
         .relayers
-        .into_iter()
-        .filter(|relayer| *relayer != relayer_address)
-        .collect();
+        .retain(|relayer| *relayer != relayer_address);
     let new_wallet_info = query_info(deps.as_ref()).unwrap();
     assert_eq!(wallet_info.relayers, new_wallet_info.relayers);
 }
@@ -514,7 +512,7 @@ fn guardian_can_rotate_user_key() {
     let msg = ExecuteMsg::RotateUserKey {
         new_user_address: new_address.to_string(),
     };
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
@@ -530,7 +528,7 @@ fn user_can_update_label() {
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(!wallet_info.is_frozen);
 
-    let info = mock_info(&user_addr.to_string(), &[]);
+    let info = mock_info(user_addr.as_ref(), &[]);
     let env = mock_env();
 
     let new_label = "new label";
@@ -538,7 +536,7 @@ fn user_can_update_label() {
         new_label: new_label.to_string(),
     };
 
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.attributes,
         [("action", "update label"), ("label", new_label)]
@@ -565,7 +563,7 @@ fn non_user_update_label_fails() {
         new_label: new_label.to_string(),
     };
 
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::IsNotUser {});
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
@@ -581,14 +579,14 @@ fn user_can_rotate_user_key() {
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(!wallet_info.is_frozen);
 
-    let info = mock_info(&user_addr.to_string(), &[]);
+    let info = mock_info(user_addr.as_ref(), &[]);
     let env = mock_env();
 
     let new_address = "new_key";
     let msg = ExecuteMsg::RotateUserKey {
         new_user_address: new_address.to_string(),
     };
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
@@ -848,7 +846,7 @@ fn frozen_contract_relay_proxy_user_tx_fails() {
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(response.attributes, [("action", "frozen")]);
 
     // RELAYER1 is a valid relayer

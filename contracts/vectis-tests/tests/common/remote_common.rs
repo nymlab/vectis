@@ -85,7 +85,7 @@ impl RemoteChainSuite {
 
         // update factory so dao is remote-tunnel
         app.execute_contract(
-            deployer.clone(),
+            deployer,
             factory.clone(),
             &WalletFactoryExecuteMsg::UpdateDao {
                 addr: remote_tunnel.to_string(),
@@ -185,13 +185,9 @@ impl RemoteChainSuite {
             .collect();
 
         // This event
-        let ev = wasm_events.iter().find(|event| {
-            event
-                .attributes
-                .iter()
-                .find(|at| at.key == "proxy_address")
-                .is_some()
-        });
+        let ev = wasm_events
+            .iter()
+            .find(|event| event.attributes.iter().any(|at| at.key == "proxy_address"));
 
         let proxy = &ev.unwrap().attributes[2].value;
 

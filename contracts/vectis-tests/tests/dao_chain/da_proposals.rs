@@ -24,7 +24,7 @@ fn cannot_propose_without_govec() {
         .app
         .execute_contract(
             suite.user.clone(),
-            wallet_addr.clone(),
+            wallet_addr,
             &proxy_exec(&suite.proposal, &propose_msg, vec![]),
             &[],
         )
@@ -96,7 +96,7 @@ fn with_govec_can_propose() {
         .app
         .execute_contract(
             suite.user.clone(),
-            wallet_addr.clone(),
+            wallet_addr,
             &proxy_exec(&suite.proposal, &propose_msg, vec![]),
             &[],
         )
