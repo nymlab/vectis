@@ -3,7 +3,7 @@ use cosmwasm_std::testing::mock_ibc_packet_timeout;
 use crate::{
     contract::{query_channels, query_dao_config},
     ibc::ibc_packet_timeout,
-    msg::{ExecuteMsg, Receiver},
+    msg::{ChainConfigResponse, ExecuteMsg, Receiver},
     tests::*,
 };
 
@@ -312,15 +312,10 @@ fn handle_inst_factory_packet() {
 
     reply(deps.as_mut(), mock_env(), response).unwrap();
 
-    let res: ChainConfig =
+    let res: ChainConfigResponse =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::ChainConfig {}).unwrap()).unwrap();
 
-    assert_eq!(
-        contract_address.to_string(),
-        deps.api
-            .addr_humanize(&res.remote_factory.unwrap())
-            .unwrap()
-    );
+    assert_eq!(contract_address.to_string(), res.remote_factory.unwrap())
 }
 
 #[test]

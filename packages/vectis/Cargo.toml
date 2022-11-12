@@ -16,5 +16,5 @@ cw2 = "0.13"
 thiserror = { version = "1.0.26" }
 cw-utils = "0.13"
 cw20 = "0.13"
-cw20-stake = {git = "https://github.com/nymlab/dao-contracts", features = ["library"], rev = "be92da6edb8bee49a7"}
-cw-proposal-single = {git = "https://github.com/nymlab/dao-contracts", features = ["library"], rev = "be92da6edb8bee49a7"}
+cw20-stake = {git = "https://github.com/nymlab/dao-contracts", features = ["library"], rev = "1383ecb2162968a"}
+cw-proposal-single = {git = "https://github.com/nymlab/dao-contracts", features = ["library"], rev = "1383ecb2162968a"}
