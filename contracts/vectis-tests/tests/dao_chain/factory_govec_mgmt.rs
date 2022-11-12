@@ -93,6 +93,7 @@ fn non_proxy_cannot_mint_via_factory() {
     let user_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
     assert_eq!(user_govec_balance.balance, Uint128::zero());
 }
+
 #[test]
 fn msg_govec_minted_not_on_dao_chain() {
     let mut suite = DaoChainSuite::init().unwrap();
