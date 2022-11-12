@@ -347,14 +347,12 @@ fn govec_minted(
     wallet: String,
 ) -> Result<Response, ContractError> {
     let dao_minter = DAO.load(deps.storage)?;
-    if info.sender != deps.api.addr_humanize(&dao_minter)?.to_string() {
+    if info.sender != deps.api.addr_humanize(&dao_minter)? {
         Err(ContractError::Unauthorized {})
+    } else if success {
+        handle_govec_minted(deps, wallet)
     } else {
-        if success {
-            handle_govec_minted(deps, wallet)
-        } else {
-            handle_govec_mint_failed(deps, env, wallet)
-        }
+        handle_govec_mint_failed(deps, env, wallet)
     }
 }
 
@@ -419,9 +417,9 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
             let res = Response::new()
                 .add_attribute("action", "Govec claim list updated")
                 .add_attribute("proxy_address", res.contract_address);
-            return Ok(res);
+            Ok(res)
         } else {
-            return Err(ContractError::ProxyInstantiationError {});
+            Err(ContractError::ProxyInstantiationError {})
         }
     } else {
         #[cfg(feature = "dao-chain")]
@@ -435,7 +433,7 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
             }
         }
 
-        return Err(ContractError::InvalidReplyId {});
+        Err(ContractError::InvalidReplyId {})
     }
 }
 
@@ -512,11 +510,11 @@ pub fn query_pending_unclaim_wallet_list(
         .take(limit)
         .map(|w| -> StdResult<Addr> {
             let ww = w?;
-            Ok(deps.api.addr_humanize(&CanonicalAddr::from(ww.0))?)
+            deps.api.addr_humanize(&CanonicalAddr::from(ww.0))
         })
         .collect();
 
-    Ok(wallets?)
+    wallets
 }
 
 #[cfg(feature = "dao-chain")]

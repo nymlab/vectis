@@ -361,7 +361,7 @@ fn is_authorised_src(
     let channel_resp: ChannelResponse =
         deps.querier.query(&QueryRequest::Ibc(IbcQuery::Channel {
             channel_id: endpoint.channel_id,
-            port_id: Some(endpoint.port_id.clone()),
+            port_id: Some(endpoint.port_id),
         }))?;
 
     let local_connection_id = channel_resp

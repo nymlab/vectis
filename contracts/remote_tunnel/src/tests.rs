@@ -160,7 +160,7 @@ fn ibc_transfer_fails_without_channel() {
     let env = mock_env();
     let err = execute_ibc_transfer(
         deps.as_mut(),
-        env.clone(),
+        env,
         mock_info("sender", &[coin(11u128, DENOM), coin(22u128, DENOM)]),
         crate::msg::Receiver {
             connection_id: "NOT_VALID_CONNECTION".to_string(),
@@ -193,7 +193,7 @@ fn ibc_transfer_fails_without_funds() {
 
     let err = execute_ibc_transfer(
         deps.as_mut(),
-        env.clone(),
+        env,
         mock_info("sender", &[coin(11u128, "some_other_denom")]),
         crate::msg::Receiver {
             connection_id: OTHER_CONNECTION_ID.to_string(),

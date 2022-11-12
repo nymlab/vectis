@@ -111,7 +111,7 @@ fn user_can_remove_multisig_for_guardians() {
         .create_new_proxy(
             Addr::unchecked(USER_ADDR),
             vec![],
-            Some(multisig.clone()),
+            Some(multisig),
             WALLET_FEE,
         )
         .unwrap();
@@ -230,7 +230,7 @@ fn non_user_update_proxy_multisig_fails() {
         .app
         .execute_contract(
             Addr::unchecked("not-user"),
-            wallet_address.clone(),
+            wallet_address,
             &update_guardians_message,
             &[],
         )
@@ -268,7 +268,7 @@ fn relayer_update_proxy_multisig_with_non_user_fails() {
 
     let execute_msg_err: ContractError = suite
         .app
-        .execute_contract(relayer, wallet_address.clone(), &relay_msg, &[])
+        .execute_contract(relayer, wallet_address, &relay_msg, &[])
         .unwrap_err()
         .downcast()
         .unwrap();

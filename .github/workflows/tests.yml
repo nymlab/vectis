@@ -95,5 +95,8 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
-      - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
+      - name: Run cargo clippy dao-chain
+        run: cargo clippy --features dao-chain -- -D warnings
+
+      - name: Run cargo clippy remote-chain
+        run: cargo clippy --features remote-chain -- -D warnings

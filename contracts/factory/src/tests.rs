@@ -129,7 +129,7 @@ fn admin_update_fee_works() {
     let msg = ExecuteMsg::UpdateWalletFee {
         new_fee: new_update_fee.clone(),
     };
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.attributes,
         [("config", "Wallet Fee"), ("New Fee", "3ucosm")]
@@ -201,17 +201,22 @@ fn admin_updates_addresses_work() {
     let msg = ExecuteMsg::UpdateDao {
         addr: "new_dao".to_string(),
     };
-
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
+    #[cfg(feature = "remote")]
+    {
+        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+        assert_eq!(err, ContractError::Unauthorized {});
+    }
 
     #[cfg(feature = "dao-chain")]
     {
+        let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+        assert_eq!(err, ContractError::Unauthorized {});
+
         let msg = ExecuteMsg::UpdateGovecAddr {
             addr: "new_govec".to_string(),
         };
 
-        let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
     }
 }
@@ -235,8 +240,8 @@ fn non_admin_update_code_id_fails() {
 
     let err = execute(
         deps.as_mut(),
-        env.clone(),
-        info.clone(),
+        env,
+        info,
         ExecuteMsg::UpdateCodeId {
             ty: CodeIdType::Proxy,
             new_code_id,
@@ -265,8 +270,8 @@ fn non_admin_update_fees_fails() {
 
     let err = execute(
         deps.as_mut(),
-        env.clone(),
-        info.clone(),
+        env,
+        info,
         ExecuteMsg::UpdateWalletFee {
             new_fee: coin(3, "ucosm"),
         },
@@ -293,7 +298,7 @@ fn non_admin_cannot_call_minted() {
     //IBC returns  success
     let err = execute(
         deps.as_mut(),
-        env.clone(),
+        env,
         mock_info("NOT_ADMIN", &[]),
         ExecuteMsg::GovecMinted {
             success: true,

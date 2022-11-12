@@ -175,9 +175,7 @@ fn user_can_execute_messages() {
     let execute_msg_resp = suite.app.execute_contract(
         user,
         wallet_address.clone(),
-        &ProxyExecuteMsg::Execute {
-            msgs: vec![msg.clone()],
-        },
+        &ProxyExecuteMsg::Execute { msgs: vec![msg] },
         &[],
     );
     assert!(execute_msg_resp.is_ok());

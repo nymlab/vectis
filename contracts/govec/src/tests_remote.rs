@@ -40,7 +40,7 @@ fn remote_relayed_transfer() {
 
     assert_eq!(get_balance(deps.as_ref(), dao_addr.clone()), transfer);
     assert_eq!(
-        get_balance(deps.as_ref(), remote_addr.clone()),
+        get_balance(deps.as_ref(), remote_addr),
         amount1.saturating_sub(transfer)
     );
     assert_eq!(
@@ -59,9 +59,9 @@ fn remote_relayed_transfer() {
 
     // not dao tunnel cannot relay transfers
     let failing_msg = ExecuteMsg::Transfer {
-        recipient: dao_addr.clone(),
+        recipient: dao_addr,
         amount: transfer,
-        relayed_from: Some(not_wallet.clone()),
+        relayed_from: Some(not_wallet),
     };
     let info_wrong_dao_tunnel = mock_info("not_dao_tunnel", &[]);
     let err = execute(deps.as_mut(), env, info_wrong_dao_tunnel, failing_msg).unwrap_err();
@@ -87,7 +87,7 @@ fn burn() {
     let initial_total_supply = query_token_info(deps.as_ref()).unwrap().total_supply;
 
     // valid burn update from dao_tunnel reduces total supply and remove account from BALANCES
-    let info = mock_info(DAO_TUNNEL.as_ref(), &[]);
+    let info = mock_info(DAO_TUNNEL, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::Burn {
         relayed_from: Some(remote_addr.clone()),
@@ -106,7 +106,7 @@ fn burn() {
         deps.as_ref(),
         env.clone(),
         QueryMsg::Balance {
-            address: remote_addr.clone(),
+            address: remote_addr,
         },
     )
     .unwrap();
@@ -192,8 +192,8 @@ fn send() {
     let msg = ExecuteMsg::Send {
         contract: addr2,
         amount: transfer,
-        msg: send_msg.clone(),
-        relayed_from: Some(addr1.clone()),
+        msg: send_msg,
+        relayed_from: Some(addr1),
     };
     let err = execute(deps.as_mut(), env, failing_info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});

@@ -57,7 +57,7 @@ pub fn do_instantiate(
 
     let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
-    instantiate(deps.branch(), env.clone(), info, instantiate_msg).unwrap();
+    instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
 
     let meta = query_token_info(deps.as_ref()).unwrap();
     assert_eq!(
@@ -165,7 +165,7 @@ fn dao_can_receive_govec() {
     execute(
         deps.as_mut(),
         env,
-        mock_info("addr0000".into(), &[]),
+        mock_info("addr0000", &[]),
         ExecuteMsg::Transfer {
             recipient: "dao".into(),
             amount,
@@ -330,9 +330,7 @@ fn dao_can_update_dao_addr_and_transfer_tokens() {
         Uint128::new(0)
     );
     assert_eq!(
-        query_balance(deps.as_ref(), new_dao.to_string())
-            .unwrap()
-            .balance,
+        query_balance(deps.as_ref(), new_dao).unwrap().balance,
         Uint128::new(5)
     );
 }
@@ -416,14 +414,14 @@ fn can_mint_by_minter() {
     assert_eq!(0, res.messages.len());
     assert_eq!(get_balance(deps.as_ref(), genesis), amount);
     assert_eq!(
-        get_balance(deps.as_ref(), winner.clone()),
+        get_balance(deps.as_ref(), winner),
         Uint128::from(MINT_AMOUNT * 2)
     );
 
     // but if it exceeds cap, it fails cap is enforced
     let info = mock_info(FACTORY, &[]);
     let env = mock_env();
-    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::CannotExceedCap {});
 }
 
@@ -543,7 +541,7 @@ fn transfer() {
     let info = mock_info(addr1.as_ref(), &[]);
     let env = mock_env();
     let msg = ExecuteMsg::Transfer {
-        recipient: not_wallet.clone(),
+        recipient: not_wallet,
         amount: transfer,
         relayed_from: None,
     };
@@ -575,7 +573,7 @@ fn transfer() {
         ]
     );
 
-    assert_eq!(get_balance(deps.as_ref(), addr2.clone()), transfer);
+    assert_eq!(get_balance(deps.as_ref(), addr2), transfer);
     assert_eq!(
         query_token_info(deps.as_ref()).unwrap().total_supply,
         amount1
@@ -764,7 +762,7 @@ fn send() {
     let msg = ExecuteMsg::Send {
         contract: "not-a-wallet".to_string(),
         amount: transfer,
-        msg: send_msg.clone(),
+        msg: send_msg,
         relayed_from: None,
     };
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
@@ -950,8 +948,8 @@ fn execute_update_logo_works() {
     let description = "description".to_string();
 
     let marketing_msg = MarketingInfoResponse {
-        project: Some(project.clone()),
-        description: Some(description.clone()),
+        project: Some(project),
+        description: Some(description),
         marketing: Some(Addr::unchecked(DAO_ADDR)),
         logo: None,
     };
