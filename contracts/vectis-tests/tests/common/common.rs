@@ -47,7 +47,10 @@ pub use cw20_staked_balance_voting::{
 
 pub use cw20_stake::{
     contract::{execute as stake_execute, instantiate as stake_instantiate, query as stake_query},
-    msg::{InstantiateMsg as StakeInstMsg, QueryMsg as StakeQueryMsg, ReceiveMsg},
+    msg::{
+        InstantiateMsg as StakeInstMsg, QueryMsg as StakeQueryMsg, ReceiveMsg,
+        StakedBalanceAtHeightResponse,
+    },
 };
 
 pub use vectis_dao_tunnel::{

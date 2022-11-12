@@ -234,13 +234,33 @@ dependencies = [
 [[package]]
 name = "cw-core"
 version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
+dependencies = [
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-core-interface 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "cw-core-macros 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "cw-paginate 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "cw-storage-plus 0.13.4",
+ "cw-utils 0.13.4",
+ "cw2 0.13.4",
+ "cw20",
+ "cw721",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "cw-core"
+version = "0.1.0"
 source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
 dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-core-interface",
- "cw-core-macros",
- "cw-paginate",
+ "cw-core-interface 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw-core-macros 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw-paginate 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
  "cw-storage-plus 0.13.4",
  "cw-utils 0.13.4",
  "cw2 0.13.4",
@@ -254,13 +274,35 @@ dependencies = [
 [[package]]
 name = "cw-core-interface"
 version = "0.1.0"
-source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
 dependencies = [
  "cosmwasm-std",
- "cw-core-macros",
+ "cw-core-macros 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw2 0.13.4",
  "schemars",
  "serde",
+]
+
+[[package]]
+name = "cw-core-interface"
+version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
+dependencies = [
+ "cosmwasm-std",
+ "cw-core-macros 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw2 0.13.4",
+ "schemars",
+ "serde",
+]
+
+[[package]]
+name = "cw-core-macros"
+version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -295,6 +337,17 @@ dependencies = [
 [[package]]
 name = "cw-paginate"
 version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
+dependencies = [
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-storage-plus 0.13.4",
+ "serde",
+]
+
+[[package]]
+name = "cw-paginate"
+version = "0.1.0"
 source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
 dependencies = [
  "cosmwasm-std",
@@ -306,25 +359,49 @@ dependencies = [
 [[package]]
 name = "cw-proposal-single"
 version = "0.1.0"
-source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
 dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-core",
- "cw-core-interface",
- "cw-core-macros",
+ "cw-core 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "cw-core-interface 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "cw-core-macros 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw-storage-plus 0.13.4",
  "cw-utils 0.13.4",
  "cw2 0.13.4",
  "cw20",
  "cw3",
- "indexable-hooks",
- "proposal-hooks",
+ "indexable-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "proposal-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "schemars",
  "serde",
  "thiserror",
- "vote-hooks",
- "voting",
+ "vote-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "voting 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+]
+
+[[package]]
+name = "cw-proposal-single"
+version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
+dependencies = [
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-core 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw-core-interface 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw-core-macros 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw-storage-plus 0.13.4",
+ "cw-utils 0.13.4",
+ "cw2 0.13.4",
+ "cw20",
+ "cw3",
+ "indexable-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "proposal-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "schemars",
+ "serde",
+ "thiserror",
+ "vote-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "voting 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
 ]
 
 [[package]]
@@ -453,11 +530,12 @@ dependencies = [
 [[package]]
 name = "cw20-stake"
 version = "0.2.6"
-source = "git+https://github.com/DA0-DA0/dao-contracts.git?tag=v1.0.0#e531c760a5d057329afd98d62567aaa4dca2c96f"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
 dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-controllers",
+ "cw-core 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw-storage-plus 0.13.4",
  "cw-utils 0.13.4",
  "cw2 0.13.4",
@@ -476,7 +554,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-controllers",
- "cw-core",
+ "cw-core 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
  "cw-storage-plus 0.13.4",
  "cw-utils 0.13.4",
  "cw2 0.13.4",
@@ -490,18 +568,18 @@ dependencies = [
 [[package]]
 name = "cw20-staked-balance-voting"
 version = "0.1.0"
-source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
 dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-core-interface",
- "cw-core-macros",
+ "cw-core-interface 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "cw-core-macros 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw-storage-plus 0.13.4",
  "cw-utils 0.13.4",
  "cw2 0.13.4",
  "cw20",
  "cw20-base",
- "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "schemars",
  "serde",
  "thiserror",
@@ -734,6 +812,18 @@ dependencies = [
 [[package]]
 name = "indexable-hooks"
 version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
+dependencies = [
+ "cosmwasm-std",
+ "cw-storage-plus 0.13.4",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "indexable-hooks"
+version = "0.1.0"
 source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
 dependencies = [
  "cosmwasm-std",
@@ -814,10 +904,21 @@ dependencies = [
 [[package]]
 name = "proposal-hooks"
 version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
+dependencies = [
+ "cosmwasm-std",
+ "indexable-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "schemars",
+ "serde",
+]
+
+[[package]]
+name = "proposal-hooks"
+version = "0.1.0"
 source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
 dependencies = [
  "cosmwasm-std",
- "indexable-hooks",
+ "indexable-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
  "schemars",
  "serde",
 ]
@@ -1133,15 +1234,15 @@ dependencies = [
  "assert_matches",
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-core",
+ "cw-core 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw-multi-test",
- "cw-proposal-single",
+ "cw-proposal-single 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw-storage-plus 0.13.4",
  "cw-utils 0.13.4",
  "cw1",
  "cw2 0.13.4",
  "cw20",
- "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw20-staked-balance-voting",
  "cw3",
  "cw3-fixed-multisig",
@@ -1158,7 +1259,7 @@ dependencies = [
  "vectis-proxy",
  "vectis-remote-tunnel",
  "vectis-wallet",
- "voting",
+ "voting 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
 ]
 
 [[package]]
@@ -1172,7 +1273,7 @@ dependencies = [
  "cw2 0.13.4",
  "thiserror",
  "vectis-wallet",
- "voting",
+ "voting 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
 ]
 
 [[package]]
@@ -1189,7 +1290,7 @@ dependencies = [
  "cw1",
  "cw2 0.13.4",
  "cw20",
- "cw20-stake 0.2.6 (git+https://github.com/DA0-DA0/dao-contracts.git?tag=v1.0.0)",
+ "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "cw3",
  "cw3-fixed-multisig",
  "derivative",
@@ -1213,7 +1314,7 @@ dependencies = [
  "cw1",
  "cw2 0.13.4",
  "cw20",
- "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
+ "cw20-stake 0.2.6 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
  "derivative",
  "hex",
  "thiserror",
@@ -1258,7 +1359,7 @@ dependencies = [
  "bech32",
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-proposal-single",
+ "cw-proposal-single 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
  "cw-utils 0.13.4",
  "cw2 0.13.4",
  "cw20",
@@ -1279,12 +1380,34 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "vote-hooks"
 version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
+dependencies = [
+ "cosmwasm-std",
+ "indexable-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a)",
+ "schemars",
+ "serde",
+]
+
+[[package]]
+name = "vote-hooks"
+version = "0.1.0"
 source = "git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7#be92da6edb8bee49a7bc8029cb8683805dd10240"
 dependencies = [
  "cosmwasm-std",
- "indexable-hooks",
+ "indexable-hooks 0.1.0 (git+https://github.com/nymlab/dao-contracts?rev=be92da6edb8bee49a7)",
  "schemars",
  "serde",
+]
+
+[[package]]
+name = "voting"
+version = "0.1.0"
+source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
+dependencies = [
+ "cosmwasm-std",
+ "schemars",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

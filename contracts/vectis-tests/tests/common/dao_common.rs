@@ -103,7 +103,7 @@ impl DaoChainSuite {
                                 address: govec.to_string(),
                                 staking_contract: StakingInfo::New {
                                     staking_code_id: stake_id,
-                                    unstaking_duration: None,
+                                    unstaking_duration: Some(Duration::Height(5)),
                                 },
                             },
                             active_threshold: None,
@@ -587,6 +587,21 @@ impl DaoChainSuite {
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: self.proposal.to_string(),
                 msg: to_binary(&PropQueryMsg::Proposal { proposal_id: id })?,
+            }))?;
+        Ok(r)
+    }
+
+    pub fn query_staked_balance_at_height(
+        &self,
+        address: String,
+        height: Option<u64>,
+    ) -> Result<StakedBalanceAtHeightResponse, StdError> {
+        let r = self
+            .app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: self.cw20_stake.to_string(),
+                msg: to_binary(&StakeQueryMsg::StakedBalanceAtHeight { address, height })?,
             }))?;
         Ok(r)
     }
