@@ -48,5 +48,5 @@ cw-multi-test = { version = "0.13.2" }
 secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}
 cw3 = "0.13"
 cw3-fixed-multisig = { version = "0.13", features = ["library"] }
-cw20-stake = { git = "https://github.com/DA0-DA0/dao-contracts.git", tag = "v1.0.0", features = ['library'] }
+cw20-stake = { git = "https://github.com/nymlab/dao-contracts.git", features = ['library'], rev="1383ecb2162968a" }
 vectis-proxy = { path = "../proxy", features = ["migration", "library"]}

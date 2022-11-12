@@ -42,10 +42,10 @@ hex = { version = "0.4", default-features = false }
 cosmwasm-schema = { version = "1.0.0" }
 secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}
 vectis-wallet = { path = "../../packages/vectis" }
-cw20-stake = {git = "https://github.com/nymlab/dao-contracts",  rev = "be92da6edb8bee49a7"}
-cw-core = {git = "https://github.com/nymlab/dao-contracts",  rev = "be92da6edb8bee49a7"}
-cw20-staked-balance-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "be92da6edb8bee49a7"}
-cw-proposal-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "be92da6edb8bee49a7"}
-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "be92da6edb8bee49a7"}
+cw20-stake = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
+cw-core = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
+cw20-staked-balance-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
+cw-proposal-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
+voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
 cw-multi-test = { version = "0.13.2" }
 derivative = "2"

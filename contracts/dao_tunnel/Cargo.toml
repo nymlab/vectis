@@ -32,4 +32,4 @@ thiserror = { version = "1.0.37" }
 vectis-wallet = {path = "../../packages/vectis"}
 
 [dev-dependencies]
-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "be92da6edb8bee49a7"}
+voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
