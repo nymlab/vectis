@@ -33,7 +33,13 @@ export interface RemoteTunnelReadOnlyInterface {
     contractAddress: string;
     daoConfig: () => Promise<DaoConfig>;
     chainConfig: () => Promise<ChainConfigResponse>;
-    ibcTransferChannels: ({ limit, startFrom }: { limit?: number; startFrom?: string }) => Promise<IbcTransferChannels>;
+    ibcTransferChannels: ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: string;
+    }) => Promise<IbcTransferChannels>;
     nextJobId: () => Promise<Uint64>;
 }
 export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
@@ -61,15 +67,15 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
     };
     ibcTransferChannels = async ({
         limit,
-        startFrom,
+        startAfter,
     }: {
         limit?: number;
-        startFrom?: string;
+        startAfter?: string;
     }): Promise<IbcTransferChannels> => {
         return this.client.queryContractSmart(this.contractAddress, {
             ibc_transfer_channels: {
                 limit,
-                start_from: startFrom,
+                start_after: startAfter,
             },
         });
     };

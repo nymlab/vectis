@@ -112,6 +112,12 @@ export type QueryMsg =
           };
       }
     | {
+          pending_govec_claim_wallets: {
+              limit?: number | null;
+              start_after?: string | null;
+          };
+      }
+    | {
           claim_expiration: {
               wallet: string;
           };
@@ -147,6 +153,7 @@ export type Expiration =
       };
 export type Timestamp = Uint64;
 export type Uint64 = string;
+export type ArrayOfAddr = Addr[];
 export interface UnclaimedWalletList {
     wallets: [Addr, Expiration][];
 }

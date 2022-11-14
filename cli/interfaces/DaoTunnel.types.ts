@@ -5,8 +5,13 @@
  */
 
 export interface InstantiateMsg {
+    denom: string;
     govec_minter: string;
+    init_ibc_transfer_mods?: IbcTransferChannels | null;
     init_remote_tunnels?: RemoteTunnels | null;
+}
+export interface IbcTransferChannels {
+    endpoints: [string, string][];
 }
 export interface RemoteTunnels {
     tunnels: [string, string][];
@@ -32,6 +37,17 @@ export type ExecuteMsg =
     | {
           update_govec_addr: {
               new_addr: string;
+          };
+      }
+    | {
+          update_ibc_transfer_reciever_channel: {
+              channel_id?: string | null;
+              connection_id: string;
+          };
+      }
+    | {
+          ibc_transfer: {
+              receiver: Receiver;
           };
       }
     | {
@@ -183,6 +199,10 @@ export type GovMsg = {
     };
 };
 export type VoteOption = "yes" | "no" | "abstain" | "no_with_veto";
+export interface Receiver {
+    addr: string;
+    connection_id: string;
+}
 export interface DaoConfig {
     addr: string;
     connection_id: string;
@@ -230,6 +250,12 @@ export type QueryMsg =
       }
     | {
           dao: {};
+      }
+    | {
+          ibc_transfer_channels: {
+              limit?: number | null;
+              start_after?: string | null;
+          };
       };
 export type Nullable_Addr = Addr | null;
 export type Addr = string;

@@ -7,13 +7,29 @@
     "title": "InstantiateMsg",
     "type": "object",
     "required": [
+      "denom",
       "govec_minter"
     ],
     "properties": {
-      "govec_minter": {
+      "denom": {
         "type": "string"
       },
+      "govec_minter": {
+        "description": "Govec contract address",
+        "type": "string"
+      },
+      "init_ibc_transfer_mods": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/IbcTransferChannels"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "init_remote_tunnels": {
+        "description": "Any remote tunnel endpoints to be included initially No channels has been established",
         "anyOf": [
           {
             "$ref": "#/definitions/RemoteTunnels"
@@ -26,6 +42,33 @@
     },
     "additionalProperties": false,
     "definitions": {
+      "IbcTransferChannels": {
+        "description": "Returned when IBC_TRANSFER_MODULES are queried",
+        "type": "object",
+        "required": [
+          "endpoints"
+        ],
+        "properties": {
+          "endpoints": {
+            "description": "(connection_id, channel_id) The channel_id are for channel already established",
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "RemoteTunnels": {
         "type": "object",
         "required": [
@@ -33,6 +76,7 @@
         ],
         "properties": {
           "tunnels": {
+            "description": "These are endpoints to other remote-tunnel contracts (connection_id, port_id)",
             "type": "array",
             "items": {
               "type": "array",
@@ -147,6 +191,56 @@
             "properties": {
               "new_addr": {
                 "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "The connections and channel_id this chain supports and voted in by the DAO",
+        "type": "object",
+        "required": [
+          "update_ibc_transfer_reciever_channel"
+        ],
+        "properties": {
+          "update_ibc_transfer_reciever_channel": {
+            "type": "object",
+            "required": [
+              "connection_id"
+            ],
+            "properties": {
+              "channel_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "connection_id": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Transfer native tokens to another chain Fund amount is forward from the MessageInfo.funds",
+        "type": "object",
+        "required": [
+          "ibc_transfer"
+        ],
+        "properties": {
+          "ibc_transfer": {
+            "type": "object",
+            "required": [
+              "receiver"
+            ],
+            "properties": {
+              "receiver": {
+                "$ref": "#/definitions/Receiver"
               }
             },
             "additionalProperties": false
@@ -725,6 +819,22 @@
           }
         }
       },
+      "Receiver": {
+        "type": "object",
+        "required": [
+          "addr",
+          "connection_id"
+        ],
+        "properties": {
+          "addr": {
+            "type": "string"
+          },
+          "connection_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "Timestamp": {
         "description": "A point in time in nanosecond precision.\n\nThis type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.\n\n## Examples\n\n``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);\n\nlet ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```",
         "allOf": [
@@ -1038,6 +1148,35 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "ibc_transfer_channels"
+        ],
+        "properties": {
+          "ibc_transfer_channels": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "uint32",
+                "minimum": 0.0
+              },
+              "start_after": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ]
   },
@@ -1053,6 +1192,7 @@
       ],
       "properties": {
         "tunnels": {
+          "description": "These are endpoints to other remote-tunnel contracts (connection_id, port_id)",
           "type": "array",
           "items": {
             "type": "array",
@@ -1106,6 +1246,35 @@
           "type": "string"
         }
       }
+    },
+    "ibc_transfer_channels": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "IbcTransferChannels",
+      "description": "Returned when IBC_TRANSFER_MODULES are queried",
+      "type": "object",
+      "required": [
+        "endpoints"
+      ],
+      "properties": {
+        "endpoints": {
+          "description": "(connection_id, channel_id) The channel_id are for channel already established",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "maxItems": 2,
+            "minItems": 2
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

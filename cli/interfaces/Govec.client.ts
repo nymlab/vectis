@@ -24,6 +24,7 @@ import {
     DownloadLogoResponse,
     Nullable_BalanceResponse,
     MintResponse,
+    String,
     TokenInfoResponse,
 } from "./Govec.types";
 export interface GovecReadOnlyInterface {
@@ -39,6 +40,7 @@ export interface GovecReadOnlyInterface {
     allAccounts: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<AllAccountsResponse>;
     marketingInfo: () => Promise<MarketingInfoResponse>;
     downloadLogo: () => Promise<DownloadLogoResponse>;
+    tokenContract: () => Promise<String>;
 }
 export class GovecQueryClient implements GovecReadOnlyInterface {
     client: CosmWasmClient;
@@ -58,6 +60,7 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
         this.allAccounts = this.allAccounts.bind(this);
         this.marketingInfo = this.marketingInfo.bind(this);
         this.downloadLogo = this.downloadLogo.bind(this);
+        this.tokenContract = this.tokenContract.bind(this);
     }
 
     balance = async ({ address }: { address: string }): Promise<BalanceResponse> => {
@@ -128,6 +131,11 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
             download_logo: {},
         });
     };
+    tokenContract = async (): Promise<String> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            token_contract: {},
+        });
+    };
 }
 export interface GovecInterface extends GovecReadOnlyInterface {
     contractAddress: string;
@@ -141,6 +149,18 @@ export interface GovecInterface extends GovecReadOnlyInterface {
             amount: Uint128;
             recipient: string;
             relayedFrom?: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    proposalTransfer: (
+        {
+            deposit,
+            proposer,
+        }: {
+            deposit: Uint128;
+            proposer: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -229,6 +249,7 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
         this.sender = sender;
         this.contractAddress = contractAddress;
         this.transfer = this.transfer.bind(this);
+        this.proposalTransfer = this.proposalTransfer.bind(this);
         this.burn = this.burn.bind(this);
         this.send = this.send.bind(this);
         this.mint = this.mint.bind(this);
@@ -260,6 +281,32 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
                     amount,
                     recipient,
                     relayed_from: relayedFrom,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    proposalTransfer = async (
+        {
+            deposit,
+            proposer,
+        }: {
+            deposit: Uint128;
+            proposer: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                proposal_transfer: {
+                    deposit,
+                    proposer,
                 },
             },
             fee,

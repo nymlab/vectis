@@ -42,6 +42,12 @@ export type ExecuteMsg =
           };
       }
     | {
+          proposal_transfer: {
+              deposit: Uint128;
+              proposer: string;
+          };
+      }
+    | {
           burn: {
               relayed_from?: string | null;
           };
@@ -150,6 +156,9 @@ export type QueryMsg =
       }
     | {
           download_logo: {};
+      }
+    | {
+          token_contract: {};
       };
 export interface AllAccountsResponse {
     accounts: string[];
@@ -169,6 +178,7 @@ export interface MintResponse {
     cap?: Uint128 | null;
     minters?: string[] | null;
 }
+export type String = string;
 export interface TokenInfoResponse {
     decimals: number;
     name: string;

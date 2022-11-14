@@ -61,10 +61,9 @@ export type GovecExecuteMsg =
           };
       }
     | {
-          transfer_from: {
-              amount: Uint128;
-              owner: string;
-              recipient: string;
+          proposal_transfer: {
+              deposit: Uint128;
+              proposer: string;
           };
       }
     | {
@@ -201,7 +200,7 @@ export type QueryMsg =
     | {
           ibc_transfer_channels: {
               limit?: number | null;
-              start_from?: string | null;
+              start_after?: string | null;
           };
       }
     | {
