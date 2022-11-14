@@ -8,6 +8,7 @@ import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/co
 import { StdFee } from "@cosmjs/amino";
 import {
     InstantiateMsg,
+    IbcTransferChannels,
     RemoteTunnels,
     ExecuteMsg,
     DaoTunnelPacketMsg,
@@ -22,6 +23,7 @@ import {
     WasmMsg,
     GovMsg,
     VoteOption,
+    Receiver,
     DaoConfig,
     ChainConfig,
     WalletFactoryInstantiateMsg,
@@ -38,6 +40,13 @@ export interface DaoTunnelReadOnlyInterface {
     controllers: ({ limit, startAfter }: { limit?: number; startAfter?: string[][] }) => Promise<RemoteTunnels>;
     govec: () => Promise<Nullable_Addr>;
     dao: () => Promise<Nullable_Addr>;
+    ibcTransferChannels: ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: string;
+    }) => Promise<IbcTransferChannels>;
 }
 export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
     client: CosmWasmClient;
@@ -49,6 +58,7 @@ export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
         this.controllers = this.controllers.bind(this);
         this.govec = this.govec.bind(this);
         this.dao = this.dao.bind(this);
+        this.ibcTransferChannels = this.ibcTransferChannels.bind(this);
     }
 
     controllers = async ({
@@ -73,6 +83,20 @@ export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
     dao = async (): Promise<Nullable_Addr> => {
         return this.client.queryContractSmart(this.contractAddress, {
             dao: {},
+        });
+    };
+    ibcTransferChannels = async ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: string;
+    }): Promise<IbcTransferChannels> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            ibc_transfer_channels: {
+                limit,
+                start_after: startAfter,
+            },
         });
     };
 }
@@ -123,6 +147,28 @@ export interface DaoTunnelInterface extends DaoTunnelReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    updateIbcTransferRecieverChannel: (
+        {
+            channelId,
+            connectionId,
+        }: {
+            channelId?: string;
+            connectionId: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    ibcTransfer: (
+        {
+            receiver,
+        }: {
+            receiver: Receiver;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
     dispatchActionOnRemoteTunnel: (
         {
             channelId,
@@ -152,6 +198,8 @@ export class DaoTunnelClient extends DaoTunnelQueryClient implements DaoTunnelIn
         this.removeApprovedController = this.removeApprovedController.bind(this);
         this.updateDaoAddr = this.updateDaoAddr.bind(this);
         this.updateGovecAddr = this.updateGovecAddr.bind(this);
+        this.updateIbcTransferRecieverChannel = this.updateIbcTransferRecieverChannel.bind(this);
+        this.ibcTransfer = this.ibcTransfer.bind(this);
         this.dispatchActionOnRemoteTunnel = this.dispatchActionOnRemoteTunnel.bind(this);
     }
 
@@ -246,6 +294,55 @@ export class DaoTunnelClient extends DaoTunnelQueryClient implements DaoTunnelIn
             {
                 update_govec_addr: {
                     new_addr: newAddr,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateIbcTransferRecieverChannel = async (
+        {
+            channelId,
+            connectionId,
+        }: {
+            channelId?: string;
+            connectionId: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_ibc_transfer_reciever_channel: {
+                    channel_id: channelId,
+                    connection_id: connectionId,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    ibcTransfer = async (
+        {
+            receiver,
+        }: {
+            receiver: Receiver;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                ibc_transfer: {
+                    receiver,
                 },
             },
             fee,

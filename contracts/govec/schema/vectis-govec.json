@@ -192,6 +192,32 @@
         "additionalProperties": false
       },
       {
+        "description": "This is implemented such that the sender MUST be a DAO proposal module The recipient will always be the sender, aka the proposal contract called by `get_deposit_msg` required interface in proposal_single",
+        "type": "object",
+        "required": [
+          "proposal_transfer"
+        ],
+        "properties": {
+          "proposal_transfer": {
+            "type": "object",
+            "required": [
+              "deposit",
+              "proposer"
+            ],
+            "properties": {
+              "deposit": {
+                "$ref": "#/definitions/Uint128"
+              },
+              "proposer": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
         "description": "Burn is a base message to destroy tokens forever Logic checks that caller only has exactly 1 vote token in their balance",
         "type": "object",
         "required": [
@@ -490,6 +516,18 @@
               }
             },
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "proposal"
+            ],
+            "properties": {
+              "proposal": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
           }
         ]
       }
@@ -679,6 +717,20 @@
         ],
         "properties": {
           "download_logo": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Required by `cw-proposal-single` for instantiation if deposit for proposal is required see https://github.com/nymlab/dao-contracts/tree/v1.0.0-vectis/contracts/cw-proposal-single#proposal-deposits",
+        "type": "object",
+        "required": [
+          "token_contract"
+        ],
+        "properties": {
+          "token_contract": {
             "type": "object",
             "additionalProperties": false
           }
@@ -906,6 +958,11 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Addr",
       "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
+    },
+    "token_contract": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "String",
       "type": "string"
     },
     "token_info": {

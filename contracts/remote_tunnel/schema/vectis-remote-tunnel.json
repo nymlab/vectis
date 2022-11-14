@@ -92,6 +92,7 @@
         "additionalProperties": false
       },
       "IbcTransferChannels": {
+        "description": "Returned when IBC_TRANSFER_MODULES are queried",
         "type": "object",
         "required": [
           "endpoints"
@@ -431,27 +432,23 @@
             "additionalProperties": false
           },
           {
-            "description": "This is implemented such that the sender MUST be a DAO proposal module The recipient will always be the sender This matches the cw_proposal_single `get_deposit_msg` required interface",
+            "description": "This is implemented such that the sender MUST be a DAO proposal module The recipient will always be the sender, aka the proposal contract called by `get_deposit_msg` required interface in proposal_single",
             "type": "object",
             "required": [
-              "transfer_from"
+              "proposal_transfer"
             ],
             "properties": {
-              "transfer_from": {
+              "proposal_transfer": {
                 "type": "object",
                 "required": [
-                  "amount",
-                  "owner",
-                  "recipient"
+                  "deposit",
+                  "proposer"
                 ],
                 "properties": {
-                  "amount": {
+                  "deposit": {
                     "$ref": "#/definitions/Uint128"
                   },
-                  "owner": {
-                    "type": "string"
-                  },
-                  "recipient": {
+                  "proposer": {
                     "type": "string"
                   }
                 },
@@ -880,7 +877,7 @@
                 "format": "uint32",
                 "minimum": 0.0
               },
-              "start_from": {
+              "start_after": {
                 "type": [
                   "string",
                   "null"
@@ -975,6 +972,7 @@
     "ibc_transfer_channels": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "IbcTransferChannels",
+      "description": "Returned when IBC_TRANSFER_MODULES are queried",
       "type": "object",
       "required": [
         "endpoints"

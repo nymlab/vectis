@@ -25,6 +25,7 @@ import {
     Expiration,
     Timestamp,
     Uint64,
+    ArrayOfAddr,
     UnclaimedWalletList,
 } from "./Factory.types";
 export interface FactoryReadOnlyInterface {
@@ -36,6 +37,7 @@ export interface FactoryReadOnlyInterface {
         limit?: number;
         startAfter?: string;
     }) => Promise<UnclaimedWalletList>;
+    pendingGovecClaimWallets: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<ArrayOfAddr>;
     claimExpiration: ({ wallet }: { wallet: string }) => Promise<Expiration>;
     totalCreated: () => Promise<Uint64>;
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<Uint64>;
@@ -51,6 +53,7 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.unclaimedGovecWallets = this.unclaimedGovecWallets.bind(this);
+        this.pendingGovecClaimWallets = this.pendingGovecClaimWallets.bind(this);
         this.claimExpiration = this.claimExpiration.bind(this);
         this.totalCreated = this.totalCreated.bind(this);
         this.codeId = this.codeId.bind(this);
@@ -68,6 +71,20 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
     }): Promise<UnclaimedWalletList> => {
         return this.client.queryContractSmart(this.contractAddress, {
             unclaimed_govec_wallets: {
+                limit,
+                start_after: startAfter,
+            },
+        });
+    };
+    pendingGovecClaimWallets = async ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: string;
+    }): Promise<ArrayOfAddr> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            pending_govec_claim_wallets: {
                 limit,
                 start_after: startAfter,
             },
