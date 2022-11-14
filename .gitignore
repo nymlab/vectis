@@ -30,3 +30,6 @@
 
 # cache folders
 **/.cache
+
+# env
+.env
