@@ -5,13 +5,6 @@ set -e
 NODE_1=`docker ps -a --format="{{.Names}}" | grep juno_local | awk '{print $1}'`
 NODE_2=`docker ps -a --format="{{.Names}}" | grep wasm_local | awk '{print $1}'`
 
-echo "👀 Checking and setting up requirements on your machine..."
-
-if [[ `command -v docker` == "" ]]; then
-echo "Installing relayer from @confio/relayer"
-npm install -g @confio/relayer
-fi
-
 if [[ "$NODE_1" != "" ]]; then
 echo "Removing existing node container $NODE_1"
 docker rm -f $NODE_1 > /dev/null;
