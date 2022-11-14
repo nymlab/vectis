@@ -80,33 +80,35 @@ cargo test
 
 ### Runner Options
 
-#### Docker Vectis Image
+#### Docker Images
 
-```bash
-docker run -d --name vectis_node -p 1317:1317 -p 26656:26656 -p 26657:26657 ghcr.io/nymlab/vectis:main
+##### 1. Set Environment
+
+Please ensure you have set up the `.env` file according to the `example.env`. <br>
+You should check supported chains in ``cli/config/chains`` directory.
+
+```sh
+make ibc-nodes
+```
+##### 2. Compile Contracts
+
+```sh
+make build
 ```
 
-#### Docker Local Node
+##### 3. Upload and Instantiate Contracts
 
-##### 1. Set env variable
-
-You must create an .env file from example.env template and define NETWORK env variable.
-
-Supported networks are: `juno_local` `juno_testnet` `wasmd_local` `wasmd_testnet`
-
-##### 2. Run Script
-
-In scripts folder there is a script called `./local-node-setup.sh` which will spin up a wasmd or juno container and run the setup script to seed some accounts, then compile Rust contracts and run the E2E spec to deploy contracts and test functionalities. When everything is done, you can use the local node on your machine.
-
-The script will check if you have both Docker and Rust installed. In case you haven't, a link will be shown to install said dependencies.
-
+```sh
+make deploy
+```
+After upload and deploy contracts it will check the contract have the right checksum and the contracts have DAO as admin.
 #### Native Local Node
 
 ##### Juno Option
 
 ###### Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
 
-> **Note:** this requires you to do a setup script to seed the accounts use for cli test/utils folder specified in the `.env`
+> **Note:** this requires you to do a setup script to seed the accounts use for cli.
 
 ##### Wasmd Option
 
@@ -133,24 +135,12 @@ wasmd version
 ##### 2. Compile smart contracts
 
 ```sh
-./scripts/build.sh
+make build
 ```
 
 ### Interacting with the blockchain
 
-We are using [CosmJS](https://github.com/cosmos/cosmjs) to test the smart contracts.
-The testing framework used is [Jest](https://jestjs.io/)
-The CLI is in the `cli` directory.
-
-Please ensure you have set up the `.env` file according to the `example.env`.
-
-> Note: _The tests include storing and instantiating the contracts_
-
-```sh
-cd cli
-npm i           # Install all dependencies
-npm test        # Run tests
-```
+We are using [CosmJS](https://github.com/cosmos/cosmjs) to interact with the smart contracts and [Jest](https://jestjs.io/) as testing framework for client-side tests.
 
 ### Deployment
 
