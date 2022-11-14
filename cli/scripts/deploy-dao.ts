@@ -6,7 +6,7 @@ import RemoteTunnelClient from "../clients/remote-tunnel";
 import { delay } from "../utils/promises";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeInCacheFolder } from "../utils/fs";
-import { hostChainName, remoteChainName, uploadReportPath } from "../utils/constants";
+import { hostChain, hostChainName, remoteChainName, uploadReportPath } from "../utils/constants";
 
 import type { DaoTunnelT, GovecT, ProxyT } from "../interfaces";
 import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -108,6 +108,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
     // Admin propose and execute dao deploy dao tunnel
     const daoTunnelInstMsg: DaoTunnelT.InstantiateMsg = {
+        denom: "",
         govec_minter: govecAddr,
         init_remote_tunnels: { tunnels: [] },
     };
@@ -145,7 +146,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         },
         chain_config: {
             remote_factory: null,
-            denom: "",
+            denom: hostChain.feeToken,
         },
         init_ibc_transfer_mod: null,
     });
