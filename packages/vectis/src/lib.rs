@@ -1,7 +1,7 @@
 pub use crate::error::{IbcError, MigrationMsgError, RelayTxError};
 pub use crate::factory::{
-    CodeIdType, CreateWalletMsg, MultiSig, ProxyMigrateMsg, ProxyMigrationTxMsg,
-    ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
+    CodeIdType, CreateWalletMsg, FeesResponse, MultiSig, ProxyMigrateMsg, ProxyMigrationTxMsg,
+    ThresholdAbsoluteCount, UnclaimedWalletList, UpdateFeeReq, WalletFactoryExecuteMsg,
     WalletFactoryInstantiateMsg, WalletFactoryQueryMsg,
 };
 pub use crate::govec::{

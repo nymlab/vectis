@@ -75,8 +75,10 @@ pub struct WalletFactoryInstantiateMsg {
     pub proxy_multisig_code_id: u64,
     /// Chain address prefix
     pub addr_prefix: String,
-    /// Fee in native token to be sent to Admin (DAO)
+    /// Fee for wallet creation in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
+    /// Fee for claim govec in native token to be sent to Admin (DAO)
+    pub claim_fee: Coin,
     /// Governance Token, Govec, address
     pub govec_minter: Option<String>,
 }
@@ -94,8 +96,8 @@ pub enum WalletFactoryExecuteMsg {
         ty: CodeIdType,
         new_code_id: u64,
     },
-    UpdateWalletFee {
-        new_fee: Coin,
+    UpdateConfigFee {
+        new_fee: UpdateFeeReq,
     },
     UpdateGovecAddr {
         addr: String,
@@ -144,14 +146,26 @@ pub enum WalletFactoryQueryMsg {
     TotalCreated {},
     #[returns(u64)]
     CodeId { ty: CodeIdType },
-    /// Returns the fee required to create a wallet
+    /// Returns the fees required to create a wallet and claim govec
     /// Fee goes to the DAO
-    #[returns(Coin)]
-    Fee {},
+    #[returns(FeesResponse)]
+    Fees {},
     /// Returns the address of the Govec Voting Tokens Contract
     #[returns(Addr)]
     GovecAddr {},
     /// Returns the address of the DAO which holds the admin role of this contract
     #[returns(Addr)]
     DaoAddr {},
+}
+
+#[cw_serde]
+pub enum UpdateFeeReq {
+    Wallet(Coin),
+    Claim(Coin),
+}
+
+#[cw_serde]
+pub struct FeesResponse {
+    pub wallet_fee: Coin,
+    pub claim_fee: Coin,
 }

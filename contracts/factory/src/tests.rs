@@ -1,12 +1,13 @@
 #[cfg(test)]
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Coin, DepsMut};
+use vectis_wallet::UpdateFeeReq;
 
 #[cfg(feature = "dao-chain")]
 use crate::contract::query_govec_addr;
 use crate::{
     contract::{
-        execute, instantiate, query_code_id, query_dao_addr, query_fee, query_unclaim_wallet_list,
+        execute, instantiate, query_code_id, query_dao_addr, query_fees, query_unclaim_wallet_list,
         CodeIdType,
     },
     error::ContractError,
@@ -30,6 +31,7 @@ fn do_instantiate(
     proxy_multisig_code_id: u64,
     addr_prefix: &str,
     wallet_fee: Coin,
+    claim_fee: Coin,
     govec_minter: Option<&str>,
 ) {
     // we do not do integrated tests here so code ids are arbitrary
@@ -38,6 +40,7 @@ fn do_instantiate(
         proxy_multisig_code_id,
         addr_prefix: addr_prefix.to_string(),
         wallet_fee,
+        claim_fee,
         govec_minter: govec_minter.map(|s| s.to_string()),
     };
     let info = mock_info("admin", &[]);
@@ -53,7 +56,15 @@ fn do_instantiate(
 fn initialise_with_no_wallets() {
     let mut deps = mock_dependencies();
 
-    do_instantiate(deps.as_mut(), 0, 1, "wasm", coin(1, "ucosm"), None);
+    do_instantiate(
+        deps.as_mut(),
+        0,
+        1,
+        "wasm",
+        coin(1, "ucosm"),
+        coin(1, "ucosm"),
+        None,
+    );
 
     // no wallets to start
     let wallets: UnclaimedWalletList =
@@ -71,6 +82,7 @@ fn admin_upgrade_code_id_works() {
         initial_code_id,
         initial_code_id + 1,
         "wasm",
+        coin(1, "ucosm"),
         coin(1, "ucosm"),
         None,
     );
@@ -109,34 +121,54 @@ fn admin_upgrade_code_id_works() {
 
 #[test]
 fn admin_update_fee_works() {
-    let fee = coin(1, "ucosm");
     let mut deps = mock_dependencies();
+    let info = mock_info("admin", &[]);
+    let env = mock_env();
     let initial_code_id = 1111;
+    let wallet_fee = coin(1, "ucosm");
+    let claim_fee = coin(2, "ucosm");
+
     do_instantiate(
         deps.as_mut(),
         initial_code_id,
         initial_code_id,
         "wasm",
-        fee.clone(),
+        wallet_fee.clone(),
+        claim_fee.clone(),
         None,
     );
-    let old_fee = query_fee(deps.as_ref()).unwrap();
-    assert_eq!(old_fee, fee);
 
-    let info = mock_info("admin", &[]);
-    let env = mock_env();
-    let new_update_fee = coin(3, "ucosm");
-    let msg = ExecuteMsg::UpdateWalletFee {
-        new_fee: new_update_fee.clone(),
+    let fees = query_fees(deps.as_ref()).unwrap();
+    assert_eq!(fees.wallet_fee, wallet_fee);
+    assert_eq!(fees.claim_fee, claim_fee);
+
+    let new_wallet_fee = coin(3, "ucosm");
+    let msg = ExecuteMsg::UpdateConfigFee {
+        new_fee: UpdateFeeReq::Wallet(new_wallet_fee.clone()),
     };
-    let response = execute(deps.as_mut(), env, info, msg).unwrap();
+
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
         response.attributes,
         [("config", "Wallet Fee"), ("New Fee", "3ucosm")]
     );
 
-    let new_fee = query_fee(deps.as_ref()).unwrap();
-    assert_eq!(new_fee, new_update_fee);
+    let fees = query_fees(deps.as_ref()).unwrap();
+    assert_eq!(fees.wallet_fee, new_wallet_fee);
+
+    let new_claim_fee = coin(25, "ucosm");
+    let msg = ExecuteMsg::UpdateConfigFee {
+        new_fee: UpdateFeeReq::Claim(new_claim_fee.clone()),
+    };
+
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(
+        response.attributes,
+        [("config", "Claim Fee"), ("New Fee", "25ucosm")]
+    );
+
+    let fees = query_fees(deps.as_ref()).unwrap();
+    assert_eq!(fees.claim_fee, new_claim_fee);
 }
 
 #[test]
@@ -150,10 +182,9 @@ fn admin_updates_addresses_work() {
         initial_code_id,
         "wasm",
         fee.clone(),
+        coin(1, "ucosm"),
         None,
     );
-    let old_fee = query_fee(deps.as_ref()).unwrap();
-    assert_eq!(old_fee, fee);
 
     let info = mock_info("admin", &[]);
     let env = mock_env();
@@ -232,6 +263,7 @@ fn non_admin_update_code_id_fails() {
         initial_code_id + 1,
         "wasm",
         coin(1, "ucosm"),
+        coin(1, "ucosm"),
         None,
     );
 
@@ -262,6 +294,7 @@ fn non_admin_update_fees_fails() {
         initial_code_id + 1,
         "wasm",
         coin(1, "ucosm"),
+        coin(1, "ucosm"),
         None,
     );
 
@@ -272,8 +305,8 @@ fn non_admin_update_fees_fails() {
         deps.as_mut(),
         env,
         info,
-        ExecuteMsg::UpdateWalletFee {
-            new_fee: coin(3, "ucosm"),
+        ExecuteMsg::UpdateConfigFee {
+            new_fee: UpdateFeeReq::Wallet(coin(1, "ucosm")),
         },
     )
     .unwrap_err();
@@ -293,7 +326,15 @@ fn not_found_query() {
 fn non_admin_cannot_call_minted() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    do_instantiate(deps.as_mut(), 0, 1, "wasm", coin(1, "ucosm"), None);
+    do_instantiate(
+        deps.as_mut(),
+        0,
+        1,
+        "wasm",
+        coin(1, "ucosm"),
+        coin(1, "ucosm"),
+        None,
+    );
 
     //IBC returns  success
     let err = execute(
@@ -320,6 +361,7 @@ fn handles_minted_submsg() {
         initial_code_id,
         initial_code_id + 1,
         "wasm",
+        coin(1, "ucosm"),
         coin(1, "ucosm"),
         None,
     );

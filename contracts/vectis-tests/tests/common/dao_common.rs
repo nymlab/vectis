@@ -182,6 +182,10 @@ impl DaoChainSuite {
                         denom: "ucosm".to_string(),
                         amount: Uint128::new(WALLET_FEE),
                     },
+                    claim_fee: Coin {
+                        denom: "ucosm".to_string(),
+                        amount: Uint128::new(CLAIM_FEE),
+                    },
                     govec_minter: Some(govec.to_string()),
                 },
                 &[],

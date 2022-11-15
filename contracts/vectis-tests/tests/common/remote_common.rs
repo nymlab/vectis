@@ -46,6 +46,10 @@ impl RemoteChainSuite {
                 denom: "uremote".to_string(),
                 amount: Uint128::new(WALLET_FEE),
             },
+            claim_fee: Coin {
+                amount: Uint128::one(),
+                denom: "denom".to_string(),
+            },
             govec_minter: None,
         };
 

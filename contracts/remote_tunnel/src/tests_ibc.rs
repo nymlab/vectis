@@ -277,6 +277,10 @@ fn handle_inst_factory_packet() {
             amount: Uint128::one(),
             denom: "denom".to_string(),
         },
+        claim_fee: Coin {
+            amount: Uint128::one(),
+            denom: "denom".to_string(),
+        },
     };
 
     let ibc_msg = PacketMsg {
@@ -647,7 +651,7 @@ fn handle_ack_for_non_govec_minting_packets() {
     let env = mock_env();
 
     // In the case of success
-    let ack = StdAck::success(action_id as u64);
+    let ack = StdAck::success(action_id.clone() as u64);
     let original_ibc_msg = PacketMsg {
         sender: env.contract.address.to_string(),
         job_id,
