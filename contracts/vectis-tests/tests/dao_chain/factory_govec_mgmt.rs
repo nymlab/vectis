@@ -4,7 +4,8 @@ use crate::common::dao_common::*;
 #[test]
 fn proxy_mint_govec_works() {
     let mut suite = DaoChainSuite::init().unwrap();
-
+    let dao_old_balance = suite.query_balance(&suite.dao).unwrap();
+    assert_eq!(dao_old_balance.amount, Uint128::zero());
     // Create a new wallet
     let wallet_addr = suite
         .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
@@ -14,7 +15,7 @@ fn proxy_mint_govec_works() {
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
-        funds: vec![],
+        funds: vec![coin(CLAIM_FEE, "ucosm")],
     });
 
     // Initially there is something to claim
@@ -32,12 +33,19 @@ fn proxy_mint_govec_works() {
             &ProxyExecuteMsg::Execute {
                 msgs: vec![mint_govec_msg],
             },
-            &[],
+            &[coin(CLAIM_FEE, "ucosm")],
         )
         .unwrap();
 
     let user_govec_balance = suite.query_govec_balance(&wallet_addr).unwrap();
     assert_eq!(user_govec_balance.balance, Uint128::from(MINT_AMOUNT));
+
+    // DAO should have received the claim fee and wallet fee
+    let dao_current_balance = suite.query_balance(&suite.dao).unwrap();
+    assert_eq!(
+        dao_old_balance.amount + Uint128::from(CLAIM_FEE) + Uint128::from(WALLET_FEE),
+        dao_current_balance.amount
+    );
 
     // Nothing to claim by this wallet
     let unclaimed = suite
@@ -47,7 +55,7 @@ fn proxy_mint_govec_works() {
 }
 
 #[test]
-fn non_proxy_cannot_mint_on_govec() {
+fn cannot_mint_govec_without_paying_fee() {
     let mut suite = DaoChainSuite::init().unwrap();
 
     // user mint govec
@@ -72,6 +80,31 @@ fn non_proxy_cannot_mint_on_govec() {
 }
 
 #[test]
+fn non_proxy_cannot_mint_on_govec() {
+    let mut suite = DaoChainSuite::init().unwrap();
+
+    // user mint govec
+    let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
+        contract_addr: suite.factory.to_string(),
+        msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
+        funds: vec![coin(CLAIM_FEE, "ucosm")],
+    });
+
+    suite
+        .app
+        .execute_contract(
+            suite.deployer.clone(),
+            suite.govec.clone(),
+            &mint_govec_msg,
+            &[coin(CLAIM_FEE, "ucosm")],
+        )
+        .unwrap_err();
+
+    let user_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
+    assert_eq!(user_govec_balance.balance, Uint128::zero());
+}
+
+#[test]
 fn non_proxy_cannot_mint_via_factory() {
     let mut suite = DaoChainSuite::init().unwrap();
 
@@ -86,7 +119,7 @@ fn non_proxy_cannot_mint_via_factory() {
             suite.deployer.clone(),
             suite.factory.clone(),
             &WalletFactoryExecuteMsg::ClaimGovec {},
-            &[],
+            &[coin(CLAIM_FEE, "ucosm")],
         )
         .unwrap_err();
 

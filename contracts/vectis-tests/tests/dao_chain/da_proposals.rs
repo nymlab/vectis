@@ -43,7 +43,7 @@ fn with_govec_can_propose() {
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&FactoryExecuteMsg::ClaimGovec {}).unwrap(),
-        funds: vec![],
+        funds: vec![coin(CLAIM_FEE, "ucosm")],
     });
 
     // User execute proxy to claim govec
@@ -55,7 +55,7 @@ fn with_govec_can_propose() {
             &ProxyExecuteMsg::Execute {
                 msgs: vec![mint_govec_msg],
             },
-            &[],
+            &[coin(CLAIM_FEE, "ucosm")],
         )
         .unwrap();
 
