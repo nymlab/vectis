@@ -279,16 +279,20 @@ pub fn execute_burn(
 pub enum Role {
     Factory,
     DaoTunnel,
+    Dao,
 }
 
 fn ensure_is_minter(deps: Deps, sender: Addr) -> Result<Role, ContractError> {
-    let d = DAO_TUNNEL.load(deps.storage)?;
+    let d = DAO_ADDR.load(deps.storage)?;
+    let t = DAO_TUNNEL.load(deps.storage)?;
     let f = FACTORY.load(deps.storage)?;
     let s = deps.api.addr_canonicalize(sender.as_str())?;
-    if s == d {
+    if s == t {
         Ok(Role::DaoTunnel)
     } else if s == f {
         Ok(Role::Factory)
+    } else if s == d {
+        Ok(Role::Dao)
     } else {
         Err(ContractError::Unauthorized {})
     }
