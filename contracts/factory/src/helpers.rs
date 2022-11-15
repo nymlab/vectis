@@ -1,13 +1,13 @@
 #[cfg(feature = "dao-chain")]
 use crate::contract::GOVEC_REPLY_ID;
-use crate::error::ContractError;
 #[cfg(feature = "dao-chain")]
 use crate::state::GOVEC_MINTER;
 use crate::state::{ADDR_PREFIX, DAO, GOVEC_CLAIM_LIST};
+use crate::{error::ContractError, state::CLAIM_FEE};
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Response, StdResult, SubMsg,
-    Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, MessageInfo, Response, StdError,
+    StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 pub use vectis_proxy::msg::QueryMsg as ProxyQueryMsg;
@@ -17,7 +17,7 @@ pub use vectis_wallet::{
 };
 #[cfg(feature = "remote")]
 use {
-    crate::state::PENDING_CLAIM_LIST,
+    crate::state::{PENDING_CLAIM_LIST, WALLET_FEE},
     cosmwasm_std::Env,
     cw_utils::{Expiration, DAY},
     std::ops::{Add, Mul},
@@ -49,6 +49,28 @@ pub fn ensure_is_valid_threshold(guardians: &Guardians) -> Result<(), ContractEr
         _ => Ok(()),
     }
 }
+
+/// Ensure user has sent in enought funds to cover the claim fee
+pub fn ensure_is_enough_claim_fee(deps: Deps, sent_fund: &[Coin]) -> Result<(), ContractError> {
+    let claim_fee = CLAIM_FEE.load(deps.storage)?;
+
+    let fund = sent_fund
+        .iter()
+        .find(|c| c.denom == claim_fee.denom)
+        .ok_or(ContractError::Std(StdError::GenericErr {
+            msg: format!("Expected denom fee: {}", claim_fee.denom).to_string(),
+        }))?;
+
+    if fund.amount < claim_fee.amount {
+        return Err(ContractError::InvalidNativeFund(
+            claim_fee.amount,
+            fund.amount,
+        ));
+    }
+
+    Ok(())
+}
+
 /// Ensure user has sent in enough to cover the fee and the initial proxy balance
 pub fn ensure_enough_native_funds(
     fee: &Coin,
@@ -198,7 +220,19 @@ pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
 pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, ContractError> {
     let claiming_user = deps.api.addr_canonicalize(&wallet)?;
     GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+
+    let fee = CLAIM_FEE.load(deps.storage)?;
+
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: deps
+            .api
+            .addr_humanize(&DAO.load(deps.storage)?)?
+            .to_string(),
+        amount: vec![fee],
+    });
+
     let res = Response::new()
+        .add_message(msg)
         .add_attribute("action", "Govec Minted on DAO Chain")
         .add_attribute("proxy_address", wallet);
     Ok(res)
@@ -208,7 +242,16 @@ pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, Co
 pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, ContractError> {
     let claiming_user = deps.api.addr_canonicalize(&wallet)?;
     PENDING_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+
+    let fee = WALLET_FEE.load(deps.storage)?;
+
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: deps.api.addr_humanize(&DAO.load(deps.storage)?)?.into(),
+        amount: vec![fee],
+    });
+
     let res = Response::new()
+        .add_message(msg)
         .add_attribute("action", "Govec Minted on DAO Chain")
         .add_attribute("proxy_address", wallet);
     Ok(res)
@@ -226,7 +269,16 @@ pub fn handle_govec_mint_failed(
         .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
         .expect("error defining activate_at");
     GOVEC_CLAIM_LIST.save(deps.storage, claiming_user.to_vec(), &expiration)?;
+
+    let fee = CLAIM_FEE.load(deps.storage)?;
+
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: wallet.clone(),
+        amount: vec![fee],
+    });
+
     let res = Response::new()
+        .add_message(msg)
         .add_attribute("action", "Govec Mint failed on DAO Chain")
         .add_attribute("action", "Renewed Claim expiration")
         .add_attribute("proxy_address", wallet);
