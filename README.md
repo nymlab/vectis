@@ -3,8 +3,9 @@
 [![Cosmowasm 0.20.0](https://img.shields.io/badge/CosmWasm-0.20.0-green)](https://github.com/CosmWasm/wasmd/releases)
 [![codecov_img](https://img.shields.io/codecov/c/github/nymlab/vectis)](https://img.shields.io/codecov/c/github/nymlab/vectis)
 
-- [Website](https://vectis.nymlab.it/)
-- [Discord](https://discord.gg/xp3vFSAMgS)
+[![Website](https://img.shields.io/badge/WEBSITE-https%3A%2F%2Fvectis.nymlab.it%2F-green?style=for-the-badge)](https://vectis.nymlab.it/)
+
+[![Discord](https://discord.com/api/guilds/989088257323188264/widget.png?style=banner2)](https://discord.gg/xp3vFSAMgS)
 
 ## Overview
 

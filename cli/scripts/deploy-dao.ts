@@ -6,7 +6,7 @@ import RemoteTunnelClient from "../clients/remote-tunnel";
 import { delay } from "../utils/promises";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeInCacheFolder } from "../utils/fs";
-import { hostChain, hostChainName, remoteChainName, uploadReportPath } from "../utils/constants";
+import { hostChain, hostChainName, remoteChain, remoteChainName, uploadReportPath } from "../utils/constants";
 
 import type { DaoTunnelT, GovecT, ProxyT } from "../interfaces";
 import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -41,7 +41,13 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
     const relayerClient = new RelayerClient();
     const connection = await relayerClient.connect();
+    const channels = await relayerClient.loadChannels();
+    const { transfer: channelTransfer } = channels.transfer
+        ? channels
+        : await relayerClient.createChannel("transfer", "transfer", "ics20-1");
+
     console.log(connection);
+    console.log("ibc transfer channel: ", channelTransfer);
 
     const adminHostClient = await CWClient.connectHostWithAccount("admin");
     const adminRemoteClient = await CWClient.connectRemoteWithAccount("admin");
@@ -108,9 +114,9 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
     // Admin propose and execute dao deploy dao tunnel
     const daoTunnelInstMsg: DaoTunnelT.InstantiateMsg = {
-        denom: "",
+        denom: hostChain.feeToken,
         govec_minter: govecAddr,
-        init_remote_tunnels: { tunnels: [] },
+        init_ibc_transfer_mods: { endpoints: [[connection.hostConnection, channelTransfer?.src.channelId as string]] },
     };
 
     const deployDaoTunnelMsg: ProxyT.CosmosMsgForEmpty = {
@@ -145,10 +151,11 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
             connection_id: relayerClient.connections.remoteConnection,
         },
         chain_config: {
-            remote_factory: null,
-            denom: hostChain.feeToken,
+            denom: remoteChain.feeToken,
         },
-        init_ibc_transfer_mod: null,
+        init_ibc_transfer_mod: {
+            endpoints: [[connection.remoteConnection, channelTransfer?.dest.channelId as string]],
+        },
     });
 
     const remoteTunnelAddr = remoteTunnelClient.contractAddress;
@@ -176,9 +183,11 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     // Instantiate Factory in remote chain
 
     // Create channel
-    const channels = await relayerClient.createChannel(`wasm.${daoTunnelAddr}`, `wasm.${remoteTunnelAddr}`);
+    const { wasm: channelWasm } = channels.wasm
+        ? channels
+        : await relayerClient.createChannel(`wasm.${daoTunnelAddr}`, `wasm.${remoteTunnelAddr}`, "vectis-v1");
 
-    console.log(channels);
+    console.log("ibc wasm channel: ", channelWasm);
 
     // Admin propose and execute dao deploy factory remote
     const createRemoteFactoryMsg: DaoTunnelT.ExecuteMsg = {
@@ -190,7 +199,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
                     msg: FactoryClient.createFactoryInstMsg(remoteChainName, remoteProxy.codeId, remoteMultisig.codeId),
                 },
             },
-            channel_id: channels.hostChannel,
+            channel_id: channelWasm?.src.channelId as string,
         },
     };
 

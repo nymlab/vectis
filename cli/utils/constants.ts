@@ -53,6 +53,7 @@ export const configPath = path.join(__dirname, "../config");
 export const downloadContractPath = path.join(cachePath, "/contracts");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
 export const deployReportPath = path.join(cachePath, "deployInfo.json");
+export const ibcReportPath = path.join(cachePath, "ibcInfo.json");
 
 // Host Contracts
 // const vectisContractsPath = process.env.VECTIS_CW_PATH as string;

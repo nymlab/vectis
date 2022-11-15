@@ -16,6 +16,13 @@ export function writeRelayerConfig(data: unknown, fileName: string): void {
     fs.writeFileSync(path.join(configPath, "/relayer", fileName), JSON.stringify(data, null, 2));
 }
 
+export function loadIbcInfo(): Record<string, any> | null {
+    const ibcInfoPath = path.join(cachePath, "ibcInfo.json");
+    if (!fs.existsSync(ibcInfoPath)) return null;
+    const ibcInfo = fs.readFileSync(path.join(cachePath, "ibcInfo.json")).toString();
+    return ibcInfo ? JSON.parse(ibcInfo) : null;
+}
+
 export async function downloadFile(url: string, fileName: string): Promise<void> {
     const file = fs.createWriteStream(path.join(cachePath, fileName));
 
