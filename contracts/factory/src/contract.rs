@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::helpers::{
-    create_mint_msg, ensure_enough_native_funds, ensure_is_dao, ensure_is_valid_migration_msg,
-    ensure_is_valid_threshold, handle_govec_minted,
+    create_mint_msg, ensure_enough_native_funds, ensure_is_dao, ensure_is_enough_claim_fee,
+    ensure_is_valid_migration_msg, ensure_is_valid_threshold, handle_govec_minted,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
@@ -338,6 +338,7 @@ fn claim_govec_or_remove_from_list(
         GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user);
         Err(ContractError::ClaimExpired {})
     } else {
+        ensure_is_enough_claim_fee(deps.as_ref(), &info.funds);
         #[cfg(feature = "remote")]
         {
             GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user.clone());
