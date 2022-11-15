@@ -321,6 +321,7 @@ pub fn execute_mint(
         // We do validate remote wallet address with Bech32 as prefix will be different
         // Validation is done on the remote-tunnel channel
         Role::DaoTunnel => Addr::unchecked(new_wallet.clone()),
+        Role::Dao => todo!(),
     };
 
     // add amount to recipient balance

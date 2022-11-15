@@ -107,6 +107,7 @@ pub use vectis_wallet::{
 };
 
 pub const WALLET_FEE: u128 = 10u128;
+pub const CLAIM_FEE: u128 = 10u128;
 pub const MINTER_CAP: u128 = 10000;
 pub const USER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,

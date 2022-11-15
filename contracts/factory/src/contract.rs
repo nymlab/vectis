@@ -5,7 +5,8 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
 use crate::state::{
-    ADDR_PREFIX, DAO, FEE, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID, TOTAL_CREATED,
+    ADDR_PREFIX, CLAIM_FEE, DAO, GOVEC_CLAIM_LIST, PROXY_CODE_ID, PROXY_MULTISIG_CODE_ID,
+    TOTAL_CREATED, WALLET_FEE,
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env,
@@ -15,9 +16,9 @@ use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
 pub use vectis_wallet::{
-    pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, Guardians,
+    pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, FeesResponse, Guardians,
     MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
-    WalletAddr, WalletInfo, GOVEC_CLAIM_DURATION_DAY_MUL,
+    UpdateFeeReq, WalletAddr, WalletInfo, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 // use stake_cw20::msg::InstantiateMsg as StakingInstantiateMsg;
 use std::ops::{Add, Mul};
@@ -58,7 +59,8 @@ pub fn instantiate(
     PROXY_MULTISIG_CODE_ID.save(deps.storage, &msg.proxy_multisig_code_id)?;
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
-    FEE.save(deps.storage, &msg.wallet_fee)?;
+    WALLET_FEE.save(deps.storage, &msg.wallet_fee)?;
+    CLAIM_FEE.save(deps.storage, &msg.claim_fee)?;
 
     #[cfg(feature = "dao-chain")]
     if let Some(mint) = msg.govec_minter {
@@ -84,7 +86,7 @@ pub fn execute(
             migration_msg,
         } => migrate_wallet(deps, info, wallet_address, migration_msg),
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => update_code_id(deps, info, ty, new_code_id),
-        ExecuteMsg::UpdateWalletFee { new_fee } => update_wallet_fee(deps, info, new_fee),
+        ExecuteMsg::UpdateConfigFee { new_fee } => update_config_fee(deps, info, new_fee),
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec_or_remove_from_list(deps, env, info),
@@ -108,7 +110,7 @@ fn create_wallet(
     #[cfg(feature = "dao-chain")]
     ensure_has_govec(deps.as_ref())?;
 
-    let fee = FEE.load(deps.storage)?;
+    let fee = WALLET_FEE.load(deps.storage)?;
     let mut proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
     let mut multisig_initial_funds = create_wallet_msg
         .guardians
@@ -264,16 +266,29 @@ fn update_code_id(
         .add_attribute("new Id", format!("{}", new_code_id)))
 }
 
-fn update_wallet_fee(
+fn update_config_fee(
     deps: DepsMut,
     info: MessageInfo,
-    new_fee: Coin,
+    new_fee: UpdateFeeReq,
 ) -> Result<Response, ContractError> {
     ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
-    FEE.save(deps.storage, &new_fee)?;
-    Ok(Response::new()
-        .add_attribute("config", "Wallet Fee")
-        .add_attribute("New Fee", format!("{}", new_fee)))
+
+    let res = match new_fee {
+        UpdateFeeReq::Claim(fee) => {
+            CLAIM_FEE.save(deps.storage, &fee)?;
+            Response::new()
+                .add_attribute("config", "Claim Fee")
+                .add_attribute("New Fee", format!("{}", fee))
+        }
+        UpdateFeeReq::Wallet(fee) => {
+            WALLET_FEE.save(deps.storage, &fee)?;
+            Response::new()
+                .add_attribute("config", "Wallet Fee")
+                .add_attribute("New Fee", format!("{}", fee))
+        }
+    };
+
+    Ok(res)
 }
 
 #[cfg(feature = "dao-chain")]
@@ -450,16 +465,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query_wallet_claim_expiration(deps, wallet)?)
         }
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
-        QueryMsg::Fee {} => to_binary(&query_fee(deps)?),
+        QueryMsg::Fees {} => to_binary(&query_fees(deps)?),
         QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
         QueryMsg::DaoAddr {} => to_binary(&query_dao_addr(deps)?),
         QueryMsg::TotalCreated {} => to_binary(&query_total(deps)?),
     }
 }
 
-/// Returns fees required for wallet creation
-pub fn query_fee(deps: Deps) -> StdResult<Coin> {
-    FEE.load(deps.storage)
+/// Returns fees required for wallet creation and claim govec
+pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {
+    Ok(FeesResponse {
+        wallet_fee: WALLET_FEE.load(deps.storage)?,
+        claim_fee: CLAIM_FEE.load(deps.storage)?,
+    })
 }
 
 /// Returns wallets with Govec to claim with limit
