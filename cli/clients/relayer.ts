@@ -7,6 +7,7 @@ import {
     hostAccounts,
     hostChain,
     hostChainName,
+    ibcReportPath,
     remoteAccounts,
     remoteChain,
     remoteChainName,
@@ -14,14 +15,16 @@ import {
 
 import type { Chain } from "../config/chains";
 import connections from "../config/relayer/connections.json";
-import { writeRelayerConfig } from "../utils/fs";
+import { loadIbcInfo, writeInCacheFolder } from "../utils/fs";
 
 class RelayerClient {
     link: Link | null;
-    channel: ChannelPair | null;
+    wasmChannel: ChannelPair | null;
+    transferChannel: ChannelPair | null;
     constructor() {
         this.link = null;
-        this.channel = null;
+        this.wasmChannel = null;
+        this.transferChannel = null;
     }
 
     get connections(): { hostConnection: string; remoteConnection: string } {
@@ -33,27 +36,27 @@ class RelayerClient {
         };
     }
 
-    get channels(): { hostChannel: string; remoteChannel: string } {
-        if (!this.channel) throw new Error("Channel not initialized");
-
+    get channels(): { wasm: ChannelPair | null; transfer: ChannelPair | null } {
         return {
-            hostChannel: this.channel.src.channelId,
-            remoteChannel: this.channel.dest.channelId,
+            wasm: this.wasmChannel,
+            transfer: this.transferChannel,
         };
     }
 
-    backup() {
+    backupConnection() {
         if (!this.link) throw new Error("Link not initialized");
+
         const relayerConfig = {
-            [hostChainName]: {
-                [remoteChainName]: {
-                    src: this.link.endA.connectionID,
-                    dest: this.link.endB.connectionID,
-                },
-            },
+            src: this.link.endA.connectionID,
+            dest: this.link.endB.connectionID,
         };
 
-        writeRelayerConfig(Object.assign(connections, relayerConfig), "connections.json");
+        writeInCacheFolder("ibcInfo.json", JSON.stringify(relayerConfig, null, 2));
+    }
+
+    async backupChannels() {
+        const ibcInfo = loadIbcInfo();
+        writeInCacheFolder("ibcInfo.json", JSON.stringify({ ...ibcInfo, channels: this.channels }, null, 2));
     }
 
     async relayAll() {
@@ -62,11 +65,38 @@ class RelayerClient {
     }
 
     async connect() {
+        const ibcInfo = loadIbcInfo();
+
         const hostConnections = connections[hostChainName as keyof typeof connections] || {};
         const connectionsId = hostConnections[remoteChainName as keyof typeof hostConnections] as
             | { src: string; dest: string }
             | undefined;
-        return connectionsId ? this.recoverConnection(connectionsId.src, connectionsId.dest) : this.createConnection();
+
+        if (ibcInfo) {
+            return await this.recoverConnection(ibcInfo.src, ibcInfo.dest);
+        } else if (connectionsId) {
+            return await this.recoverConnection(connectionsId.src, connectionsId.dest);
+        }
+
+        return this.createConnection();
+    }
+
+    async loadChannels() {
+        const ibcInfo = loadIbcInfo();
+        const hostConnections = connections[hostChainName as keyof typeof connections] || {};
+        const connectionsInfo = hostConnections[remoteChainName as keyof typeof hostConnections] as
+            | {
+                  channels: {
+                      wasm: ChannelPair | undefined;
+                      transfer: ChannelPair | undefined;
+                  };
+              }
+            | undefined;
+
+        this.wasmChannel = ibcInfo?.channels?.wasm || connectionsInfo?.channels?.wasm || null;
+        this.transferChannel = ibcInfo?.channels?.transfer || connectionsInfo?.channels?.transfer || null;
+
+        return this.channels;
     }
 
     async createConnection() {
@@ -74,7 +104,7 @@ class RelayerClient {
         const remoteClient = await this.createIbcClient(remoteChain, remoteAccounts.admin.mnemonic as string);
 
         this.link = await Link.createWithNewConnections(hostClient, remoteClient);
-        this.backup();
+        this.backupConnection();
         return this.connections;
     }
 
@@ -91,10 +121,17 @@ class RelayerClient {
         });
     }
 
-    async createChannel(src: string, dest: string) {
+    async createChannel(src: string, dest: string, version: string) {
         if (!this.link) throw new Error("Link not initialized");
 
-        this.channel = await this.link.createChannel("A", src, dest, 1, "vectis-v1");
+        if (version === "ics20-1") {
+            this.transferChannel = await this.link.createChannel("A", src, dest, 1, version);
+        } else if (version === "vectis-v1") {
+            this.wasmChannel = await this.link.createChannel("A", src, dest, 1, version);
+        }
+
+        await this.backupChannels();
+
         return this.channels;
     }
 
