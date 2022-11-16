@@ -58,6 +58,11 @@ fn proxy_mint_govec_works() {
 fn cannot_mint_govec_without_paying_fee() {
     let mut suite = DaoChainSuite::init().unwrap();
 
+    // Create a new wallet
+    let wallet_addr = suite
+        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .unwrap();
+
     // user mint govec
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
@@ -65,12 +70,21 @@ fn cannot_mint_govec_without_paying_fee() {
         funds: vec![],
     });
 
+    // Initially there is something to claim
+    let unclaimed = suite
+        .query_proxy_govec_claim_expiration(&suite.factory, &wallet_addr)
+        .unwrap();
+    assert!(unclaimed.is_some());
+
+    // User execute proxy to claim govec
     suite
         .app
         .execute_contract(
-            suite.deployer.clone(),
-            suite.govec.clone(),
-            &mint_govec_msg,
+            suite.user.clone(),
+            wallet_addr.clone(),
+            &ProxyExecuteMsg::Execute {
+                msgs: vec![mint_govec_msg],
+            },
             &[],
         )
         .unwrap_err();
