@@ -31,14 +31,9 @@ jobs:
         run: |
           cargo install grcov
           rustup component add llvm-tools-preview
-
-      - name: Run contract tests for dao chain
-        run: cargo test-dao-chain --locked
-        env:
-          RUST_BACKTRACE: 1
       
       - name: Run contract tests for remote chain
-        run: cargo test-remote-chain --locked
+        run: cargo test
         env:
           RUST_BACKTRACE: 1
 
@@ -77,6 +72,12 @@ jobs:
         run: cargo wasm-remote-tunnel --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
+
+      - name: Compile WASM contract remote factory 
+        run: cargo wasm-remote-factory --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
   lints:
     name: Lints
     runs-on: ubuntu-latest
@@ -95,8 +96,5 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
-      - name: Run cargo clippy dao-chain
-        run: cargo clippy --features dao-chain -- -D warnings
-
-      - name: Run cargo clippy remote-chain
-        run: cargo clippy --features remote-chain -- -D warnings
+      - name: Run cargo clippy
+        run: cargo clippy -- -D warnings
