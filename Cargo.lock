@@ -1180,7 +1180,6 @@ dependencies = [
  "thiserror",
  "vectis-govec",
  "vectis-proxy",
- "vectis-remote-tunnel",
  "vectis-wallet",
 ]
 
@@ -1222,6 +1221,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "vectis-remote-factory"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "assert_matches",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus 0.13.4",
+ "cw-utils 0.13.4",
+ "cw1",
+ "cw2 0.13.4",
+ "cw20",
+ "cw20-stake",
+ "cw3",
+ "cw3-fixed-multisig",
+ "derivative",
+ "hex",
+ "secp256k1",
+ "thiserror",
+ "vectis-proxy",
+ "vectis-wallet",
+]
+
+[[package]]
 name = "vectis-remote-tunnel"
 version = "0.1.0"
 dependencies = [
@@ -1241,7 +1265,9 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-proposal-single",
+ "cw-storage-plus 0.14.0",
  "cw-utils 0.13.4",
+ "cw1",
  "cw2 0.13.4",
  "cw20",
  "cw20-stake",

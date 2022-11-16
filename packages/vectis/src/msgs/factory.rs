@@ -1,9 +1,8 @@
-use crate::guardians::Guardians;
-use crate::wallet::{RelayTransaction, WalletAddr};
-use crate::MigrationMsgError;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 use cw_utils::Expiration;
+
+use crate::{Guardians, MigrationMsgError, RelayTransaction, WalletAddr};
 
 /// Declares that a fixed weight of Yes votes is needed to pass.
 /// See `ThresholdResponse.AbsoluteCount` in the cw3 spec for details.

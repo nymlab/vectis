@@ -1,5 +1,5 @@
 [package]
-name = "vectis-factory"
+name = "vectis-remote-factory"
 version = "0.1.0"
 authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>"]
 edition = "2021"
@@ -33,7 +33,6 @@ derivative = "2"
 hex = "0.4"
 cw-utils = "0.13" # required lower version due to stake-cw20
 # Vectis libs
-vectis-govec = { path = "../govec", features = ["library"] }
 vectis-wallet = {path = "../../packages/vectis" }
 
 [dev-dependencies]

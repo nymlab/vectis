@@ -1,20 +1,9 @@
-use cosmwasm_schema::{cw_serde, schemars, QueryResponses};
+use cosmwasm_schema::{cw_serde, schemars};
 use cosmwasm_std::{Addr, CosmosMsg, Empty};
-use cw1::CanExecuteResponse;
+
 use std::fmt;
-use vectis_wallet::{
-    CreateWalletMsg, GuardiansUpdateMsg, GuardiansUpdateRequest, RelayTransaction, WalletInfo,
-};
-#[cw_serde]
-pub struct InstantiateMsg {
-    pub create_wallet_msg: CreateWalletMsg,
-    /// Fixed Multisig Code Id for guardians
-    pub multisig_code_id: u64,
-    /// Code Id used to instantiate the contract
-    pub code_id: u64,
-    /// Chain address prefix
-    pub addr_prefix: String,
-}
+use vectis_wallet::{GuardiansUpdateMsg, RelayTransaction};
+pub use vectis_wallet::{ProxyInstantiateMsg as InstantiateMsg, ProxyQueryMsg as QueryMsg};
 
 #[cw_serde]
 pub enum ExecuteMsg<T = Empty>
@@ -47,20 +36,4 @@ where
     UpdateGuardians {},
     /// Updates label by the user
     UpdateLabel { new_label: String },
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum QueryMsg {
-    /// Query for wallet info
-    #[returns(WalletInfo)]
-    Info {},
-    /// Checks permissions of the caller on this proxy.
-    /// If CanExecuteRelay returns true then a call to `ExecuteRelay`,
-    /// before any further state changes, should also succeed.
-    #[returns(CanExecuteResponse)]
-    CanExecuteRelay { sender: String },
-    /// Return the current guardian update request.
-    #[returns(Option<GuardiansUpdateRequest>)]
-    GuardiansUpdateRequest {},
 }

@@ -10,7 +10,7 @@ use cosmwasm_std::{
 use cosmwasm_std::{IbcQuery, QueryRequest};
 
 use vectis_wallet::{
-    check_order, check_version, GovecExecuteMsg, GovecQueryMsg, IbcError, PacketMsg,
+    check_ibc_order, check_ibc_version, GovecExecuteMsg, GovecQueryMsg, IbcError, PacketMsg,
     ProposalExecuteMsg, RemoteTunnelPacketMsg, StakeExecuteMsg, StdAck, VectisDaoActionIds,
     IBC_APP_VERSION,
 };
@@ -28,11 +28,11 @@ pub fn ibc_channel_open(
     msg: IbcChannelOpenMsg,
 ) -> Result<IbcChannelOpenResponse, ContractError> {
     let channel = msg.channel();
-    check_order(&channel.order)?;
+    check_ibc_order(&channel.order)?;
     // In ibcv3 we don't check the version string passed in the IbcChannel
     // and only check the counterparty version in OpenTry
     if let Some(counter_version) = msg.counterparty_version() {
-        check_version(counter_version)?;
+        check_ibc_version(counter_version)?;
     }
     // We return the version we need (which could be different than the counterparty version)
     Ok(Some(Ibc3ChannelOpenResponse {
