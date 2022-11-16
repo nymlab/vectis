@@ -488,9 +488,11 @@ pub fn ensure_is_enough_claim_fee(deps: Deps, sent_fund: &[Coin]) -> Result<(), 
     let fund = sent_fund
         .iter()
         .find(|c| c.denom == claim_fee.denom)
-        .ok_or(ContractError::Std(StdError::GenericErr {
-            msg: format!("Expected denom fee: {}", claim_fee.denom).to_string(),
-        }))?;
+        .ok_or_else(|| {
+            ContractError::Std(StdError::GenericErr {
+                msg: format!("Expected denom fee: {}", claim_fee.denom),
+            })
+        })?;
 
     if fund.amount < claim_fee.amount {
         return Err(ContractError::InvalidNativeFund(
