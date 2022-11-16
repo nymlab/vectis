@@ -14,7 +14,7 @@ pub use cosmwasm_std::{
 pub use vectis_wallet::{
     ChainConfig, DaoConfig, DaoTunnelPacketMsg, IbcError, PacketMsg, RemoteTunnelPacketMsg, StdAck,
     VectisDaoActionIds, WalletFactoryExecuteMsg,
-    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_ORDER, IBC_APP_VERSION,
     PACKET_LIFETIME,
 };
 

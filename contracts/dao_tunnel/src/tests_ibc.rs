@@ -64,7 +64,7 @@ fn only_correct_version_order_can_open() {
 
     // In open init, invalid version is not not checked in IBCv3
     let invalid_ibc_channel_open_msg =
-        mock_ibc_channel_open_init(CHANNEL_ID, APP_ORDER, "some-invalid-version");
+        mock_ibc_channel_open_init(CHANNEL_ID, IBC_APP_ORDER, "some-invalid-version");
     let res = ibc_channel_open(deps.as_mut(), mock_env(), invalid_ibc_channel_open_msg)
         .unwrap()
         .unwrap();
@@ -73,14 +73,14 @@ fn only_correct_version_order_can_open() {
     // In open try, counterparty_version is checked
     // invalid version
     let invalid_ibc_channel_open_try_msg =
-        mock_ibc_channel_open_try(CHANNEL_ID, APP_ORDER, "some-invalid-version");
+        mock_ibc_channel_open_try(CHANNEL_ID, IBC_APP_ORDER, "some-invalid-version");
     let err =
         ibc_channel_open(deps.as_mut(), mock_env(), invalid_ibc_channel_open_try_msg).unwrap_err();
 
     assert_eq!(err, IbcError::InvalidChannelVersion(IBC_APP_VERSION).into());
 
     let valid_ibc_channel_open_try_msg =
-        mock_ibc_channel_open_try(CHANNEL_ID, APP_ORDER, IBC_APP_VERSION);
+        mock_ibc_channel_open_try(CHANNEL_ID, IBC_APP_ORDER, IBC_APP_VERSION);
     let res = ibc_channel_open(deps.as_mut(), mock_env(), valid_ibc_channel_open_try_msg).unwrap();
 
     assert_eq!(
@@ -95,7 +95,7 @@ fn only_correct_version_order_can_open() {
 #[test]
 fn correct_event_emitted_when_channel_closes() {
     let mut deps = do_instantiate();
-    let init_msg = mock_ibc_channel_close_init(CHANNEL_ID, APP_ORDER, IBC_APP_VERSION);
+    let init_msg = mock_ibc_channel_close_init(CHANNEL_ID, IBC_APP_ORDER, IBC_APP_VERSION);
     let mut channel = init_msg.channel().to_owned();
     channel.connection_id = TEST_CONNECTION_ID.to_string();
     channel.endpoint.channel_id = CHANNEL_ID.to_string();
@@ -123,7 +123,7 @@ fn only_approved_endpoint_can_connect() {
     if let IbcChannelConnectMsg::OpenAck {
         mut channel,
         counterparty_version,
-    } = mock_ibc_channel_connect_ack(CHANNEL_ID, APP_ORDER, IBC_APP_VERSION)
+    } = mock_ibc_channel_connect_ack(CHANNEL_ID, IBC_APP_ORDER, IBC_APP_VERSION)
     {
         // port id not added to DAO_TUNNEL
         channel.counterparty_endpoint.port_id = "SOME PORT_ID".to_string();
