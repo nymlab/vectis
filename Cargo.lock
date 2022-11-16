@@ -470,26 +470,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw20-staked-balance-voting"
-version = "0.1.0"
-source = "git+https://github.com/nymlab/dao-contracts?rev=1383ecb2162968a#1383ecb2162968a82da341f968df7561a5f813c4"
-dependencies = [
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-core-interface",
- "cw-core-macros",
- "cw-storage-plus 0.13.4",
- "cw-utils 0.13.4",
- "cw2 0.13.4",
- "cw20",
- "cw20-base",
- "cw20-stake",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "cw3"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1106,42 +1086,6 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
-
-[[package]]
-name = "vectis-contract-tests"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "assert_matches",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-core",
- "cw-multi-test",
- "cw-proposal-single",
- "cw-storage-plus 0.13.4",
- "cw-utils 0.13.4",
- "cw1",
- "cw2 0.13.4",
- "cw20",
- "cw20-stake",
- "cw20-staked-balance-voting",
- "cw3",
- "cw3-fixed-multisig",
- "derivative",
- "hex",
- "schemars",
- "secp256k1",
- "serde",
- "sha2 0.9.9",
- "thiserror",
- "vectis-dao-tunnel",
- "vectis-factory",
- "vectis-govec",
- "vectis-proxy",
- "vectis-remote-tunnel",
- "vectis-wallet",
- "voting",
-]
 
 [[package]]
 name = "vectis-dao-tunnel"
