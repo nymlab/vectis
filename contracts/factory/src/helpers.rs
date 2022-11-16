@@ -243,7 +243,7 @@ pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, Co
     let claiming_user = deps.api.addr_canonicalize(&wallet)?;
     PENDING_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
 
-    let fee = WALLET_FEE.load(deps.storage)?;
+    let fee = CLAIM_FEE.load(deps.storage)?;
 
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: deps.api.addr_humanize(&DAO.load(deps.storage)?)?.into(),
