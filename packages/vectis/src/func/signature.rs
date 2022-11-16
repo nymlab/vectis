@@ -1,8 +1,8 @@
-use crate::wallet::RelayTransaction;
 use cosmwasm_std::{Binary, DepsMut, StdResult};
-
 use ripemd160::Digest as Ripemd160Digest;
 use sha2::Sha256;
+
+use crate::RelayTransaction;
 
 pub fn query_verify_cosmos(deps: &DepsMut, transaction: &RelayTransaction) -> StdResult<bool> {
     let message_with_nonce = Binary(

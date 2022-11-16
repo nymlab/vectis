@@ -13,7 +13,7 @@ pub use cosmwasm_std::{
 pub use vectis_wallet::{
     ChainConfig, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, IbcTransferChannels, PacketMsg,
     ProposalExecuteMsg, Receiver, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
-    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, APP_ORDER, IBC_APP_VERSION,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_ORDER, IBC_APP_VERSION,
     PACKET_LIFETIME,
 };
 pub use voting::Vote;

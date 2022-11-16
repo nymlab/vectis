@@ -38,7 +38,7 @@ pub fn connect(mut deps: DepsMut, dao_channel_id: &str) {
     if let IbcChannelConnectMsg::OpenAck {
         mut channel,
         counterparty_version,
-    } = mock_ibc_channel_connect_ack(dao_channel_id, APP_ORDER, IBC_APP_VERSION)
+    } = mock_ibc_channel_connect_ack(dao_channel_id, IBC_APP_ORDER, IBC_APP_VERSION)
     {
         // add dao tunnel
         channel.counterparty_endpoint.port_id = DAO_PORT_ID.to_string();
@@ -85,7 +85,7 @@ fn channel_open_only_right_version_order() {
         DAO_CONNECTION_ID,
         DAO_PORT_ID,
         DAO_CHANNEL_ID,
-        APP_ORDER,
+        IBC_APP_ORDER,
         "wrong-version",
     );
     let res = ibc_channel_open(deps.as_mut(), mock_env(), handshake_open).unwrap_err();
@@ -97,7 +97,7 @@ fn channel_open_only_right_version_order() {
         DAO_CONNECTION_ID,
         DAO_PORT_ID,
         DAO_CHANNEL_ID,
-        APP_ORDER,
+        IBC_APP_ORDER,
         IBC_APP_VERSION,
     );
 
@@ -119,7 +119,7 @@ fn only_approved_endpoint_can_connect() {
     if let IbcChannelConnectMsg::OpenAck {
         mut channel,
         counterparty_version,
-    } = mock_ibc_channel_connect_ack(DAO_CHANNEL_ID, APP_ORDER, IBC_APP_VERSION)
+    } = mock_ibc_channel_connect_ack(DAO_CHANNEL_ID, IBC_APP_ORDER, IBC_APP_VERSION)
     {
         // try to connect with port id not added as dao_tunnel or ibc_transfer
         channel.counterparty_endpoint.port_id = INVALID_PORT_ID.to_string();
@@ -238,7 +238,7 @@ fn close_channels_reset_states() {
     let dao_config = query_dao_config(deps.as_ref()).unwrap();
     assert!(dao_config.dao_tunnel_channel.is_some());
 
-    let init_msg = mock_ibc_channel_close_confirm(DAO_CHANNEL_ID, APP_ORDER, IBC_APP_VERSION);
+    let init_msg = mock_ibc_channel_close_confirm(DAO_CHANNEL_ID, IBC_APP_ORDER, IBC_APP_VERSION);
     let mut channel = init_msg.channel().to_owned();
     channel.connection_id = DAO_CONNECTION_ID.to_string();
     channel.endpoint.channel_id = DAO_CHANNEL_ID.to_string();

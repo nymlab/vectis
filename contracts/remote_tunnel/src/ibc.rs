@@ -8,8 +8,8 @@ use cosmwasm_std::{
 };
 
 use vectis_wallet::{
-    check_order, check_version, ChainConfig, DaoConfig, DaoTunnelPacketMsg, IbcError, PacketMsg,
-    RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds, WalletFactoryExecuteMsg,
+    check_ibc_order, check_ibc_version, ChainConfig, DaoConfig, DaoTunnelPacketMsg, IbcError,
+    PacketMsg, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds, WalletFactoryExecuteMsg,
     WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_VERSION,
 };
 
@@ -25,9 +25,9 @@ pub fn ibc_channel_open(
 ) -> Result<Option<Ibc3ChannelOpenResponse>, ContractError> {
     // We dont enforce anything regarding permission here as counterparty_endpoint is not set yet
     let channel = msg.channel();
-    check_order(&channel.order)?;
+    check_ibc_order(&channel.order)?;
     if let Some(counter_version) = msg.counterparty_version() {
-        check_version(counter_version)?;
+        check_ibc_version(counter_version)?;
     }
     Ok(Some(Ibc3ChannelOpenResponse {
         version: IBC_APP_VERSION.to_string(),
