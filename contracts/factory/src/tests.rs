@@ -1,27 +1,14 @@
-#[cfg(test)]
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Coin, DepsMut};
-use vectis_wallet::UpdateFeeReq;
 
-#[cfg(feature = "dao-chain")]
-use crate::contract::query_govec_addr;
+use vectis_wallet::factory_queries::{query_code_id, query_fees, query_unclaim_wallet_list};
+use vectis_wallet::CodeIdType;
+use vectis_wallet::{factory_queries::query_dao_addr, UpdateFeeReq};
+
 use crate::{
-    contract::{
-        execute, instantiate, query_code_id, query_dao_addr, query_fees, query_unclaim_wallet_list,
-        CodeIdType,
-    },
+    contract::{execute, instantiate, query_govec_addr},
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, UnclaimedWalletList},
-};
-#[cfg(feature = "remote")]
-use {
-    crate::contract::query_pending_unclaim_wallet_list,
-    crate::msg::QueryMsg,
-    crate::state::GOVEC_CLAIM_LIST,
-    cosmwasm_std::Api,
-    cw_utils::{Expiration, DAY},
-    std::ops::{Add, Mul},
-    vectis_wallet::GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
 // this will set up the instantiation for other tests
@@ -189,30 +176,17 @@ fn admin_updates_addresses_work() {
     let info = mock_info("admin", &[]);
     let env = mock_env();
 
-    #[cfg(feature = "dao-chain")]
-    {
-        // update govec
-        let msg = ExecuteMsg::UpdateGovecAddr {
-            addr: "new_govec".to_string(),
-        };
-        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-        assert_eq!(
-            response.attributes,
-            [("config", "Govec Addr"), ("New Addr", "new_govec")]
-        );
-        let new_govec = query_govec_addr(deps.as_ref()).unwrap();
-        assert_eq!(new_govec, "new_govec");
-    }
-
-    #[cfg(feature = "remote")]
-    {
-        let msg = ExecuteMsg::UpdateGovecAddr {
-            addr: "new_govec".to_string(),
-        };
-
-        let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
-        assert_eq!(err, ContractError::NotSupportedByChain {});
-    }
+    // update govec
+    let msg = ExecuteMsg::UpdateGovecAddr {
+        addr: "new_govec".to_string(),
+    };
+    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    assert_eq!(
+        response.attributes,
+        [("config", "Govec Addr"), ("New Addr", "new_govec")]
+    );
+    let new_govec = query_govec_addr(deps.as_ref()).unwrap();
+    assert_eq!(new_govec, "new_govec");
 
     // update admin
     let msg = ExecuteMsg::UpdateDao {
@@ -232,24 +206,16 @@ fn admin_updates_addresses_work() {
     let msg = ExecuteMsg::UpdateDao {
         addr: "new_dao".to_string(),
     };
-    #[cfg(feature = "remote")]
-    {
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
-    }
 
-    #[cfg(feature = "dao-chain")]
-    {
-        let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 
-        let msg = ExecuteMsg::UpdateGovecAddr {
-            addr: "new_govec".to_string(),
-        };
+    let msg = ExecuteMsg::UpdateGovecAddr {
+        addr: "new_govec".to_string(),
+    };
 
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
-    }
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 }
 
 #[test]
