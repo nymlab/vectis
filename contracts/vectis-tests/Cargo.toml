@@ -14,6 +14,7 @@ vectis-factory = { path = "../factory" }
 vectis-proxy = { path = "../proxy", features = ["migration", "library"]}
 vectis-govec = { path = "../govec", features = ["library"]}
 vectis-dao-tunnel = {path = "../dao_tunnel", features = ["library"]}
+vectis-remote-factory = {path = "../remote_factory", features = ["library"]}
 vectis-remote-tunnel = {path = "../remote_tunnel", features = ["library"]}
 anyhow = "1"
 assert_matches = "1"

@@ -71,16 +71,16 @@ pub use vectis_remote_tunnel::{
     msg::InstantiateMsg as RTunnelInstanstiateMsg,
 };
 
-pub use vectis_factory::{
-    contract::{
-        execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
-        reply as factory_reply,
-    },
-    msg::{
-        ExecuteMsg as FactoryExecuteMsg, InstantiateMsg, QueryMsg as FactoryQueryMsg,
-        UnclaimedWalletList,
-    },
+pub use vectis_factory::contract::{
+    execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
+    reply as factory_reply,
 };
+
+pub use vectis_remote_factory::contract::{
+    execute as remote_factory_execute, instantiate as remote_factory_instantiate,
+    query as remote_factory_query, reply as remote_factory_reply,
+};
+
 pub use vectis_govec::{
     contract::{
         execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
@@ -103,7 +103,9 @@ pub use vectis_proxy::{
 pub use vectis_wallet::{
     pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
     GuardiansUpdateRequest, MultiSig, ProposalExecuteMsg, RelayTransaction, StakeExecuteMsg,
-    ThresholdAbsoluteCount, WalletFactoryExecuteMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
+    ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
+    WalletFactoryExecuteMsg as FactoryExecuteMsg, WalletFactoryInstantiateMsg as InstantiateMsg,
+    WalletFactoryQueryMsg as FactoryQueryMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
 pub const WALLET_FEE: u128 = 10u128;
@@ -125,6 +127,16 @@ pub const GUARD3: &str = "guardian3";
 pub fn contract_factory() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(factory_execute, factory_instantiate, factory_query)
         .with_reply(factory_reply);
+    Box::new(contract)
+}
+
+pub fn contract_remote_factory() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(
+        remote_factory_execute,
+        remote_factory_instantiate,
+        remote_factory_query,
+    )
+    .with_reply(remote_factory_reply);
     Box::new(contract)
 }
 
