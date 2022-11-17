@@ -166,7 +166,6 @@ export type DistributionMsg =
               [k: string]: unknown;
           };
       };
-export type Binary = string;
 export type IbcMsg =
     | {
           transfer: {

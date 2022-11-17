@@ -58,3 +58,5 @@ pub const RELAYERS: Map<&[u8], ()> = Map::new("relayers");
 pub const LABEL: Item<String> = Item::new("label");
 // An address of fixed multisig contract, used for guardians multisig support.
 pub const MULTISIG_ADDRESS: Item<Option<CanonicalAddr>> = Item::new("fixed_multisig_address");
+/// Plugins
+pub const PLUGINS: Map<&[u8], ()> = Map::new("plugins");

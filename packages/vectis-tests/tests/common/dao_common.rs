@@ -1,5 +1,6 @@
 pub use crate::common::common::*;
 
+use vectis_wallet::PluginListResponse;
 use voting::Threshold;
 
 /// DaoChainSuite
@@ -43,7 +44,7 @@ impl DaoChainSuite {
     /// - default WALLET_FEE
     ///
     pub fn init() -> Result<DaoChainSuite> {
-        let genesis_funds = vec![coin(100000, "ucosm")];
+        let genesis_funds = vec![coin(10_000_000_000_000, "ucosm")];
         let deployer = Addr::unchecked("deployer");
         let controller = Addr::unchecked(CONTROLLER_ADDR);
         let mut app = App::new(|router, _, storage| {
@@ -52,7 +53,11 @@ impl DaoChainSuite {
                 .init_balance(storage, &deployer, genesis_funds)
                 .unwrap();
         });
-        app.send_tokens(deployer.clone(), controller, &[coin(50000, "ucosm")])?;
+        app.send_tokens(
+            deployer.clone(),
+            controller,
+            &[coin(10_000_000_00, "ucosm")],
+        )?;
 
         let dao_id = app.store_code(contract_dao());
         let vote_id = app.store_code(contract_vote());
@@ -514,6 +519,17 @@ impl DaoChainSuite {
             }))
             .unwrap();
         Ok(r)
+    }
+
+    pub fn query_plugins(&self, contract_addr: &Addr) -> Result<PluginListResponse, StdError> {
+        self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&ProxyQueryMsg::Plugins {
+                start_after: None,
+                limit: None,
+            })
+            .unwrap(),
+        }))
     }
 
     pub fn query_wallet_info<R>(&self, contract_addr: &Addr) -> Result<R, StdError>

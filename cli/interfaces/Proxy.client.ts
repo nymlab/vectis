@@ -31,6 +31,7 @@ import {
     IbcTimeoutBlock,
     RelayTransaction,
     GuardiansUpdateMsg,
+    PluginParams,
     QueryMsg,
     CanExecuteResponse,
     NullableGuardiansUpdateRequest,
@@ -38,12 +39,14 @@ import {
     GuardiansUpdateRequest,
     WalletInfo,
     ContractVersion,
+    PluginListResponse,
 } from "./Proxy.types";
 export interface ProxyReadOnlyInterface {
     contractAddress: string;
     info: () => Promise<WalletInfo>;
     canExecuteRelay: ({ sender }: { sender: string }) => Promise<CanExecuteResponse>;
     guardiansUpdateRequest: () => Promise<NullableGuardiansUpdateRequest>;
+    plugins: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<PluginListResponse>;
 }
 export class ProxyQueryClient implements ProxyReadOnlyInterface {
     client: CosmWasmClient;
@@ -55,6 +58,7 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
         this.info = this.info.bind(this);
         this.canExecuteRelay = this.canExecuteRelay.bind(this);
         this.guardiansUpdateRequest = this.guardiansUpdateRequest.bind(this);
+        this.plugins = this.plugins.bind(this);
     }
 
     info = async (): Promise<WalletInfo> => {
@@ -72,6 +76,14 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
     guardiansUpdateRequest = async (): Promise<NullableGuardiansUpdateRequest> => {
         return this.client.queryContractSmart(this.contractAddress, {
             guardians_update_request: {},
+        });
+    };
+    plugins = async ({ limit, startAfter }: { limit?: number; startAfter?: string }): Promise<PluginListResponse> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            plugins: {
+                limit,
+                start_after: startAfter,
+            },
         });
     };
 }
@@ -150,6 +162,44 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    instantiatePlugin: (
+        {
+            codeId,
+            instantiateMsg,
+            label,
+            pluginParams,
+        }: {
+            codeId: number;
+            instantiateMsg: Binary;
+            label: string;
+            pluginParams: PluginParams;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    updatePlugins: (
+        {
+            migrateMsg,
+            pluginAddr,
+        }: {
+            migrateMsg?: number[][];
+            pluginAddr: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    pluginExecute: (
+        {
+            msgs,
+        }: {
+            msgs: CosmosMsgForEmpty[];
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
 }
 export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
     override client: SigningCosmWasmClient;
@@ -170,6 +220,9 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
         this.requestUpdateGuardians = this.requestUpdateGuardians.bind(this);
         this.updateGuardians = this.updateGuardians.bind(this);
         this.updateLabel = this.updateLabel.bind(this);
+        this.instantiatePlugin = this.instantiatePlugin.bind(this);
+        this.updatePlugins = this.updatePlugins.bind(this);
+        this.pluginExecute = this.pluginExecute.bind(this);
     }
 
     execute = async (
@@ -358,6 +411,87 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
             {
                 update_label: {
                     new_label: newLabel,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    instantiatePlugin = async (
+        {
+            codeId,
+            instantiateMsg,
+            label,
+            pluginParams,
+        }: {
+            codeId: number;
+            instantiateMsg: Binary;
+            label: string;
+            pluginParams: PluginParams;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                instantiate_plugin: {
+                    code_id: codeId,
+                    instantiate_msg: instantiateMsg,
+                    label,
+                    plugin_params: pluginParams,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updatePlugins = async (
+        {
+            migrateMsg,
+            pluginAddr,
+        }: {
+            migrateMsg?: number[][];
+            pluginAddr: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_plugins: {
+                    migrate_msg: migrateMsg,
+                    plugin_addr: pluginAddr,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    pluginExecute = async (
+        {
+            msgs,
+        }: {
+            msgs: CosmosMsgForEmpty[];
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                plugin_execute: {
+                    msgs,
                 },
             },
             fee,

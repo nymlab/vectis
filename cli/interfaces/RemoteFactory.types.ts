@@ -82,7 +82,7 @@ export type WalletAddr =
     | {
           addr: Addr;
       };
-export type CanonicalAddr = string;
+export type CanonicalAddr = Binary;
 export type Addr = string;
 export type CodeIdType = "proxy" | "multisig";
 export type FeeType = "wallet" | "claim";

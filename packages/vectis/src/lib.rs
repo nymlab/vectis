@@ -18,6 +18,6 @@ mod func;
 mod msgs;
 mod types;
 
-// settings for pagination
-pub const MAX_LIMIT: u32 = 100;
+//  Global settings for addr pagination
+pub const MAX_LIMIT: u32 = 1000;
 pub const DEFAULT_LIMIT: u32 = 50;
