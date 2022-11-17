@@ -1138,6 +1138,7 @@ dependencies = [
  "vectis-factory",
  "vectis-govec",
  "vectis-proxy",
+ "vectis-remote-factory",
  "vectis-remote-tunnel",
  "vectis-wallet",
  "voting",

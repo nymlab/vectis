@@ -33,7 +33,7 @@ impl RemoteChainSuite {
         });
         app.send_tokens(deployer.clone(), user.clone(), &[coin(50000, "uremote")])?;
 
-        let factory_id = app.store_code(contract_factory());
+        let factory_id = app.store_code(contract_remote_factory());
         let proxy_id = app.store_code(contract_proxy());
         let multisig_id = app.store_code(contract_multisig());
         let remote_tunnel_id = app.store_code(contract_remote_tunnel());
