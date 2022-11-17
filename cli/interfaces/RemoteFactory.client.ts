@@ -29,8 +29,8 @@ import {
     FeesResponse,
     ArrayOfAddr,
     UnclaimedWalletList,
-} from "./Factory.types";
-export interface FactoryReadOnlyInterface {
+} from "./RemoteFactory.types";
+export interface RemoteFactoryReadOnlyInterface {
     contractAddress: string;
     unclaimedGovecWallets: ({
         limit,
@@ -47,7 +47,7 @@ export interface FactoryReadOnlyInterface {
     govecAddr: () => Promise<Addr>;
     daoAddr: () => Promise<Addr>;
 }
-export class FactoryQueryClient implements FactoryReadOnlyInterface {
+export class RemoteFactoryQueryClient implements RemoteFactoryReadOnlyInterface {
     client: CosmWasmClient;
     contractAddress: string;
 
@@ -127,7 +127,7 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         });
     };
 }
-export interface FactoryInterface extends FactoryReadOnlyInterface {
+export interface RemoteFactoryInterface extends RemoteFactoryReadOnlyInterface {
     contractAddress: string;
     sender: string;
     createWallet: (
@@ -220,7 +220,7 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
 }
-export class FactoryClient extends FactoryQueryClient implements FactoryInterface {
+export class RemoteFactoryClient extends RemoteFactoryQueryClient implements RemoteFactoryInterface {
     override client: SigningCosmWasmClient;
     sender: string;
     override contractAddress: string;

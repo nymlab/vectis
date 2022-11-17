@@ -25,6 +25,7 @@ class FactoryClient extends FactoryC {
             proxy_multisig_code_id: multisigCodeId,
             addr_prefix: addressPrefix,
             wallet_fee: coin(10000000, feeToken) as FactoryT.Coin,
+            claim_fee: coin(10000000, feeToken) as FactoryT.Coin,
             govec_minter: govecMinter,
         };
     }

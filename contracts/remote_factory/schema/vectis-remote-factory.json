@@ -1,5 +1,5 @@
 {
-  "contract_name": "vectis-factory",
+  "contract_name": "vectis-remote-factory",
   "contract_version": "0.1.0",
   "idl_version": "1.0.0",
   "instantiate": {

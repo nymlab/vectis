@@ -864,6 +864,7 @@
         "type": "object",
         "required": [
           "addr_prefix",
+          "claim_fee",
           "proxy_code_id",
           "proxy_multisig_code_id",
           "wallet_fee"
@@ -872,6 +873,14 @@
           "addr_prefix": {
             "description": "Chain address prefix",
             "type": "string"
+          },
+          "claim_fee": {
+            "description": "Fee for claim govec in native token to be sent to Admin (DAO)",
+            "allOf": [
+              {
+                "$ref": "#/definitions/Coin"
+              }
+            ]
           },
           "govec_minter": {
             "description": "Governance Token, Govec, address",
@@ -893,7 +902,7 @@
             "minimum": 0.0
           },
           "wallet_fee": {
-            "description": "Fee in native token to be sent to Admin (DAO)",
+            "description": "Fee for wallet creation in native token to be sent to Admin (DAO)",
             "allOf": [
               {
                 "$ref": "#/definitions/Coin"
