@@ -6,6 +6,3 @@ wasm-govec = "build --release --target wasm32-unknown-unknown --package vectis-g
 wasm-dao-tunnel = "build --release --target wasm32-unknown-unknown --package vectis-dao-tunnel"
 wasm-remote-tunnel = "build --release --target wasm32-unknown-unknown --package vectis-remote-tunnel"
 wasm-remote-factory = "build --release --target wasm32-unknown-unknown --package vectis-remote-factory"
-schema = "run --example schema"
-test-dao-chain = "test --workspace --exclude vectis-remote-tunnel --features dao-chain"
-test-remote-chain = "test --workspace --exclude vectis-dao-tunnel --exclude vectis-govec"

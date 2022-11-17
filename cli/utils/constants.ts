@@ -6,9 +6,6 @@ import type { Chains } from "../config/chains";
 
 dotenv.config({ path: path.join(__dirname, "../.env") });
 
-// Arch
-const archSuffix = ""; //process.arch === "arm64" ? "-aarch64" : "";
-
 export const hostChainName = (process.env.HOST_CHAIN || "juno_localnet") as Chains;
 export const hostChain = chains[hostChainName as keyof typeof chains];
 export const remoteChainName = (process.env.REMOTE_CHAIN || "wasm_localnet") as Chains;
@@ -19,9 +16,9 @@ export const remoteAccounts = accounts[remoteChainName as keyof typeof accounts]
 // Contracts Filenames
 export const contractsFileNames = {
     vectis_dao_tunnel: "vectis_dao_tunnel.wasm",
-    vectis_proxy: `vectis_proxy${archSuffix}.wasm`,
-    vectis_factory: `vectis_factory${archSuffix}.wasm`,
-    vectis_govec: `vectis_govec${archSuffix}.wasm`,
+    vectis_proxy: `vectis_proxy.wasm`,
+    vectis_factory: `vectis_factory.wasm`,
+    vectis_govec: `vectis_govec.wasm`,
     vectis_remote_tunnel: "vectis_remote_tunnel.wasm",
     vectis_remote_proxy: "vectis_proxy.wasm",
     vectis_remote_factory: "vectis_remote_factory.wasm",
@@ -56,15 +53,14 @@ export const deployReportPath = path.join(cachePath, "deployInfo.json");
 export const ibcReportPath = path.join(cachePath, "ibcInfo.json");
 
 // Host Contracts
-// const vectisContractsPath = process.env.VECTIS_CW_PATH as string;
-const vectisContractsPath = path.join(__dirname, "..", "/contracts");
+const vectisContractsPath = path.join(__dirname, "../../artifacts");
 export const daoTunnelCodetPath = path.join(vectisContractsPath, contractsFileNames.vectis_dao_tunnel);
 export const proxyCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_proxy);
 export const govecCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_govec);
 export const factoryCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_factory);
 
 // Remote Contracts
-const remoteContractsPath = path.join(__dirname, "..", "/contracts");
+const remoteContractsPath = path.join(__dirname, "../../artifacts");
 export const remoteTunnelCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_tunnel);
 export const remoteProxyCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_proxy);
 export const remoteFactoryCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_factory);

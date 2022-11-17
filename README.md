@@ -89,7 +89,7 @@ Please ensure you have set up the `.env` file according to the `example.env`. <b
 You should check supported chains in ``cli/config/chains`` directory.
 
 ```sh
-make ibc-nodes
+make nodes-setup
 ```
 ##### 2. Compile Contracts
 

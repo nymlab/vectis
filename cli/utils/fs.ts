@@ -43,5 +43,5 @@ export async function downloadContract(url: string, fileName: string): Promise<v
 export function areContractsDownloaded(): boolean {
     if (!fs.existsSync(downloadContractPath)) return false;
     const downloadContractPathFiles = fs.readdirSync(downloadContractPath);
-    return Object.values(contractsFileNames).every((fileName) => downloadContractPathFiles.includes(fileName));
+    return downloadContractPathFiles.length === 6;
 }
