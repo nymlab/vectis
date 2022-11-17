@@ -13,12 +13,8 @@ use crate::{factory_state::*, GOVEC_CLAIM_DURATION_DAY_MUL};
 use crate::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, FactoryError as ContractError, Guardians,
     ProxyMigrationTxMsg, ProxyQueryMsg, RelayTxError,
-    WalletFactoryInstantiateMsg as InstantiateMsg, WalletInfo,
+    WalletFactoryInstantiateMsg as InstantiateMsg, WalletInfo, DEFAULT_LIMIT, MAX_LIMIT,
 };
-
-// settings for pagination for unclaimed govec wallet list
-const MAX_LIMIT: u32 = 1000;
-const DEFAULT_LIMIT: u32 = 50;
 
 pub fn factory_instantiate(
     deps: DepsMut,

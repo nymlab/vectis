@@ -4,7 +4,8 @@
  * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
  */
 
-export type CanonicalAddr = string;
+export type CanonicalAddr = Binary;
+export type Binary = string;
 export interface InstantiateMsg {
     chain_config: ChainConfig;
     dao_config: DaoConfig;
@@ -115,7 +116,6 @@ export type GovecExecuteMsg =
           upload_logo: Logo;
       };
 export type Uint128 = string;
-export type Binary = string;
 export type UpdateAddrReq =
     | {
           dao: string;

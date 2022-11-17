@@ -17,7 +17,6 @@ import {
     BankMsg,
     StakingMsg,
     DistributionMsg,
-    Binary,
     IbcMsg,
     Timestamp,
     Uint64,

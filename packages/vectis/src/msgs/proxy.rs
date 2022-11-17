@@ -2,7 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 
 use cw1::CanExecuteResponse;
 
-use crate::{CreateWalletMsg, GuardiansUpdateRequest, WalletInfo};
+use crate::{CreateWalletMsg, GuardiansUpdateRequest, PluginListResponse, WalletInfo};
 
 #[cw_serde]
 pub struct ProxyInstantiateMsg {
@@ -27,4 +27,11 @@ pub enum ProxyQueryMsg {
     /// Return the current guardian update request.
     #[returns(Option<GuardiansUpdateRequest>)]
     GuardiansUpdateRequest {},
+    #[returns(PluginListResponse)]
+    Plugins {
+        // Address string to start after
+        start_after: Option<String>,
+        // Max is 30 and default is 10
+        limit: Option<u32>,
+    },
 }

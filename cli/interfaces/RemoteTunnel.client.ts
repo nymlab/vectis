@@ -8,6 +8,7 @@ import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/co
 import { Coin, StdFee } from "@cosmjs/amino";
 import {
     CanonicalAddr,
+    Binary,
     InstantiateMsg,
     ChainConfig,
     DaoConfig,
@@ -16,7 +17,6 @@ import {
     RemoteTunnelPacketMsg,
     GovecExecuteMsg,
     Uint128,
-    Binary,
     UpdateAddrReq,
     Logo,
     EmbeddedLogo,

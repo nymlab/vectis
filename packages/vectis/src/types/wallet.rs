@@ -40,3 +40,8 @@ pub struct RelayTransaction {
     /// Cosmos format (secp256k1 verification scheme).
     pub signature: Binary,
 }
+
+#[cw_serde]
+pub struct PluginListResponse {
+    pub plugins: Vec<Addr>,
+}

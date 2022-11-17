@@ -71,6 +71,25 @@ export type ExecuteMsg =
           update_label: {
               new_label: string;
           };
+      }
+    | {
+          instantiate_plugin: {
+              code_id: number;
+              instantiate_msg: Binary;
+              label: string;
+              plugin_params: PluginParams;
+          };
+      }
+    | {
+          update_plugins: {
+              migrate_msg?: [number, Binary] | null;
+              plugin_addr: string;
+          };
+      }
+    | {
+          plugin_execute: {
+              msgs: CosmosMsgForEmpty[];
+          };
       };
 export type CosmosMsgForEmpty =
     | {
@@ -250,6 +269,9 @@ export interface GuardiansUpdateMsg {
     guardians: Guardians;
     new_multisig_code_id?: number | null;
 }
+export interface PluginParams {
+    grantor: boolean;
+}
 export type QueryMsg =
     | {
           info: {};
@@ -261,6 +283,12 @@ export type QueryMsg =
       }
     | {
           guardians_update_request: {};
+      }
+    | {
+          plugins: {
+              limit?: number | null;
+              start_after?: string | null;
+          };
       };
 export interface CanExecuteResponse {
     can_execute: boolean;
@@ -301,4 +329,7 @@ export interface ContractVersion {
     contract: string;
     version: string;
     [k: string]: unknown;
+}
+export interface PluginListResponse {
+    plugins: Addr[];
 }

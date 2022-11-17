@@ -96,6 +96,7 @@ pub use vectis_govec::{
         QueryMsg as GovecQueryMsg,
     },
 };
+
 pub use vectis_proxy::{
     contract::{
         execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,

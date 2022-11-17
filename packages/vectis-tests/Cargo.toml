@@ -9,6 +9,9 @@ publish = false
 name = "multi-contracts-integration-tests"
 path = "tests/lib.rs"
 
+[features]
+croncat-plugin = []
+
 [dev-dependencies]
 vectis-factory = { path = "../../contracts/factory" }
 vectis-proxy = { path = "../../contracts/proxy", features = ["migration", "library"]}
@@ -42,3 +45,8 @@ cw-proposal-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "1
 voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
 cw-multi-test = { version = "0.16" }
 derivative = "2"
+cronkitty = { path = "../../../vectis-plugins/cronkitty" }
+cw-croncat-core = "0.1.3"
+cw-rules-core = "0.1.1"
+cw-croncat = { path = "../../../../cw-croncat/contracts/cw-croncat" }
+cw-rules= { path = "../../../../cw-croncat/contracts/cw-rules" }

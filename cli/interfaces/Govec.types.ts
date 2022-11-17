@@ -6,10 +6,10 @@
 
 export type Uint128 = string;
 export type LogoInfo =
-    | "embedded"
     | {
           url: string;
-      };
+      }
+    | "embedded";
 export type Addr = string;
 export interface InstantiateMsg {
     dao_tunnel?: string | null;
