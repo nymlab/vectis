@@ -10,12 +10,12 @@ name = "multi-contracts-integration-tests"
 path = "tests/lib.rs"
 
 [dev-dependencies]
-vectis-factory = { path = "../factory" }
-vectis-proxy = { path = "../proxy", features = ["migration", "library"]}
-vectis-govec = { path = "../govec", features = ["library"]}
-vectis-dao-tunnel = {path = "../dao_tunnel", features = ["library"]}
-vectis-remote-factory = {path = "../remote_factory", features = ["library"]}
-vectis-remote-tunnel = {path = "../remote_tunnel", features = ["library"]}
+vectis-factory = { path = "../../contracts/factory" }
+vectis-proxy = { path = "../../contracts/proxy", features = ["migration", "library"]}
+vectis-govec = { path = "../../contracts/govec", features = ["library"]}
+vectis-dao-tunnel = {path = "../../contracts/dao_tunnel", features = ["library"]}
+vectis-remote-factory = {path = "../../contracts/remote_factory", features = ["library"]}
+vectis-remote-tunnel = {path = "../../contracts/remote_tunnel", features = ["library"]}
 anyhow = "1"
 assert_matches = "1"
 cosmwasm-std = { version = "1.0.0", features = ["staking"] }
