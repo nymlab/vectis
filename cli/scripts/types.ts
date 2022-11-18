@@ -36,5 +36,8 @@ tsGenerator({
         bundle: {
             enabled: false,
         },
+        client: {
+            noImplicitOverride: true,
+        },
     },
 }).then(() => console.log("Generated typescript interfaces for contracts"));
