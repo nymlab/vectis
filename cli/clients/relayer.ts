@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { ChannelPair } from "@confio/relayer/build/lib/link";
 import { IbcClient, Link } from "@confio/relayer";
 import { GasPrice } from "@cosmjs/stargate";
@@ -7,7 +8,6 @@ import {
     hostAccounts,
     hostChain,
     hostChainName,
-    ibcReportPath,
     remoteAccounts,
     remoteChain,
     remoteChainName,
@@ -43,6 +43,13 @@ class RelayerClient {
         };
     }
 
+    get denoms(): { src: string; dest: string } {
+        return {
+            src: this.getDenomIBC("transfer", this.transferChannel?.src.channelId as string, hostChain.feeToken),
+            dest: this.getDenomIBC("transfer", this.transferChannel?.dest.channelId as string, remoteChain.feeToken),
+        };
+    }
+
     backupConnection() {
         if (!this.link) throw new Error("Link not initialized");
 
@@ -52,6 +59,10 @@ class RelayerClient {
         };
 
         writeInCacheFolder("ibcInfo.json", JSON.stringify(relayerConfig, null, 2));
+    }
+
+    getDenomIBC(port: string, channel: string, token: string) {
+        return "ibc/" + crypto.createHash("sha256").update(`${port}/${channel}/${token}`).digest("hex");
     }
 
     async backupChannels() {
