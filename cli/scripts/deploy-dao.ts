@@ -183,9 +183,11 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     // Instantiate Factory in remote chain
 
     // Create channel
-    const { wasm: channelWasm } = channels.wasm
-        ? channels
-        : await relayerClient.createChannel(`wasm.${daoTunnelAddr}`, `wasm.${remoteTunnelAddr}`, "vectis-v1");
+    const { wasm: channelWasm } = await relayerClient.createChannel(
+        `wasm.${daoTunnelAddr}`,
+        `wasm.${remoteTunnelAddr}`,
+        "vectis-v1"
+    );
 
     console.log("ibc wasm channel: ", channelWasm);
 
