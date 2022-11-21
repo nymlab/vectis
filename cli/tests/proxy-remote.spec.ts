@@ -1,3 +1,4 @@
+import { queryClient } from "@confio/relayer/build/lib/helpers";
 import { coin } from "@cosmjs/amino";
 import {
     BankExtension,
@@ -15,6 +16,7 @@ import { RemoteFactoryClient } from "../interfaces/RemoteFactory.client";
 import { deployReportPath, hostChain, remoteAccounts, remoteChain } from "../utils/constants";
 import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
 import { delay } from "../utils/promises";
+import { generateRandomAddress } from "./mocks/addresses";
 
 describe("Proxy Remote Suite: ", () => {
     let addrs: VectisDaoContractsAddrs;
@@ -66,8 +68,7 @@ describe("Proxy Remote Suite: ", () => {
 
     it("should be able to do ibc transfer", async () => {
         const amount = "1000000";
-        const account = await CWClient.generateRandomAccount("juno");
-        const [{ address }] = await account.getAccounts();
+        const address = await generateRandomAddress("juno");
         const previousBalance = await hostUserClient.getBalance(address, relayerClient.denoms.dest);
 
         expect(previousBalance.amount).toBe("0");
@@ -87,28 +88,50 @@ describe("Proxy Remote Suite: ", () => {
         const { claim_fee } = await factoryClient.fees();
         await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
         await relayerClient.relayAll();
-        await proxyClient.executeProposal;
-        const { accounts } = await govecClient.allAccounts({});
+        const { accounts } = await govecClient.allAccounts({ limit: 50 });
+        const { balance } = await govecClient.balance({ address: proxyClient.contractAddress });
         expect(accounts.includes(proxyClient.contractAddress)).toBeTruthy();
+        expect(balance).toBe("2");
+    });
+
+    it("should be able to transfer govec", async () => {
+        const address = await generateRandomAddress("juno");
+        const { balance: previousBalance } = await govecClient.balance({ address });
+        expect(previousBalance).toBe("0");
+
+        await proxyClient.transferGovec(addrs.remoteTunnelAddr, address, "1");
+        await relayerClient.relayAll();
+        await delay(10000);
+
+        const { balance: currentBalance } = await govecClient.balance({ address });
+        expect(currentBalance).toBe("1");
     });
 
     it("should be able to stake", async () => {
-        await proxyClient.stakeGovec(addrs.remoteTunnelAddr, addrs.stakingAddr, "2");
+        await proxyClient.stakeGovec(addrs.remoteTunnelAddr, addrs.stakingAddr, "1");
         await relayerClient.relayAll();
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
         });
-        expect(value).toBe("2");
+        expect(value).toBe("1");
     });
 
     it("should be able to unstake", async () => {
-        const resp = await proxyClient.unstakeGovec(addrs.remoteTunnelAddr, "2");
-        console.log(resp);
+        await proxyClient.unstakeGovec(addrs.remoteTunnelAddr, "1");
+
         await relayerClient.relayAll();
-        await delay(10000);
+
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
         });
         expect(value).toBe("0");
+    });
+
+    it("should be able to burn govec", async () => {
+        await proxyClient.burnGovec(addrs.remoteTunnelAddr);
+        await relayerClient.relayAll();
+        const { balance } = await govecClient.balance({ address: proxyClient.contractAddress });
+        // Temporally is failing because we have to fix unstake
+        expect(balance).toBe("0");
     });
 });

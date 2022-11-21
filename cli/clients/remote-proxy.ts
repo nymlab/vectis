@@ -41,6 +41,22 @@ class RemoteProxyClient extends ProxyC {
         return await this.executeWasm(factoryAddr, { claim_govec: {} }, [fee]);
     }
 
+    async transferGovec(tunnelAddr: string, reciverAddr: string, amount: string) {
+        const msg: RemoteTunnelT.ExecuteMsg = {
+            dao_actions: {
+                msg: {
+                    govec_actions: {
+                        transfer: {
+                            amount,
+                            recipient: reciverAddr,
+                        },
+                    },
+                },
+            },
+        };
+        return await this.executeWasm(tunnelAddr, msg);
+    }
+
     async stakeGovec(tunnelAddr: string, stakingAddr: string, amount: string): Promise<ExecuteResult> {
         const msg: RemoteTunnelT.ExecuteMsg = {
             dao_actions: {
@@ -69,20 +85,15 @@ class RemoteProxyClient extends ProxyC {
         return await this.executeWasm(tunnelAddr, msg);
     }
 
-    async burnGovec(govecAddr: string): Promise<ExecuteResult> {
-        return await this.execute({
-            msgs: [
-                {
-                    wasm: {
-                        execute: {
-                            contract_addr: govecAddr,
-                            funds: [],
-                            msg: toCosmosMsg({ burn: {} }),
-                        },
-                    },
+    async burnGovec(tunnelAddr: string): Promise<ExecuteResult> {
+        const msg: RemoteTunnelT.ExecuteMsg = {
+            dao_actions: {
+                msg: {
+                    govec_actions: { burn: {} },
                 },
-            ],
-        });
+            },
+        };
+        return await this.executeWasm(tunnelAddr, msg);
     }
 
     async createProposal(proposalAddr: string, title: string, description: string, msgs: unknown[]) {
