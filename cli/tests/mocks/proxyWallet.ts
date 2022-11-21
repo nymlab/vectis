@@ -5,8 +5,8 @@ import { getDefaultWalletCreationFee, walletInitialFunds } from "../../utils/fee
 
 export async function createTestProxyWallets(factoryClient: FactoryClient): Promise<FactoryT.Addr[]> {
     const initial_funds = walletInitialFunds(hostChain);
-    const walletCreationFee = await factoryClient.fee();
-    const totalFee: Number = Number(walletCreationFee.amount) + Number(initial_funds.amount);
+    const { wallet_fee } = await factoryClient.fees();
+    const totalFee: Number = Number(wallet_fee.amount) + Number(initial_funds.amount);
 
     await factoryClient.createWallet(
         {
