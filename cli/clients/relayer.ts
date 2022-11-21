@@ -84,7 +84,11 @@ class RelayerClient {
             | undefined;
 
         if (ibcInfo) {
-            return await this.recoverConnection(ibcInfo.src, ibcInfo.dest);
+            try {
+                return await this.recoverConnection(ibcInfo.src, ibcInfo.dest);
+            } catch (err) {
+                return this.createConnection();
+            }
         } else if (connectionsId) {
             return await this.recoverConnection(connectionsId.src, connectionsId.dest);
         }

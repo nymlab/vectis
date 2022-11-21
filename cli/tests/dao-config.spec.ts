@@ -69,6 +69,9 @@ describe("DAO Suite:", () => {
         const { wallet_fee } = await factoryClient.fees();
         const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
 
+        const { amount: remainingBalance } = await userClient.getBalance(userClient.sender, remoteChain.feeToken);
+        console.log("remaining balance ", remainingBalance);
+        console.log("initial", totalFee);
         await factoryClient.createWallet(
             {
                 createWalletMsg: {
@@ -212,206 +215,23 @@ describe("DAO Suite:", () => {
                 },
             },
         });
+        // TODO  check
     });
 
-    it("DAO can send funds from remote-tunnel to others", async () => {
-        const funds = [{ amount: (1e7).toString(), denom: remoteChain.feeToken }];
-        await userRemoteClient.sendTokens(userRemoteClient.sender, addrs.remoteTunnelAddr, funds, "auto");
-        const { amount: rmtFactoryPreviousBalance } = await userRemoteClient.getBalance(
-            addrs.remoteFactoryAddr,
-            remoteChain.feeToken
-        );
-        const { amount: rmtTunnelPreviousBalance } = await userRemoteClient.getBalance(
-            addrs.remoteFactoryAddr,
-            remoteChain.feeToken
-        );
-
-        console.log(relayerClient.channels);
-
-        const msg = daoClient.executeMsg(addrs.daoTunnelAddr, {
-            dispatch_action_on_remote_tunnel: {
-                channel_id: relayerClient.channels.wasm?.src.channelId as string,
-                job_id: 1,
-                msg: {
-                    dispatch_actions: {
-                        msgs: [
-                            {
-                                bank: {
-                                    send: {
-                                        amount: funds,
-                                        to_address: addrs.remoteFactoryAddr,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
-        });
-
-        await proxyClient.createProposal(
-            daoClient.proposalAddr,
-            "Send funds from remote tunnel",
-            "Send funds from remote tunne",
-            [msg]
-        );
-        await delay(10000);
-
-        const { proposals } = await daoClient.queryProposals();
-        const proposalId = proposals.length;
-
-        await proxyClient.voteProposal(daoClient.proposalAddr, proposalId, "yes");
-        await delay(10000);
-
-        await proxyClient.executeProposal(daoClient.proposalAddr, proposalId);
-        await delay(10000);
-        await relayerClient.relayAll();
-
-        const { amount: rmtFactoryCurrentBalance } = await userRemoteClient.getBalance(
-            addrs.remoteFactoryAddr,
-            remoteChain.feeToken
-        );
-        const { amount: rmtTunnelCurrentBalance } = await userRemoteClient.getBalance(
-            addrs.remoteFactoryAddr,
-            remoteChain.feeToken
-        );
-
-        expect(+rmtTunnelPreviousBalance).toBe(+rmtTunnelCurrentBalance - +funds[0].amount);
-        expect(+rmtFactoryPreviousBalance + +funds[0].amount).toBe(+rmtFactoryCurrentBalance);
-    });
-
-    it("DAO can instruct remote-tunnel to stake / delegate", async () => {
-        const funds = { amount: (1e7).toString(), denom: remoteChain.feeToken };
-        await userRemoteClient.sendTokens(userRemoteClient.sender, addrs.remoteTunnelAddr, [funds], "auto");
-        let balanceBeforeStaking = "0";
-        const { validators } = await remoteQueryClient.staking.validators("BOND_STATUS_BONDED");
-        const [validator] = validators;
-        try {
-            const delegations = await remoteQueryClient.staking.delegation(
-                addrs.remoteTunnelAddr,
-                validator.operatorAddress
-            );
-            balanceBeforeStaking = delegations?.delegationResponse?.balance?.amount || "0";
-        } catch (err) {}
-
-        const msg = daoClient.executeMsg(addrs.daoTunnelAddr, {
-            dispatch_action_on_remote_tunnel: {
-                channel_id: relayerClient.channels.wasm?.src.channelId as string,
-                job_id: 3,
-                msg: {
-                    dispatch_actions: {
-                        msgs: [
-                            {
-                                staking: {
-                                    delegate: {
-                                        amount: funds,
-                                        validator: validator.operatorAddress,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
-        });
-
-        await proxyClient.createProposal(
-            daoClient.proposalAddr,
-            "Stake action from remote tunnel",
-            "Stake action from remote tunnel",
-            [msg]
-        );
-        await delay(10000);
-
-        const { proposals } = await daoClient.queryProposals();
-        const proposalId = proposals.length;
-
-        await proxyClient.voteProposal(daoClient.proposalAddr, proposalId, "yes");
-        await delay(10000);
-
-        await proxyClient.executeProposal(daoClient.proposalAddr, proposalId);
-        await delay(10000);
-        await relayerClient.relayAll();
-
-        const resp = await remoteQueryClient.staking.delegation(addrs.remoteTunnelAddr, validator.operatorAddress);
-        const balanceAfterStaking = resp.delegationResponse?.balance?.amount || NaN;
-
-        expect(+balanceBeforeStaking + +funds.amount).toBe(+balanceAfterStaking);
-    });
-
-    it("DAO can send funds from remote-tunnel to itself", async () => {
-        const amount = 1e7;
-        const { amount: daoPreviousBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
-
-        const msg = daoClient.executeMsg(addrs.daoTunnelAddr, {
-            dispatch_action_on_remote_tunnel: {
-                channel_id: relayerClient.channels.wasm?.src.channelId as string,
-                job_id: 2,
-                msg: {
-                    dispatch_actions: {
-                        msgs: [
-                            {
-                                ibc: {
-                                    transfer: {
-                                        amount: coin(amount, remoteChain.feeToken),
-                                        channel_id: relayerClient.channels.transfer?.dest.channelId,
-                                        timeout: {
-                                            timestamp: long
-                                                .fromNumber(Math.floor(Date.now() / 1000) + 60)
-                                                .multiply(1e9)
-                                                .toString(),
-                                        },
-                                        to_address: daoClient.daoAddr,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
-        });
-
-        await proxyClient.createProposal(
-            daoClient.proposalAddr,
-            "Send funds from remote tunnel to DAO",
-            "Send funds from remote tunne to DAO",
-            [msg]
-        );
-        await delay(10000);
-
-        const { proposals } = await daoClient.queryProposals();
-        const proposalId = proposals.length;
-
-        await proxyClient.voteProposal(daoClient.proposalAddr, proposalId, "yes");
-        await delay(10000);
-
-        await proxyClient.executeProposal(daoClient.proposalAddr, proposalId);
-
-        await delay(10000);
-        await relayerClient.relayAll();
-        await delay(10000);
-
-        const { amount: daoCurrentBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
-        const balances = await queryClient.bank.allBalances(addrs.daoAddr);
-        console.log(balances, relayerClient.denoms);
-
-        expect(+daoPreviousBalance + amount).toBe(+daoCurrentBalance);
-    });
-
-    it("DAO should be able to update wallet fee in factory", async () => {
+    it("DAO should be able to update wallet fee in Dao-chain factory", async () => {
         const fee = coin(1000, hostChain.feeToken);
         const { wallet_fee: oldFee } = await factoryClient.fees();
 
         expect(oldFee).not.toBe(fee);
 
         const msg = daoClient.executeMsg(addrs.factoryAddr, {
-            update_wallet_fee: {
-                new_fee: fee,
+            update_config_fee: {
+                new_fee: { wallet: fee },
             },
         });
 
         await proxyClient.createProposal(daoClient.proposalAddr, "Update wallet fee", "Update wallet fee", [msg]);
-        await delay(10000);
+        await delay(8000);
 
         const { proposals } = await daoClient.queryProposals();
         const approveControllerProposalId = proposals.length;
@@ -420,7 +240,6 @@ describe("DAO Suite:", () => {
         await delay(10000);
 
         await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
-        await delay(10000);
 
         const { wallet_fee: newFee } = await factoryClient.fees();
 
@@ -442,16 +261,15 @@ describe("DAO Suite:", () => {
         });
 
         await proxyClient.createProposal(daoClient.proposalAddr, "Update govec addr", "Update govec addr", [msg]);
-        await delay(10000);
+        await delay(8000);
 
         const { proposals } = await daoClient.queryProposals();
         const approveControllerProposalId = proposals.length;
 
         await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
-        await delay(10000);
+        await delay(8000);
 
         await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
-        await delay(10000);
 
         const newGovec = await factoryClient.govecAddr();
 
