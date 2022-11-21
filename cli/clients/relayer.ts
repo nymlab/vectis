@@ -62,7 +62,7 @@ class RelayerClient {
     }
 
     getDenomIBC(port: string, channel: string, token: string) {
-        return "ibc/" + crypto.createHash("sha256").update(`${port}/${channel}/${token}`).digest("hex");
+        return "ibc/" + crypto.createHash("sha256").update(`${port}/${channel}/${token}`).digest("hex").toUpperCase();
     }
 
     async backupChannels() {
