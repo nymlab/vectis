@@ -47,6 +47,7 @@ export const cw20ProposalSingleDownloadLink = `https://github.com/DA0-DA0/dao-co
 // Paths
 export const cachePath = path.join(__dirname, "../.cache");
 export const configPath = path.join(__dirname, "../config");
+export const contractPath = path.join(__dirname, "../contracts");
 export const downloadContractPath = path.join(cachePath, "/contracts");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
 export const deployReportPath = path.join(cachePath, "deployInfo.json");
@@ -71,6 +72,6 @@ export const cw20CodePath = path.join(downloadContractPath, contractsFileNames.c
 
 // DAODAO Contracts
 export const daoCodePath = path.join(downloadContractPath, contractsFileNames.cw_dao);
-export const stakingCodePath = path.join(downloadContractPath, contractsFileNames.cw20_staking);
-export const voteCodePath = path.join(downloadContractPath, contractsFileNames.cw20_voting);
-export const proposalSingleCodePath = path.join(downloadContractPath, contractsFileNames.cw_proposal_single);
+export const stakingCodePath = path.join(contractPath, contractsFileNames.cw20_staking);
+export const voteCodePath = path.join(contractPath, contractsFileNames.cw20_voting);
+export const proposalSingleCodePath = path.join(contractPath, contractsFileNames.cw_proposal_single);
