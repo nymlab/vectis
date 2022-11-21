@@ -9,88 +9,61 @@
 
 ## Overview
 
-Smart Contract Wallet allows user to interact with DAPPs on the blockchain with the same amount of autonomy of a classic non-custodial solution, but with more flexibility by providing functionalities designed to serve the user.
+Smart Contract Wallet allows user to interact with DAPPs on the blockchain with the same amount of autonomy of a classic non-custodial solution,
+with the additional functionalities designed to provide the user with better experience and security.
+
 SCW also provide functions that allow businesses to satisfy regulatory requirements regarding support of users,
 transparency,
 separation of control duties and verifiability.
 
 VectisDAO is the organisation that provides governance to the this infrastructure.
-Every wallet has a Govec token that is minted during wallet creation and can be staked to vote.
 VectisDAO lives on [Juno Network] and leverages the [DAO DAO] stack.
+Every SCW wallet has the right to purchase a set amount of Govec tokens at a set price,
+the Govec will be minted and can be staked to vote.
+Contributors can enter VectisDAO with investment (typically development and other useful efforts).
+The amount of Govec from contributions will be determined by the DAO.
 
 Through [IBC], Vectis wallets can also be deployed on other chains.
 From the perspective of DAO participation,
 there is no difference between a wallet on [Juno Network] or others.
 Staking and voting will be done via IBC calls from the wallet.
 
+Please see our [wiki] for details.
+
 [dao dao]: https://daodao.zone
 [juno network]: https://www.junonetwork.io/
 [ibc]: https://github.com/cosmos/ibc
-
-Please see our [wiki] for details
-
 [wiki]: https://github.com/nymlab/vectis/wiki
 
-#### IBC Architecture
-
-##### Juno Network Components
-
-- DAODAO contracts: [cw-core], [cw-proposal-single], [cw20-staked-balance-voting], [cw20-stake]
-- [Factory]
-- [Proxy]
-- [Govec]: This allows balance of Govec token for proxy addresses of different chains
-- [IBC Host]: This is inspire by the `simple-ica-host` provided in the [Confio demo],
-  it stores, in its states, of the acceptable [`connection-id`] and [`port-id`] of a Vectis [`IBC Remote`] contract as voted in by the VectisDAO,
-  it will effectively communitcate to the Govec contract for new voting tokens and their votes etc
-
-##### Remote Network Components
-
-- [Factory Remote]: Same as [Factory] with the addition of messages for the [IBC Remote] contract
-- [Proxy Remote]: Same as [Proxy] with the addition of [Govec] operations,
-  this is to minimise each proxy having to create their own channel
-- [IBC Remote]: This is inspired by the `simple-ica-remote` provided in the [Confio demo],
-  its main job is to route IBC messages to the [IBC Host] for minting new Govec tokens and other Govec operations
-
-[factory]: https://github.com/nymlab/vectis/tree/main/contracts/factory
-[proxy]: https://github.com/nymlab/vectis/tree/main/contracts/proxy
-[govec]: https://github.com/nymlab/vectis/tree/main/contracts/govec
-[cw-core]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw-core
-[cw-proposal-single]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw-proposal-single
-[cw20-staked-balance-voting]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw-staked-balance-voting
-[cw20-stake]: https://github.com/DA0-DA0/dao-contracts/tree/v1.0.0/contracts/cw20-stake
-[confio demo]: https://github.com/confio/cw-ibc-demo
-
-### Note on Relayer gas fees
-
-When a message is relayed, the smart contract wallet has to verify the relayed transaction has been signed by the user and that it was not replayed.
-This operation adds some amount of gas to a transaction that was just directly sent by the user to the SCW.
-
-For reference (tested on a local node):
-
-- A user directly sends a bank message to the SCW: 138700
-- A relayer sends a signed bank message for execution: 147285
+---
 
 ## Hack
 
-### Contracts Code Test
+### Contract Tests
 
 ```sh
-cd contracts
+# For individual contract tests
+cd contracts/contract-you-want-to-test
+cargo test
+
+# For all tests
 cargo test
 ```
 
-### Runner Options
+### Integration Tests
 
 #### Docker Images
 
 ##### 1. Set Environment
 
+First we set up the two networks (one node each) locally.
 Please ensure you have set up the `.env` file according to the `example.env`. <br>
-You should check supported chains in ``cli/config/chains`` directory.
+You should check supported chains in `cli/config/chains` directory.
 
 ```sh
 make nodes-setup
 ```
+
 ##### 2. Compile Contracts
 
 ```sh
@@ -102,7 +75,29 @@ make build
 ```sh
 make deploy
 ```
+
+The deployment of the DAO on the host chain has the following steps:
+
+1. _Relayer_: Creates channels between Dao-tunnel and Remote-tunnel
+1. Upload all required contracts (in ./upload.ts) to dao chain + remote chains
+   1. Host: Factory, Govec, Proxy, Dao-tunnel, Dao contracts
+   1. Remote: Remote-Factory, Proxy, Remote-tunnel
+1. _DAO Chain_: Instantiate Govec contract (with admin having initial balance for proposing for DAO to deploy Factory)
+1. _DAO Chain_: Instantiate dao-core contract (which will instantiate one proposal module and one vote module contracts)
+   - note: vote contracts also instantiates a new staking contract as we use staked-balance for voting
+1. _DAO Chain_: Admin propose and execute on DAO to deploy factory and Dao-tunnel contracts
+1. _Remote Chain_: Remote Admin instantiate Remote-tunnel with Dao-tunnel as port and connection Id from step 1
+1. _DAO Chain_: Admin propose and execute on DAO to allow ibc-connection to the Remote-tunnel
+1. _DAO Chain_: Admin propose and execute on DAO to deploy remote-factory
+1. _Remote Chain_: Execute instantiate remote-factory
+1. _DAO Chain_: Admin updates Govec staking address to the staking contract in step 4.
+1. _DAO Chain_: Admin updates Govec minter address to the factory contract addr and dao-tunnel addr
+1. _DAO Chain_: Admin updates Govec contract DAO_ADDR as DAO
+1. _DAO Chain_: Admin updates Govec contract admin as DAO (for future upgrades)
+1. _DAO Chain_: Admin unstakes and burn its govec (exits system)
+
 After upload and deploy contracts it will check the contract have the right checksum and the contracts have DAO as admin.
+
 #### Native Local Node
 
 ##### Juno Option
@@ -142,25 +137,3 @@ make build
 ### Interacting with the blockchain
 
 We are using [CosmJS](https://github.com/cosmos/cosmjs) to interact with the smart contracts and [Jest](https://jestjs.io/) as testing framework for client-side tests.
-
-### Deployment
-
-Deployment
-The deployment of the DAO on the host chain has the following steps:
-
-1. Upload all required contracts (in ./upload.ts) to host chain + remote chains - Host: Factory, Govec, Proxy, Ibc-host - Remote: Factory-remote, Proxy-remote, Ibc-remote
-2. Instantiate Govec contract (with admin having initial balance for proposing for DAO to deploy Factory)
-3. Instantiate dao-core contract (which will instantiate proposal(s) and vote contracts)
-   note: vote contracts also instantiates a new staking contract
-4. Admin propose and execute on DAO to deploy factory and ibc-host contracts
-5. Admin updates Govec staking address to the staking contract in step 3.
-6. Admin updates Govec minter address to the factory contract addr and ibc-host addr in step 4.
-7. Admin updates Govec contract DAO_ADDR as DAO
-8. Admin updates Govec contract admin as DAO (for future upgrades)
-
-   (Somehow DAO gets ICA on other chains?)
-
-9. Admin propose and execute on DAO to deploy factory-remote and Ibc-remote contracts with DAO ICA
-10. Create channels between Ibc-host<> Ibc-remote_1; Ibc-host <> Ibc-remote_2; with known connection ids?
-11. Admin propose and execute to add <connection-id, portid> to ibc-host for each channel in step 9
-12. Admin unstakes and burn its govec (exits system)
