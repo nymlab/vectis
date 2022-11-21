@@ -6,6 +6,7 @@ import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
 import { Coin, Expiration } from "../interfaces/Factory.types";
 import RelayerClient from "../clients/relayer";
 import { toCosmosMsg } from "../utils/enconding";
+import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
 describe("Remote Factory Suite:", () => {
     let userClient: CWClient;
@@ -13,10 +14,12 @@ describe("Remote Factory Suite:", () => {
     let factoryClient: FactoryClient;
     let proxyClient: ProxyClient;
     let govecClient: GovecClient;
+    let addrs: VectisDaoContractsAddrs;
     const relayerClient = new RelayerClient();
     beforeAll(async () => {
         const { remoteFactoryAddr, govecAddr } = await import(deployReportPath);
         await relayerClient.connect();
+        addrs = await import(deployReportPath);
         userClient = await CWClient.connectRemoteWithAccount("user");
         hostUserClient = await CWClient.connectHostWithAccount("user");
         factoryClient = new FactoryClient(userClient, userClient.sender, remoteFactoryAddr);
@@ -24,8 +27,8 @@ describe("Remote Factory Suite:", () => {
     });
     it("should create a proxy wallet", async () => {
         const initialFunds = walletInitialFunds(remoteChain);
-        const walletCreationFee = await factoryClient.fee();
-        const totalFee: Number = Number(walletCreationFee.amount) + Number(initialFunds.amount);
+        const { wallet_fee } = await factoryClient.fees();
+        const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
 
         const totalWalletBeforeCreation = await factoryClient.totalCreated();
 
@@ -53,10 +56,13 @@ describe("Remote Factory Suite:", () => {
 
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });
+
     it("should be able to mint govec tokens", async () => {
         let res = await factoryClient.unclaimedGovecWallets({});
+        const initTunnelBalance = (await userClient.getBalance(addrs.remoteTunnelAddr, remoteChain.feeToken)) as Coin;
         let targetWallet = res.wallets.find(([w]: [string, Expiration]) => w === proxyClient.contractAddress);
 
+        const { claim_fee } = await factoryClient.fees();
         expect(targetWallet).toBeDefined();
 
         await proxyClient.execute({
@@ -65,7 +71,7 @@ describe("Remote Factory Suite:", () => {
                     wasm: {
                         execute: {
                             contract_addr: factoryClient.contractAddress,
-                            funds: [],
+                            funds: [claim_fee],
                             msg: toCosmosMsg({ claim_govec: {} }),
                         },
                     },
@@ -83,5 +89,9 @@ describe("Remote Factory Suite:", () => {
             address: proxyClient.contractAddress,
         });
         expect(balance).toBe("2");
+
+        const finalTunnelBalance = (await userClient.getBalance(addrs.remoteTunnelAddr, remoteChain.feeToken)) as Coin;
+        let diff = +finalTunnelBalance.amount - +initTunnelBalance.amount;
+        expect(diff).toEqual(+claim_fee.amount);
     });
 });

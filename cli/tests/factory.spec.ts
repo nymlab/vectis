@@ -2,7 +2,7 @@ import { coin } from "@cosmjs/stargate";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import { deployReportPath, hostAccounts, hostChain, uploadReportPath } from "../utils/constants";
-import { CWClient, FactoryClient, GovecClient, ProxyClient } from "../clients";
+import { CWClient, FactoryClient, GovecClient, ProxyClient, DaoClient } from "../clients";
 import { getInitialFactoryBalance, getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
 import { toCosmosMsg } from "../utils/enconding";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -32,10 +32,15 @@ describe("Factory Suite: ", () => {
         govecClient = new GovecClient(userClient, userClient.sender, addrs.govecAddr);
     });
 
+    it("Should store Proxy code id in Factory contract", async () => {
+        const codeId = await factoryClient.codeId({ ty: "proxy" });
+        expect(codeId).toEqual(proxyCodeId);
+    });
+
     it("should be able to create a proxy wallet", async () => {
         const initialFunds = walletInitialFunds(hostChain);
-        const walletCreationFee = await factoryClient.fee();
-        const totalFee: Number = Number(walletCreationFee.amount) + Number(initialFunds.amount);
+        const { wallet_fee } = await factoryClient.fees();
+        const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
 
         const totalWalletBeforeCreation = await factoryClient.totalCreated();
 
@@ -64,8 +69,41 @@ describe("Factory Suite: ", () => {
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });
 
+    it("Should get correct balance in proxy wallet", async () => {
+        const initialFunds = walletInitialFunds(hostChain);
+        const balance = await client.getBalance(proxyClient.contractAddress, hostChain.feeToken);
+        expect(balance).toEqual(initialFunds);
+    });
+
+    it("should not allow to claim govec without fee ", async () => {
+        let res = await factoryClient.unclaimedGovecWallets({});
+        let targetWallet = res.wallets.find(([w]: [string, Expiration]) => w === proxyClient.contractAddress);
+
+        expect(targetWallet).toBeDefined();
+
+        try {
+            await proxyClient.execute({
+                msgs: [
+                    {
+                        wasm: {
+                            execute: {
+                                contract_addr: factoryClient.contractAddress,
+                                funds: [],
+                                msg: toCosmosMsg({ claim_govec: {} }),
+                            },
+                        },
+                    },
+                ],
+            });
+        } catch (err) {
+            expect(err).toBeDefined();
+        }
+    });
+
     it("should allow to claim govec to new proxy wallets", async () => {
         let res = await factoryClient.unclaimedGovecWallets({});
+        const initDAOBalance = (await client.getBalance(addrs.daoAddr, hostChain.feeToken)) as Coin;
+        const { claim_fee } = await factoryClient.fees();
         let targetWallet = res.wallets.find(([w]: [string, Expiration]) => w === proxyClient.contractAddress);
 
         expect(targetWallet).toBeDefined();
@@ -76,7 +114,7 @@ describe("Factory Suite: ", () => {
                     wasm: {
                         execute: {
                             contract_addr: factoryClient.contractAddress,
-                            funds: [],
+                            funds: [claim_fee],
                             msg: toCosmosMsg({ claim_govec: {} }),
                         },
                     },
@@ -91,17 +129,11 @@ describe("Factory Suite: ", () => {
             address: proxyClient.contractAddress,
         });
         expect(balance).toBe("2");
-    });
 
-    it("Should store Proxy code id in Factory contract", async () => {
-        const codeId = await factoryClient.codeId({ ty: "proxy" });
-        expect(codeId).toEqual(proxyCodeId);
-    });
+        const finalDAOBalance = (await client.getBalance(addrs.daoAddr, hostChain.feeToken)) as Coin;
 
-    it("Should get correct balance in proxy wallet", async () => {
-        const initialFunds = walletInitialFunds(hostChain);
-        const balance = await client.getBalance(proxyClient.contractAddress, hostChain.feeToken);
-        expect(balance).toEqual(initialFunds);
+        let diff = +finalDAOBalance.amount - +initDAOBalance.amount;
+        expect(diff).toEqual(+claim_fee.amount);
     });
 
     afterAll(() => {
