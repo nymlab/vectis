@@ -8,6 +8,7 @@ command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed on your
 
 NODE_1=`docker ps -a --format="{{.Names}}" | grep juno_local | awk '{print $1}'`
 NODE_2=`docker ps -a --format="{{.Names}}" | grep wasm_local | awk '{print $1}'`
+NODE_3=`docker ps -a --format="{{.Names}}" | grep tgrade_local | awk '{print $1}'`
 
 if [[ "$NODE_1" != "" ]]; then
 echo "Removing existing node container $NODE_1"
@@ -17,6 +18,11 @@ fi
 if [[ "$NODE_2" != "" ]]; then
 echo "Removing existing node container $NODE_2"
 docker rm -f $NODE_2 > /dev/null;
+fi
+
+if [[ "$NODE_3" != "" ]]; then
+echo "Removing existing node container $NODE_3"
+docker rm -f $NODE_3 > /dev/null;
 fi
 
 echo "⚙️  Running juno_local on Docker..."
@@ -46,3 +52,16 @@ docker run -d \
 cosmwasm/wasmd:v0.29.0 \
 ./setup_and_run.sh \
 wasm1jcdyqsjyvp86g6tuzwwryfkpvua89fau728ctm wasm1tcxyhajlzvdheqyackfzqcmmfcr760marg3zw5 wasm1wk2r0jrhuskqmhc0gk6dcpmnz094sc2ausut0d wasm1ucl9dulgww2trng0dmunj348vxneufu5nk4yy4 wasm1yjammmgqu62lz4sxk5seu7ml4fzdu7gkatgswc;
+
+echo "⚙️  Running tgrade_local on Docker..."
+
+docker run -d \
+--name tgrade_local \
+-p 1337:1317 \
+-p 26636:26656 \
+-p 26637:26657 \
+-e STAKE_TOKEN=utgd \
+-e UNSAFE_CORS=true \
+-e CHAIN_ID=tgrade-local \
+confio/tgrade:v2.0.2 \
+./setup_and_run.sh 
