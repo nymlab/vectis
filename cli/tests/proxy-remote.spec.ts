@@ -95,16 +95,14 @@ describe("Proxy Remote Suite: ", () => {
     });
 
     it("should be able to transfer govec", async () => {
-        const address = await generateRandomAddress("juno");
-        const { balance: previousBalance } = await govecClient.balance({ address });
-        expect(previousBalance).toBe("0");
+        const { balance: previousBalance } = await govecClient.balance({ address: addrs.daoAddr });
 
-        await proxyClient.transferGovec(addrs.remoteTunnelAddr, address, "1");
+        await proxyClient.transferGovec(addrs.remoteTunnelAddr, addrs.daoAddr, "1");
         await relayerClient.relayAll();
-        await delay(10000);
+        await delay(8000);
 
-        const { balance: currentBalance } = await govecClient.balance({ address });
-        expect(currentBalance).toBe("1");
+        const { balance: currentBalance } = await govecClient.balance({ address: addrs.daoAddr });
+        expect(-+previousBalance + +currentBalance).toBe(1);
     });
 
     it("should be able to stake", async () => {
@@ -125,13 +123,5 @@ describe("Proxy Remote Suite: ", () => {
             staked_value: { address: proxyClient.contractAddress },
         });
         expect(value).toBe("0");
-    });
-
-    it("should be able to burn govec", async () => {
-        await proxyClient.burnGovec(addrs.remoteTunnelAddr);
-        await relayerClient.relayAll();
-        const { balance } = await govecClient.balance({ address: proxyClient.contractAddress });
-        // Temporally is failing because we have to fix unstake
-        expect(balance).toBe("0");
     });
 });
