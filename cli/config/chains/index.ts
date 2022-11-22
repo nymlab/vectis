@@ -1,4 +1,4 @@
-export type Chains = "juno_testnet" | "juno_localnet" | "wasm_testnet" | "wasm_localnet";
+export type Chains = "juno_testnet" | "juno_localnet" | "wasm_testnet" | "wasm_localnet" | "tgrade_localnet";
 export interface Chain {
     readonly chainId: string;
     readonly chainName: string;
@@ -16,3 +16,4 @@ export interface Chain {
 
 export * from "./juno";
 export * from "./wasm";
+export * from "./tgrade";
