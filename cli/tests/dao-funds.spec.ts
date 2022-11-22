@@ -91,6 +91,9 @@ describe("DAO Suite:", () => {
         const { claim_fee } = await factoryClient.fees();
         await proxyClient.mintGovec(addrs.factoryAddr, claim_fee);
         await proxyClient.stakeGovec(addrs.govecAddr, addrs.stakingAddr, "2");
+
+        // ensure all previously ibc messages have been relayed
+        await relayerClient.relayAll();
         await delay(10000);
     });
 
@@ -239,26 +242,15 @@ describe("DAO Suite:", () => {
     //    console.log("denoms: ", relayerClient.denoms);
     //});
 
-    it("DAO can send funds from remote-tunnel to itself", async () => {
+    it("DAO can send funds from remote-tunnel to itself via contract and ibc-transfer module", async () => {
         const tosend = 1e7;
-        const funds = { amount: tosend.toString(), denom: remoteChain.feeToken };
+        const funds = { amount: (2 * tosend).toString(), denom: remoteChain.feeToken };
         await userRemoteClient.sendTokens(userRemoteClient.sender, addrs.remoteTunnelAddr, [funds], "auto");
         console.log("remote tunnel:", addrs.remoteTunnelAddr);
 
-        const { amount: daoPreviousBalance } = await userClient.getBalance(
-            addrs.daoAddr,
-            relayerClient.denoms.dest.toUpperCase()
-        );
+        const { amount: daoPreviousBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
+        console.log("denom: ", relayerClient.denoms.dest);
         console.log("previous balance dao: ", daoPreviousBalance);
-
-        const pbalances = await queryClient.bank.allBalances(addrs.daoAddr);
-        console.log("init balances: ", pbalances);
-
-        const { amount: initRemoteBalance } = await userRemoteClient.getBalance(
-            addrs.remoteTunnelAddr,
-            remoteChain.feeToken
-        );
-        console.log("previous balance remote: ", initRemoteBalance);
 
         const msg = daoClient.executeMsg(addrs.daoTunnelAddr, {
             dispatch_action_on_remote_tunnel: {
@@ -281,19 +273,21 @@ describe("DAO Suite:", () => {
                                             },
                                         }),
                                     },
-                                    //ibc: {
-                                    //    transfer: {
-                                    //        amount: coin(tosend, remoteChain.feeToken),
-                                    //        channel_id: relayerClient.channels.transfer?.dest.channelId,
-                                    //        timeout: {
-                                    //            timestamp: long
-                                    //                .fromNumber(Math.floor(Date.now() / 1000) + 60)
-                                    //                .multiply(1e12)
-                                    //                .toString(),
-                                    //        },
-                                    //        to_address: daoClient.daoAddr,
-                                    //    },
-                                    //},
+                                },
+                            },
+                            {
+                                ibc: {
+                                    transfer: {
+                                        amount: coin(tosend, remoteChain.feeToken),
+                                        channel_id: relayerClient.channels.transfer?.dest.channelId,
+                                        timeout: {
+                                            timestamp: long
+                                                .fromNumber(Math.floor(Date.now() / 1000) + 60)
+                                                .multiply(1e12)
+                                                .toString(),
+                                        },
+                                        to_address: daoClient.daoAddr,
+                                    },
                                 },
                             },
                         ],
@@ -318,17 +312,16 @@ describe("DAO Suite:", () => {
         await delay(8000);
 
         await proxyClient.executeProposal(daoClient.proposalAddr, proposalId);
-        await delay(8000);
+        await delay(12000);
         await relayerClient.relayAll();
 
-        const { amount: daoCurrentBalance } = await userClient.getBalance(
-            addrs.daoAddr,
-            relayerClient.denoms.dest.toUpperCase()
-        );
+        await delay(8000);
+        await relayerClient.relayAll();
+        const { amount: daoCurrentBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
         const balances = await queryClient.bank.allBalances(addrs.daoAddr);
         console.log("final balances: ", balances);
 
-        expect(+daoPreviousBalance + tosend).toBe(+daoCurrentBalance);
+        expect(+daoPreviousBalance + 2 * tosend).toBe(+daoCurrentBalance);
     });
 
     afterAll(async () => {
