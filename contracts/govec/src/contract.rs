@@ -337,7 +337,7 @@ pub fn execute_mint(
         .set_data(to_binary(&new_wallet)?)
         .add_attribute("action", "mint")
         .add_attribute("to", new_wallet)
-        .add_attribute("amount", "1");
+        .add_attribute("amount", MINT_AMOUNT.to_string());
     Ok(res)
 }
 
