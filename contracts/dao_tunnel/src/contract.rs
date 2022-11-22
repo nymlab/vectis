@@ -302,8 +302,8 @@ pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contra
     match reply.id {
         // All possible DAO actions
         // VectisDaoActionIds::GovecMint = 10
-        // VectisDaoActionIds::ProposalClose = 19
-        10..=19 => reply_dao_actions(reply),
+        // VectisDaoActionIds::FactoryInstantiated = 20
+        10..=20 => reply_dao_actions(reply),
         _ => Err(ContractError::InvalidReplyId {}),
     }
 }
