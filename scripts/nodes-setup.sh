@@ -53,15 +53,15 @@ cosmwasm/wasmd:v0.29.0 \
 ./setup_and_run.sh \
 wasm1jcdyqsjyvp86g6tuzwwryfkpvua89fau728ctm wasm1tcxyhajlzvdheqyackfzqcmmfcr760marg3zw5 wasm1wk2r0jrhuskqmhc0gk6dcpmnz094sc2ausut0d wasm1ucl9dulgww2trng0dmunj348vxneufu5nk4yy4 wasm1yjammmgqu62lz4sxk5seu7ml4fzdu7gkatgswc;
 
-echo "⚙️  Running tgrade_local on Docker..."
-
-docker run -d \
---name tgrade_local \
--p 1337:1317 \
--p 26636:26656 \
--p 26637:26657 \
--e STAKE_TOKEN=utgd \
--e UNSAFE_CORS=true \
--e CHAIN_ID=tgrade-local \
-confio/tgrade:v2.0.2 \
-./setup_and_run.sh 
+# echo "⚙️  Running tgrade_local on Docker..."
+# 
+# docker run -d \
+# --name tgrade_local \
+# -p 1337:1317 \
+# -p 26636:26656 \
+# -p 26637:26657 \
+# -e STAKE_TOKEN=utgd \
+# -e UNSAFE_CORS=true \
+# -e CHAIN_ID=tgrade-local \
+# confio/tgrade:v2.0.2 \
+# ./setup_and_run.sh 

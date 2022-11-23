@@ -211,8 +211,31 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     const { remote_factory: remoteFactoryAddr } = await remoteTunnelClient.chainConfig();
     console.log("\nRemote Factory Addr: ", remoteFactoryAddr);
 
+    // Set dao-tunnel address in DAO
+    //     // Update DAO with dao_tunnel addr
+    //
+    const daoSetItemMsg: ProxyT.CosmosMsgForEmpty = {
+        wasm: {
+            execute: {
+                contract_addr: daoClient.daoAddr,
+                funds: [],
+                msg: toCosmosMsg({ set_item: { key: "dao-tunnel", addr: daoTunnelAddr } }),
+            },
+        },
+    };
+
+    await daoClient.createProposal("Set Dao-tunnel Addr in DAO", "Set item - dao-tunnel", [daoSetItemMsg]);
+    await delay(10000);
+
+    const setItemProposalId = 5;
+
+    await daoClient.voteProposal(setItemProposalId, "yes");
+    await delay(10000);
+    let res = await daoClient.executeProposal(setItemProposalId);
+    await delay(10000);
+
     // Update marketing address on Govec
-    let res = await govecClient.updateMarketing({
+    res = await govecClient.updateMarketing({
         marketing: daoClient.daoAddr,
     });
     console.log("\n\nUpdated Marketing Address on Govec\n", JSON.stringify(res));
@@ -267,6 +290,9 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         voteAddr: daoClient.voteAddr,
     };
 
+    console.log("ALL ADDRESSES");
+    console.log("%j", contracts);
+
     await verifyDeploy(contracts);
 
     writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
@@ -297,9 +323,9 @@ async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
     const tokenInfo = await govecClient.tokenInfo();
     assert.strictEqual(tokenInfo.total_supply, "0");
 
-    // DAO should have 4 proposals executed
+    // DAO should have 5 proposals executed
     const { proposals } = await daoClient.queryProposals();
-    assert.strictEqual(proposals.length, 4);
+    assert.strictEqual(proposals.length, 5);
 
     // Govec, dao_tunnel, host_factory, cw20_stake, cw20_stake_balance_voting, Proposal Contracts should have DAO as admin
     contract = await adminHostClient.getContract(addrs.factoryAddr);
