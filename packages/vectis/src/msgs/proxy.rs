@@ -11,8 +11,6 @@ pub struct ProxyInstantiateMsg {
     pub multisig_code_id: u64,
     /// Code Id used to instantiate the contract
     pub code_id: u64,
-    /// Chain address prefix
-    pub addr_prefix: String,
 }
 
 #[cw_serde]

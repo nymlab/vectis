@@ -66,7 +66,6 @@ pub fn instantiate(
     )?;
     CODE_ID.save(deps.storage, &msg.code_id)?;
     MULTISIG_CODE_ID.save(deps.storage, &msg.multisig_code_id)?;
-    ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     LABEL.save(deps.storage, &msg.create_wallet_msg.label)?;
 
     let guardian_addresses = &msg.create_wallet_msg.guardians.addresses;
@@ -178,7 +177,10 @@ pub fn execute_relay(
     // Get user addr from it's pubkey
     let addr = pub_key_to_address(
         &deps.as_ref(),
-        &ADDR_PREFIX.load(deps.storage)?,
+        &ADDR_PREFIX.query(
+            &deps.querier,
+            deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
+        )?,
         &transaction.user_pubkey.0,
     )?;
 
