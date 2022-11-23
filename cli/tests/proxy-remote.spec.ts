@@ -1,19 +1,12 @@
 import { queryClient } from "@confio/relayer/build/lib/helpers";
 import { coin } from "@cosmjs/amino";
-import {
-    BankExtension,
-    QueryClient,
-    setupBankExtension,
-    setupStakingExtension,
-    StakingExtension,
-} from "@cosmjs/stargate";
-import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-import { CWClient, GovecClient, ProxyClient, RelayerClient } from "../clients";
+import { BankExtension, QueryClient, StakingExtension } from "@cosmjs/stargate";
+import { CWClient, GovecClient, RelayerClient } from "../clients";
 import RemoteProxyClient from "../clients/remote-proxy";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { Coin } from "../interfaces/Factory.types";
 import { RemoteFactoryClient } from "../interfaces/RemoteFactory.client";
-import { deployReportPath, hostChain, remoteAccounts, remoteChain } from "../utils/constants";
+import { deployReportPath, remoteAccounts, remoteChain } from "../utils/constants";
 import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
 import { delay } from "../utils/promises";
 import { generateRandomAddress } from "./mocks/addresses";
@@ -25,7 +18,6 @@ describe("Proxy Remote Suite: ", () => {
     let factoryClient: RemoteFactoryClient;
     let proxyClient: RemoteProxyClient;
     let govecClient: GovecClient;
-    let hostQueryClient: QueryClient & StakingExtension & BankExtension;
     const relayerClient = new RelayerClient();
     beforeAll(async () => {
         addrs = await import(deployReportPath);
@@ -35,11 +27,6 @@ describe("Proxy Remote Suite: ", () => {
         hostUserClient = await CWClient.connectHostWithAccount("user");
         factoryClient = new RemoteFactoryClient(userClient, userClient.sender, addrs.remoteFactoryAddr);
         govecClient = new GovecClient(hostUserClient, hostUserClient.sender, addrs.govecAddr);
-        hostQueryClient = await QueryClient.withExtensions(
-            await Tendermint34Client.connect(hostChain.rpcUrl),
-            setupStakingExtension,
-            setupBankExtension
-        );
 
         const initialFunds = walletInitialFunds(remoteChain);
         const { wallet_fee } = await factoryClient.fees();
@@ -108,16 +95,19 @@ describe("Proxy Remote Suite: ", () => {
     it("should be able to stake", async () => {
         await proxyClient.stakeGovec(addrs.remoteTunnelAddr, addrs.stakingAddr, "1");
         await relayerClient.relayAll();
+        await delay(8000);
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
         });
+        await delay(8000);
         expect(value).toBe("1");
     });
 
     it("should be able to unstake", async () => {
         await proxyClient.unstakeGovec(addrs.remoteTunnelAddr, "1");
-
+        await delay(8000);
         await relayerClient.relayAll();
+        await delay(8000);
 
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
