@@ -6,7 +6,7 @@ import RemoteProxyClient from "../clients/remote-proxy";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { Coin } from "../interfaces/Factory.types";
 import { RemoteFactoryClient } from "../interfaces/RemoteFactory.client";
-import { deployReportPath, remoteAccounts, remoteChain } from "../utils/constants";
+import { deployReportPath, hostChain, remoteAccounts, remoteChain } from "../utils/constants";
 import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
 import { delay } from "../utils/promises";
 import { generateRandomAddress } from "./mocks/addresses";
@@ -101,6 +101,66 @@ describe("Proxy Remote Suite: ", () => {
         });
         await delay(8000);
         expect(value).toBe("1");
+    });
+
+    it("should be able to do proposal, vote them and execute them", async () => {
+        await hostUserClient.sendTokens(
+            hostUserClient.sender,
+            addrs.daoAddr,
+            [coin("1000000", hostChain.feeToken) as Coin],
+            "auto"
+        );
+
+        const msg = {
+            bank: {
+                send: {
+                    from_address: addrs.daoAddr,
+                    to_address: addrs.daoTunnelAddr,
+                    amount: [coin("100000", hostChain.feeToken) as Coin],
+                },
+            },
+        };
+
+        const { proposals: previousProposals } = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
+            list_proposals: {},
+        });
+
+        await proxyClient.createProposal(
+            addrs.remoteTunnelAddr,
+            addrs.proposalAddr,
+            "title proposal",
+            "description proposal",
+            [msg]
+        );
+        await relayerClient.relayAll();
+
+        let proposalsResult = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
+            list_proposals: {},
+        });
+
+        const { id, proposal: createdProposal } = proposalsResult.proposals[proposalsResult.proposals.length - 1];
+
+        expect(previousProposals.length + 1).toBe(proposalsResult.proposals.length);
+        expect(createdProposal.proposer).toBe(proxyClient.contractAddress);
+
+        await proxyClient.voteProposal(addrs.remoteTunnelAddr, addrs.proposalAddr, id, "yes");
+        await relayerClient.relayAll();
+
+        proposalsResult = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
+            list_proposals: {},
+        });
+
+        const { proposal: votedProposal } = proposalsResult.proposals[proposalsResult.proposals.length - 1];
+
+        expect(votedProposal.votes["yes"]).toBe("1");
+
+        await proxyClient.executeProposal(addrs.remoteTunnelAddr, addrs.proposalAddr, id);
+        await relayerClient.relayAll();
+        await delay(1000);
+
+        const { proposal: executedProposal } = proposalsResult.proposals[proposalsResult.proposals.length - 1];
+
+        expect(executedProposal.status).toBe("executed");
     });
 
     it("should be able to unstake", async () => {
