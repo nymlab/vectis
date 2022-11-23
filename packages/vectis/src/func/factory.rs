@@ -89,7 +89,6 @@ pub mod factory_execute {
                     multisig_code_id: PROXY_MULTISIG_CODE_ID.load(deps.storage)?,
                     create_wallet_msg,
                     code_id: PROXY_CODE_ID.load(deps.storage)?,
-                    addr_prefix: ADDR_PREFIX.load(deps.storage)?,
                 })?,
                 funds,
                 label: "Wallet-Proxy".into(),
