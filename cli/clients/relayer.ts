@@ -136,13 +136,15 @@ class RelayerClient {
         });
     }
 
-    async createChannel(src: string, dest: string, version: string) {
+    async createChannel(src: string, dest: string, version: string, backup = true) {
         if (!this.link) throw new Error("Link not initialized");
 
         if (version === "ics20-1") {
             this.transferChannel = await this.link.createChannel("A", src, dest, 1, version);
         } else if (version === "vectis-v1") {
             this.wasmChannel = await this.link.createChannel("A", src, dest, 1, version);
+        } else if (!backup) {
+            return await this.link.createChannel("A", src, dest, 1, version);
         }
 
         await this.backupChannels();
