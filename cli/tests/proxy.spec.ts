@@ -3,7 +3,7 @@ import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import { Addr, CosmosMsgForEmpty as CosmosMsg, BankMsg, Coin } from "../interfaces/Proxy.types";
-import { FactoryClient } from "../clients";
+import { FactoryClient, RelayerClient } from "../clients";
 import { coin } from "@cosmjs/stargate";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,
@@ -11,37 +11,45 @@ import {
 } from "@dao-dao/types/contracts/cw-proposal-single";
 import { getContract } from "../utils/fs";
 
-import { cw20CodePath, deployReportPath, hostAccounts, hostChain } from "../utils/constants";
+import { cw20CodePath, deployReportPath, hostAccounts, hostChain, remoteChain } from "../utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { CWClient } from "../clients";
 import { getDefaultRelayFee, getDefaultSendFee, getDefaultUploadFee } from "../utils/fees";
 import { ProxyClient } from "../interfaces";
-import { delay } from "../utils/promises";
+import { randomAddress } from "@confio/relayer/build/lib/helpers";
+import { VectisDaoContractsAddrs } from "../interfaces/contracts";
+import { toCosmosMsg } from "../utils/enconding";
 
 /**
  * This suite tests Proxy contract methods
  */
 describe("Proxy Suite: ", () => {
     let hostUserClient: CWClient;
+    let remoteUserClient: CWClient;
     let hostGuardianClient: CWClient;
     let hostAdminClient: CWClient;
     let hostClient: CosmWasmClient;
     let proxyWalletAddress: Addr;
     let proxyWalletMultisigAddress: Addr;
+    let addrs: VectisDaoContractsAddrs;
 
     let factoryClient: FactoryClient;
     let proxyClient: ProxyClient;
     let guardianProxyClient: ProxyClient;
+    const relayerClient = new RelayerClient();
 
     beforeAll(async () => {
-        const { factoryAddr } = await import(deployReportPath);
+        addrs = await import(deployReportPath);
+        await relayerClient.connect();
+        await relayerClient.loadChannels();
 
         hostUserClient = await CWClient.connectHostWithAccount("user");
+        remoteUserClient = await CWClient.connectRemoteWithAccount("user");
         hostAdminClient = await CWClient.connectHostWithAccount("admin");
         hostGuardianClient = await CWClient.connectHostWithAccount("guardian_1");
         hostClient = await CosmWasmClient.connect(hostChain.rpcUrl);
 
-        factoryClient = new FactoryClient(hostAdminClient, hostAdminClient.sender, factoryAddr);
+        factoryClient = new FactoryClient(hostAdminClient, hostAdminClient.sender, addrs.factoryAddr);
 
         const [walletAddr, walletMSAddr] = await createTestProxyWallets(factoryClient);
         console.log(walletAddr, walletMSAddr);
@@ -61,6 +69,60 @@ describe("Proxy Suite: ", () => {
         expect(info.is_frozen).toEqual(false);
         expect(info.multisig_address).toBeFalsy();
         expect(info.nonce).toEqual(0);
+    });
+
+    it("should be able to add or remove a relayer", async () => {
+        const relayer3 = randomAddress("juno");
+        await proxyClient.addRelayer({ newRelayerAddress: relayer3 });
+
+        const { relayers: relayersBefore } = await proxyClient.info();
+
+        expect(relayersBefore).toContain(relayer3);
+
+        await proxyClient.removeRelayer({ relayerAddress: relayer3 });
+
+        const { relayers: relayersAfter } = await proxyClient.info();
+
+        expect(relayersAfter).not.toContain(relayer3);
+    });
+
+    it("should be able to do ibc transfer", async () => {
+        const amountToSend = 1e7;
+        const targetAddress = randomAddress(remoteChain.addressPrefix);
+        const funds = [coin(amountToSend, hostChain.feeToken) as Coin];
+
+        const { amount: balanceBefore } = await remoteUserClient.getBalance(targetAddress, relayerClient.denoms.src);
+
+        await proxyClient.execute(
+            {
+                msgs: [
+                    {
+                        wasm: {
+                            execute: {
+                                contract_addr: addrs.daoTunnelAddr,
+                                msg: toCosmosMsg({
+                                    ibc_transfer: {
+                                        receiver: {
+                                            connection_id: relayerClient.connections.hostConnection,
+                                            addr: targetAddress,
+                                        },
+                                    },
+                                }),
+                                funds,
+                            },
+                        },
+                    },
+                ],
+            },
+            "auto",
+            undefined,
+            funds
+        );
+
+        await relayerClient.relayAll();
+
+        const { amount: balanceAfter } = await remoteUserClient.getBalance(targetAddress, relayerClient.denoms.src);
+        expect(+balanceAfter).toEqual(+balanceBefore + +amountToSend);
     });
 
     it("Should be able to use wallet to send funds as user", async () => {
