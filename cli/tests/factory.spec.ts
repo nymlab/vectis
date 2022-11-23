@@ -2,8 +2,8 @@ import { coin } from "@cosmjs/stargate";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import { deployReportPath, hostAccounts, hostChain, uploadReportPath } from "../utils/constants";
-import { CWClient, FactoryClient, GovecClient, ProxyClient, DaoClient } from "../clients";
-import { getInitialFactoryBalance, getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
+import { CWClient, FactoryClient, GovecClient, ProxyClient } from "../clients";
+import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
 import { toCosmosMsg } from "../utils/enconding";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { Coin, Expiration } from "../interfaces/Factory.types";

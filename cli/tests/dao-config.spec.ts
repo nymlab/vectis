@@ -1,22 +1,12 @@
 import { FactoryClient, GovecClient, CWClient, DaoClient, ProxyClient, RelayClient } from "../clients";
 import { hostAccounts, hostChain, remoteChain } from "../utils/constants";
 import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
-import {
-    BankExtension,
-    coin,
-    QueryClient,
-    setupBankExtension,
-    setupStakingExtension,
-    SigningStargateClient,
-    StakingExtension,
-} from "@cosmjs/stargate";
+import { coin, SigningStargateClient } from "@cosmjs/stargate";
 import { Coin } from "../interfaces/Factory.types";
-import { DaoTunnelClient, DaoTunnelT } from "../interfaces";
+import { DaoTunnelClient } from "../interfaces";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { deployReportPath } from "../utils/constants";
 import { delay } from "../utils/promises";
-import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-import long from "long";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
@@ -27,31 +17,17 @@ describe("DAO Suite:", () => {
     let addrs: VectisDaoContractsAddrs;
     let adminClient: CWClient;
     let userClient: CWClient;
-    let userRemoteClient: CWClient;
     let proxyClient: ProxyClient;
     let govecClient: GovecClient;
     let daoClient: DaoClient;
     let daoTunnelClient: DaoTunnelClient;
     let factoryClient: FactoryClient;
     let relayerClient: RelayClient;
-    let queryClient: QueryClient & StakingExtension & BankExtension;
-    let remoteQueryClient: QueryClient & StakingExtension & BankExtension;
     SigningStargateClient;
     beforeAll(async () => {
-        queryClient = await QueryClient.withExtensions(
-            await Tendermint34Client.connect(hostChain.rpcUrl),
-            setupStakingExtension,
-            setupBankExtension
-        );
-        remoteQueryClient = await QueryClient.withExtensions(
-            await Tendermint34Client.connect(remoteChain.rpcUrl),
-            setupStakingExtension,
-            setupBankExtension
-        );
         addrs = await import(deployReportPath);
         adminClient = await CWClient.connectHostWithAccount("admin");
         userClient = await CWClient.connectHostWithAccount("user");
-        userRemoteClient = await CWClient.connectRemoteWithAccount("user");
         govecClient = new GovecClient(adminClient, adminClient.sender, addrs.govecAddr);
         factoryClient = new FactoryClient(userClient, userClient.sender, addrs.factoryAddr);
         daoTunnelClient = new DaoTunnelClient(adminClient, adminClient.sender, addrs.daoTunnelAddr);
