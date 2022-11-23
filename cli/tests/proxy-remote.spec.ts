@@ -1,6 +1,4 @@
-import { queryClient } from "@confio/relayer/build/lib/helpers";
 import { coin } from "@cosmjs/amino";
-import { BankExtension, QueryClient, StakingExtension } from "@cosmjs/stargate";
 import { CWClient, GovecClient, RelayerClient } from "../clients";
 import RemoteProxyClient from "../clients/remote-proxy";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -156,7 +154,10 @@ describe("Proxy Remote Suite: ", () => {
 
         await proxyClient.executeProposal(addrs.remoteTunnelAddr, addrs.proposalAddr, id);
         await relayerClient.relayAll();
-        await delay(1000);
+
+        proposalsResult = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
+            list_proposals: {},
+        });
 
         const { proposal: executedProposal } = proposalsResult.proposals[proposalsResult.proposals.length - 1];
 
