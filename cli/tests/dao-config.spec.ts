@@ -1,5 +1,5 @@
 import { FactoryClient, GovecClient, CWClient, DaoClient, ProxyClient, RelayClient } from "../clients";
-import { hostAccounts, hostChain, remoteChain } from "../utils/constants";
+import { hostAccounts, hostChain, remoteChain, uploadReportPath } from "../utils/constants";
 import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
 import { coin, SigningStargateClient } from "@cosmjs/stargate";
 import { Coin } from "../interfaces/Factory.types";
@@ -7,6 +7,7 @@ import { DaoTunnelClient } from "../interfaces";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { deployReportPath } from "../utils/constants";
 import { delay } from "../utils/promises";
+import { ChannelPair } from "@confio/relayer/build/lib/link";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
@@ -17,17 +18,25 @@ describe("DAO Suite:", () => {
     let addrs: VectisDaoContractsAddrs;
     let adminClient: CWClient;
     let userClient: CWClient;
+    let userRemoteClient: CWClient;
     let proxyClient: ProxyClient;
     let govecClient: GovecClient;
     let daoClient: DaoClient;
     let daoTunnelClient: DaoTunnelClient;
     let factoryClient: FactoryClient;
-    let relayerClient: RelayClient;
-    SigningStargateClient;
+    let testDaoTunnel: DaoTunnelClient;
+    let testChannel: ChannelPair;
+    const relayerClient = new RelayClient();
     beforeAll(async () => {
         addrs = await import(deployReportPath);
+        const { host } = await import(uploadReportPath);
+
+        await relayerClient.connect();
+        await relayerClient.loadChannels();
+
         adminClient = await CWClient.connectHostWithAccount("admin");
         userClient = await CWClient.connectHostWithAccount("user");
+        userRemoteClient = await CWClient.connectRemoteWithAccount("user");
         govecClient = new GovecClient(adminClient, adminClient.sender, addrs.govecAddr);
         factoryClient = new FactoryClient(userClient, userClient.sender, addrs.factoryAddr);
         daoTunnelClient = new DaoTunnelClient(adminClient, adminClient.sender, addrs.daoTunnelAddr);
@@ -37,9 +46,70 @@ describe("DAO Suite:", () => {
             stakingAddr: addrs.stakingAddr,
             voteAddr: addrs.voteAddr,
         });
-        relayerClient = new RelayClient();
-        await relayerClient.connect();
-        await relayerClient.loadChannels();
+
+        const { contractAddress: daoTunnelTestAddr } = await adminClient.instantiate(
+            adminClient.sender,
+            host.daoTunnelRes.codeId,
+            {
+                denom: hostChain.feeToken,
+                govec_minter: addrs.govecAddr,
+                init_ibc_transfer_mods: {
+                    endpoints: [
+                        [
+                            relayerClient.connections.hostConnection,
+                            (relayerClient.channels.transfer as ChannelPair).src,
+                        ],
+                    ],
+                },
+                init_remote_tunnels: {
+                    tunnels: [[relayerClient.connections.hostConnection, addrs.remoteTunnelAddr]],
+                },
+            },
+            "test dao-tunnel",
+            "auto"
+        );
+
+        testDaoTunnel = new DaoTunnelClient(adminClient, adminClient.sender, daoTunnelTestAddr);
+        testChannel = (await relayerClient.createChannel(
+            daoTunnelTestAddr,
+            addrs.remoteTunnelAddr,
+            "vectis-v1",
+            false
+        )) as ChannelPair;
+
+        const updateDaoConfigMsg = daoClient.executeMsg(addrs.daoTunnelAddr, {
+            dispatch_action_on_remote_tunnel: {
+                channel_id: relayerClient.channels.wasm?.src,
+                job_id: 5,
+                msg: {
+                    update_dao_config: {
+                        new_config: {
+                            addr: "",
+                            connection_id: relayerClient.connections.remoteConnection,
+                            dao_tunnel_channel: testChannel.dest.channelId,
+                            dao_tunnel_port_id: daoTunnelTestAddr,
+                        },
+                    },
+                },
+            },
+        });
+
+        await proxyClient.createProposal(
+            daoClient.proposalAddr,
+            "Change Config in Remote Tunnel",
+            "Change Config in Remote Tunnel",
+            [updateDaoConfigMsg]
+        );
+        await delay(8000);
+
+        const { proposals } = await daoClient.queryProposals();
+        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
+        await delay(8000);
+
+        await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
+        await delay(8000);
 
         const initialFunds = walletInitialFunds(hostChain);
         const { wallet_fee } = await factoryClient.fees();
@@ -116,6 +186,44 @@ describe("DAO Suite:", () => {
         let res = await daoTunnelClient.controllers({});
 
         expect(tunnels.length + 1).toBe(res.tunnels.length);
+    });
+
+    it("DAO should be able to dispatch an update of chain config to remote_tunnel through dao_tunnel", async () => {
+        const denom = Math.random().toString(36).slice(2, 9);
+        const previousConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
+        expect(previousConfig.denom).toBe(remoteChain.feeToken);
+
+        const updateDaoConfigMsg = daoClient.executeMsg(addrs.daoTunnelAddr, {
+            dispatch_action_on_remote_tunnel: {
+                channel_id: relayerClient.channels.wasm?.src,
+                job_id: 5,
+                msg: {
+                    update_chain_config: {
+                        denom,
+                    },
+                },
+            },
+        });
+
+        await proxyClient.createProposal(
+            daoClient.proposalAddr,
+            "Change Config in Remote Tunnel",
+            "Change Config in Remote Tunnel",
+            [updateDaoConfigMsg]
+        );
+        await delay(8000);
+
+        const { proposals } = await daoClient.queryProposals();
+        const approveControllerProposalId = proposals.length;
+
+        await proxyClient.voteProposal(daoClient.proposalAddr, approveControllerProposalId, "yes");
+        await delay(8000);
+
+        await proxyClient.executeProposal(daoClient.proposalAddr, approveControllerProposalId);
+        await delay(8000);
+
+        const currentConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
+        expect(currentConfig.denom).toBe(denom);
     });
 
     it("DAO should be able to remove approved controllers in dao_tunnel", async () => {
