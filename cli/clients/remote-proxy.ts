@@ -37,6 +37,20 @@ class RemoteProxyClient extends ProxyC {
         );
     }
 
+    async executeProposalAction(tunnelAddr: string, proposalAddr: string, msg: Record<string, unknown>) {
+        const action = {
+            dao_actions: {
+                msg: {
+                    proposal_actions: {
+                        prop_module_addr: proposalAddr,
+                        msg,
+                    },
+                },
+            },
+        };
+        return await this.executeWasm(tunnelAddr, action);
+    }
+
     async mintGovec(factoryAddr: string, fee: Coin): Promise<ExecuteResult> {
         return await this.executeWasm(factoryAddr, { claim_govec: {} }, [fee]);
     }
@@ -96,67 +110,36 @@ class RemoteProxyClient extends ProxyC {
         return await this.executeWasm(tunnelAddr, msg);
     }
 
-    async createProposal(proposalAddr: string, title: string, description: string, msgs: unknown[]) {
-        return await this.execute({
-            msgs: [
-                {
-                    wasm: {
-                        execute: {
-                            contract_addr: proposalAddr,
-                            funds: [],
-                            msg: toCosmosMsg({
-                                propose: {
-                                    description,
-                                    latest: null,
-                                    msgs,
-                                    title,
-                                },
-                            }),
-                        },
-                    },
-                },
-            ],
+    async createProposal(
+        tunnelAddr: string,
+        proposalAddr: string,
+        title: string,
+        description: string,
+        msgs: unknown[]
+    ) {
+        return await this.executeProposalAction(tunnelAddr, proposalAddr, {
+            propose: {
+                title,
+                description,
+                msgs,
+            },
         });
     }
 
-    async voteProposal(proposalAddr: string, proposalId: number, vote: Vote) {
-        return await this.execute({
-            msgs: [
-                {
-                    wasm: {
-                        execute: {
-                            contract_addr: proposalAddr,
-                            funds: [],
-                            msg: toCosmosMsg({
-                                vote: {
-                                    proposal_id: proposalId,
-                                    vote,
-                                },
-                            }),
-                        },
-                    },
-                },
-            ],
+    async voteProposal(tunnelAddr: string, proposalAddr: string, proposalId: number, vote: Vote) {
+        return await this.executeProposalAction(tunnelAddr, proposalAddr, {
+            vote: {
+                proposal_id: proposalId,
+                vote,
+            },
         });
     }
 
-    async executeProposal(proposalAddr: string, proposalId: number) {
-        return await this.execute({
-            msgs: [
-                {
-                    wasm: {
-                        execute: {
-                            contract_addr: proposalAddr,
-                            funds: [],
-                            msg: toCosmosMsg({
-                                execute: {
-                                    proposal_id: proposalId,
-                                },
-                            }),
-                        },
-                    },
-                },
-            ],
+    async executeProposal(tunnelAddr: string, proposalAddr: string, proposalId: number) {
+        return await this.executeProposalAction(tunnelAddr, proposalAddr, {
+            execute: {
+                proposal_id: proposalId,
+            },
         });
     }
 
