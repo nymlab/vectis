@@ -646,7 +646,7 @@ fn mint_govec_packet_ack_sends_msg_to_factory() {
 fn handle_ack_for_non_govec_minting_packets() {
     let mut deps = do_instantiate();
     let job_id = 2901;
-    let action_id = VectisDaoActionIds::GovecBurn;
+    let action_id = VectisDaoActionIds::GovecExit;
     connect(deps.as_mut(), DAO_CHANNEL_ID);
     let env = mock_env();
 
@@ -656,7 +656,7 @@ fn handle_ack_for_non_govec_minting_packets() {
         sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::GovecActions(
-            vectis_wallet::GovecExecuteMsg::Burn {
+            vectis_wallet::GovecExecuteMsg::Exit {
                 relayed_from: Some("proxy".to_string()),
             },
         ))
@@ -745,7 +745,7 @@ fn handle_timeout_for_non_govec_minting_packets() {
         sender: env.contract.address.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::GovecActions(
-            vectis_wallet::GovecExecuteMsg::Burn {
+            vectis_wallet::GovecExecuteMsg::Exit {
                 relayed_from: Some("proxy".to_string()),
             },
         ))

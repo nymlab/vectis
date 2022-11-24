@@ -220,15 +220,15 @@ pub fn receive_govec_actions(
             },
             VectisDaoActionIds::GovecSend as u64,
         ),
-        GovecExecuteMsg::Burn { .. } => SubMsg::reply_always(
+        GovecExecuteMsg::Exit { .. } => SubMsg::reply_always(
             WasmMsg::Execute {
                 contract_addr: govec_addr.to_string(),
-                msg: to_binary(&GovecExecuteMsg::Burn {
+                msg: to_binary(&GovecExecuteMsg::Exit {
                     relayed_from: Some(sender),
                 })?,
                 funds: vec![],
             },
-            VectisDaoActionIds::GovecBurn as u64,
+            VectisDaoActionIds::GovecExit as u64,
         ),
         _ => return Err(ContractError::Unauthorized {}),
     };

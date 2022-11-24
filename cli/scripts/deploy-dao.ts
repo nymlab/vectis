@@ -42,6 +42,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     const govecClient = await GovecClient.instantiate(adminHostClient, govecRes.codeId, {
         initial_balances,
         marketing: GovecClient.createVectisMarketingInfo(adminHostClient.sender),
+        mintAmount: "2",
     });
     const govecAddr = govecClient.contractAddress;
     console.log("Instantiated Govec at: ", govecAddr);
