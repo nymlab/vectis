@@ -11,18 +11,18 @@ fn proxy_mint_govec_works() {
         .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
-    // Initially there is something to claim
-    let unclaimed = suite
-        .query_proxy_govec_claim_expiration(&suite.factory, &wallet_addr)
-        .unwrap();
-    assert!(unclaimed.is_some());
-
     // controller mint govec
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
         funds: vec![coin(CLAIM_FEE, "ucosm")],
     });
+
+    // Initially there is something to claim
+    let unclaimed = suite
+        .query_proxy_govec_claim_expiration(&suite.factory, &wallet_addr)
+        .unwrap();
+    assert!(unclaimed.is_some());
 
     // Controller execute proxy to claim govec
     suite
