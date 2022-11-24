@@ -372,18 +372,18 @@ fn recieve_govec_actions_works() {
     let mut deps = do_instantiate();
     add_mock_controller(deps.as_mut(), SRC_PORT_ID_RCV);
 
-    // Burn
+    // Exit
     //
     // test match sub messages, attributes and ack
-    let burn = GovecExecuteMsg::Burn {
+    let exit = GovecExecuteMsg::Exit {
         relayed_from: Some(WALLET_ADDR.to_string()),
     };
-    let ibc_burn = RemoteTunnelPacketMsg::GovecActions(burn.clone());
-    let rec_res = test_rec_ibc_package(deps.as_mut(), &ibc_burn, JOB_ID).unwrap();
+    let ibc_exit = RemoteTunnelPacketMsg::GovecActions(exit.clone());
+    let rec_res = test_rec_ibc_package(deps.as_mut(), &ibc_exit, JOB_ID).unwrap();
 
     let reply_res = test_reply(
         deps.as_mut(),
-        VectisDaoActionIds::GovecBurn as u64,
+        VectisDaoActionIds::GovecExit as u64,
         SUBMSG_RES,
     )
     .unwrap();
@@ -392,7 +392,7 @@ fn recieve_govec_actions_works() {
         .unwrap();
     assert_eq!(
         rec_res.messages[0].msg,
-        CosmosMsg::Wasm(wasm_execute(GOVEC_ADDR, &burn, vec![]).unwrap())
+        CosmosMsg::Wasm(wasm_execute(GOVEC_ADDR, &exit, vec![]).unwrap())
     );
     assert_eq!(
         rec_res.attributes,
@@ -400,7 +400,7 @@ fn recieve_govec_actions_works() {
     );
     assert_eq!(
         from_binary::<u64>(&ack).unwrap(),
-        VectisDaoActionIds::GovecBurn as u64
+        VectisDaoActionIds::GovecExit as u64
     );
 
     // transfer
@@ -652,7 +652,7 @@ fn ack_emits_reply_id() {
         sender: WALLET_ADDR.to_string(),
         job_id,
         msg: to_binary(&RemoteTunnelPacketMsg::GovecActions(
-            GovecExecuteMsg::Burn {
+            GovecExecuteMsg::Exit {
                 relayed_from: Some(WALLET_ADDR.to_string()),
             },
         ))

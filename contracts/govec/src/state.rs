@@ -17,6 +17,7 @@ pub const MARKETING_INFO: Item<MarketingInfoResponse> = Item::new("marketing_inf
 pub const LOGO: Item<Logo> = Item::new("logo");
 pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
 pub const MINT_CAP: Item<Uint128> = Item::new("mint_cap");
+pub const MINT_AMOUNT: Item<Uint128> = Item::new("Mint_amount");
 // updated by `UpdateConfigAddr`
 pub const STAKING_ADDR: Item<CanonicalAddr> = Item::new("staking_addr");
 pub const DAO_ADDR: Item<CanonicalAddr> = Item::new("DAO_addr");

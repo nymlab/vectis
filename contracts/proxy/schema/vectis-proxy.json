@@ -7,16 +7,11 @@
     "title": "InstantiateMsg",
     "type": "object",
     "required": [
-      "addr_prefix",
       "code_id",
       "create_wallet_msg",
       "multisig_code_id"
     ],
     "properties": {
-      "addr_prefix": {
-        "description": "Chain address prefix",
-        "type": "string"
-      },
       "code_id": {
         "description": "Code Id used to instantiate the contract",
         "type": "integer",

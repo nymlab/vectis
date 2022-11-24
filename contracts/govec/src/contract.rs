@@ -15,8 +15,8 @@ use crate::error::ContractError;
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_CAP, PROP_MODULES,
-    STAKING_ADDR, TOKEN_INFO,
+    TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_AMOUNT, MINT_CAP,
+    PROP_MODULES, STAKING_ADDR, TOKEN_INFO,
 };
 use cw20_stake::{
     contract::{
@@ -29,7 +29,6 @@ use vectis_wallet::{MintResponse, UpdateAddrReq};
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const MINT_AMOUNT: u8 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -80,6 +79,8 @@ pub fn instantiate(
         &deps.api.addr_canonicalize(info.sender.as_str())?,
     )?;
 
+    MINT_AMOUNT.save(deps.storage, &msg.mint_amount)?;
+
     if let Some(addr) = msg.staking_addr {
         STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
     }
@@ -127,7 +128,8 @@ pub fn execute(
         ExecuteMsg::ProposalTransfer { proposer, deposit } => {
             execute_transfer_deposit(deps, info, proposer, deposit)
         }
-        ExecuteMsg::Burn { relayed_from } => execute_burn(deps, env, info, relayed_from),
+        ExecuteMsg::Burn { amount } => execute_burn(deps, env, info, amount),
+        ExecuteMsg::Exit { relayed_from } => execute_exit(deps, env, info, relayed_from),
         ExecuteMsg::Send {
             contract,
             amount,
@@ -137,6 +139,9 @@ pub fn execute(
         ExecuteMsg::Mint { new_wallet } => execute_mint(deps, env, info, new_wallet),
         ExecuteMsg::UpdateConfigAddr { new_addr } => {
             execute_update_config_addr(deps, info, new_addr)
+        }
+        ExecuteMsg::UpdateMintAmount { new_amount } => {
+            execute_update_mint_amount(deps, info, new_amount)
         }
         ExecuteMsg::UpdateMintCap { new_mint_cap } => {
             execute_update_mint_cap(deps, info, new_mint_cap)
@@ -232,17 +237,51 @@ pub fn execute_transfer_deposit(
     }
 }
 
-/// Burning of the vote, this can only be used by the approved list of SCW
-///
-/// Only exactly 1 vote can be burnt per wallet and is executed during destroy of the wallet,
-/// the wallet must also only have exactly 1 vote in its balance
+/// Burning of Govec
+/// must be done by dao
 pub fn execute_burn(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    amount: Uint128,
+) -> Result<Response, ContractError> {
+    ensure_is_dao(deps.as_ref(), &info.sender)?;
+
+    if amount == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
+    // lower balance
+    BALANCES.update(
+        deps.storage,
+        &info.sender,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_sub(amount)?)
+        },
+    )?;
+    // reduce total_supply
+    TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
+        info.total_supply = info.total_supply.checked_sub(amount)?;
+        Ok(info)
+    })?;
+
+    let res = Response::new()
+        .add_attribute("action", "burn")
+        .add_attribute("from", info.sender)
+        .add_attribute("amount", amount);
+
+    Ok(res)
+}
+
+/// Exits the DAO
+/// remove the requester from the ledger
+/// any balance in the requester account will be sent to the dao
+pub fn execute_exit(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     relayed_from: Option<String>,
 ) -> Result<Response, ContractError> {
-    let to_burn = Uint128::from(MINT_AMOUNT);
     let from = match relayed_from {
         Some(remote) => {
             ensure_is_dao_tunnel(deps.as_ref(), info.sender)?;
@@ -251,29 +290,24 @@ pub fn execute_burn(
         None => info.sender,
     };
     // Ensure only have voting power of exactly 1
-    let balance_option = query_balance_joined(deps.as_ref(), from.to_string())?;
-    if let Some(balance) = balance_option {
-        if balance.balance != to_burn {
-            return Err(ContractError::IncorrectBalance(balance.balance));
-        };
+    let remaining_balance = query_balance(deps.as_ref(), from.to_string())?.balance;
 
-        // remove key from the map as they exit the DAO
-        BALANCES.remove(deps.storage, &from);
+    let dao = deps.api.addr_humanize(&DAO_ADDR.load(deps.storage)?)?;
 
-        // reduce total_supply
-        TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
-            info.total_supply = info.total_supply.checked_sub(to_burn)?;
-            Ok(info)
-        })?;
+    BALANCES.update(
+        deps.storage,
+        &dao,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_add(remaining_balance)?)
+        },
+    )?;
 
-        let res = Response::new()
-            .add_attribute("action", "burn")
-            .add_attribute("from", from)
-            .add_attribute("amount", to_burn);
-        Ok(res)
-    } else {
-        Err(ContractError::NotFound {})
-    }
+    // remove key from the map as they exit the DAO
+    BALANCES.remove(deps.storage, &from);
+
+    Ok(Response::new()
+        .add_attribute("action", "exit")
+        .add_attribute("addr", from))
 }
 
 pub enum Role {
@@ -306,9 +340,10 @@ pub fn execute_mint(
 ) -> Result<Response, ContractError> {
     // update supply and enforce cap
     let caller = ensure_is_minter(deps.as_ref(), info.sender)?;
+    let mint_amount = MINT_AMOUNT.load(deps.storage)?;
 
     let mut config = TOKEN_INFO.load(deps.storage)?;
-    config.total_supply += Uint128::from(MINT_AMOUNT);
+    config.total_supply += mint_amount;
     if let Some(limit) = MINT_CAP.may_load(deps.storage)? {
         if config.total_supply > limit {
             return Err(ContractError::CannotExceedCap {});
@@ -329,7 +364,7 @@ pub fn execute_mint(
         deps.storage,
         &rcpt_addr,
         |balance: Option<Uint128>| -> StdResult<_> {
-            Ok(balance.unwrap_or_default() + Uint128::from(MINT_AMOUNT))
+            Ok(balance.unwrap_or_default() + mint_amount)
         },
     )?;
 
@@ -337,7 +372,7 @@ pub fn execute_mint(
         .set_data(to_binary(&new_wallet)?)
         .add_attribute("action", "mint")
         .add_attribute("to", new_wallet)
-        .add_attribute("amount", MINT_AMOUNT.to_string());
+        .add_attribute("amount", mint_amount.to_string());
     Ok(res)
 }
 
@@ -401,7 +436,7 @@ pub fn execute_update_staking(
     info: MessageInfo,
     new_addr: String,
 ) -> Result<Response, ContractError> {
-    ensure_is_dao(deps.as_ref(), info.sender)?;
+    ensure_is_dao(deps.as_ref(), &info.sender)?;
 
     STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&new_addr)?)?;
 
@@ -412,12 +447,24 @@ pub fn execute_update_staking(
     Ok(res)
 }
 
+pub fn execute_update_mint_amount(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_amount: Uint128,
+) -> Result<Response, ContractError> {
+    ensure_is_dao(deps.as_ref(), &info.sender)?;
+    MINT_AMOUNT.save(deps.storage, &new_amount)?;
+    Ok(Response::new()
+        .add_attribute("action", "update_mint_amount")
+        .add_attribute("amount", new_amount.to_string()))
+}
+
 pub fn execute_update_mint_cap(
     deps: DepsMut,
     info: MessageInfo,
     new_mint: Option<Uint128>,
 ) -> Result<Response, ContractError> {
-    ensure_is_dao(deps.as_ref(), info.sender)?;
+    ensure_is_dao(deps.as_ref(), &info.sender)?;
 
     let res = match new_mint {
         Some(cap) => {
@@ -440,7 +487,7 @@ pub fn execute_update_config_addr(
     info: MessageInfo,
     new_addr: UpdateAddrReq,
 ) -> Result<Response, ContractError> {
-    let dao = ensure_is_dao(deps.as_ref(), info.sender)?;
+    let dao = ensure_is_dao(deps.as_ref(), &info.sender)?;
     let res = match new_addr {
         UpdateAddrReq::Dao(addr) => {
             let new_dao = deps.api.addr_validate(&addr)?;
@@ -558,7 +605,7 @@ fn ensure_is_dao_tunnel(deps: Deps, sender: Addr) -> Result<Addr, ContractError>
     Ok(sender)
 }
 
-fn ensure_is_dao(deps: Deps, sender: Addr) -> Result<Addr, ContractError> {
+fn ensure_is_dao<'a>(deps: Deps, sender: &'a Addr) -> Result<&'a Addr, ContractError> {
     let dao = DAO_ADDR.load(deps.storage)?;
     if dao != deps.api.addr_canonicalize(sender.as_str())? {
         return Err(ContractError::Unauthorized {});
@@ -585,6 +632,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
         QueryMsg::Joined { address } => to_binary(&query_balance_joined(deps, address)?),
+        QueryMsg::MintAmount {} => to_binary(&query_mint_amount(deps)?),
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Minters {} => to_binary(&query_minter(deps)?),
         QueryMsg::Staking {} => to_binary(&query_staking(deps)?),
@@ -626,6 +674,10 @@ pub fn query_token_info(deps: Deps) -> StdResult<TokenInfoResponse> {
         total_supply: info.total_supply,
     };
     Ok(res)
+}
+
+pub fn query_mint_amount(deps: Deps) -> StdResult<Uint128> {
+    MINT_AMOUNT.load(deps.storage)
 }
 
 pub fn query_minter(deps: Deps) -> StdResult<MintResponse> {

@@ -33,6 +33,7 @@ pub fn do_instantiate(
     factory: Option<&str>,
     dao_tunnel: Option<&str>,
     mint_cap: Option<Uint128>,
+    mint_amount: Uint128,
     marketing: Option<MarketingInfoResponse>,
 ) -> TokenInfoResponse {
     let mut coins: Vec<Cw20Coin> = Vec::new();
@@ -50,6 +51,7 @@ pub fn do_instantiate(
         initial_balances: coins,
         staking_addr: None,
         mint_cap,
+        mint_amount,
         factory: factory.map(|e| e.to_string()),
         dao_tunnel: dao_tunnel.map(|e| e.to_string()),
         marketing,
@@ -115,6 +117,7 @@ fn can_instantiate_accounts() {
         factory: None,
         dao_tunnel: None,
         mint_cap: Some(limit),
+        mint_amount: Uint128::new(2),
         marketing: None,
     };
     let info = mock_info("creator", &[]);
@@ -151,6 +154,7 @@ fn dao_can_receive_govec() {
         factory: None,
         dao_tunnel: None,
         mint_cap: Some(limit),
+        mint_amount: Uint128::new(2),
         marketing: None,
     };
     let info = mock_info("dao", &[]);
@@ -197,6 +201,7 @@ fn cannot_mint_over_cap() {
         factory: None,
         dao_tunnel: None,
         mint_cap: Some(limit),
+        mint_amount: Uint128::new(2),
         staking_addr: None,
         marketing: None,
     };
@@ -224,6 +229,7 @@ fn query_joined_works() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         Some(limit),
+        Uint128::new(2),
         None,
     );
 
@@ -264,6 +270,7 @@ fn dao_can_update_staking_addr() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         Some(limit),
+        Uint128::new(2),
         None,
     );
 
@@ -300,6 +307,7 @@ fn dao_can_update_dao_addr_and_transfer_tokens() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         Some(limit),
+        Uint128::new(2),
         None,
     );
     assert_eq!(
@@ -336,6 +344,38 @@ fn dao_can_update_dao_addr_and_transfer_tokens() {
 }
 
 #[test]
+fn dao_can_update_mint_amount() {
+    let mut deps = mock_dependencies();
+    let new_amount = Uint128::new(123);
+
+    do_instantiate(
+        deps.as_mut(),
+        vec![],
+        vec![],
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
+        None,
+        Uint128::new(2),
+        None,
+    );
+
+    let msg = ExecuteMsg::UpdateMintAmount { new_amount };
+
+    // only dao can update mint data
+    let info = mock_info(FACTORY, &[]);
+    let env = mock_env();
+    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // dao can update mint data
+    let info = mock_info(DAO_ADDR, &[]);
+    let env = mock_env();
+    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+    assert_eq!(query_mint_amount(deps.as_ref()).unwrap(), new_amount);
+}
+
+#[test]
 fn dao_can_update_mint_cap() {
     let mut deps = mock_dependencies();
     let new_mint_cap = Some(Uint128::new(123));
@@ -347,6 +387,7 @@ fn dao_can_update_mint_cap() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
+        Uint128::new(2),
         None,
     );
 
@@ -372,7 +413,7 @@ fn can_mint_by_minter() {
 
     let genesis = String::from("genesis");
     let amount = Uint128::new(0);
-    let limit = Uint128::from(MINT_AMOUNT * 2);
+    let limit = Uint128::new(2 * 2);
 
     do_instantiate(
         deps.as_mut(),
@@ -381,6 +422,7 @@ fn can_mint_by_minter() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         Some(limit),
+        Uint128::new(2),
         None,
     );
 
@@ -402,10 +444,7 @@ fn can_mint_by_minter() {
     let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(get_balance(deps.as_ref(), genesis.clone()), amount);
-    assert_eq!(
-        get_balance(deps.as_ref(), winner.clone()),
-        Uint128::from(MINT_AMOUNT)
-    );
+    assert_eq!(get_balance(deps.as_ref(), winner.clone()), Uint128::new(2));
 
     // DAO Tunnel can also mint
     let info = mock_info(DAO_TUNNEL, &[]);
@@ -413,10 +452,7 @@ fn can_mint_by_minter() {
     let res = execute(deps.as_mut(), env, info, msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
     assert_eq!(get_balance(deps.as_ref(), genesis), amount);
-    assert_eq!(
-        get_balance(deps.as_ref(), winner),
-        Uint128::from(MINT_AMOUNT * 2)
-    );
+    assert_eq!(get_balance(deps.as_ref(), winner), Uint128::new(2 * 2));
 
     // but if it exceeds cap, it fails cap is enforced
     let info = mock_info(FACTORY, &[]);
@@ -439,6 +475,7 @@ fn queries_work() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         Some(limit),
+        Uint128::new(2),
         None,
     );
 
@@ -501,6 +538,7 @@ fn transfer() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
+        Uint128::new(2),
         None,
     );
 
@@ -583,85 +621,94 @@ fn transfer() {
 #[test]
 fn burn() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let addr1 = String::from("addr0001");
-    let addr2 = String::from("addr0002");
-    let addr3 = String::from("addr0003");
-    let right_amount = Uint128::from(MINT_AMOUNT);
-    let too_little = Uint128::zero();
-    let too_much = Uint128::from(MINT_AMOUNT + 1);
 
+    let all = Uint128::new(10);
     do_instantiate(
         deps.as_mut(),
-        vec![addr1.as_str(), addr2.as_str(), addr3.as_str()],
-        vec![right_amount, too_little, too_much],
+        vec![DAO_ADDR],
+        vec![all],
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
+        Uint128::new(2),
         None,
     );
 
     let initial_total_supply = query_token_info(deps.as_ref()).unwrap().total_supply;
 
     // valid burn reduces total supply and remove account from BALANCES
-    let info = mock_info(addr1.as_ref(), &[]);
+    let info = mock_info(DAO_ADDR.as_ref(), &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn { relayed_from: None };
-    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+    let msg = ExecuteMsg::Burn {
+        amount: Uint128::new(1),
+    };
+    let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(res.messages.len(), 0);
 
-    let remainder = initial_total_supply.checked_sub(right_amount).unwrap();
+    let remainder = initial_total_supply.checked_sub(Uint128::new(1)).unwrap();
     assert_eq!(
         query_token_info(deps.as_ref()).unwrap().total_supply,
         remainder
     );
     let data = query(
         deps.as_ref(),
-        env,
+        env.clone(),
         QueryMsg::Balance {
-            address: addr1.clone(),
+            address: DAO_ADDR.to_string(),
         },
     )
     .unwrap();
     let balance: BalanceResponse = from_binary(&data).unwrap();
-    assert_eq!(balance.balance, Uint128::new(0));
-
-    // cannot transfer to burnt wallet
-    let info = mock_info(addr3.as_ref(), &[]);
-    let env = mock_env();
-    let msg = ExecuteMsg::Transfer {
-        recipient: addr1.clone(),
-        amount: Uint128::new(1),
-        relayed_from: None,
-    };
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // cannot send to burnt wallet
-    let info = mock_info(addr3.as_ref(), &[]);
-    let env = mock_env();
-    let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
-    let msg = ExecuteMsg::Send {
-        contract: addr1,
-        amount: Uint128::new(1),
-        msg: send_msg,
-        relayed_from: None,
-    };
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // cannot burn too little
-    let info = mock_info(addr2.as_ref(), &[]);
-    let env = mock_env();
-    let msg = ExecuteMsg::Burn { relayed_from: None };
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::IncorrectBalance(too_little));
+    assert_eq!(balance.balance, Uint128::new(9));
 
     // cannot burn too much
-    let info = mock_info(addr3.as_ref(), &[]);
+    let msg = ExecuteMsg::Burn {
+        amount: Uint128::new(11),
+    };
+    execute(deps.as_mut(), env, info, msg).unwrap_err();
+
+    // cannot burn if not DAO
+    let info = mock_info("NOT_DAO", &[]);
     let env = mock_env();
-    let msg = ExecuteMsg::Burn { relayed_from: None };
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::IncorrectBalance(too_much));
+    let msg = ExecuteMsg::Burn {
+        amount: Uint128::new(1),
+    };
+    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {})
+}
+
+#[test]
+fn exit() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+
+    let all = Uint128::new(10);
+    let addr1 = "addr1";
+    do_instantiate(
+        deps.as_mut(),
+        vec![addr1],
+        vec![all],
+        Some(FACTORY),
+        Some(DAO_TUNNEL),
+        None,
+        Uint128::new(2),
+        None,
+    );
+    let init_dao_balance = query_balance(deps.as_ref(), DAO_ADDR.to_string()).unwrap();
+
+    // cannot transfer to burnt wallet
+    let info = mock_info(addr1.as_ref(), &[]);
+    let env = mock_env();
+    let msg = ExecuteMsg::Exit { relayed_from: None };
+    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    assert_eq!(res.attributes, [("action", "exit"), ("addr", addr1)]);
+    let post_dao_balance = query_balance(deps.as_ref(), DAO_ADDR.to_string()).unwrap();
+
+    assert_eq!(all, post_dao_balance.balance - init_dao_balance.balance);
+
+    assert_eq!(
+        None,
+        query_balance_joined(deps.as_ref(), addr1.to_string()).unwrap()
+    )
 }
 
 #[test]
@@ -681,6 +728,7 @@ fn send() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
+        Uint128::new(2),
         None,
     );
 
@@ -803,6 +851,7 @@ fn query_all_accounts_works() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
+        Uint128::new(2),
         None,
     );
 
@@ -837,6 +886,7 @@ fn query_minter_works() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
+        Uint128::new(2),
         None,
     );
 
@@ -868,6 +918,7 @@ fn query_marketing_info_works() {
         Some(FACTORY),
         Some(DAO_TUNNEL),
         None,
+        Uint128::new(2),
         Some(marketing_msg),
     );
 
@@ -880,7 +931,16 @@ fn query_marketing_info_works() {
 fn query_download_logo_works() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
-    do_instantiate(deps.as_mut(), vec![], vec![], None, None, None, None);
+    do_instantiate(
+        deps.as_mut(),
+        vec![],
+        vec![],
+        None,
+        None,
+        None,
+        Uint128::new(2),
+        None,
+    );
 
     let logo = query_download_logo(deps.as_ref()).expect_err("NotFound");
 
@@ -910,6 +970,7 @@ fn execute_update_marketing_works() {
         None,
         None,
         None,
+        Uint128::new(2),
         Some(marketing_msg),
     );
 
@@ -961,6 +1022,7 @@ fn execute_update_logo_works() {
         None,
         None,
         None,
+        Uint128::new(2),
         Some(marketing_msg),
     );
 

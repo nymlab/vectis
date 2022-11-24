@@ -458,13 +458,35 @@
             "additionalProperties": false
           },
           {
-            "description": "Burn is a base message to destroy tokens forever Logic checks that caller only has exactly 1 vote token in their balance",
+            "description": "Burn amount specified from total supply permission: executed by dao only",
             "type": "object",
             "required": [
               "burn"
             ],
             "properties": {
               "burn": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/definitions/Uint128"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Exits the DAO but removing itself from the ledger QueryMsg::Joined will return None",
+            "type": "object",
+            "required": [
+              "exit"
+            ],
+            "properties": {
+              "exit": {
                 "type": "object",
                 "properties": {
                   "relayed_from": {
@@ -516,7 +538,7 @@
             "additionalProperties": false
           },
           {
-            "description": "If authorized, creates 1 new vote token and adds to the new wallets .",
+            "description": "If authorised, mint the `MINT_AMOUNT` defined by the dao to the new wallet permission: minters",
             "type": "object",
             "required": [
               "mint"
@@ -556,6 +578,28 @@
                         "type": "null"
                       }
                     ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Updates the mint cap of the contract.Authorized by the DAO permission: executed by dao only",
+            "type": "object",
+            "required": [
+              "update_mint_amount"
+            ],
+            "properties": {
+              "update_mint_amount": {
+                "type": "object",
+                "required": [
+                  "new_amount"
+                ],
+                "properties": {
+                  "new_amount": {
+                    "$ref": "#/definitions/Uint128"
                   }
                 },
                 "additionalProperties": false

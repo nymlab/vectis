@@ -6,7 +6,6 @@
 
 export type Uint128 = string;
 export interface InstantiateMsg {
-    addr_prefix: string;
     code_id: number;
     create_wallet_msg: CreateWalletMsg;
     multisig_code_id: number;
