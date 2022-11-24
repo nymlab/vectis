@@ -109,15 +109,15 @@ pub const MINT_AMOUNT: u128 = 2u128;
 pub const WALLET_FEE: u128 = 10u128;
 pub const CLAIM_FEE: u128 = 10u128;
 pub const MINTER_CAP: u128 = 10000;
-pub const USER_PRIV: &[u8; 32] = &[
+pub const CONTROLLER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
     185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 26,
 ];
-pub const NON_USER_PRIV: &[u8; 32] = &[
+pub const NON_CONTROLLER_PRIV: &[u8; 32] = &[
     239, 111, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
     185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 26,
 ];
-pub const USER_ADDR: &str = "wasm1ky4epcqzk0mngu7twqz06qzmpgrxstxhfch6yl";
+pub const CONTROLLER_ADDR: &str = "wasm1ky4epcqzk0mngu7twqz06qzmpgrxstxhfch6yl";
 pub const MULTISIG_THRESHOLD: ThresholdAbsoluteCount = 2;
 pub const GUARD1: &str = "guardian1";
 pub const GUARD2: &str = "guardian2";

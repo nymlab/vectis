@@ -99,11 +99,11 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
-    rotateUserKey: (
+    rotateControllerKey: (
         {
-            newUserAddress,
+            newControllerAddress,
         }: {
-            newUserAddress: string;
+            newControllerAddress: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -164,7 +164,7 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
         this.execute = this.execute.bind(this);
         this.revertFreezeStatus = this.revertFreezeStatus.bind(this);
         this.relay = this.relay.bind(this);
-        this.rotateUserKey = this.rotateUserKey.bind(this);
+        this.rotateControllerKey = this.rotateControllerKey.bind(this);
         this.addRelayer = this.addRelayer.bind(this);
         this.removeRelayer = this.removeRelayer.bind(this);
         this.requestUpdateGuardians = this.requestUpdateGuardians.bind(this);
@@ -234,11 +234,11 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
             funds
         );
     };
-    rotateUserKey = async (
+    rotateControllerKey = async (
         {
-            newUserAddress,
+            newControllerAddress,
         }: {
-            newUserAddress: string;
+            newControllerAddress: string;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -248,8 +248,8 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
             this.sender,
             this.contractAddress,
             {
-                rotate_user_key: {
-                    new_user_address: newUserAddress,
+                rotate_controller_key: {
+                    new_controller_address: newControllerAddress,
                 },
             },
             fee,

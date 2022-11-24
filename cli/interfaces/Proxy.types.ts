@@ -11,11 +11,11 @@ export interface InstantiateMsg {
     multisig_code_id: number;
 }
 export interface CreateWalletMsg {
+    controller_addr: string;
     guardians: Guardians;
     label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
-    user_addr: string;
 }
 export interface Guardians {
     addresses: string[];
@@ -45,8 +45,8 @@ export type ExecuteMsg =
           };
       }
     | {
-          rotate_user_key: {
-              new_user_address: string;
+          rotate_controller_key: {
+              new_controller_address: string;
           };
       }
     | {
@@ -241,10 +241,10 @@ export interface IbcTimeoutBlock {
     [k: string]: unknown;
 }
 export interface RelayTransaction {
+    controller_pubkey: Binary;
     message: Binary;
     nonce: number;
     signature: Binary;
-    user_pubkey: Binary;
 }
 export interface GuardiansUpdateMsg {
     guardians: Guardians;
@@ -286,6 +286,7 @@ export interface GuardiansUpdateRequest {
 }
 export interface WalletInfo {
     code_id: number;
+    controller_addr: Addr;
     factory: Addr;
     guardians: Addr[];
     is_frozen: boolean;
@@ -294,7 +295,6 @@ export interface WalletInfo {
     multisig_code_id: number;
     nonce: number;
     relayers: Addr[];
-    user_addr: Addr;
     version: ContractVersion;
 }
 export interface ContractVersion {

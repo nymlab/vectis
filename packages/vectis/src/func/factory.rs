@@ -136,14 +136,14 @@ pub mod factory_execute {
             .querier
             .query_wasm_smart(wallet_addr.clone(), &ProxyQueryMsg::Info {})?;
 
-        // The migration call is either directly called by the user with `ProxyMigrationTxMsg::DirectMigrationMsg`
+        // The migration call is either directly called by the controller with `ProxyMigrationTxMsg::DirectMigrationMsg`
         // or relayed by the proxy relayer via `ProxyMigrationTxMsg::RelayTx`.
         //
         // Different safety checks are applied
         let tx_msg: CosmosMsg =
             ensure_is_valid_migration_msg(&deps, info, &wallet_info, &wallet_addr, migration_msg)?;
 
-        // Further checks applied to ensure user has signed the correct relay msg / tx
+        // Further checks applied to ensure controller has signed the correct relay msg / tx
         if let CosmosMsg::Wasm(WasmMsg::Migrate {
             contract_addr,
             new_code_id,
@@ -152,7 +152,7 @@ pub mod factory_execute {
         {
             let msg: ProxyMigrateMsg = cosmwasm_std::from_slice(&msg)?;
 
-            // Ensure user knows the latest supported proxy code id
+            // Ensure controller knows the latest supported proxy code id
             msg.ensure_is_supported_proxy_code_id(PROXY_CODE_ID.load(deps.storage)?)?;
             if new_code_id != PROXY_CODE_ID.load(deps.storage)? {
                 return Err(ContractError::InvalidMigrationMsg(
@@ -311,7 +311,7 @@ pub mod factory_queries {
         Ok(UnclaimedWalletList { wallets: wallets? })
     }
 
-    /// Returns wallets of user
+    /// Returns wallets of controller
     pub fn query_wallet_claim_expiration(
         deps: Deps,
         wallet: String,
@@ -321,7 +321,7 @@ pub mod factory_queries {
 
     /// Returns the current supported code Id:
     /// - `wallet_proxy`
-    ///  - `multisig` wallet user can use their own version, however we only support the cw3-fixed-multisig
+    ///  - `multisig` wallet controller can use their own version, however we only support the cw3-fixed-multisig
     pub fn query_code_id(deps: Deps, ty: CodeIdType) -> StdResult<u64> {
         let id = match ty {
             CodeIdType::Proxy => PROXY_CODE_ID.load(deps.storage)?,
@@ -373,7 +373,7 @@ pub fn ensure_is_valid_threshold(guardians: &Guardians) -> Result<(), ContractEr
     }
 }
 
-/// Ensure user has sent in enough to cover the fee and the initial proxy balance
+/// Ensure controller has sent in enough to cover the fee and the initial proxy balance
 pub fn ensure_enough_native_funds(
     fee: &Coin,
     proxy_initial_fund: &[Coin],
@@ -439,16 +439,16 @@ pub fn ensure_is_valid_migration_msg(
             if !can_execute_relay.can_execute {
                 return Err(ContractError::Unauthorized {});
             } else {
-                // Ensure Signer of relayed message is the wallet user
-                if wallet_info.user_addr
+                // Ensure Signer of relayed message is the wallet controller
+                if wallet_info.controller_addr
                     != pub_key_to_address(
                         &deps.as_ref(),
                         &ADDR_PREFIX.load(deps.storage)?,
-                        &tx.user_pubkey.0,
+                        &tx.controller_pubkey.0,
                     )?
                 {
                     return Err(ContractError::InvalidRelayMigrationTx(
-                        RelayTxError::IsNotUser {},
+                        RelayTxError::IsNotController {},
                     ));
                 };
 
@@ -470,8 +470,8 @@ pub fn ensure_is_valid_migration_msg(
             }
         }
         ProxyMigrationTxMsg::DirectMigrationMsg(msg) => {
-            // Ensure caller is the wallet user
-            if wallet_info.user_addr != info.sender {
+            // Ensure caller is the wallet controller
+            if wallet_info.controller_addr != info.sender {
                 return Err(ContractError::Unauthorized {});
             }
             cosmwasm_std::from_slice(&msg)?
@@ -480,7 +480,7 @@ pub fn ensure_is_valid_migration_msg(
     Ok(tx_msg)
 }
 
-/// Ensure user has sent in enought funds to cover the claim fee
+/// Ensure controller has sent in enought funds to cover the claim fee
 pub fn ensure_is_enough_claim_fee(deps: Deps, sent_fund: &[Coin]) -> Result<(), ContractError> {
     let claim_fee = CLAIM_FEE.load(deps.storage)?;
 

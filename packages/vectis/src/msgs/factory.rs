@@ -11,7 +11,7 @@ pub type ThresholdAbsoluteCount = u64;
 
 #[cw_serde]
 pub struct CreateWalletMsg {
-    pub user_addr: String,
+    pub controller_addr: String,
     pub guardians: Guardians,
     /// A List of keys can act as relayer for
     pub relayers: Vec<String>,

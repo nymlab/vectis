@@ -18,10 +18,10 @@ pub struct Guardians {
 }
 
 impl Guardians {
-    pub fn verify_guardians(&self, user: &Addr) -> StdResult<()> {
+    pub fn verify_guardians(&self, controller: &Addr) -> StdResult<()> {
         for g in &self.addresses {
-            if g == user.as_str() {
-                return Err(StdError::generic_err("user cannot be a guardian"));
+            if g == controller.as_str() {
+                return Err(StdError::generic_err("controller cannot be a guardian"));
             }
         }
         Ok(())

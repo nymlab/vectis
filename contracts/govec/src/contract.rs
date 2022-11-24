@@ -493,7 +493,7 @@ pub fn execute_update_config_addr(
             let new_dao = deps.api.addr_validate(&addr)?;
             DAO_ADDR.save(deps.storage, &deps.api.addr_canonicalize(new_dao.as_str())?)?;
             // transfer all balance from existing DAO to the new DAO
-            let existing_dao_balance = BALANCES.may_load(deps.storage, &dao)?;
+            let existing_dao_balance = BALANCES.may_load(deps.storage, dao)?;
             let new_dao_balance = BALANCES.may_load(deps.storage, &new_dao)?;
 
             if let Some(amount) = existing_dao_balance {
@@ -509,7 +509,7 @@ pub fn execute_update_config_addr(
                     BALANCES.save(deps.storage, &new_dao, &amount)?;
                 }
 
-                BALANCES.save(deps.storage, &dao, &Uint128::zero())?;
+                BALANCES.save(deps.storage, dao, &Uint128::zero())?;
             };
 
             Response::new()

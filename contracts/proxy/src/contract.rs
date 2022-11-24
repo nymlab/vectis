@@ -15,14 +15,15 @@ use vectis_wallet::{
 
 use crate::error::ContractError;
 use crate::helpers::{
-    addresses_to_voters, authorize_guardian_or_multisig, authorize_user_or_guardians,
-    ensure_is_contract_self, ensure_is_relayer, ensure_is_relayer_or_user, ensure_is_user,
-    is_frozen, is_relayer, load_addresses, load_canonical_addresses,
+    addresses_to_voters, authorize_controller_or_guardians, authorize_guardian_or_multisig,
+    ensure_is_contract_self, ensure_is_controller, ensure_is_relayer,
+    ensure_is_relayer_or_controller, is_frozen, is_relayer, load_addresses,
+    load_canonical_addresses,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    User, ADDR_PREFIX, CODE_ID, FACTORY, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
-    MULTISIG_CODE_ID, PENDING_GUARDIAN_ROTATION, RELAYERS, USER,
+    Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, FACTORY, FROZEN, GUARDIANS, LABEL,
+    MULTISIG_ADDRESS, MULTISIG_CODE_ID, PENDING_GUARDIAN_ROTATION, RELAYERS,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
@@ -49,15 +50,17 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    // Ensure no guardians are the same as a user
+    // Ensure no guardians are the same as a controller
     // https://github.com/nymlab/vectis/issues/43
-    let addr_human = deps.api.addr_validate(&msg.create_wallet_msg.user_addr)?;
+    let addr_human = deps
+        .api
+        .addr_validate(&msg.create_wallet_msg.controller_addr)?;
     msg.create_wallet_msg
         .guardians
         .verify_guardians(&addr_human)?;
 
     let addr = deps.api.addr_canonicalize(addr_human.as_str())?;
-    USER.save(deps.storage, &User { addr, nonce: 0 })?;
+    CONTROLLER.save(deps.storage, &Controller { addr, nonce: 0 })?;
 
     FROZEN.save(deps.storage, &false)?;
     FACTORY.save(
@@ -100,9 +103,9 @@ pub fn instantiate(
         let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
         Response::new()
             .add_submessage(msg)
-            .add_attribute("user", addr_human)
+            .add_attribute("controller", addr_human)
     } else {
-        Response::new().add_attribute("user", addr_human)
+        Response::new().add_attribute("controller", addr_human)
     };
 
     Ok(resp)
@@ -119,9 +122,9 @@ pub fn execute(
         ExecuteMsg::Execute { msgs } => execute_execute(deps, env, info, msgs),
         ExecuteMsg::Relay { transaction } => execute_relay(deps, info, transaction),
         ExecuteMsg::RevertFreezeStatus {} => execute_revert_freeze_status(deps, info),
-        ExecuteMsg::RotateUserKey { new_user_address } => {
-            execute_rotate_user_key(deps, info, new_user_address)
-        }
+        ExecuteMsg::RotateControllerKey {
+            new_controller_address,
+        } => execute_rotate_controller_key(deps, info, new_controller_address),
         ExecuteMsg::AddRelayer {
             new_relayer_address,
         } => execute_add_relayer(deps, info, new_relayer_address),
@@ -136,7 +139,7 @@ pub fn execute(
     }
 }
 
-/// Executes message from the user
+/// Executes message from the controller
 pub fn execute_execute<T>(
     deps: DepsMut,
     _env: Env,
@@ -150,8 +153,8 @@ where
         return Err(ContractError::Frozen {});
     }
 
-    // Ensure user exists
-    ensure_is_user(deps.as_ref(), info.sender.as_ref())?;
+    // Ensure controller exists
+    ensure_is_controller(deps.as_ref(), info.sender.as_ref())?;
 
     let res = Response::new()
         .add_messages(msgs)
@@ -174,32 +177,32 @@ pub fn execute_relay(
         return Err(ContractError::Frozen {});
     }
 
-    // Get user addr from it's pubkey
+    // Get controller addr from it's pubkey
     let addr = pub_key_to_address(
         &deps.as_ref(),
         &ADDR_PREFIX.query(
             &deps.querier,
             deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
         )?,
-        &transaction.user_pubkey.0,
+        &transaction.controller_pubkey.0,
     )?;
 
-    // Ensure address derived from pub message is the address of existing user
-    let user = ensure_is_user(deps.as_ref(), addr.as_ref())?;
+    // Ensure address derived from pub message is the address of existing controller
+    let controller = ensure_is_controller(deps.as_ref(), addr.as_ref())?;
 
     // Ensure relayer provided nonce is correct
-    user.ensure_nonces_are_equal(&transaction.nonce)?;
+    controller.ensure_nonces_are_equal(&transaction.nonce)?;
 
-    // Checks signature, which includes a message including the nonce signed by the user
+    // Checks signature, which includes a message including the nonce signed by the controller
     let is_verified = query_verify_cosmos(&deps, &transaction)?;
 
     if is_verified {
         let msg: Result<CosmosMsg, _> = cosmwasm_std::from_slice(transaction.message.0.as_slice());
         if let Ok(msg) = msg {
             // Update nonce
-            USER.update(deps.storage, |mut user| -> StdResult<_> {
-                user.increment_nonce();
-                Ok(user)
+            CONTROLLER.update(deps.storage, |mut controller| -> StdResult<_> {
+                controller.increment_nonce();
+                Ok(controller)
             })?;
 
             Ok(Response::new()
@@ -223,8 +226,8 @@ pub fn execute_add_relayer(
     info: MessageInfo,
     relayer_addr: Addr,
 ) -> Result<Response, ContractError> {
-    // Authorize user or guardians
-    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
+    // Authorize controller or guardians
+    authorize_controller_or_guardians(deps.as_ref(), &info.sender)?;
 
     // Save a new relayer if it does not exist yet
     let relayer_addr_canonical = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
@@ -243,8 +246,8 @@ pub fn execute_remove_relayer(
     info: MessageInfo,
     relayer_addr: Addr,
 ) -> Result<Response, ContractError> {
-    // Authorize user or guardians
-    authorize_user_or_guardians(deps.as_ref(), &info.sender)?;
+    // Authorize controller or guardians
+    authorize_controller_or_guardians(deps.as_ref(), &info.sender)?;
 
     // Remove a relayer if possible
     let relayer_addr_canonical = deps.api.addr_canonicalize(relayer_addr.as_ref())?;
@@ -278,12 +281,12 @@ pub fn execute_revert_freeze_status(
     Ok(res)
 }
 
-/// Complete user key rotation by changing it's address
+/// Complete controller key rotation by changing it's address
 /// Must be from a guardian or a guardian multisig contract
-pub fn execute_rotate_user_key(
+pub fn execute_rotate_controller_key(
     deps: DepsMut,
     info: MessageInfo,
-    new_user_address: String,
+    new_controller_address: String,
 ) -> Result<Response, ContractError> {
     // Allow guardians to rotate key when it is frozen
     if is_frozen(deps.as_ref())?
@@ -291,22 +294,24 @@ pub fn execute_rotate_user_key(
     {
         return Err(ContractError::Frozen {});
     } else {
-        authorize_user_or_guardians(deps.as_ref(), &info.sender)?
+        authorize_controller_or_guardians(deps.as_ref(), &info.sender)?
     };
 
-    let user = USER.load(deps.storage)?;
+    let controller = CONTROLLER.load(deps.storage)?;
 
     // Ensure provided address is different from current
-    let new_user_address = deps.api.addr_canonicalize(new_user_address.as_ref())?;
-    user.ensure_addresses_are_not_equal(&new_user_address)?;
+    let new_controller_address = deps
+        .api
+        .addr_canonicalize(new_controller_address.as_ref())?;
+    controller.ensure_addresses_are_not_equal(&new_controller_address)?;
 
-    // Update user address
-    USER.update(deps.storage, |mut user| -> StdResult<_> {
-        user.set_address(new_user_address);
-        Ok(user)
+    // Update controller address
+    CONTROLLER.update(deps.storage, |mut controller| -> StdResult<_> {
+        controller.set_address(new_controller_address);
+        Ok(controller)
     })?;
 
-    Ok(Response::new().add_attribute("action", "execute_rotate_user_key"))
+    Ok(Response::new().add_attribute("action", "execute_rotate_controller_key"))
 }
 
 pub fn execute_update_guardians(
@@ -314,7 +319,7 @@ pub fn execute_update_guardians(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
+    ensure_is_relayer_or_controller(deps.as_ref(), &env, &info.sender)?;
 
     // make sure guardians have not frozen the contract
     if is_frozen(deps.as_ref())? {
@@ -396,7 +401,7 @@ pub fn execute_request_update_guardians(
     env: Env,
     request: Option<GuardiansUpdateMsg>,
 ) -> Result<Response, ContractError> {
-    ensure_is_relayer_or_user(deps.as_ref(), &env, &info.sender)?;
+    ensure_is_relayer_or_controller(deps.as_ref(), &env, &info.sender)?;
 
     if is_frozen(deps.as_ref())? {
         return Err(ContractError::Frozen {});
@@ -404,8 +409,11 @@ pub fn execute_request_update_guardians(
 
     match request {
         Some(r) => {
-            r.guardians
-                .verify_guardians(&deps.api.addr_humanize(&USER.load(deps.storage)?.addr)?)?;
+            r.guardians.verify_guardians(
+                &deps
+                    .api
+                    .addr_humanize(&CONTROLLER.load(deps.storage)?.addr)?,
+            )?;
 
             PENDING_GUARDIAN_ROTATION.save(
                 deps.storage,
@@ -421,17 +429,17 @@ pub fn execute_request_update_guardians(
     }
 }
 
-/// Update label by user
+/// Update label by controller
 pub fn execute_update_label(
     deps: DepsMut,
     info: MessageInfo,
     env: Env,
     new_label: String,
 ) -> Result<Response, ContractError> {
-    let is_user = ensure_is_user(deps.as_ref(), info.sender.as_str());
+    let is_controller = ensure_is_controller(deps.as_ref(), info.sender.as_str());
     let is_contract = ensure_is_contract_self(&env, &info.sender);
-    if is_user.is_err() && is_contract.is_err() {
-        is_user?;
+    if is_controller.is_err() && is_contract.is_err() {
+        is_controller?;
         is_contract?;
     }
 
@@ -488,13 +496,13 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
         _ => None,
     };
 
-    let user = USER.load(deps.storage)?;
+    let controller = CONTROLLER.load(deps.storage)?;
     let factory = FACTORY.load(deps.storage)?;
 
     Ok(WalletInfo {
-        user_addr: deps.api.addr_humanize(&user.addr)?,
+        controller_addr: deps.api.addr_humanize(&controller.addr)?,
         factory: deps.api.addr_humanize(&factory)?,
-        nonce: user.nonce,
+        nonce: controller.nonce,
         version: cw2::get_contract_version(deps.storage)?,
         code_id: CODE_ID.load(deps.storage)?,
         multisig_code_id: MULTISIG_CODE_ID.load(deps.storage)?,

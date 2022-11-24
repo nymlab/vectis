@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr};
 
-/// User nonce
+/// Controller nonce
 pub type Nonce = u64;
 
 /// Representation of the wallet address in both form used in migration
@@ -15,7 +15,7 @@ pub enum WalletAddr {
 
 #[cw_serde]
 pub struct WalletInfo {
-    pub user_addr: Addr,
+    pub controller_addr: Addr,
     pub factory: Addr,
     pub version: cw2::ContractVersion,
     pub code_id: u64,
@@ -30,8 +30,8 @@ pub struct WalletInfo {
 
 #[cw_serde]
 pub struct RelayTransaction {
-    /// User pubkey
-    pub user_pubkey: Binary,
+    /// Controller pubkey
+    pub controller_pubkey: Binary,
     /// Message to verify
     pub message: Binary,
     /// Nonce

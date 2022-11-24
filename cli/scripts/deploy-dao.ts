@@ -291,9 +291,6 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         voteAddr: daoClient.voteAddr,
     };
 
-    console.log("ALL ADDRESSES");
-    console.log("%j", contracts);
-
     await verifyDeploy(contracts);
 
     writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));

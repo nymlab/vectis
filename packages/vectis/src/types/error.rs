@@ -6,8 +6,8 @@ use thiserror::Error;
 /// Relay transaction related errors
 #[derive(Error, Debug, PartialEq)]
 pub enum RelayTxError {
-    #[error("MismatchUserAddr")]
-    IsNotUser {},
+    #[error("MismatchControllerAddr")]
+    IsNotController {},
     #[error("NoncesAreNotEqual")]
     NoncesAreNotEqual {},
     #[error("SignatureVerificationError")]

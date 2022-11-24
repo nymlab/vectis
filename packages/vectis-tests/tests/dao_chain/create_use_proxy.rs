@@ -16,12 +16,12 @@ fn create_new_proxy() {
 
     let mut suite = DaoChainSuite::init().unwrap();
 
-    let init_user_fund = suite.query_balance(&suite.user).unwrap();
+    let init_controller_fund = suite.query_balance(&suite.controller).unwrap();
     let init_dao_fund = suite.query_balance(&suite.dao).unwrap();
 
     let wallet_addr = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![init_wallet_fund.clone()],
             None,
             WALLET_FEE + init_wallet_fund.amount.u128(),
@@ -45,16 +45,16 @@ fn create_new_proxy() {
 
     let factory_fund = suite.query_balance(&suite.factory).unwrap();
     let wallet_fund = suite.query_balance(&wallet_addr).unwrap();
-    let post_user_fund = suite.query_balance(&suite.user.clone()).unwrap();
+    let post_controller_fund = suite.query_balance(&suite.controller.clone()).unwrap();
     let post_dao_fund = suite.query_balance(&suite.dao).unwrap();
 
     // factory fund does not change
     assert_eq!(Uint128::zero(), factory_fund.amount,);
     // wallet fund should be what is specified
     assert_eq!(wallet_fund.amount, init_wallet_fund.amount,);
-    // user funds should be wallet_fee + init wallet fund less
+    // controller funds should be wallet_fee + init wallet fund less
     assert_eq!(
-        init_user_fund.amount.u128() - post_user_fund.amount.u128(),
+        init_controller_fund.amount.u128() - post_controller_fund.amount.u128(),
         WALLET_FEE + init_wallet_fund.amount.u128()
     );
     // dao fund should increase by wallet_fee
@@ -74,7 +74,7 @@ fn cannot_create_new_proxy_without_payment() {
 
     let mut suite = DaoChainSuite::init().unwrap();
     suite
-        .create_new_proxy(suite.user.clone(), vec![], None, no_wallet_fee)
+        .create_new_proxy(suite.controller.clone(), vec![], None, no_wallet_fee)
         .unwrap();
 }
 
@@ -83,7 +83,7 @@ fn create_new_proxy_without_guardians() {
     let mut suite = DaoChainSuite::init().unwrap();
     suite
         .create_new_proxy_without_guardians(
-            suite.user.clone(),
+            suite.controller.clone(),
             suite.factory.clone(),
             vec![],
             None,
@@ -93,12 +93,12 @@ fn create_new_proxy_without_guardians() {
 }
 
 #[test]
-fn user_can_rotate_keys() {
+fn controller_can_rotate_keys() {
     let mut suite = DaoChainSuite::init().unwrap();
 
     let wallet_address = suite
         .create_new_proxy_without_guardians(
-            suite.user.clone(),
+            suite.controller.clone(),
             suite.factory.clone(),
             vec![],
             None,
@@ -110,17 +110,17 @@ fn user_can_rotate_keys() {
     suite
         .app
         .execute_contract(
-            suite.user.clone(),
+            suite.controller.clone(),
             wallet_address.clone(),
-            &ProxyExecuteMsg::<Empty>::RotateUserKey {
-                new_user_address: new_address.to_string(),
+            &ProxyExecuteMsg::<Empty>::RotateControllerKey {
+                new_controller_address: new_address.to_string(),
             },
             &[],
         )
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    assert_eq!(w.user_addr.as_str(), new_address);
+    assert_eq!(w.controller_addr.as_str(), new_address);
 }
 
 #[test]
@@ -133,7 +133,7 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
 
     let rsp: ContractError = suite
         .create_new_proxy_without_guardians(
-            suite.user.clone(),
+            suite.controller.clone(),
             suite.factory.clone(),
             vec![],
             Some(multisig),
@@ -150,12 +150,12 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
 }
 
 #[test]
-fn user_can_execute_messages() {
+fn controller_can_execute_messages() {
     let mut suite = DaoChainSuite::init().unwrap();
     let init_wallet_fund: Coin = coin(100, "ucosm");
     let wallet_address = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![init_wallet_fund.clone()],
             None,
             WALLET_FEE + init_wallet_fund.amount.u128(),
@@ -163,7 +163,7 @@ fn user_can_execute_messages() {
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    let user = w.user_addr;
+    let controller = w.controller_addr;
 
     // Can execute Bank msgs
     let send_amount: Coin = coin(10, "ucosm");
@@ -173,7 +173,7 @@ fn user_can_execute_messages() {
     });
 
     let execute_msg_resp = suite.app.execute_contract(
-        user,
+        controller,
         wallet_address.clone(),
         &ProxyExecuteMsg::Execute { msgs: vec![msg] },
         &[],
@@ -194,7 +194,7 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 
     let wallet_addr = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -275,11 +275,11 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
     let mut suite = DaoChainSuite::init().unwrap();
     let init_multisig_fund: Coin = coin(200, "ucosm");
     let init_proxy_fund: Coin = coin(100, "ucosm");
-    let init_user_balance = suite.query_balance(&suite.user.clone());
+    let init_controller_balance = suite.query_balance(&suite.controller.clone());
 
     let proxy_addr = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![init_proxy_fund.clone()],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -292,15 +292,15 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
     let w: WalletInfo = suite.query_wallet_info(&proxy_addr).unwrap();
     let multisig_balance = suite.query_balance(&w.multisig_address.unwrap());
     let proxy_balance = suite.query_balance(&proxy_addr);
-    let user_balance = suite.query_balance(&suite.user.clone());
+    let controller_balance = suite.query_balance(&suite.controller.clone());
     assert_eq!(multisig_balance.unwrap().amount, init_multisig_fund.amount);
     assert_eq!(proxy_balance.unwrap().amount, init_proxy_fund.amount);
     assert_eq!(
-        user_balance.unwrap().amount.u128()
+        controller_balance.unwrap().amount.u128()
             + WALLET_FEE
             + init_proxy_fund.amount.u128()
             + init_multisig_fund.amount.u128(),
-        init_user_balance.unwrap().amount.u128()
+        init_controller_balance.unwrap().amount.u128()
     );
 }
 
@@ -310,15 +310,15 @@ fn query_all_unclaimed_wallets_works() {
 
     // Create a few wallets
     suite
-        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
     suite
-        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
     suite
-        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
     let all = suite

@@ -6,18 +6,18 @@ use cw_storage_plus::{Item, Map};
 pub use vectis_wallet::{factory_state::ADDR_PREFIX, GuardiansUpdateRequest, Nonce, RelayTxError};
 
 #[cw_serde]
-pub struct User {
+pub struct Controller {
     pub addr: CanonicalAddr,
     pub nonce: Nonce,
 }
 
-impl User {
+impl Controller {
     /// Increase nonce by 1
     pub fn increment_nonce(&mut self) {
         self.nonce += 1;
     }
 
-    /// Set new user address
+    /// Set new controller address
     pub fn set_address(&mut self, address: CanonicalAddr) {
         self.addr = address;
     }
@@ -50,7 +50,7 @@ pub const FROZEN: Item<bool> = Item::new("frozen");
 pub const FACTORY: Item<CanonicalAddr> = Item::new("factory");
 pub const CODE_ID: Item<u64> = Item::new("code_id");
 pub const MULTISIG_CODE_ID: Item<u64> = Item::new("multisig_code_id");
-pub const USER: Item<User> = Item::new("user");
+pub const CONTROLLER: Item<Controller> = Item::new("controller");
 pub const GUARDIANS: Map<&[u8], ()> = Map::new("guardians");
 pub const PENDING_GUARDIAN_ROTATION: Item<GuardiansUpdateRequest> =
     Item::new("pending_guardian_rotation");

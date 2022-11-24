@@ -28,8 +28,8 @@ pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
 }
 
 pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, ContractError> {
-    let claiming_user = deps.api.addr_canonicalize(&wallet)?;
-    PENDING_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+    let claiming_controller = deps.api.addr_canonicalize(&wallet)?;
+    PENDING_CLAIM_LIST.remove(deps.storage, claiming_controller.to_vec());
 
     let fee = CLAIM_FEE.load(deps.storage)?;
 
@@ -50,12 +50,12 @@ pub fn handle_govec_mint_failed(
     env: Env,
     wallet: String,
 ) -> Result<Response, ContractError> {
-    let claiming_user = deps.api.addr_canonicalize(&wallet)?;
-    PENDING_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+    let claiming_controller = deps.api.addr_canonicalize(&wallet)?;
+    PENDING_CLAIM_LIST.remove(deps.storage, claiming_controller.to_vec());
     let expiration = Expiration::AtTime(env.block.time)
         .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
         .expect("error defining activate_at");
-    GOVEC_CLAIM_LIST.save(deps.storage, claiming_user.to_vec(), &expiration)?;
+    GOVEC_CLAIM_LIST.save(deps.storage, claiming_controller.to_vec(), &expiration)?;
 
     let fee = CLAIM_FEE.load(deps.storage)?;
 

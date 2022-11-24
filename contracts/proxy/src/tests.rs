@@ -31,10 +31,10 @@ const INVALID_GUARD: &str = "not_a_guardian";
 const MULTISIG_CODE_ID: u64 = 13;
 
 // this will set up the instantiation for other tests
-// returns User address
+// returns Controller address
 fn do_instantiate(mut deps: DepsMut) -> Addr {
     let create_wallet_msg = CreateWalletMsg {
-        user_addr: "user_addr".to_string(),
+        controller_addr: "controller_addr".to_string(),
         guardians: get_guardians(),
         relayers: vec![RELAYER1.into(), RELAYER2.into()],
         proxy_initial_funds: vec![],
@@ -54,7 +54,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     let info = query_info(deps.as_ref()).unwrap();
 
     let expected_info = WalletInfo {
-        user_addr: Addr::unchecked("user_addr"),
+        controller_addr: Addr::unchecked("controller_addr"),
         factory: Addr::unchecked("creator"),
         nonce: 0,
         version: ContractVersion {
@@ -71,21 +71,21 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     };
 
     assert_eq!(expected_info, info);
-    Addr::unchecked("user_addr")
+    Addr::unchecked("controller_addr")
 }
 
 #[test]
-fn user_cannot_be_a_guardian() {
+fn controller_cannot_be_a_guardian() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
-    let guardians_with_user = Guardians {
-        addresses: vec![GUARD1.to_string(), "user_addr".to_string()],
+    let guardians_with_controller = Guardians {
+        addresses: vec![GUARD1.to_string(), "controller_addr".to_string()],
         guardians_multisig: None,
     };
 
     let create_wallet_msg = CreateWalletMsg {
-        user_addr: "user_addr".to_string(),
-        guardians: guardians_with_user,
+        controller_addr: "controller_addr".to_string(),
+        guardians: guardians_with_controller,
         relayers: vec![RELAYER1.into(), RELAYER2.into()],
         proxy_initial_funds: vec![],
         label: "initial label".to_string(),
@@ -103,7 +103,7 @@ fn user_cannot_be_a_guardian() {
     let err = instantiate(deps.as_mut().branch(), env, info, instantiate_msg).unwrap_err();
     assert_eq!(
         err,
-        ContractError::Std(StdError::generic_err("user cannot be a guardian"))
+        ContractError::Std(StdError::generic_err("controller cannot be a guardian"))
     );
 }
 
@@ -148,7 +148,7 @@ fn non_guardian_cannot_revert_freeze_status() {
 }
 
 #[test]
-fn frozen_contract_cannot_execute_user_tx() {
+fn frozen_contract_cannot_execute_controller_tx() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     do_instantiate(deps.as_mut());
 
@@ -168,16 +168,16 @@ fn frozen_contract_cannot_execute_user_tx() {
 }
 
 #[test]
-fn frozen_contract_user_cannot_rotate_guardians_or_user() {
+fn frozen_contract_controller_cannot_rotate_guardians_or_controller() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
     execute(deps.as_mut(), env, info, msg).unwrap();
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let msg = ExecuteMsg::UpdateGuardians {};
@@ -185,8 +185,8 @@ fn frozen_contract_user_cannot_rotate_guardians_or_user() {
     let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
     assert_eq!(err, ContractError::Frozen {});
 
-    let msg = ExecuteMsg::RotateUserKey {
-        new_user_address: "new user".into(),
+    let msg = ExecuteMsg::RotateControllerKey {
+        new_controller_address: "new controller".into(),
     };
 
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
@@ -194,9 +194,9 @@ fn frozen_contract_user_cannot_rotate_guardians_or_user() {
 }
 
 #[test]
-fn frozen_contract_guardians_can_rotate_user_key() {
+fn frozen_contract_guardians_can_rotate_controller_key() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
@@ -208,26 +208,26 @@ fn frozen_contract_guardians_can_rotate_user_key() {
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
 
-    let msg = ExecuteMsg::RotateUserKey {
-        new_user_address: "new user123".into(),
+    let msg = ExecuteMsg::RotateControllerKey {
+        new_controller_address: "new controller123".into(),
     };
 
     execute(deps.as_mut(), env, info, msg).unwrap();
     let wallet_info = query_info(deps.as_ref()).unwrap();
-    assert_ne!(wallet_info.user_addr, user_addr);
+    assert_ne!(wallet_info.controller_addr, controller_addr);
 }
 
 #[test]
 fn frozen_contract_cannot_create_update_guardians_request() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     let info = mock_info(GUARD1, &[]);
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
     execute(deps.as_mut(), env, info, msg).unwrap();
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let request = GuardiansUpdateMsg {
@@ -247,20 +247,20 @@ fn frozen_contract_cannot_create_update_guardians_request() {
 }
 
 #[test]
-fn user_cannot_create_update_guardians_request_to_include_self() {
+fn controller_cannot_create_update_guardians_request_to_include_self() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     // initially we have a wallet with 2 relayers
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(wallet_info.guardians.contains(&Addr::unchecked(GUARD2)));
     assert!(!wallet_info.guardians.contains(&Addr::unchecked(GUARD3)));
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let new_guardians = Guardians {
-        addresses: vec![user_addr.to_string(), GUARD3.to_string()],
+        addresses: vec![controller_addr.to_string(), GUARD3.to_string()],
         guardians_multisig: None,
     };
 
@@ -276,20 +276,20 @@ fn user_cannot_create_update_guardians_request_to_include_self() {
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(
         err,
-        ContractError::Std(StdError::generic_err("user cannot be a guardian"))
+        ContractError::Std(StdError::generic_err("controller cannot be a guardian"))
     );
 }
 
 #[test]
-fn user_cannot_execute_not_active_request() {
+fn controller_cannot_execute_not_active_request() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let guardians = Guardians {
-        addresses: vec![user_addr.to_string(), GUARD3.to_string()],
+        addresses: vec![controller_addr.to_string(), GUARD3.to_string()],
         guardians_multisig: None,
     };
 
@@ -305,11 +305,11 @@ fn user_cannot_execute_not_active_request() {
 }
 
 #[test]
-fn user_cannot_execute_update_guardian_when_no_request() {
+fn controller_cannot_execute_update_guardian_when_no_request() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let msg = ExecuteMsg::UpdateGuardians {};
@@ -319,15 +319,15 @@ fn user_cannot_execute_update_guardian_when_no_request() {
 }
 
 #[test]
-fn user_can_execute_active_guardian_request() {
+fn controller_can_execute_active_guardian_request() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let guardians = Guardians {
-        addresses: vec![user_addr.to_string(), GUARD3.to_string()],
+        addresses: vec![controller_addr.to_string(), GUARD3.to_string()],
         guardians_multisig: None,
     };
 
@@ -352,11 +352,11 @@ fn user_can_execute_active_guardian_request() {
 }
 
 #[test]
-fn user_can_create_update_guardians_request() {
+fn controller_can_create_update_guardians_request() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let request = GuardiansUpdateMsg {
@@ -385,11 +385,11 @@ fn user_can_create_update_guardians_request() {
 }
 
 #[test]
-fn user_can_remove_update_guardians_request() {
+fn controller_can_remove_update_guardians_request() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let msg = ExecuteMsg::RequestUpdateGuardians { request: None };
@@ -406,14 +406,14 @@ fn user_can_remove_update_guardians_request() {
 }
 
 #[test]
-fn user_can_add_relayer() {
+fn controller_can_add_relayer() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     // initially we have a wallet with 2 relayers
     let mut wallet_info = query_info(deps.as_ref()).unwrap();
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let new_relayer_address = Addr::unchecked(RELAYER3);
@@ -433,14 +433,14 @@ fn user_can_add_relayer() {
 }
 
 #[test]
-fn user_can_remove_relayer() {
+fn controller_can_remove_relayer() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     // initially we have a wallet with 2 relayers
     let mut wallet_info = query_info(deps.as_ref()).unwrap();
 
-    let info = mock_info(user_addr.as_str(), &[]);
+    let info = mock_info(controller_addr.as_str(), &[]);
     let env = mock_env();
 
     let relayer_address = Addr::unchecked(RELAYER2);
@@ -462,7 +462,7 @@ fn user_can_remove_relayer() {
 }
 
 #[test]
-fn guardian_can_rotate_user_key() {
+fn guardian_can_rotate_controller_key() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     do_instantiate(deps.as_mut());
 
@@ -475,26 +475,26 @@ fn guardian_can_rotate_user_key() {
     let env = mock_env();
 
     let new_address = "new_key";
-    let msg = ExecuteMsg::RotateUserKey {
-        new_user_address: new_address.to_string(),
+    let msg = ExecuteMsg::RotateControllerKey {
+        new_controller_address: new_address.to_string(),
     };
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
+    assert_eq!(response.attributes, [("action", "execute_rotate_controller_key")]);
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
-    assert!(new_address.eq(wallet_info.user_addr.as_str()));
+    assert!(new_address.eq(wallet_info.controller_addr.as_str()));
 }
 
 #[test]
-fn user_can_update_label() {
+fn controller_can_update_label() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     // initially it is not frozen
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(!wallet_info.is_frozen);
 
-    let info = mock_info(user_addr.as_ref(), &[]);
+    let info = mock_info(controller_addr.as_ref(), &[]);
     let env = mock_env();
 
     let new_label = "new label";
@@ -513,7 +513,7 @@ fn user_can_update_label() {
 }
 
 #[test]
-fn non_user_update_label_fails() {
+fn non_controller_update_label_fails() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     let _ = do_instantiate(deps.as_mut());
 
@@ -521,7 +521,7 @@ fn non_user_update_label_fails() {
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(!wallet_info.is_frozen);
 
-    let info = mock_info("Non-user", &[]);
+    let info = mock_info("Non-controller", &[]);
     let env = mock_env();
 
     let new_label = "new label";
@@ -530,37 +530,37 @@ fn non_user_update_label_fails() {
     };
 
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::IsNotUser {});
+    assert_eq!(err, ContractError::IsNotController {});
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert_eq!("initial label", wallet_info.label.as_str());
 }
 
 #[test]
-fn user_can_rotate_user_key() {
+fn controller_can_rotate_controller_key() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     // initially it is not frozen
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(!wallet_info.is_frozen);
 
-    let info = mock_info(user_addr.as_ref(), &[]);
+    let info = mock_info(controller_addr.as_ref(), &[]);
     let env = mock_env();
 
     let new_address = "new_key";
-    let msg = ExecuteMsg::RotateUserKey {
-        new_user_address: new_address.to_string(),
+    let msg = ExecuteMsg::RotateControllerKey {
+        new_controller_address: new_address.to_string(),
     };
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(response.attributes, [("action", "execute_rotate_user_key")]);
+    assert_eq!(response.attributes, [("action", "execute_rotate_controller_key")]);
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
-    assert!(new_address.eq(wallet_info.user_addr.as_str()));
+    assert!(new_address.eq(wallet_info.controller_addr.as_str()));
 }
 
 #[test]
-fn invalid_guardian_or_use_cannot_rotate_user_key() {
+fn invalid_guardian_or_use_cannot_rotate_controller_key() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
     do_instantiate(deps.as_mut());
 
@@ -569,8 +569,8 @@ fn invalid_guardian_or_use_cannot_rotate_user_key() {
     let env = mock_env();
 
     let new_address = "new_key";
-    let msg = ExecuteMsg::RotateUserKey {
-        new_user_address: new_address.to_string(),
+    let msg = ExecuteMsg::RotateControllerKey {
+        new_controller_address: new_address.to_string(),
     };
 
     let res = execute(deps.as_mut(), env, info, msg);
@@ -578,9 +578,9 @@ fn invalid_guardian_or_use_cannot_rotate_user_key() {
 }
 
 #[test]
-fn rotate_user_key_same_address_fails() {
+fn rotate_controller_key_same_address_fails() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-    let user_addr = do_instantiate(deps.as_mut());
+    let controller_addr = do_instantiate(deps.as_mut());
 
     // initially it is not frozen
     let wallet_info = query_info(deps.as_ref()).unwrap();
@@ -591,8 +591,8 @@ fn rotate_user_key_same_address_fails() {
     let env = mock_env();
 
     // Make an attempt to provide the same address as currently set
-    let msg = ExecuteMsg::RotateUserKey {
-        new_user_address: user_addr.to_string(),
+    let msg = ExecuteMsg::RotateControllerKey {
+        new_controller_address: controller_addr.to_string(),
     };
 
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
