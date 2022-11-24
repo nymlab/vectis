@@ -1,21 +1,14 @@
 use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
-use cosmwasm_std::{
-    coins, to_binary, Addr, BankMsg, Binary, BlockInfo, CosmosMsg, DepsMut, StdError, Timestamp,
-};
+use cosmwasm_std::{coins, Addr, BankMsg, BlockInfo, CosmosMsg, DepsMut, StdError, Timestamp};
 use cw2::ContractVersion;
 
-use crate::contract::{
-    execute, execute_relay, instantiate, query_guardian_update_request, query_info,
-};
+use crate::contract::{execute, instantiate, query_guardian_update_request, query_info};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::PENDING_GUARDIAN_ROTATION;
 
-use secp256k1::bitcoin_hashes::sha256;
-use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
 use vectis_wallet::{
-    pub_key_to_address, CreateWalletMsg, Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest,
-    RelayTransaction, RelayTxError, WalletInfo,
+    CreateWalletMsg, Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest, WalletInfo,
 };
 
 const GUARD1: &str = "guardian1";
@@ -34,33 +27,14 @@ const RELAYER2: &str = "relayer2";
 const RELAYER3: &str = "relayer3";
 
 const INVALID_GUARD: &str = "not_a_guardian";
-const INVALID_RELAYER: &str = "not_a_relayer";
-
-const USER_PRIV: &[u8; 32] = &[
-    239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
-    185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 26,
-];
-
-const INVAILID_USER_PRIV: &[u8; 32] = &[
-    239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,
-    185, 197, 114, 54, 55, 35, 162, 124, 200, 2, 59, 27,
-];
 
 const MULTISIG_CODE_ID: u64 = 13;
 
 // this will set up the instantiation for other tests
 // returns User address
 fn do_instantiate(mut deps: DepsMut) -> Addr {
-    let secp = Secp256k1::new();
-
-    let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
-    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-    let public_key_serialized = Binary(public_key.serialize_uncompressed().to_vec());
-    let user_addr =
-        pub_key_to_address(&deps.as_ref(), "wasm", &public_key.serialize_uncompressed()).unwrap();
-
     let create_wallet_msg = CreateWalletMsg {
-        user_addr: user_addr.to_string(),
+        user_addr: "user_addr".to_string(),
         guardians: get_guardians(),
         relayers: vec![RELAYER1.into(), RELAYER2.into()],
         proxy_initial_funds: vec![],
@@ -76,12 +50,11 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     let info = mock_info("creator", &[]);
     let env = mock_env();
 
-    let address = pub_key_to_address(&deps.as_ref(), "wasm", &public_key_serialized).unwrap();
     instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
     let info = query_info(deps.as_ref()).unwrap();
 
     let expected_info = WalletInfo {
-        user_addr: address.clone(),
+        user_addr: Addr::unchecked("user_addr"),
         factory: Addr::unchecked("creator"),
         nonce: 0,
         version: ContractVersion {
@@ -98,25 +71,20 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     };
 
     assert_eq!(expected_info, info);
-    address
+    Addr::unchecked("user_addr")
 }
 
 #[test]
 fn user_cannot_be_a_guardian() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
-    let secp = Secp256k1::new();
-    let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
-    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-    let public_key_serialized = Binary(public_key.serialize_uncompressed().to_vec());
-    let user_addr = pub_key_to_address(&deps.as_ref(), "wasm", &public_key_serialized).unwrap();
     let guardians_with_user = Guardians {
-        addresses: vec![GUARD1.to_string(), user_addr.to_string()],
+        addresses: vec![GUARD1.to_string(), "user_addr".to_string()],
         guardians_multisig: None,
     };
 
     let create_wallet_msg = CreateWalletMsg {
-        user_addr: user_addr.to_string(),
+        user_addr: "user_addr".to_string(),
         guardians: guardians_with_user,
         relayers: vec![RELAYER1.into(), RELAYER2.into()],
         proxy_initial_funds: vec![],
