@@ -75,6 +75,7 @@ impl DaoChainSuite {
                     staking_addr: None,
                     marketing: None,
                     mint_cap: None,
+                    mint_amount: Uint128::new(MINT_AMOUNT),
                     factory: None,
                     dao_tunnel: None,
                 },

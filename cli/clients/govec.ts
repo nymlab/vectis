@@ -8,6 +8,7 @@ interface InstantiateGovec {
     initial_balances: GovecT.Cw20Coin[];
     factory?: string | null;
     minterCap?: string;
+    mintAmount: string;
     marketing?: GovecT.MarketingInfoResponse;
     dao_tunnel?: string | null;
     staking_addr?: string | null;
@@ -25,6 +26,7 @@ class GovecClient extends GovecC {
             factory: msg.factory,
             initial_balances: msg.initial_balances,
             mint_cap: msg.minterCap,
+            mint_amount: msg.mintAmount,
             marketing: msg.marketing,
             staking_addr: msg.staking_addr,
             dao_tunnel: msg.dao_tunnel,

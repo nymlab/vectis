@@ -13,6 +13,7 @@ pub struct InstantiateMsg {
     pub initial_balances: Vec<Cw20Coin>,
     pub staking_addr: Option<String>,
     pub mint_cap: Option<Uint128>,
+    pub mint_amount: Uint128,
     pub factory: Option<String>,
     pub dao_tunnel: Option<String>,
     pub marketing: Option<MarketingInfoResponse>,

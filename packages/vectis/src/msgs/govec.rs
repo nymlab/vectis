@@ -30,9 +30,12 @@ pub enum GovecExecuteMsg {
     /// The recipient will always be the sender, aka the proposal contract
     /// called by `get_deposit_msg` required interface in proposal_single
     ProposalTransfer { proposer: String, deposit: Uint128 },
-    /// Burn is a base message to destroy tokens forever
-    /// Logic checks that caller only has exactly 1 vote token in their balance
-    Burn { relayed_from: Option<String> },
+    /// Burn amount specified from total supply
+    /// permission: executed by dao only
+    Burn { amount: Uint128 },
+    /// Exits the DAO but removing itself from the ledger
+    /// QueryMsg::Joined will return None
+    Exit { relayed_from: Option<String> },
     /// Send is a base message to transfer tokens to a contract and trigger an action
     /// on the receiving contract.
     Send {
@@ -41,11 +44,15 @@ pub enum GovecExecuteMsg {
         msg: Binary,
         relayed_from: Option<String>,
     },
-    /// If authorized, creates 1 new vote token and adds to the new wallets .
+    /// If authorised, mint the `MINT_AMOUNT` defined by the dao to the new wallet
+    /// permission: minters
     Mint { new_wallet: String },
     /// Updates the mint cap of the contract.Authorized by the DAO
     /// permission: executed by dao only
     UpdateMintCap { new_mint_cap: Option<Uint128> },
+    /// Updates the mint cap of the contract.Authorized by the DAO
+    /// permission: executed by dao only
+    UpdateMintAmount { new_amount: Uint128 },
     /// Updates the staking contract address.Authorized by the DAO
     /// permission: executed by dao only
     UpdateConfigAddr { new_addr: UpdateAddrReq },
@@ -87,6 +94,9 @@ pub enum GovecQueryMsg {
     /// Return type: TokenInfoResponse.
     #[returns(TokenInfoResponse)]
     TokenInfo {},
+    /// Returns the current amount of Govec that a wallet will get when claiming
+    #[returns(Uint128)]
+    MintAmount {},
     /// Returns who can mint and the hard cap on maximum tokens after minting.
     /// Return type: MintResponse
     #[returns(MintResponse)]

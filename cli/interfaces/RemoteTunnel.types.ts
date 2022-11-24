@@ -68,6 +68,11 @@ export type GovecExecuteMsg =
       }
     | {
           burn: {
+              amount: Uint128;
+          };
+      }
+    | {
+          exit: {
               relayed_from?: string | null;
           };
       }
@@ -87,6 +92,11 @@ export type GovecExecuteMsg =
     | {
           update_mint_cap: {
               new_mint_cap?: Uint128 | null;
+          };
+      }
+    | {
+          update_mint_amount: {
+              new_amount: Uint128;
           };
       }
     | {

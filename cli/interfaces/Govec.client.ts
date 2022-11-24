@@ -32,6 +32,7 @@ export interface GovecReadOnlyInterface {
     balance: ({ address }: { address: string }) => Promise<BalanceResponse>;
     joined: ({ address }: { address: string }) => Promise<NullableBalanceResponse>;
     tokenInfo: () => Promise<TokenInfoResponse>;
+    mintAmount: () => Promise<Uint128>;
     minters: () => Promise<MintResponse>;
     staking: () => Promise<Addr>;
     dao: () => Promise<Addr>;
@@ -52,6 +53,7 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
         this.balance = this.balance.bind(this);
         this.joined = this.joined.bind(this);
         this.tokenInfo = this.tokenInfo.bind(this);
+        this.mintAmount = this.mintAmount.bind(this);
         this.minters = this.minters.bind(this);
         this.staking = this.staking.bind(this);
         this.dao = this.dao.bind(this);
@@ -80,6 +82,11 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
     tokenInfo = async (): Promise<TokenInfoResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             token_info: {},
+        });
+    };
+    mintAmount = async (): Promise<Uint128> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            mint_amount: {},
         });
     };
     minters = async (): Promise<MintResponse> => {
@@ -168,6 +175,16 @@ export interface GovecInterface extends GovecReadOnlyInterface {
     ) => Promise<ExecuteResult>;
     burn: (
         {
+            amount,
+        }: {
+            amount: Uint128;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    exit: (
+        {
             relayedFrom,
         }: {
             relayedFrom?: string;
@@ -212,6 +229,16 @@ export interface GovecInterface extends GovecReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    updateMintAmount: (
+        {
+            newAmount,
+        }: {
+            newAmount: Uint128;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
     updateConfigAddr: (
         {
             newAddr,
@@ -251,9 +278,11 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
         this.transfer = this.transfer.bind(this);
         this.proposalTransfer = this.proposalTransfer.bind(this);
         this.burn = this.burn.bind(this);
+        this.exit = this.exit.bind(this);
         this.send = this.send.bind(this);
         this.mint = this.mint.bind(this);
         this.updateMintCap = this.updateMintCap.bind(this);
+        this.updateMintAmount = this.updateMintAmount.bind(this);
         this.updateConfigAddr = this.updateConfigAddr.bind(this);
         this.updateMarketing = this.updateMarketing.bind(this);
         this.uploadLogo = this.uploadLogo.bind(this);
@@ -316,6 +345,29 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
     };
     burn = async (
         {
+            amount,
+        }: {
+            amount: Uint128;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                burn: {
+                    amount,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    exit = async (
+        {
             relayedFrom,
         }: {
             relayedFrom?: string;
@@ -328,7 +380,7 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
             this.sender,
             this.contractAddress,
             {
-                burn: {
+                exit: {
                     relayed_from: relayedFrom,
                 },
             },
@@ -408,6 +460,29 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
             {
                 update_mint_cap: {
                     new_mint_cap: newMintCap,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateMintAmount = async (
+        {
+            newAmount,
+        }: {
+            newAmount: Uint128;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_mint_amount: {
+                    new_amount: newAmount,
                 },
             },
             fee,

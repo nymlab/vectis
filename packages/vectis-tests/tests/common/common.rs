@@ -82,10 +82,7 @@ pub use vectis_remote_factory::contract::{
 };
 
 pub use vectis_govec::{
-    contract::{
-        execute as govec_execute, instantiate as govec_instantiate, query as govec_query,
-        MINT_AMOUNT,
-    },
+    contract::{execute as govec_execute, instantiate as govec_instantiate, query as govec_query},
     msg::{
         ExecuteMsg as GovecExecuteMsg, InstantiateMsg as GovecInstantiateMsg,
         QueryMsg as GovecQueryMsg,
@@ -108,6 +105,7 @@ pub use vectis_wallet::{
     WalletFactoryQueryMsg as FactoryQueryMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
+pub const MINT_AMOUNT: u128 = 2u128;
 pub const WALLET_FEE: u128 = 10u128;
 pub const CLAIM_FEE: u128 = 10u128;
 pub const MINTER_CAP: u128 = 10000;
