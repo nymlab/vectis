@@ -40,12 +40,7 @@ fn controller_can_update_proxy_multisig_with_direct_message() {
     // Controller update their proxy related multisig contract to the new guardian set
     // This reinstantiates a new contract and changes the stored multisig contract addr
     suite
-        .create_guardians_request_and_update_guardians(
-            &controller,
-            &wallet_address,
-            new_guardians,
-            None,
-        )
+        .create_guardians_request_and_update_guardians(&controller, &wallet_address, new_guardians, None)
         .unwrap();
 
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();

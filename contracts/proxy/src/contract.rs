@@ -114,7 +114,6 @@ pub fn instantiate(
         let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
         resp = resp.add_submessage(msg);
     }
-
     Ok(resp)
 }
 
@@ -206,7 +205,6 @@ pub fn execute_plugin_msgs(
     // Execute messages
 }
 
-/// Executes message from the user
 pub fn execute_execute<T>(
     deps: DepsMut,
     info: MessageInfo,
