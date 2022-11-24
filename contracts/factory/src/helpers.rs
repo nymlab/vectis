@@ -30,8 +30,8 @@ pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
 }
 
 pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, ContractError> {
-    let claiming_user = deps.api.addr_canonicalize(&wallet)?;
-    GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user.to_vec());
+    let claiming_controller = deps.api.addr_canonicalize(&wallet)?;
+    GOVEC_CLAIM_LIST.remove(deps.storage, claiming_controller.to_vec());
 
     let fee = CLAIM_FEE.load(deps.storage)?;
 

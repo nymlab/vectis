@@ -19,8 +19,8 @@ pub struct DaoChainSuite {
     pub app: App,
     // The account that deploys everything and remove itself
     pub deployer: Addr,
-    // User
-    pub user: Addr,
+    // Controller
+    pub controller: Addr,
     // govec address
     pub govec: Addr,
     // factory address
@@ -45,14 +45,14 @@ impl DaoChainSuite {
     pub fn init() -> Result<DaoChainSuite> {
         let genesis_funds = vec![coin(100000, "ucosm")];
         let deployer = Addr::unchecked("deployer");
-        let user = Addr::unchecked(USER_ADDR);
+        let controller = Addr::unchecked(CONTROLLER_ADDR);
         let mut app = App::new(|router, _, storage| {
             router
                 .bank
                 .init_balance(storage, &deployer, genesis_funds)
                 .unwrap();
         });
-        app.send_tokens(deployer.clone(), user, &[coin(50000, "ucosm")])?;
+        app.send_tokens(deployer.clone(), controller, &[coin(50000, "ucosm")])?;
 
         let dao_id = app.store_code(contract_dao());
         let vote_id = app.store_code(contract_vote());
@@ -257,7 +257,7 @@ impl DaoChainSuite {
         .unwrap();
 
         Ok(DaoChainSuite {
-            user: Addr::unchecked(USER_ADDR),
+            controller: Addr::unchecked(CONTROLLER_ADDR),
             app,
             deployer,
             govec,
@@ -273,7 +273,7 @@ impl DaoChainSuite {
     // Create wallet
     pub fn create_new_proxy_without_guardians(
         &mut self,
-        user: Addr,
+        controller: Addr,
         factory: Addr,
         proxy_initial_fund: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
@@ -282,7 +282,7 @@ impl DaoChainSuite {
         native_tokens_amount: u128,
     ) -> Result<Addr> {
         self._create_new_proxy(
-            user,
+            controller,
             factory,
             proxy_initial_fund,
             guardians_multisig,
@@ -293,7 +293,7 @@ impl DaoChainSuite {
 
     pub fn create_new_proxy(
         &mut self,
-        user: Addr,
+        controller: Addr,
         proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
         // This is both the initial proxy wallet initial balance
@@ -303,7 +303,7 @@ impl DaoChainSuite {
         let g1 = GUARD1.to_owned();
         let g2 = GUARD2.to_owned();
         self._create_new_proxy(
-            user,
+            controller,
             self.factory.clone(),
             proxy_initial_funds,
             guardians_multisig,
@@ -314,7 +314,7 @@ impl DaoChainSuite {
 
     fn _create_new_proxy(
         &mut self,
-        user: Addr,
+        controller: Addr,
         factory: Addr,
         proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
@@ -324,7 +324,7 @@ impl DaoChainSuite {
         let r = "relayer".to_owned();
 
         let create_wallet_msg = CreateWalletMsg {
-            user_addr: user.to_string(),
+            controller_addr: controller.to_string(),
             guardians: Guardians {
                 addresses: guardians,
                 guardians_multisig,
@@ -339,7 +339,7 @@ impl DaoChainSuite {
         let res = self
             .app
             .execute_contract(
-                user,
+                controller,
                 factory,
                 &execute,
                 &[coin(native_tokens_amount, "ucosm")],
@@ -386,7 +386,7 @@ impl DaoChainSuite {
 
         RelayTransaction {
             message: Binary(msg_bytes.to_vec()),
-            user_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
+            controller_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
             signature: Binary(sig.serialize_compact().to_vec()),
             nonce,
         }

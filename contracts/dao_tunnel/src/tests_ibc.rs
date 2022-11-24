@@ -336,7 +336,7 @@ fn test_reply(
 // fn test_rcv_ibc_with_reply(deps: DepsMut, ibc_msg: &RemoteTunnelPacketMsg, job_id: u64, sender: &str, sub_msg)
 
 #[test]
-fn recieve_user_mint_govec_fails() {
+fn recieve_controller_mint_govec_fails() {
     let mut deps = do_instantiate();
     add_mock_controller(deps.as_mut(), SRC_PORT_ID_RCV);
 

@@ -18,7 +18,7 @@ pub fn query_verify_cosmos(deps: &DepsMut, transaction: &RelayTransaction) -> St
     let result = deps.api.secp256k1_verify(
         hash.as_ref(),
         &transaction.signature,
-        &transaction.user_pubkey,
+        &transaction.controller_pubkey,
     )?;
     Ok(result)
 }

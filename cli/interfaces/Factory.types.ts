@@ -92,11 +92,11 @@ export type UpdateFeeReq =
           claim: Coin;
       };
 export interface CreateWalletMsg {
+    controller_addr: string;
     guardians: Guardians;
     label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
-    user_addr: string;
 }
 export interface Guardians {
     addresses: string[];
@@ -107,10 +107,10 @@ export interface MultiSig {
     threshold_absolute_count: number;
 }
 export interface RelayTransaction {
+    controller_pubkey: Binary;
     message: Binary;
     nonce: number;
     signature: Binary;
-    user_pubkey: Binary;
 }
 export type QueryMsg =
     | {

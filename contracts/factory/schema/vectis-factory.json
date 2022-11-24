@@ -322,13 +322,16 @@
       "CreateWalletMsg": {
         "type": "object",
         "required": [
+          "controller_addr",
           "guardians",
           "label",
           "proxy_initial_funds",
-          "relayers",
-          "user_addr"
+          "relayers"
         ],
         "properties": {
+          "controller_addr": {
+            "type": "string"
+          },
           "guardians": {
             "$ref": "#/definitions/Guardians"
           },
@@ -347,9 +350,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "user_addr": {
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -434,12 +434,20 @@
       "RelayTransaction": {
         "type": "object",
         "required": [
+          "controller_pubkey",
           "message",
           "nonce",
-          "signature",
-          "user_pubkey"
+          "signature"
         ],
         "properties": {
+          "controller_pubkey": {
+            "description": "Controller pubkey",
+            "allOf": [
+              {
+                "$ref": "#/definitions/Binary"
+              }
+            ]
+          },
           "message": {
             "description": "Message to verify",
             "allOf": [
@@ -456,14 +464,6 @@
           },
           "signature": {
             "description": "Serialized signature (message + nonce). Cosmos format (64 bytes). Cosmos format (secp256k1 verification scheme).",
-            "allOf": [
-              {
-                "$ref": "#/definitions/Binary"
-              }
-            ]
-          },
-          "user_pubkey": {
-            "description": "User pubkey",
             "allOf": [
               {
                 "$ref": "#/definitions/Binary"

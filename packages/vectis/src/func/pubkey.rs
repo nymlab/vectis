@@ -6,7 +6,7 @@ use ripemd160::Digest as Ripemd160Digest;
 use ripemd160::Ripemd160;
 use sha2::Sha256;
 
-/// Converts user pubkey into Addr
+/// Converts controller pubkey into Addr
 pub fn pub_key_to_address(deps: &Deps, prefix: &str, pub_key: &[u8]) -> StdResult<Addr> {
     let compressed_pub_key = to_compressed_pub_key(pub_key)?;
     let mut ripemd160_hasher = Ripemd160::new();

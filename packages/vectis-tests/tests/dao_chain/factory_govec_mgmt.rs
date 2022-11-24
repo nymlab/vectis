@@ -8,10 +8,10 @@ fn proxy_mint_govec_works() {
     assert_eq!(dao_old_balance.amount, Uint128::zero());
     // Create a new wallet
     let wallet_addr = suite
-        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
-    // user mint govec
+    // controller mint govec
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
@@ -24,11 +24,11 @@ fn proxy_mint_govec_works() {
         .unwrap();
     assert!(unclaimed.is_some());
 
-    // User execute proxy to claim govec
+    // Controller execute proxy to claim govec
     suite
         .app
         .execute_contract(
-            suite.user.clone(),
+            suite.controller.clone(),
             wallet_addr.clone(),
             &ProxyExecuteMsg::Execute {
                 msgs: vec![mint_govec_msg],
@@ -37,8 +37,8 @@ fn proxy_mint_govec_works() {
         )
         .unwrap();
 
-    let user_govec_balance = suite.query_govec_balance(&wallet_addr).unwrap();
-    assert_eq!(user_govec_balance.balance, Uint128::from(MINT_AMOUNT));
+    let controller_govec_balance = suite.query_govec_balance(&wallet_addr).unwrap();
+    assert_eq!(controller_govec_balance.balance, Uint128::from(MINT_AMOUNT));
 
     // DAO should have received the claim fee and wallet fee
     let dao_current_balance = suite.query_balance(&suite.dao).unwrap();
@@ -60,10 +60,10 @@ fn cannot_mint_govec_without_paying_fee() {
 
     // Create a new wallet
     let wallet_addr = suite
-        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
-    // user mint govec
+    // controller mint govec
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
@@ -76,11 +76,11 @@ fn cannot_mint_govec_without_paying_fee() {
         .unwrap();
     assert!(unclaimed.is_some());
 
-    // User execute proxy to claim govec
+    // Controller execute proxy to claim govec
     suite
         .app
         .execute_contract(
-            suite.user.clone(),
+            suite.controller.clone(),
             wallet_addr.clone(),
             &ProxyExecuteMsg::Execute {
                 msgs: vec![mint_govec_msg],
@@ -89,15 +89,15 @@ fn cannot_mint_govec_without_paying_fee() {
         )
         .unwrap_err();
 
-    let user_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
-    assert_eq!(user_govec_balance.balance, Uint128::zero());
+    let controller_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
+    assert_eq!(controller_govec_balance.balance, Uint128::zero());
 }
 
 #[test]
 fn non_proxy_cannot_mint_on_govec() {
     let mut suite = DaoChainSuite::init().unwrap();
 
-    // user mint govec
+    // controller mint govec
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
@@ -114,8 +114,8 @@ fn non_proxy_cannot_mint_on_govec() {
         )
         .unwrap_err();
 
-    let user_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
-    assert_eq!(user_govec_balance.balance, Uint128::zero());
+    let controller_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
+    assert_eq!(controller_govec_balance.balance, Uint128::zero());
 }
 
 #[test]
@@ -137,8 +137,8 @@ fn non_proxy_cannot_mint_via_factory() {
         )
         .unwrap_err();
 
-    let user_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
-    assert_eq!(user_govec_balance.balance, Uint128::zero());
+    let controller_govec_balance = suite.query_govec_balance(&suite.deployer).unwrap();
+    assert_eq!(controller_govec_balance.balance, Uint128::zero());
 }
 
 #[test]
@@ -147,7 +147,7 @@ fn msg_govec_minted_not_on_dao_chain() {
 
     // Simulate Create a new wallet
     let wallet_addr = suite
-        .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
 
     suite
@@ -173,7 +173,7 @@ fn factory_can_purge_all_expired_claims() {
 
     for _ in 0..expired {
         suite
-            .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+            .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
             .unwrap();
     }
     suite.app.update_block(|block| {
@@ -184,7 +184,7 @@ fn factory_can_purge_all_expired_claims() {
 
     for _ in 0..unexpired {
         suite
-            .create_new_proxy(suite.user.clone(), vec![], None, WALLET_FEE)
+            .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
             .unwrap();
     }
 

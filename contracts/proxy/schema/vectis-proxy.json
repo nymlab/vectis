@@ -48,13 +48,16 @@
       "CreateWalletMsg": {
         "type": "object",
         "required": [
+          "controller_addr",
           "guardians",
           "label",
           "proxy_initial_funds",
-          "relayers",
-          "user_addr"
+          "relayers"
         ],
         "properties": {
+          "controller_addr": {
+            "type": "string"
+          },
           "guardians": {
             "$ref": "#/definitions/Guardians"
           },
@@ -73,9 +76,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "user_addr": {
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -140,7 +140,7 @@
     "title": "ExecuteMsg",
     "oneOf": [
       {
-        "description": "Execute requests the contract to re-dispatch all these messages with the contract's address as sender. Priviledge: User",
+        "description": "Execute requests the contract to re-dispatch all these messages with the contract's address as sender. Priviledge: Controller",
         "type": "object",
         "required": [
           "execute"
@@ -165,7 +165,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Freeze will freeze the account in the scenario the user lose their key / device Priviledge: Guardian/Multisig",
+        "description": "Freeze will freeze the account in the scenario the controller lose their key / device Priviledge: Guardian/Multisig",
         "type": "object",
         "required": [
           "revert_freeze_status"
@@ -201,19 +201,19 @@
         "additionalProperties": false
       },
       {
-        "description": "Rotating the User Key Priviledge: User, Guardian/Multisig",
+        "description": "Rotating the Controller Key Priviledge: Controller, Guardian/Multisig",
         "type": "object",
         "required": [
-          "rotate_user_key"
+          "rotate_controller_key"
         ],
         "properties": {
-          "rotate_user_key": {
+          "rotate_controller_key": {
             "type": "object",
             "required": [
-              "new_user_address"
+              "new_controller_address"
             ],
             "properties": {
-              "new_user_address": {
+              "new_controller_address": {
                 "type": "string"
               }
             },
@@ -223,7 +223,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Adding a new relayer Priviledge: User/Multisig",
+        "description": "Adding a new relayer Priviledge: Controller/Multisig",
         "type": "object",
         "required": [
           "add_relayer"
@@ -245,7 +245,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Removing relayer Priviledge: User/Multisig",
+        "description": "Removing relayer Priviledge: Controller/Multisig",
         "type": "object",
         "required": [
           "remove_relayer"
@@ -307,7 +307,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Updates label by the user",
+        "description": "Updates label by the controller",
         "type": "object",
         "required": [
           "update_label"
@@ -833,12 +833,20 @@
       "RelayTransaction": {
         "type": "object",
         "required": [
+          "controller_pubkey",
           "message",
           "nonce",
-          "signature",
-          "user_pubkey"
+          "signature"
         ],
         "properties": {
+          "controller_pubkey": {
+            "description": "Controller pubkey",
+            "allOf": [
+              {
+                "$ref": "#/definitions/Binary"
+              }
+            ]
+          },
           "message": {
             "description": "Message to verify",
             "allOf": [
@@ -855,14 +863,6 @@
           },
           "signature": {
             "description": "Serialized signature (message + nonce). Cosmos format (64 bytes). Cosmos format (secp256k1 verification scheme).",
-            "allOf": [
-              {
-                "$ref": "#/definitions/Binary"
-              }
-            ]
-          },
-          "user_pubkey": {
-            "description": "User pubkey",
             "allOf": [
               {
                 "$ref": "#/definitions/Binary"
@@ -1400,6 +1400,7 @@
       "type": "object",
       "required": [
         "code_id",
+        "controller_addr",
         "factory",
         "guardians",
         "is_frozen",
@@ -1407,7 +1408,6 @@
         "multisig_code_id",
         "nonce",
         "relayers",
-        "user_addr",
         "version"
       ],
       "properties": {
@@ -1415,6 +1415,9 @@
           "type": "integer",
           "format": "uint64",
           "minimum": 0.0
+        },
+        "controller_addr": {
+          "$ref": "#/definitions/Addr"
         },
         "factory": {
           "$ref": "#/definitions/Addr"
@@ -1456,9 +1459,6 @@
           "items": {
             "$ref": "#/definitions/Addr"
           }
-        },
-        "user_addr": {
-          "$ref": "#/definitions/Addr"
         },
         "version": {
           "$ref": "#/definitions/ContractVersion"

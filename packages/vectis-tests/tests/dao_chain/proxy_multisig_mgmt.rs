@@ -8,7 +8,7 @@ use vectis_wallet::{Guardians, GuardiansUpdateMsg, MultiSig, WalletInfo};
 use crate::common::dao_common::*;
 
 #[test]
-fn user_can_update_proxy_multisig_with_direct_message() {
+fn controller_can_update_proxy_multisig_with_direct_message() {
     let mut suite = DaoChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(300, "ucosm");
     let init_multisig_fund: Coin = coin(50, "ucosm");
@@ -20,7 +20,7 @@ fn user_can_update_proxy_multisig_with_direct_message() {
 
     let wallet_address = suite
         .create_new_proxy(
-            Addr::unchecked(USER_ADDR),
+            Addr::unchecked(CONTROLLER_ADDR),
             vec![init_proxy_fund.clone()],
             Some(multisig.clone()),
             WALLET_FEE + init_proxy_fund.amount.u128() + init_multisig_fund.amount.u128(),
@@ -28,7 +28,7 @@ fn user_can_update_proxy_multisig_with_direct_message() {
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
-    let user = w.user_addr;
+    let controller = w.controller_addr;
     let old_multisig_addr = w.multisig_address;
 
     let new_guardians = Guardians {
@@ -36,10 +36,10 @@ fn user_can_update_proxy_multisig_with_direct_message() {
         guardians_multisig: Some(multisig),
     };
 
-    // User update their proxy related multisig contract to the new guardian set
+    // Controller update their proxy related multisig contract to the new guardian set
     // This reinstantiates a new contract and changes the stored multisig contract addr
     suite
-        .create_guardians_request_and_update_guardians(&user, &wallet_address, new_guardians, None)
+        .create_guardians_request_and_update_guardians(&controller, &wallet_address, new_guardians, None)
         .unwrap();
 
     let new_w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -68,7 +68,7 @@ fn user_can_update_proxy_multisig_with_direct_message() {
 fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
     let mut suite = DaoChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -82,10 +82,10 @@ fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
         }),
     };
 
-    // User update their proxy guardian to multisig with factory stored code id
+    // Controller update their proxy guardian to multisig with factory stored code id
     suite
         .create_guardians_request_and_update_guardians(
-            &Addr::unchecked(USER_ADDR),
+            &Addr::unchecked(CONTROLLER_ADDR),
             &wallet_address,
             guardians,
             None,
@@ -99,7 +99,7 @@ fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
 }
 
 #[test]
-fn user_can_remove_multisig_for_guardians() {
+fn controller_can_remove_multisig_for_guardians() {
     let mut suite = DaoChainSuite::init().unwrap();
 
     let multisig = MultiSig {
@@ -109,7 +109,7 @@ fn user_can_remove_multisig_for_guardians() {
 
     let wallet_address = suite
         .create_new_proxy(
-            Addr::unchecked(USER_ADDR),
+            Addr::unchecked(CONTROLLER_ADDR),
             vec![],
             Some(multisig),
             WALLET_FEE,
@@ -126,7 +126,7 @@ fn user_can_remove_multisig_for_guardians() {
 
     suite
         .create_guardians_request_and_update_guardians(
-            &Addr::unchecked(USER_ADDR),
+            &Addr::unchecked(CONTROLLER_ADDR),
             &wallet_address,
             guardians,
             None,
@@ -138,7 +138,7 @@ fn user_can_remove_multisig_for_guardians() {
 }
 
 #[test]
-fn relayer_can_update_proxy_multisig_with_user_signature() {
+fn relayer_can_update_proxy_multisig_with_controller_signature() {
     let mut suite = DaoChainSuite::init().unwrap();
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -147,7 +147,7 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
 
     let wallet_address = suite
         .create_new_proxy(
-            Addr::unchecked(USER_ADDR),
+            Addr::unchecked(CONTROLLER_ADDR),
             vec![],
             Some(multisig.clone()),
             WALLET_FEE,
@@ -180,7 +180,7 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
     };
 
     let relay_transaction = suite.create_relay_transaction(
-        USER_PRIV,
+        CONTROLLER_PRIV,
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: wallet_address.to_string(),
             msg: to_binary(&update_guardians_message).unwrap(),
@@ -210,11 +210,11 @@ fn relayer_can_update_proxy_multisig_with_user_signature() {
 }
 
 #[test]
-fn non_user_update_proxy_multisig_fails() {
+fn non_controller_update_proxy_multisig_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(
-            Addr::unchecked(USER_ADDR),
+            Addr::unchecked(CONTROLLER_ADDR),
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -229,7 +229,7 @@ fn non_user_update_proxy_multisig_fails() {
     let execute_msg_err: ContractError = suite
         .app
         .execute_contract(
-            Addr::unchecked("not-user"),
+            Addr::unchecked("not-controller"),
             wallet_address,
             &update_guardians_message,
             &[],
@@ -237,14 +237,14 @@ fn non_user_update_proxy_multisig_fails() {
         .unwrap_err()
         .downcast()
         .unwrap();
-    assert_eq!(execute_msg_err, ContractError::IsNotUser {})
+    assert_eq!(execute_msg_err, ContractError::IsNotController {})
 }
 
 #[test]
-fn relayer_update_proxy_multisig_with_non_user_fails() {
+fn relayer_update_proxy_multisig_with_non_controller_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(USER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -253,7 +253,7 @@ fn relayer_update_proxy_multisig_with_non_user_fails() {
     let update_guardians_message: ProxyExecuteMsg = ProxyExecuteMsg::UpdateGuardians {};
 
     let relay_transaction = suite.create_relay_transaction(
-        NON_USER_PRIV,
+        NON_CONTROLLER_PRIV,
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: wallet_address.to_string(),
             msg: to_binary(&update_guardians_message).unwrap(),
@@ -273,5 +273,5 @@ fn relayer_update_proxy_multisig_with_non_user_fails() {
         .downcast()
         .unwrap();
 
-    assert_eq!(execute_msg_err, ContractError::IsNotUser {});
+    assert_eq!(execute_msg_err, ContractError::IsNotController {});
 }

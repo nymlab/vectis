@@ -6,12 +6,12 @@ use vectis_wallet::WalletInfo;
 use crate::common::{common::*, dao_common::*};
 
 #[test]
-fn relay_proxy_user_tx_succeeds() {
+fn relay_proxy_controller_tx_succeeds() {
     let mut suite = DaoChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, "ucosm");
     let wallet_address = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![init_proxy_fund.clone()],
             None,
             WALLET_FEE + init_proxy_fund.amount.u128(),
@@ -20,7 +20,7 @@ fn relay_proxy_user_tx_succeeds() {
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
     let relay_transaction = suite.create_relay_transaction(
-        USER_PRIV,
+        CONTROLLER_PRIV,
         CosmosMsg::Bank(BankMsg::Send {
             to_address: "SomeAddr".to_string(),
             amount: vec![coin(1, "ucosm")],
@@ -48,12 +48,12 @@ fn relay_proxy_user_tx_succeeds() {
 }
 
 #[test]
-fn relay_proxy_user_tx_invalid_msg_fails() {
+fn relay_proxy_controller_tx_invalid_msg_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, "ucosm");
     let wallet_address = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![init_proxy_fund.clone()],
             None,
             WALLET_FEE + init_proxy_fund.amount.u128(),
@@ -62,7 +62,7 @@ fn relay_proxy_user_tx_invalid_msg_fails() {
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     let secp = Secp256k1::new();
-    let secret_key = SecretKey::from_slice(USER_PRIV).expect("32 bytes, within curve order");
+    let secret_key = SecretKey::from_slice(CONTROLLER_PRIV).expect("32 bytes, within curve order");
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
     let msg_slice = [0xab; 32];
@@ -77,7 +77,7 @@ fn relay_proxy_user_tx_invalid_msg_fails() {
 
     let relay_transaction = RelayTransaction {
         message: Binary(msg_slice.to_vec()),
-        user_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
+        controller_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
         signature: Binary(sig.serialize_compact().to_vec()),
         nonce: w.nonce,
     };
@@ -105,12 +105,12 @@ fn relay_proxy_user_tx_invalid_msg_fails() {
 }
 
 #[test]
-fn relay_proxy_user_tx_invalid_relayer_fails() {
+fn relay_proxy_controller_tx_invalid_relayer_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, "ucosm");
     let wallet_address = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![init_proxy_fund.clone()],
             None,
             WALLET_FEE + init_proxy_fund.amount.u128(),
@@ -119,7 +119,7 @@ fn relay_proxy_user_tx_invalid_relayer_fails() {
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
     let relay_transaction = suite.create_relay_transaction(
-        USER_PRIV,
+        CONTROLLER_PRIV,
         CosmosMsg::Bank(BankMsg::Send {
             to_address: "SomeAddr".to_string(),
             amount: vec![coin(1, "ucosm")],
@@ -148,14 +148,14 @@ fn relay_proxy_user_tx_invalid_relayer_fails() {
 }
 
 #[test]
-fn relay_proxy_user_tx_is_not_user_fails() {
+fn relay_proxy_controller_tx_is_not_controller_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, "ucosm");
 
     // Creates a wallet held by the DAO
     let wallet_address = suite
         .create_new_proxy(
-            suite.user.clone(),
+            suite.controller.clone(),
             vec![init_proxy_fund.clone()],
             None,
             WALLET_FEE + init_proxy_fund.amount.u128(),
@@ -163,9 +163,9 @@ fn relay_proxy_user_tx_is_not_user_fails() {
         .unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
-    // User NOT DAO signs
+    // Controller NOT DAO signs
     let relay_transaction = suite.create_relay_transaction(
-        NON_USER_PRIV,
+        NON_CONTROLLER_PRIV,
         CosmosMsg::Bank(BankMsg::Send {
             to_address: "SomeAddr".to_string(),
             amount: vec![coin(1, "ucosm")],
@@ -190,5 +190,5 @@ fn relay_proxy_user_tx_is_not_user_fails() {
         .downcast()
         .unwrap();
 
-    assert_eq!(execute_msg_err, ContractError::IsNotUser {});
+    assert_eq!(execute_msg_err, ContractError::IsNotController {});
 }

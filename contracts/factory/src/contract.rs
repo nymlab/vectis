@@ -104,12 +104,12 @@ fn claim_govec_or_remove_from_list(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    let claiming_user = deps.api.addr_canonicalize(info.sender.as_str())?.to_vec();
+    let claiming_controller = deps.api.addr_canonicalize(info.sender.as_str())?.to_vec();
     if GOVEC_CLAIM_LIST
-        .load(deps.storage, claiming_user.clone())?
+        .load(deps.storage, claiming_controller.clone())?
         .is_expired(&env.block)
     {
-        GOVEC_CLAIM_LIST.remove(deps.storage, claiming_user);
+        GOVEC_CLAIM_LIST.remove(deps.storage, claiming_controller);
         Err(ContractError::ClaimExpired {})
     } else {
         ensure_is_enough_claim_fee(deps.as_ref(), &info.funds)?;

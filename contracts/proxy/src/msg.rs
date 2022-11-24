@@ -12,28 +12,28 @@ where
 {
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender.
-    /// Priviledge: User
+    /// Priviledge: Controller
     Execute { msgs: Vec<CosmosMsg<T>> },
-    /// Freeze will freeze the account in the scenario the user lose their key / device
+    /// Freeze will freeze the account in the scenario the controller lose their key / device
     /// Priviledge: Guardian/Multisig
     RevertFreezeStatus {},
     /// Relay message contains the signature and the message to relay
     /// Priviledge: Relayer
     Relay { transaction: RelayTransaction },
-    /// Rotating the User Key
-    /// Priviledge: User, Guardian/Multisig
-    RotateUserKey { new_user_address: String },
+    /// Rotating the Controller Key
+    /// Priviledge: Controller, Guardian/Multisig
+    RotateControllerKey { new_controller_address: String },
     /// Adding a new relayer
-    /// Priviledge: User/Multisig
+    /// Priviledge: Controller/Multisig
     AddRelayer { new_relayer_address: Addr },
     /// Removing relayer
-    /// Priviledge: User/Multisig
+    /// Priviledge: Controller/Multisig
     RemoveRelayer { relayer_address: Addr },
     /// It create a request for update guardians and it has a delay of one day after that
     /// is possible to update the guardians using UpdateGuardiansMsg
     RequestUpdateGuardians { request: Option<GuardiansUpdateMsg> },
     /// Once the request passed the waiting time, it is possible to update the guardians.
     UpdateGuardians {},
-    /// Updates label by the user
+    /// Updates label by the controller
     UpdateLabel { new_label: String },
 }
