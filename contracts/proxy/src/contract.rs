@@ -2,8 +2,8 @@ use cosmwasm_schema::schemars;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
-    StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,
+    Response, StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;
@@ -174,6 +174,7 @@ pub fn execute_inst_plugin(
     plugin_params: PluginParams,
 ) -> Result<Response, ContractError> {
     unimplemented!()
+    // check if plugin is already bought although it will be free.
     // instantiates code with code_id and msg
     // admin of the code is proxy itself
     // writes address to PLUGINS
@@ -487,7 +488,6 @@ pub fn execute_request_update_guardians(
     if is_frozen(deps.as_ref())? {
         return Err(ContractError::Frozen {});
     }
-
     match request {
         Some(r) => {
             r.guardians.verify_guardians(
