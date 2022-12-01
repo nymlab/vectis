@@ -11,10 +11,11 @@
     "scripts": {
         "dev": "npm run upload && npm run deploy:dao",
         "test": "jest --runInBand",
-        "test:ci": "npm run upload && npm test",
         "upload": "ts-node scripts/upload.ts",
         "deploy:dao": "ts-node scripts/deploy-dao.ts",
-        "generate:types": "ts-node scripts/types.ts",
+        "types:build": "tsc --project ./interfaces/build/tsconfig.json",
+        "types:generate": "ts-node scripts/types.ts && npm run prettier",
+        "types:publish": "npm run publish:dev --prefix ./interfaces/build",
         "prettier": "prettier --write \"**/*.{js,ts}\""
     },
     "devDependencies": {
