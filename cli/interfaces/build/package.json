@@ -1,0 +1,26 @@
+{
+    "name": "@vectis/types",
+    "description": "Types for the Vectis SCW",
+    "authors": [
+        "bwty <whalelephant@users.noreply.github.com>",
+        "giovanni-orciuolo <giovanni@orciuolo.it>",
+        "j0nl1 <jonlitech@gmail.com>"
+    ],
+    "version": "0.0.10",
+    "main": "index.js",
+    "scripts": {
+        "publish:dev": "npm publish --dry-run",
+        "publish:prod": "npm publish"
+    },
+    "license": "Apache-2.0",
+    "homepage": "https://www.nymlab.it",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nymlab/vectis"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
+    "dependencies": {}
+}

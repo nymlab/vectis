@@ -2,7 +2,7 @@ export * from "./Factory.client";
 export * from "./Govec.client";
 export * from "./Proxy.client";
 export * from "./RemoteTunnel.client";
-export * from "../interfaces/DaoTunnel.client";
+export * from "./DaoTunnel.client";
 export * as FactoryT from "./Factory.types";
 export * as GovecT from "./Govec.types";
 export * as ProxyT from "./Proxy.types";
