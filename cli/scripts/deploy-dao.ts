@@ -2,11 +2,20 @@ import assert from "assert";
 import { FactoryClient, GovecClient, DaoClient, RelayerClient, CWClient } from "../clients";
 import { marketingDescription, marketingProject } from "../clients/govec";
 import RemoteTunnelClient from "../clients/remote-tunnel";
+import { govecGenesisBalances } from "../config/govec_init_balances";
 
+import { Account } from "../config/accounts";
 import { delay } from "../utils/promises";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeInCacheFolder } from "../utils/fs";
-import { hostChain, hostChainName, remoteChain, remoteChainName, uploadReportPath } from "../utils/constants";
+import {
+    hostChain,
+    hostChainName,
+    remoteChain,
+    remoteChainName,
+    uploadReportPath,
+    hostAccounts,
+} from "../utils/constants";
 
 import type { DaoTunnelT, GovecT, ProxyT } from "../interfaces";
 import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -25,43 +34,27 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         ? channels
         : await relayerClient.createChannel("transfer", "transfer", "ics20-1");
 
+    console.log("\n ibc transfer channel: ", channelTransfer);
     console.log(connection);
-    console.log("ibc transfer channel: ", channelTransfer);
 
     const adminHostClient = await CWClient.connectHostWithAccount("admin");
     const adminRemoteClient = await CWClient.connectRemoteWithAccount("admin");
 
-    const initial_balances: GovecT.Cw20Coin[] = [
-        {
-            address: adminHostClient.sender,
-            amount: "2",
-        },
-    ];
-
     // Instantiate Govec
     const govecClient = await GovecClient.instantiate(adminHostClient, govecRes.codeId, {
-        initial_balances,
+        initial_balances: govecGenesisBalances,
         marketing: GovecClient.createVectisMarketingInfo(adminHostClient.sender),
         mintAmount: "2",
     });
     const govecAddr = govecClient.contractAddress;
     console.log("Instantiated Govec at: ", govecAddr);
 
-    // Instantiate DAO
-    const daoClient = await DaoClient.instantiate(adminHostClient, govecAddr);
+    // Instantiate DAO with Admin to help with deploy and dao-action tests
+    // Admin will be removed at the end of the tests
+    const daoAdmin = hostAccounts["admin"] as Account;
+    const daoClient = await DaoClient.instantiate(adminHostClient, govecAddr, daoAdmin.address);
 
-    // Admin stake initial balance to prepare for proposal
-    await govecClient.updateConfigAddr({
-        newAddr: { staking: daoClient.stakingAddr },
-    });
-    await govecClient.send({
-        amount: "2",
-        contract: daoClient.stakingAddr,
-        msg: toCosmosMsg({ stake: {} }),
-    });
-    await delay(10000);
-
-    // Admin propose and execute dao deploy factory
+    // Admin execute dao deploy factory
     const factoryInstMsg = FactoryClient.createFactoryInstMsg(
         hostChainName,
         proxyRes.codeId,
@@ -81,15 +74,8 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         },
     };
 
-    // Propose instantiate factory
-    await daoClient.createProposal("Deploy Vectis Factory", "Deploy Vectis Factory", [deployFactoryMsg]);
-    const factoryProposalId = 1;
-    await delay(10000);
-
-    // Vote and Execute to deploy Factory
-    await daoClient.voteProposal(factoryProposalId, "yes");
-    await delay(10000);
-    const factoryInstRes = await daoClient.executeProposal(factoryProposalId);
+    console.log("\nInstantiate factory");
+    let factoryInstRes = await daoClient.executeAdminMsg(deployFactoryMsg);
     const factoryAddr = CWClient.getContractAddrFromResult(factoryInstRes, "Vectis Factory instantiated");
 
     // Admin propose and execute dao deploy dao tunnel
@@ -112,15 +98,8 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     };
 
     // Propose instantiate dao tunnel
-    await daoClient.createProposal("Deploy Vectis DAO Tunnel", "Deploy Vectis DAO Tunnel", [deployDaoTunnelMsg]);
-    const daoTunnelProposalId = 2;
-    await delay(10000);
-
-    // Vote and Execute to deploy dao tunnel
-    await daoClient.voteProposal(daoTunnelProposalId, "yes");
-    await delay(10000);
-    const daoTunnelInstRes = await daoClient.executeProposal(daoTunnelProposalId);
-
+    console.log("\nInstantiate dao_tunnel");
+    let daoTunnelInstRes = await daoClient.executeAdminMsg(deployDaoTunnelMsg);
     const daoTunnelAddr = CWClient.getContractAddrFromResult(daoTunnelInstRes, "Vectis DAO-Tunnel instantiated");
 
     // Instantiate Remote Tunnel
@@ -139,26 +118,16 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     });
 
     const remoteTunnelAddr = remoteTunnelClient.contractAddress;
+    console.log("\nInstantiated remote tunnel: ", remoteTunnelAddr);
 
-    // Admin propose and execute add connection to dao tunnel
+    // Admin execute add connection to dao tunnel
     const daoTunnelApproveControllerMsg = daoClient.addApprovedControllerMsg(
         daoTunnelAddr,
         relayerClient.connections.hostConnection,
         `wasm.${remoteTunnelAddr}`
     );
-
-    // Allow connection to remote tunnel
-    await daoClient.createProposal("Allow connection in DAO Tunnel", "Allow connection in DAO Tunnel", [
-        daoTunnelApproveControllerMsg,
-    ]);
-
-    const approveControllerProposalId = 3;
-    await delay(10000);
-
-    await daoClient.voteProposal(approveControllerProposalId, "yes");
-    await delay(10000);
-    await daoClient.executeProposal(approveControllerProposalId);
-    await delay(10000);
+    console.log("\nAdd Connection to dao_tunnel");
+    await daoClient.executeAdminMsg(daoTunnelApproveControllerMsg);
 
     // Instantiate Factory in remote chain
 
@@ -185,25 +154,9 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         },
     };
 
-    const createRemoteFactoryProposalMsg: ProxyT.CosmosMsgForEmpty = {
-        wasm: {
-            execute: {
-                contract_addr: daoTunnelAddr,
-                funds: [],
-                msg: toCosmosMsg(createRemoteFactoryMsg),
-            },
-        },
-    };
-    await daoClient.createProposal("Instantiate Factory in Remote Chain", "Instantiate Factory in Remote Chain", [
-        createRemoteFactoryProposalMsg,
-    ]);
-    await delay(10000);
-    const instRemoteFactoryProposalId = 4;
-
-    await daoClient.voteProposal(instRemoteFactoryProposalId, "yes");
-    await delay(10000);
-    await daoClient.executeProposal(instRemoteFactoryProposalId);
-    await delay(10000);
+    const msg = daoClient.executeMsg(daoTunnelAddr, createRemoteFactoryMsg);
+    console.log("\nCreate Remote Factory");
+    await daoClient.executeAdminMsg(msg);
 
     // Relay packets and acknowledge
     await relayerClient.relayAll();
@@ -213,8 +166,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     console.log("\nRemote Factory Addr: ", remoteFactoryAddr);
 
     // Set dao-tunnel address in DAO
-    //     // Update DAO with dao_tunnel addr
-    //
+    // Update DAO with dao_tunnel addr
     const daoSetItemMsg: ProxyT.CosmosMsgForEmpty = {
         wasm: {
             execute: {
@@ -225,15 +177,8 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         },
     };
 
-    await daoClient.createProposal("Set Dao-tunnel Addr in DAO", "Set item - dao-tunnel", [daoSetItemMsg]);
-    await delay(10000);
-
-    const setItemProposalId = 5;
-
-    await daoClient.voteProposal(setItemProposalId, "yes");
-    await delay(10000);
-    let res = await daoClient.executeProposal(setItemProposalId);
-    await delay(10000);
+    console.log("\nSet dao_tunnel address in DAO items");
+    let res = await daoClient.executeAdminMsg(daoSetItemMsg);
 
     // Update marketing address on Govec
     res = await govecClient.updateMarketing({
@@ -253,6 +198,12 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     });
     console.log("\n\nUpdated Factory Address on Govec\n", JSON.stringify(res));
 
+    // Add staking address to Govec
+    res = await govecClient.updateConfigAddr({
+        newAddr: { staking: daoClient.stakingAddr },
+    });
+    console.log("\n\nUpdated Staking Address on Govec\n", JSON.stringify(res));
+
     // Add dao_tunnel address to Govec
     res = await govecClient.updateConfigAddr({
         newAddr: { dao_tunnel: daoTunnelAddr },
@@ -267,17 +218,6 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
     res = await adminHostClient.updateAdmin(adminHostClient.sender, govecAddr, daoClient.daoAddr, "auto");
     console.log("\n\nUpdated Govec Contract Admin to DAO\n", JSON.stringify(res));
-
-    res = await adminHostClient.execute(
-        adminHostClient.sender,
-        daoClient.stakingAddr,
-        { unstake: { amount: "2" } },
-        "auto"
-    );
-    console.log("\n\nAdmin unstakes \n", JSON.stringify(res));
-
-    res = await adminHostClient.execute(adminHostClient.sender, govecAddr, { burn: {} }, "auto");
-    console.log("\n\nAdmin burns the one govec\n", JSON.stringify(res));
 
     const contracts = {
         remoteFactoryAddr: remoteFactoryAddr as string,
@@ -320,10 +260,6 @@ async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
     // DAO Supply should be 0
     const tokenInfo = await govecClient.tokenInfo();
     assert.strictEqual(tokenInfo.total_supply, "0");
-
-    // DAO should have 5 proposals executed
-    const { proposals } = await daoClient.queryProposals();
-    assert.strictEqual(proposals.length, 5);
 
     // Govec, dao_tunnel, host_factory, cw20_stake, cw20_stake_balance_voting, Proposal Contracts should have DAO as admin
     contract = await adminHostClient.getContract(addrs.factoryAddr);
