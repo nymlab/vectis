@@ -70,7 +70,7 @@ class ProxyClient extends ProxyC {
         });
     }
 
-    async burnGovec(govecAddr: string): Promise<ExecuteResult> {
+    async exitGovec(govecAddr: string): Promise<ExecuteResult> {
         return await this.execute({
             msgs: [
                 {
@@ -78,7 +78,7 @@ class ProxyClient extends ProxyC {
                         execute: {
                             contract_addr: govecAddr,
                             funds: [],
-                            msg: toCosmosMsg({ burn: {} }),
+                            msg: toCosmosMsg({ exit: {} }),
                         },
                     },
                 },

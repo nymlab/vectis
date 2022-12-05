@@ -23,7 +23,7 @@ import long from "long";
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
  */
 
-describe("DAO Suite:", () => {
+describe("DAO Suite for DAO Funds:", () => {
     let addrs: VectisDaoContractsAddrs;
     let adminClient: CWClient;
     let userClient: CWClient;
@@ -62,38 +62,6 @@ describe("DAO Suite:", () => {
         relayerClient = new RelayClient();
         await relayerClient.connect();
         await relayerClient.loadChannels();
-
-        const initialFunds = walletInitialFunds(hostChain);
-        const { wallet_fee } = await factoryClient.fees();
-        const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
-
-        await factoryClient.createWallet(
-            {
-                createWalletMsg: {
-                    user_addr: userClient.sender,
-                    label: "user-wallet",
-                    guardians: {
-                        addresses: [hostAccounts.guardian_1.address, hostAccounts.guardian_2.address],
-                    },
-                    relayers: [hostAccounts.relayer_1.address],
-                    proxy_initial_funds: [initialFunds],
-                },
-            },
-            getDefaultWalletCreationFee(hostChain),
-            undefined,
-            [coin(totalFee.toString(), hostChain.feeToken) as Coin]
-        );
-
-        const { wallets } = await factoryClient.unclaimedGovecWallets({});
-        const walletAddr = wallets[0][0];
-        proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
-        const { claim_fee } = await factoryClient.fees();
-        await proxyClient.mintGovec(addrs.factoryAddr, claim_fee);
-        await proxyClient.stakeGovec(addrs.govecAddr, addrs.stakingAddr, "2");
-
-        // ensure all previously ibc messages have been relayed
-        await relayerClient.relayAll();
-        await delay(10000);
     });
 
     it("DAO can instruct remote-tunnel to stake / delegate", async () => {
@@ -131,21 +99,7 @@ describe("DAO Suite:", () => {
             },
         });
 
-        await proxyClient.createProposal(
-            daoClient.proposalAddr,
-            "Stake action from remote tunnel",
-            "Stake action from remote tunnel",
-            [msg]
-        );
-        await delay(10000);
-
-        const { proposals } = await daoClient.queryProposals();
-        const proposalId = proposals.length;
-
-        await proxyClient.voteProposal(daoClient.proposalAddr, proposalId, "yes");
-        await delay(10000);
-
-        await proxyClient.executeProposal(daoClient.proposalAddr, proposalId);
+        await daoClient.executeAdminMsg(msg);
         await delay(10000);
         await relayerClient.relayAll();
 
@@ -156,7 +110,9 @@ describe("DAO Suite:", () => {
         expect(+balanceBeforeStaking + +funds.amount).toBe(+balanceAfterStaking);
     });
 
-    it("Test user send ibc to dao", async () => {
+    it("Test remote proxy send funds to dao-chain via IBC transfer on remote tunnel", async () => {
+        const { amount: daoPreviousBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
+
         await userRemoteClient.execute(
             userRemoteClient.sender,
             addrs.remoteTunnelAddr,
@@ -172,23 +128,27 @@ describe("DAO Suite:", () => {
         await relayerClient.relayAll();
         await delay(10000);
 
-        console.log("denoms: ", relayerClient.denoms);
+        const { amount: daoCurrentBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
+
+        expect(+daoPreviousBalance + 1e4).toBe(+daoCurrentBalance);
     });
 
     it("DAO can send funds from remote-tunnel to itself via contract and ibc-transfer module", async () => {
-        const tosend = 1e7;
+        const tosend = 1e5;
         const funds = { amount: (2 * tosend).toString(), denom: remoteChain.feeToken };
-        await userRemoteClient.sendTokens(userRemoteClient.sender, addrs.remoteTunnelAddr, [funds], "auto");
-        console.log("remote tunnel:", addrs.remoteTunnelAddr);
+        const result = await userRemoteClient.sendTokens(
+            userRemoteClient.sender,
+            addrs.remoteTunnelAddr,
+            [funds],
+            "auto"
+        );
 
         const { amount: daoPreviousBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
-        console.log("denom: ", relayerClient.denoms.dest);
-        console.log("previous balance dao: ", daoPreviousBalance);
 
         const msg = daoClient.executeMsg(addrs.daoTunnelAddr, {
             dispatch_action_on_remote_tunnel: {
                 channel_id: relayerClient.channels.wasm?.src.channelId as string,
-                job_id: 1111,
+                job_id: 111,
                 msg: {
                     dispatch_actions: {
                         msgs: [
@@ -214,10 +174,7 @@ describe("DAO Suite:", () => {
                                         amount: coin(tosend, remoteChain.feeToken),
                                         channel_id: relayerClient.channels.transfer?.dest.channelId,
                                         timeout: {
-                                            timestamp: long
-                                                .fromNumber(Math.floor(Date.now() / 1000) + 60)
-                                                .multiply(1e12)
-                                                .toString(),
+                                            timestamp: "7718596707569197056",
                                         },
                                         to_address: daoClient.daoAddr,
                                     },
@@ -229,41 +186,24 @@ describe("DAO Suite:", () => {
             },
         });
 
-        await proxyClient.createProposal(
-            daoClient.proposalAddr,
-            "Send funds from remote tunnel to DAO",
-            "Send funds from remote tunne to DAO",
-            [msg]
-        );
-        await delay(8000);
-
-        const { proposals } = await daoClient.queryProposals();
-        const proposalId = proposals.length;
-        console.log("id: ", proposalId);
-
-        await proxyClient.voteProposal(daoClient.proposalAddr, proposalId, "yes");
-        await delay(8000);
-
-        await proxyClient.executeProposal(daoClient.proposalAddr, proposalId);
-        await delay(12000);
+        await daoClient.executeAdminMsg(msg);
         await relayerClient.relayAll();
 
-        await delay(8000);
+        await delay(10000);
         await relayerClient.relayAll();
+
         const { amount: daoCurrentBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
-        const balances = await queryClient.bank.allBalances(addrs.daoAddr);
-        console.log("final balances: ", balances);
 
         expect(+daoPreviousBalance + 2 * tosend).toBe(+daoCurrentBalance);
     });
 
     afterAll(async () => {
-        await proxyClient.unstakeGovec(addrs.stakingAddr, "2");
-        await proxyClient.burnGovec(addrs.govecAddr);
-        const { balance } = await govecClient.balance({
-            address: proxyClient.contractAddress,
-        });
-        expect(balance).toBe("0");
+        await daoClient.executeRemoveAdmin();
+
+        try {
+            await daoClient.queryAdmin();
+            expect(false);
+        } catch (err) {}
         adminClient?.disconnect();
     });
 });

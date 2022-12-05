@@ -73,6 +73,12 @@ class DaoClient {
         });
     }
 
+    async queryAdmin() {
+        return await this.client.queryContractSmart(this.daoAddr, {
+            admin: {},
+        });
+    }
+
     async createProposal(title: string, description: string, msgs: Record<string, unknown>[]) {
         const proposal = {
             propose: {
@@ -112,7 +118,29 @@ class DaoClient {
         return res;
     }
 
-    static async instantiate(client: CWClient, govecAddr: string) {
+    async executeAdminMsg(msg: unknown) {
+        const dao_msg = {
+            execute_admin_msgs: {
+                msgs: [msg],
+            },
+        };
+        const res = await this.client.execute(this.client.sender, this.daoAddr, dao_msg, "auto");
+        console.log(`\nAdmin Message Result: \n`, JSON.stringify(res));
+        return res;
+    }
+
+    async executeRemoveAdmin() {
+        const dao_msg = {
+            nominate_admin: {
+                admin: null,
+            },
+        };
+        const res = await this.client.execute(this.client.sender, this.daoAddr, dao_msg, "auto");
+        console.log(`\n\nRemove Admin Messages \n`, JSON.stringify(res));
+        return res;
+    }
+
+    static async instantiate(client: CWClient, govecAddr: string, daoAdmin: string | null) {
         const { host } = await import(uploadReportPath);
         const { stakingRes, voteRes, daoRes, proposalSingleRes } = host;
 
@@ -133,7 +161,7 @@ class DaoClient {
         // https://github.com/DA0-DA0/dao-contracts/pull/347#pullrequestreview-1011556931
         const govModInstInfo = DaoClient.createGovModInstInfo(proposalSingleRes.codeId, propInstMsg as any);
         const voteModInstInfo = DaoClient.createVoteModInstInfo(voteRes.codeId, voteInstMsg);
-        const daoInstMsg = DaoClient.createDaoInstMsg(govModInstInfo, voteModInstInfo);
+        const daoInstMsg = DaoClient.createDaoInstMsg(govModInstInfo, voteModInstInfo, daoAdmin);
 
         console.log("dao code id: ", daoRes.codeId);
 
@@ -195,8 +223,9 @@ class DaoClient {
         };
     }
 
-    static createDaoInstMsg(govModInstInfo: unknown, voteModInstInfo: unknown) {
+    static createDaoInstMsg(govModInstInfo: unknown, voteModInstInfo: unknown, admin: string | null) {
         return {
+            admin: admin,
             description: "Vectis: Smart Contract Wallet",
             proposal_modules_instantiate_info: [govModInstInfo],
             name: "VectisDAO",
