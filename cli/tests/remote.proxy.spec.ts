@@ -33,7 +33,7 @@ describe("Proxy Remote Suite: ", () => {
         await factoryClient.createWallet(
             {
                 createWalletMsg: {
-                    user_addr: userClient.sender,
+                    controller_addr: userClient.sender,
                     label: "user-wallet",
                     guardians: {
                         addresses: [remoteAccounts.guardian_1.address, remoteAccounts.guardian_2.address],
