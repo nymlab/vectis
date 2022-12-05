@@ -47,7 +47,7 @@ describe("Factory Suite: ", () => {
         await factoryClient.createWallet(
             {
                 createWalletMsg: {
-                    user_addr: userClient.sender,
+                    controller_addr: userClient.sender,
                     label: "user-wallet",
                     guardians: {
                         addresses: [hostAccounts.guardian_1.address, hostAccounts.guardian_2.address],

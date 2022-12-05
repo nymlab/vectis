@@ -11,7 +11,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
     await factoryClient.createWallet(
         {
             createWalletMsg: {
-                user_addr: hostAccounts.user.address,
+                controller_addr: hostAccounts.user.address,
                 guardians: {
                     addresses: [hostAccounts.guardian_1.address, hostAccounts.guardian_2.address],
                 },
@@ -31,7 +31,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
     await factoryClient.createWallet(
         {
             createWalletMsg: {
-                user_addr: hostAccounts.user.address,
+                controller_addr: hostAccounts.user.address,
                 guardians: {
                     addresses: [hostAccounts.guardian_1.address, hostAccounts.guardian_2.address],
                     guardians_multisig: {

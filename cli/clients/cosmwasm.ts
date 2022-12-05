@@ -82,7 +82,7 @@ class CWClient extends SigningCosmWasmClient {
         const messageHash = sha256(messageNonceBytes);
         const signature = (await Secp256k1.createSignature(messageHash, keypair.privkey)).toFixedLength();
         return {
-            user_pubkey: toBase64(keypair.pubkey),
+            controller_pubkey: toBase64(keypair.pubkey),
             message: toBase64(toUtf8(jsonMsg)),
             signature: toBase64(Secp256k1.trimRecoveryByte(signature)),
             nonce,

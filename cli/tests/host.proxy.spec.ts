@@ -60,7 +60,7 @@ describe("Proxy Suite: ", () => {
         guardianProxyClient = new ProxyClient(hostGuardianClient, hostGuardianClient.sender, proxyWalletAddress);
     });
 
-    it("Should get correct info from proxy wallet", async () => {
+    it.only("Should get correct info from proxy wallet", async () => {
         const info = await proxyClient.info();
         expect(info.guardians).toContain(hostAccounts.guardian_1.address);
         expect(info.guardians).toContain(hostAccounts.guardian_2.address);
@@ -246,8 +246,8 @@ describe("Proxy Suite: ", () => {
         assert(guardianProxyClient, "guardianProxyClient is not defined");
 
         // New owner is admin
-        await guardianProxyClient.rotateUserKey({
-            newUserAddress: hostAccounts.admin.address,
+        await guardianProxyClient.rotateControllerKey({
+            newControllerAddress: hostAccounts.admin.address,
         });
 
         // Shouldn't be able to perform operations as user since it's not his wallet anymore
@@ -274,8 +274,8 @@ describe("Proxy Suite: ", () => {
         }
 
         // Return wallet to the user
-        await guardianProxyClient.rotateUserKey({
-            newUserAddress: hostAccounts.user.address,
+        await guardianProxyClient.rotateControllerKey({
+            newControllerAddress: hostAccounts.user.address,
         });
     });
 
@@ -344,8 +344,8 @@ describe("Proxy Suite: ", () => {
             await clientG2.execute(clientG2.sender, multisig_address!, executeFreeze, "auto");
 
             // At this point, the wallet should be frozen
-            const { user_addr } = await msProxyClient.info();
-            expect(user_addr).toEqual(hostAccounts.admin.address);
+            const { controller_addr } = await msProxyClient.info();
+            expect(controller_addr).toEqual(hostAccounts.admin.address);
         } catch (err) {
             throw err;
         } finally {

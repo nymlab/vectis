@@ -99,11 +99,11 @@ class RemoteProxyClient extends ProxyC {
         return await this.executeWasm(tunnelAddr, msg);
     }
 
-    async burnGovec(tunnelAddr: string): Promise<ExecuteResult> {
+    async exitGovec(tunnelAddr: string): Promise<ExecuteResult> {
         const msg: RemoteTunnelT.ExecuteMsg = {
             dao_actions: {
                 msg: {
-                    govec_actions: { burn: {} },
+                    govec_actions: { exit: {} },
                 },
             },
         };
