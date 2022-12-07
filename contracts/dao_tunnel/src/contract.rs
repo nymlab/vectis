@@ -1,9 +1,10 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, IbcMsg, MessageInfo, Order,
-    Reply, Response, StdResult, SubMsgResult, Uint128,
+    entry_point, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, Event, IbcMsg, MessageInfo,
+    Order, Reply, Response, StdResult, SubMsgResult, Uint128,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
+
 use vectis_wallet::{
     DaoTunnelPacketMsg, IbcTransferChannels, PacketMsg, Receiver, StdAck, DEFAULT_LIMIT, MAX_LIMIT,
     PACKET_LIFETIME,
@@ -43,7 +44,10 @@ pub fn instantiate(
         }
     }
 
-    Ok(Response::new().add_attribute("Vectis DAO-Tunnel instantiated", env.contract.address))
+    let event = Event::new("vectis.dao_tunnel.v1.MsgInstantiate")
+        .add_attribute("contract_address", env.contract.address);
+
+    Ok(Response::new().add_event(event))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -89,17 +93,19 @@ fn execute_add_approved_controller(
     if to_add {
         IBC_TUNNELS.save(deps.storage, (connection_id.clone(), port_id.clone()), &())?;
 
-        Ok(Response::new()
-            .add_attribute("action", "add_approved_controller")
+        let event = Event::new("vectis.dao_tunnel.v1.MsgAddApprovedController")
             .add_attribute("connection_id", connection_id)
-            .add_attribute("port_id", port_id))
+            .add_attribute("port_id", port_id);
+
+        Ok(Response::new().add_event(event))
     } else {
         IBC_TUNNELS.remove(deps.storage, (connection_id.clone(), port_id.clone()));
 
-        Ok(Response::new()
-            .add_attribute("action", "remove_approved_controller")
+        let event = Event::new("vectis.dao_tunnel.v1.MsgRemoveApprovedController")
             .add_attribute("connection_id", connection_id)
-            .add_attribute("port_id", port_id))
+            .add_attribute("port_id", port_id);
+
+        Ok(Response::new().add_event(event))
     }
 }
 fn execute_update_dao(
@@ -110,9 +116,10 @@ fn execute_update_dao(
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
     let addr = deps.api.addr_validate(&new_addr)?;
     ADMIN.save(deps.storage, &deps.api.addr_canonicalize(addr.as_str())?)?;
-    Ok(Response::new()
-        .add_attribute("config", "DAO Addr")
-        .add_attribute("new addr", addr))
+
+    let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateDaoAddr").add_attribute("address", addr);
+
+    Ok(Response::new().add_event(event))
 }
 
 fn execute_update_govec(
@@ -123,9 +130,11 @@ fn execute_update_govec(
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
     let addr = deps.api.addr_validate(&new_addr)?;
     GOVEC.save(deps.storage, &deps.api.addr_canonicalize(addr.as_str())?)?;
-    Ok(Response::new()
-        .add_attribute("config", "GOVEC Addr")
-        .add_attribute("new addr", addr))
+
+    let event =
+        Event::new("vectis.dao_tunnel.v1.MsgUpdateGovecAddr").add_attribute("address", addr);
+
+    Ok(Response::new().add_event(event))
 }
 
 fn execute_update_ibc_transfer_channel(
@@ -139,18 +148,22 @@ fn execute_update_ibc_transfer_channel(
         Some(c) => {
             // Update the channel
             IBC_TRANSFER_MODULES.save(deps.storage, connection_id.to_owned(), &c)?;
-            Ok(Response::new()
-                .add_attribute("config", "IBC_TRANSFER_MODULES")
-                .add_attribute("connection_id", &connection_id)
-                .add_attribute("new channel", c))
+
+            let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
+                .add_attribute("connection_id", connection_id)
+                .add_attribute("channel", c);
+
+            Ok(Response::new().add_event(event))
         }
         None => {
             // Remove it
             IBC_TRANSFER_MODULES.remove(deps.storage, connection_id.to_owned());
-            Ok(Response::new()
-                .add_attribute("config", "IBC_TRANSFER_MODULES")
-                .add_attribute("connection_id", &connection_id)
-                .add_attribute("new channel", ""))
+
+            let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
+                .add_attribute("connection_id", connection_id)
+                .add_attribute("channel", "");
+
+            Ok(Response::new().add_event(event))
         }
     }
 }
@@ -177,11 +190,11 @@ fn execute_dispatch_to_remote_tunnel(
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
 
-    Ok(Response::new()
-        .add_message(msg)
-        .add_attribute("action", "dispatch_actions_to_remote_tunnel")
+    let event = Event::new("vectis.dao_tunnel.v1.MsgDispatchActionOnRemoteTunnel")
         .add_attribute("channel", sending_channel_id)
-        .add_attribute("job_id", job_id.to_string()))
+        .add_attribute("job_id", job_id.to_string());
+
+    Ok(Response::new().add_message(msg).add_event(event))
 }
 
 pub fn execute_ibc_transfer(
@@ -219,12 +232,14 @@ pub fn execute_ibc_transfer(
         },
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
-    Ok(Response::new()
-        .add_message(msg)
-        .add_attribute("action", "execute_ibc_transfer")
+
+    let event = Event::new("vectis.dao_tunnel.v1.MsgIbcTransfer")
         .add_attribute("to", rcv.addr)
         .add_attribute("channel_id", channel_id)
-        .add_attribute("amount", Coin { denom, amount }.to_string()))
+        .add_attribute("amount", amount.to_string())
+        .add_attribute("denom", denom.to_string());
+
+    Ok(Response::new().add_message(msg).add_event(event))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
