@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    from_binary, to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
     StdError, StdResult,
 };
 use cw_utils::parse_reply_execute_data;
@@ -60,8 +60,8 @@ pub fn execute(
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => {
             factory_execute::update_code_id(deps, info, ty, new_code_id)
         }
-        ExecuteMsg::UpdateConfigFee { new_fee } => {
-            factory_execute::update_config_fee(deps, info, new_fee)
+        ExecuteMsg::UpdateConfigFee { ty, new_fee } => {
+            factory_execute::update_config_fee(deps, info, ty, new_fee)
         }
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => factory_execute::update_dao_addr(deps, info, addr),
@@ -94,9 +94,10 @@ fn update_govec_addr(
 ) -> Result<Response, ContractError> {
     ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
     GOVEC_MINTER.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
-    Ok(Response::new()
-        .add_attribute("config", "Govec Addr")
-        .add_attribute("New Addr", addr))
+
+    let event = Event::new("vectis.factory.v1.MsgUpdateGovecAddr").add_attribute("address", addr);
+
+    Ok(Response::new().add_event(event))
 }
 
 fn claim_govec_or_remove_from_list(
@@ -114,11 +115,11 @@ fn claim_govec_or_remove_from_list(
     } else {
         ensure_is_enough_claim_fee(deps.as_ref(), &info.funds)?;
         let mint_msg = create_mint_msg(deps.as_ref(), info.sender.to_string())?;
-        let res = Response::new()
-            .add_submessage(mint_msg)
-            .add_attribute("action", "Claim Govec Requested")
+
+        let event = Event::new("vectis.factory.v1.MsgClaimGovec")
             .add_attribute("proxy_address", info.sender);
-        Ok(res)
+
+        Ok(Response::new().add_submessage(mint_msg).add_event(event))
     }
 }
 

@@ -3,7 +3,7 @@ use cosmwasm_std::{coin, Coin, DepsMut};
 
 use vectis_wallet::factory_queries::{query_code_id, query_fees, query_unclaim_wallet_list};
 use vectis_wallet::CodeIdType;
-use vectis_wallet::{factory_queries::query_dao_addr, UpdateFeeReq};
+use vectis_wallet::{factory_queries::query_dao_addr, FeeType};
 
 use crate::{
     contract::{execute, instantiate, query_govec_addr},
@@ -96,11 +96,10 @@ fn admin_upgrade_code_id_works() {
         )
         .unwrap();
         assert_eq!(
-            response.attributes,
+            response.events[0].attributes,
             [
-                ("config", "Code Id"),
                 ("type", &format!("{:?}", t)),
-                ("new Id", &(new_code_id + i as u64).to_string())
+                ("code_id", &(new_code_id + i as u64).to_string())
             ]
         );
     }
@@ -131,13 +130,18 @@ fn admin_update_fee_works() {
 
     let new_wallet_fee = coin(3, "ucosm");
     let msg = ExecuteMsg::UpdateConfigFee {
-        new_fee: UpdateFeeReq::Wallet(new_wallet_fee.clone()),
+        ty: FeeType::Wallet,
+        new_fee: new_wallet_fee.clone(),
     };
 
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
-        response.attributes,
-        [("config", "Wallet Fee"), ("New Fee", "3ucosm")]
+        response.events[0].attributes,
+        [
+            ("type", &format!("{:?}", FeeType::Wallet)),
+            ("amount", &new_wallet_fee.amount.to_string()),
+            ("denom", &new_wallet_fee.denom.to_string())
+        ]
     );
 
     let fees = query_fees(deps.as_ref()).unwrap();
@@ -145,13 +149,18 @@ fn admin_update_fee_works() {
 
     let new_claim_fee = coin(25, "ucosm");
     let msg = ExecuteMsg::UpdateConfigFee {
-        new_fee: UpdateFeeReq::Claim(new_claim_fee.clone()),
+        ty: FeeType::Claim,
+        new_fee: new_claim_fee.clone(),
     };
 
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(
-        response.attributes,
-        [("config", "Claim Fee"), ("New Fee", "25ucosm")]
+        response.events[0].attributes,
+        [
+            ("type", &format!("{:?}", FeeType::Claim)),
+            ("amount", &new_claim_fee.amount.to_string()),
+            ("denom", &new_wallet_fee.denom.to_string())
+        ]
     );
 
     let fees = query_fees(deps.as_ref()).unwrap();
@@ -181,10 +190,7 @@ fn admin_updates_addresses_work() {
         addr: "new_govec".to_string(),
     };
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(
-        response.attributes,
-        [("config", "Govec Addr"), ("New Addr", "new_govec")]
-    );
+    assert_eq!(response.events[0].attributes, [("address", "new_govec")]);
     let new_govec = query_govec_addr(deps.as_ref()).unwrap();
     assert_eq!(new_govec, "new_govec");
 
@@ -194,10 +200,7 @@ fn admin_updates_addresses_work() {
     };
 
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(
-        response.attributes,
-        [("config", "DAO"), ("New DAO", "new_dao")]
-    );
+    assert_eq!(response.events[0].attributes, [("address", "new_dao")]);
 
     let new_admin = query_dao_addr(deps.as_ref()).unwrap();
     assert_eq!(new_admin, "new_dao");
@@ -272,7 +275,8 @@ fn non_admin_update_fees_fails() {
         env,
         info,
         ExecuteMsg::UpdateConfigFee {
-            new_fee: UpdateFeeReq::Wallet(coin(1, "ucosm")),
+            ty: FeeType::Wallet,
+            new_fee: coin(1, "ucosm"),
         },
     )
     .unwrap_err();
