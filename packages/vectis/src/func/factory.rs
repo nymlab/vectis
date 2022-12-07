@@ -1,8 +1,8 @@
 use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
+    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw_storage_plus::Bound;
 use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
@@ -36,14 +36,17 @@ pub fn factory_instantiate(
     WALLET_FEE.save(deps.storage, &msg.wallet_fee)?;
     CLAIM_FEE.save(deps.storage, &msg.claim_fee)?;
 
-    Ok(Response::new().add_attribute("Vectis Factory instantiated", env.contract.address))
+    let event = Event::new("vectis.factory.v1.MsgInstantiate")
+        .add_attribute("contract_address", env.contract.address);
+
+    Ok(Response::new().add_event(event))
 }
 
 pub mod factory_execute {
     use super::*;
 
     use crate::{
-        CreateWalletMsg, MigrationMsgError, ProxyInstantiateMsg, ProxyMigrateMsg, UpdateFeeReq,
+        CreateWalletMsg, FeeType, MigrationMsgError, ProxyInstantiateMsg, ProxyMigrateMsg,
         WalletAddr,
     };
 
@@ -94,7 +97,11 @@ pub mod factory_execute {
                 label: "Wallet-Proxy".into(),
             };
             let msg = SubMsg::reply_always(instantiate_msg, next_id);
-            let res = Response::new().add_submessage(msg);
+
+            let event = Event::new("vectis.factory.v1.MsgCreateWallet")
+                .add_attribute("wallet_id", next_id.to_string());
+
+            let res = Response::new().add_submessage(msg).add_event(event);
 
             TOTAL_CREATED.save(deps.storage, &next_id)?;
 
@@ -140,8 +147,13 @@ pub mod factory_execute {
         // or relayed by the proxy relayer via `ProxyMigrationTxMsg::RelayTx`.
         //
         // Different safety checks are applied
-        let tx_msg: CosmosMsg =
-            ensure_is_valid_migration_msg(&deps, info, &wallet_info, &wallet_addr, migration_msg)?;
+        let tx_msg: CosmosMsg = ensure_is_valid_migration_msg(
+            &deps,
+            info.clone(),
+            &wallet_info,
+            &wallet_addr,
+            migration_msg,
+        )?;
 
         // Further checks applied to ensure controller has signed the correct relay msg / tx
         if let CosmosMsg::Wasm(WasmMsg::Migrate {
@@ -166,15 +178,17 @@ pub mod factory_execute {
                     MigrationMsgError::InvalidWalletAddr,
                 ));
             }
-        } else {
-            return Err(ContractError::InvalidMigrationMsg(
-                MigrationMsgError::InvalidWasmMsg,
-            ));
-        }
 
-        Ok(Response::new()
-            .add_message(tx_msg)
-            .add_attribute("action", "wallet migration"))
+            let event = Event::new("vectis.factory.v1.MsgMigrateWallet")
+                .add_attribute("wallet_address", contract_addr.to_string())
+                .add_attribute("code_id", new_code_id.to_string());
+
+            Ok(Response::new().add_message(tx_msg).add_event(event))
+        } else {
+            Err(ContractError::InvalidMigrationMsg(
+                MigrationMsgError::InvalidWasmMsg,
+            ))
+        }
     }
 
     /// Updates the latest code id for the supported `wallet_proxy`
@@ -205,35 +219,37 @@ pub mod factory_execute {
                 })?;
             }
         }
-        Ok(Response::new()
-            .add_attribute("config", "Code Id")
+
+        let event = Event::new("vectis.factory.v1.MsgUpdateCodeId")
             .add_attribute("type", format!("{:?}", ty))
-            .add_attribute("new Id", format!("{}", new_code_id)))
+            .add_attribute("code_id", new_code_id.to_string());
+
+        Ok(Response::new().add_event(event))
     }
 
     pub fn update_config_fee(
         deps: DepsMut,
         info: MessageInfo,
-        new_fee: UpdateFeeReq,
+        ty: FeeType,
+        new_fee: Coin,
     ) -> Result<Response, ContractError> {
         ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
 
-        let res = match new_fee {
-            UpdateFeeReq::Claim(fee) => {
-                CLAIM_FEE.save(deps.storage, &fee)?;
-                Response::new()
-                    .add_attribute("config", "Claim Fee")
-                    .add_attribute("New Fee", format!("{}", fee))
+        match ty {
+            FeeType::Claim => {
+                CLAIM_FEE.save(deps.storage, &new_fee)?;
             }
-            UpdateFeeReq::Wallet(fee) => {
-                WALLET_FEE.save(deps.storage, &fee)?;
-                Response::new()
-                    .add_attribute("config", "Wallet Fee")
-                    .add_attribute("New Fee", format!("{}", fee))
+            FeeType::Wallet => {
+                WALLET_FEE.save(deps.storage, &new_fee)?;
             }
         };
 
-        Ok(res)
+        let event = Event::new("vectis.factory.v1.MsgUpdateConfigFee")
+            .add_attribute("type", format!("{:?}", ty))
+            .add_attribute("amount", new_fee.amount.to_string())
+            .add_attribute("denom", new_fee.denom);
+
+        Ok(Response::new().add_event(event))
     }
 
     pub fn update_dao_addr(
@@ -243,9 +259,10 @@ pub mod factory_execute {
     ) -> Result<Response, ContractError> {
         ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
         DAO.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
-        Ok(Response::new()
-            .add_attribute("config", "DAO")
-            .add_attribute("New DAO", addr))
+
+        let event = Event::new("vectis.factory.v1.MsgUpdateDaoAddr").add_attribute("address", addr);
+
+        Ok(Response::new().add_event(event))
     }
 
     pub fn purge_expired_claims(
