@@ -129,12 +129,8 @@ fn admin_can_update_approved_contollers() {
     .unwrap();
 
     assert_eq!(
-        res.attributes,
-        vec![
-            ("action", "add_approved_controller"),
-            ("connection_id", "ANOTHER"),
-            ("port_id", "ANOTHER_PORT")
-        ]
+        res.events[0].attributes,
+        vec![("connection_id", "ANOTHER"), ("port_id", "ANOTHER_PORT")]
     );
 
     // Pagination query
@@ -168,12 +164,8 @@ fn admin_can_update_approved_contollers() {
     .unwrap();
 
     assert_eq!(
-        res.attributes,
-        vec![
-            ("action", "remove_approved_controller"),
-            ("connection_id", "ANOTHER"),
-            ("port_id", "ANOTHER_PORT")
-        ]
+        res.events[0].attributes,
+        vec![("connection_id", "ANOTHER"), ("port_id", "ANOTHER_PORT")]
     );
 
     let res = query_controllers(deps.as_ref(), None, None).unwrap();
@@ -215,10 +207,7 @@ fn only_admin_can_update_govec() {
     )
     .unwrap();
 
-    assert_eq!(
-        res.attributes,
-        vec![("config", "GOVEC Addr"), ("new addr", "new_govec")]
-    );
+    assert_eq!(res.events[0].attributes, vec![("address", "new_govec")]);
 
     let res = query_govec(deps.as_ref()).unwrap().unwrap();
     assert_eq!(res.as_str(), "new_govec");
@@ -250,10 +239,7 @@ fn only_admin_can_update_selfaddr() {
     )
     .unwrap();
 
-    assert_eq!(
-        res.attributes,
-        vec![("config", "DAO Addr"), ("new addr", "new_dao")]
-    );
+    assert_eq!(res.events[0].attributes, vec![("address", "new_dao")]);
 
     let res = query_dao(deps.as_ref()).unwrap().unwrap();
     assert_eq!(res.as_str(), "new_dao");
@@ -282,12 +268,8 @@ fn only_admin_can_update_ibc_transfer_modules() {
     let res = execute(deps.as_mut(), mock_env(), mock_info(ADMIN_ADDR, &[]), msg).unwrap();
 
     assert_eq!(
-        res.attributes,
-        vec![
-            ("config", "IBC_TRANSFER_MODULES"),
-            ("connection_id", &conn),
-            ("new channel", &chan)
-        ]
+        res.events[0].attributes,
+        vec![("connection_id", &conn), ("channel", &chan)]
     );
 
     let res: IbcTransferChannels = query_channels(deps.as_ref(), None, None).unwrap();
@@ -355,12 +337,8 @@ fn only_admin_can_send_actions_to_remote_tunnel_channel() {
 
     assert_eq!(res.messages[0].msg, expected_msg);
     assert_eq!(
-        res.attributes,
-        vec![
-            ("action", "dispatch_actions_to_remote_tunnel"),
-            ("channel", CHANNEL_ID),
-            ("job_id", &JOB_ID.to_string())
-        ]
+        res.events[0].attributes,
+        vec![("channel", CHANNEL_ID), ("job_id", &JOB_ID.to_string())]
     )
 }
 
@@ -397,12 +375,12 @@ fn ibc_transfer_works_with_channel_connected() {
     assert_eq!(res.messages[0], SubMsg::new(msg));
 
     assert_eq!(
-        res.attributes,
+        res.events[0].attributes,
         vec![
-            ("action", "execute_ibc_transfer"),
             ("to", "receiver"),
             ("channel_id", &chan),
-            ("amount", &total_fund.to_string()),
+            ("amount", &total_fund.amount.to_string()),
+            ("denom", &total_fund.denom.to_string())
         ]
     )
 }

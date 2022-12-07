@@ -92,11 +92,14 @@ pub enum WalletFactoryExecuteMsg {
         migration_msg: ProxyMigrationTxMsg,
     },
     UpdateCodeId {
+        #[serde(rename = "type")]
         ty: CodeIdType,
         new_code_id: u64,
     },
     UpdateConfigFee {
-        new_fee: UpdateFeeReq,
+        #[serde(rename = "type")]
+        ty: FeeType,
+        new_fee: Coin,
     },
     UpdateGovecAddr {
         addr: String,
@@ -158,9 +161,9 @@ pub enum WalletFactoryQueryMsg {
 }
 
 #[cw_serde]
-pub enum UpdateFeeReq {
-    Wallet(Coin),
-    Claim(Coin),
+pub enum FeeType {
+    Wallet,
+    Claim,
 }
 
 #[cw_serde]

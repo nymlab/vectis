@@ -13,9 +13,9 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 pub use vectis_wallet::{
-    pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, FeesResponse, Guardians,
-    MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction, RelayTxError,
-    UpdateFeeReq, WalletAddr, WalletInfo, GOVEC_CLAIM_DURATION_DAY_MUL,
+    pub_key_to_address, query_verify_cosmos, CodeIdType, CreateWalletMsg, FeeType, FeesResponse,
+    Guardians, MigrationMsgError, ProxyMigrateMsg, ProxyMigrationTxMsg, RelayTransaction,
+    RelayTxError, WalletAddr, WalletInfo, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
 // version info for migration info
@@ -63,8 +63,8 @@ pub fn execute(
         ExecuteMsg::UpdateCodeId { ty, new_code_id } => {
             factory_execute::update_code_id(deps, info, ty, new_code_id)
         }
-        ExecuteMsg::UpdateConfigFee { new_fee } => {
-            factory_execute::update_config_fee(deps, info, new_fee)
+        ExecuteMsg::UpdateConfigFee { ty, new_fee } => {
+            factory_execute::update_config_fee(deps, info, ty, new_fee)
         }
         ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => factory_execute::update_dao_addr(deps, info, addr),
