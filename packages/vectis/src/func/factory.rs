@@ -147,13 +147,8 @@ pub mod factory_execute {
         // or relayed by the proxy relayer via `ProxyMigrationTxMsg::RelayTx`.
         //
         // Different safety checks are applied
-        let tx_msg: CosmosMsg = ensure_is_valid_migration_msg(
-            &deps,
-            info.clone(),
-            &wallet_info,
-            &wallet_addr,
-            migration_msg,
-        )?;
+        let tx_msg: CosmosMsg =
+            ensure_is_valid_migration_msg(&deps, info, &wallet_info, &wallet_addr, migration_msg)?;
 
         // Further checks applied to ensure controller has signed the correct relay msg / tx
         if let CosmosMsg::Wasm(WasmMsg::Migrate {
@@ -180,7 +175,7 @@ pub mod factory_execute {
             }
 
             let event = Event::new("vectis.factory.v1.MsgMigrateWallet")
-                .add_attribute("wallet_address", contract_addr.to_string())
+                .add_attribute("wallet_address", contract_addr)
                 .add_attribute("code_id", new_code_id.to_string());
 
             Ok(Response::new().add_message(tx_msg).add_event(event))
