@@ -3,6 +3,8 @@ build:
 	- npm install --prefix ./cli
 schemas:
 	./scripts/schemas.sh
+types:
+	npm run types:generate --prefix ./cli
 deploy:
 	npm run dev --prefix ./cli
 nodes-setup:
