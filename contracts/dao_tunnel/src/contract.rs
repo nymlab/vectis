@@ -90,23 +90,19 @@ fn execute_add_approved_controller(
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
+    let mut event = Event::new("")
+        .add_attribute("connection_id", connection_id.clone())
+        .add_attribute("port_id", port_id.clone());
+
     if to_add {
-        IBC_TUNNELS.save(deps.storage, (connection_id.clone(), port_id.clone()), &())?;
-
-        let event = Event::new("vectis.dao_tunnel.v1.MsgAddApprovedController")
-            .add_attribute("connection_id", connection_id)
-            .add_attribute("port_id", port_id);
-
-        Ok(Response::new().add_event(event))
+        IBC_TUNNELS.save(deps.storage, (connection_id, port_id), &())?;
+        event.ty = "vectis.dao_tunnel.v1.MsgAddApprovedController".to_string();
     } else {
-        IBC_TUNNELS.remove(deps.storage, (connection_id.clone(), port_id.clone()));
-
-        let event = Event::new("vectis.dao_tunnel.v1.MsgRemoveApprovedController")
-            .add_attribute("connection_id", connection_id)
-            .add_attribute("port_id", port_id);
-
-        Ok(Response::new().add_event(event))
+        IBC_TUNNELS.remove(deps.storage, (connection_id, port_id));
+        event.ty = "vectis.dao_tunnel.v1.MsgRemoveApprovedController".to_string();
     }
+
+    Ok(Response::new().add_event(event))
 }
 fn execute_update_dao(
     deps: DepsMut,
@@ -144,28 +140,23 @@ fn execute_update_ibc_transfer_channel(
     channel: Option<String>,
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+
+    let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
+        .add_attribute("connection_id", connection_id.clone())
+        .add_attribute("channel_id", channel.clone().unwrap_or_default());
+
     match channel {
         Some(c) => {
             // Update the channel
             IBC_TRANSFER_MODULES.save(deps.storage, connection_id.to_owned(), &c)?;
-
-            let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
-                .add_attribute("connection_id", connection_id)
-                .add_attribute("channel", c);
-
-            Ok(Response::new().add_event(event))
         }
         None => {
             // Remove it
             IBC_TRANSFER_MODULES.remove(deps.storage, connection_id.to_owned());
-
-            let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
-                .add_attribute("connection_id", connection_id)
-                .add_attribute("channel", "");
-
-            Ok(Response::new().add_event(event))
         }
     }
+
+    Ok(Response::new().add_event(event))
 }
 
 fn execute_dispatch_to_remote_tunnel(
@@ -191,7 +182,7 @@ fn execute_dispatch_to_remote_tunnel(
     };
 
     let event = Event::new("vectis.dao_tunnel.v1.MsgDispatchActionOnRemoteTunnel")
-        .add_attribute("channel", sending_channel_id)
+        .add_attribute("channel_id", sending_channel_id)
         .add_attribute("job_id", job_id.to_string());
 
     Ok(Response::new().add_message(msg).add_event(event))

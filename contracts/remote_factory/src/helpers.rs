@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, CosmosMsg, Deps, DepsMut, Env, Response, StdResult, SubMsg, WasmMsg,
+    to_binary, BankMsg, CosmosMsg, Deps, DepsMut, Env, Event, Response, StdResult, SubMsg, WasmMsg,
 };
 use std::ops::{Add, Mul};
 
@@ -38,11 +38,11 @@ pub fn handle_govec_minted(deps: DepsMut, wallet: String) -> Result<Response, Co
         amount: vec![fee],
     });
 
-    let res = Response::new()
-        .add_message(msg)
-        .add_attribute("action", "Govec Minted on DAO Chain")
-        .add_attribute("proxy_address", wallet);
-    Ok(res)
+    let event = Event::new("vectis.factory.v1.MsgGovecMinted")
+        .add_attribute("proxy_address", wallet)
+        .add_attribute("minted", "success");
+
+    Ok(Response::new().add_message(msg).add_event(event))
 }
 
 pub fn handle_govec_mint_failed(
@@ -64,10 +64,9 @@ pub fn handle_govec_mint_failed(
         amount: vec![fee],
     });
 
-    let res = Response::new()
-        .add_message(msg)
-        .add_attribute("action", "Govec Mint failed on DAO Chain")
-        .add_attribute("action", "Renewed Claim expiration")
-        .add_attribute("proxy_address", wallet);
-    Ok(res)
+    let event = Event::new("vectis.factory.v1.MsgGovecMinted")
+        .add_attribute("proxy_address", wallet)
+        .add_attribute("minted", "failed");
+
+    Ok(Response::new().add_message(msg).add_event(event))
 }
