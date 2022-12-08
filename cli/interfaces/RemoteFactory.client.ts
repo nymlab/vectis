@@ -17,7 +17,7 @@ import {
     CanonicalAddr,
     Addr,
     CodeIdType,
-    UpdateFeeReq,
+    FeeType,
     CreateWalletMsg,
     Guardians,
     MultiSig,
@@ -155,10 +155,10 @@ export interface RemoteFactoryInterface extends RemoteFactoryReadOnlyInterface {
     updateCodeId: (
         {
             newCodeId,
-            ty,
+            type,
         }: {
             newCodeId: number;
-            ty: CodeIdType;
+            type: CodeIdType;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -167,8 +167,10 @@ export interface RemoteFactoryInterface extends RemoteFactoryReadOnlyInterface {
     updateConfigFee: (
         {
             newFee,
+            type,
         }: {
-            newFee: UpdateFeeReq;
+            newFee: Coin;
+            type: FeeType;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -293,10 +295,10 @@ export class RemoteFactoryClient extends RemoteFactoryQueryClient implements Rem
     updateCodeId = async (
         {
             newCodeId,
-            ty,
+            type,
         }: {
             newCodeId: number;
-            ty: CodeIdType;
+            type: CodeIdType;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -308,7 +310,7 @@ export class RemoteFactoryClient extends RemoteFactoryQueryClient implements Rem
             {
                 update_code_id: {
                     new_code_id: newCodeId,
-                    ty,
+                    type,
                 },
             },
             fee,
@@ -319,8 +321,10 @@ export class RemoteFactoryClient extends RemoteFactoryQueryClient implements Rem
     updateConfigFee = async (
         {
             newFee,
+            type,
         }: {
-            newFee: UpdateFeeReq;
+            newFee: Coin;
+            type: FeeType;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -332,6 +336,7 @@ export class RemoteFactoryClient extends RemoteFactoryQueryClient implements Rem
             {
                 update_config_fee: {
                     new_fee: newFee,
+                    type,
                 },
             },
             fee,

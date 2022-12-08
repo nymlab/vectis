@@ -33,12 +33,13 @@ export type ExecuteMsg =
     | {
           update_code_id: {
               new_code_id: number;
-              ty: CodeIdType;
+              type: CodeIdType;
           };
       }
     | {
           update_config_fee: {
-              new_fee: UpdateFeeReq;
+              new_fee: Coin;
+              type: FeeType;
           };
       }
     | {
@@ -84,13 +85,7 @@ export type WalletAddr =
 export type CanonicalAddr = string;
 export type Addr = string;
 export type CodeIdType = "proxy" | "multisig";
-export type UpdateFeeReq =
-    | {
-          wallet: Coin;
-      }
-    | {
-          claim: Coin;
-      };
+export type FeeType = "wallet" | "claim";
 export interface CreateWalletMsg {
     controller_addr: string;
     guardians: Guardians;
