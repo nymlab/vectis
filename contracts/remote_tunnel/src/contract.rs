@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Coin, Deps, DepsMut, Env, IbcMsg, MessageInfo, QueryResponse, Reply, Response,
-    StdResult, Uint128,
+    to_binary, Coin, Deps, DepsMut, Env, Event, IbcMsg, MessageInfo, QueryResponse, Reply,
+    Response, StdResult, Uint128,
 };
 use cw_storage_plus::Bound;
 
@@ -123,10 +123,10 @@ pub fn execute_dispatch(
 
         JOB_ID.save(deps.storage, &job_id.wrapping_add(1))?;
 
-        Ok(Response::new()
-            .add_message(msg)
-            .add_attribute("action", "dispatched DAO actions")
-            .add_attribute("job_id", job_id.to_string()))
+        let event = Event::new("vectis.remote-tunnel.v1.MsgDispatch")
+            .add_attribute("job_id", job_id.to_string());
+
+        Ok(Response::new().add_message(msg).add_event(event))
     }
 }
 
@@ -165,12 +165,14 @@ pub fn execute_ibc_transfer(
         },
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
-    Ok(Response::new()
-        .add_message(msg)
-        .add_attribute("action", "execute_ibc_transfer")
-        .add_attribute("to", rcv.addr)
+
+    let event = Event::new("vectis.ibc-transfer.v1.MsgIbcTransfer")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("amount", Coin { denom, amount }.to_string()))
+        .add_attribute("to", rcv.addr)
+        .add_attribute("amount", amount.to_string())
+        .add_attribute("denom", denom.to_string());
+
+    Ok(Response::new().add_message(msg).add_event(event))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
