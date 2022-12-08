@@ -236,11 +236,8 @@ fn dao_actions_works_with_connected_channel() {
     assert_eq!(res.messages[0], SubMsg::new(msg));
 
     assert_eq!(
-        res.attributes,
-        vec![
-            ("action", "dispatched DAO actions"),
-            ("job_id", &job_id.to_string())
-        ]
+        res.events[0].attributes,
+        vec![("job_id", &job_id.to_string())]
     );
 
     let next_job_id = query_job_id(deps.as_ref()).unwrap();
@@ -273,12 +270,12 @@ fn ibc_transfer_works_with_channel_connected() {
     assert_eq!(res.messages[0], SubMsg::new(msg));
 
     assert_eq!(
-        res.attributes,
+        res.events[0].attributes,
         vec![
-            ("action", "execute_ibc_transfer"),
-            ("to", "receiver"),
             ("channel_id", OTHER_CHANNEL_ID),
-            ("amount", &total_fund.to_string()),
+            ("to", "receiver"),
+            ("amount", &total_fund.amount.to_string()),
+            ("denom", &total_fund.denom.to_string()),
         ]
     )
 }

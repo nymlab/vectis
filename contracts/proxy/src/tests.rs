@@ -348,7 +348,7 @@ fn controller_can_execute_active_guardian_request() {
     assert_eq!(
         response.events[0].attributes,
         [
-            ("guaridans", format!("{:?}", request.guardians.addresses)),
+            ("guardians", format!("{:?}", request.guardians.addresses)),
             ("multisig", "false".to_string())
         ]
     );
@@ -379,7 +379,7 @@ fn controller_can_create_update_guardians_request() {
         response.events[0].attributes,
         [
             ("create", "true".to_string()),
-            ("guaridans", format!("{:?}", request.guardians.addresses))
+            ("guardians", format!("{:?}", request.guardians.addresses))
         ]
     );
 
