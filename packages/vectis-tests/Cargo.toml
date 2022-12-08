@@ -46,7 +46,7 @@ voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb216296
 cw-multi-test = { version = "0.16" }
 derivative = "2"
 cronkitty = { path = "../../../vectis-plugins/cronkitty" }
-cw-croncat-core = "0.1.3"
+cw-croncat-core = { path = "../../../../cw-croncat/packages/cw-croncat-core" }
 cw-rules-core = "0.1.1"
 cw-croncat = { path = "../../../../cw-croncat/contracts/cw-croncat" }
 cw-rules= { path = "../../../../cw-croncat/contracts/cw-rules" }
