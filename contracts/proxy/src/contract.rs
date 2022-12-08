@@ -11,7 +11,7 @@ use cw_storage_plus::Bound;
 use std::fmt;
 use vectis_wallet::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, GuardiansUpdateMsg,
-    GuardiansUpdateRequest, PluginListResponse, RelayTransaction, RelayTxError,
+    GuardiansUpdateRequest, PluginListResponse, PluginParams, RelayTransaction, RelayTxError,
     WalletFactoryQueryMsg, WalletInfo, DEFAULT_LIMIT, MAX_LIMIT,
 };
 
@@ -22,7 +22,7 @@ use crate::helpers::{
     ensure_is_relayer_or_controller, is_frozen, is_relayer, load_addresses,
     load_canonical_addresses,
 };
-use crate::msg::{ExecuteMsg, InstantiateMsg, PluginParams, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
     Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, FACTORY, FROZEN, GUARDIANS, LABEL,
     MULTISIG_ADDRESS, MULTISIG_CODE_ID, PENDING_GUARDIAN_ROTATION, PLUGINS, RELAYERS,
