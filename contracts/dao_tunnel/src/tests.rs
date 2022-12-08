@@ -269,7 +269,7 @@ fn only_admin_can_update_ibc_transfer_modules() {
 
     assert_eq!(
         res.events[0].attributes,
-        vec![("connection_id", &conn), ("channel", &chan)]
+        vec![("connection_id", &conn), ("channel_id", &chan)]
     );
 
     let res: IbcTransferChannels = query_channels(deps.as_ref(), None, None).unwrap();
@@ -338,7 +338,7 @@ fn only_admin_can_send_actions_to_remote_tunnel_channel() {
     assert_eq!(res.messages[0].msg, expected_msg);
     assert_eq!(
         res.events[0].attributes,
-        vec![("channel", CHANNEL_ID), ("job_id", &JOB_ID.to_string())]
+        vec![("channel_id", CHANNEL_ID), ("job_id", &JOB_ID.to_string())]
     )
 }
 

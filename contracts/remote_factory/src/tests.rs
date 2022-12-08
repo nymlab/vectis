@@ -195,10 +195,7 @@ fn admin_updates_addresses_work() {
     };
 
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(
-        response.attributes,
-        [("config", "DAO"), ("New DAO", "new_dao")]
-    );
+    assert_eq!(response.events[0].attributes, [("address", "new_dao")]);
 
     let new_admin = query_dao_addr(deps.as_ref()).unwrap();
     assert_eq!(new_admin, "new_dao");

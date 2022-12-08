@@ -2,7 +2,7 @@ use cosmwasm_schema::schemars;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
     StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
@@ -83,8 +83,18 @@ pub fn instantiate(
         RELAYERS.save(deps.storage, &relayer, &())?;
     }
 
+    let event = Event::new("vectis.proxy.v1.MsgInstantiate")
+        .add_attribute("controller_address", addr_human)
+        .add_attribute("code_id", msg.code_id.to_string())
+        .add_attribute("multisig_code_id", msg.multisig_code_id.to_string())
+        .add_attribute("label", msg.create_wallet_msg.label)
+        .add_attribute("relayers", format!("{:?}", msg.create_wallet_msg.relayers))
+        .add_attribute("guardians", format!("{:?}", guardian_addresses));
+
+    let mut resp = Response::new().add_event(event);
+
     // Instantiates a cw3 multisig contract if multisig option is provided for guardians
-    let resp = if let Some(multisig) = msg.create_wallet_msg.guardians.guardians_multisig {
+    if let Some(multisig) = msg.create_wallet_msg.guardians.guardians_multisig {
         let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
             voters: addresses_to_voters(guardian_addresses),
             threshold: Threshold::AbsoluteCount {
@@ -101,12 +111,8 @@ pub fn instantiate(
             label: "Wallet-Multisig".into(),
         };
         let msg = SubMsg::reply_always(instantiate_msg, MULTISIG_INSTANTIATE_ID);
-        Response::new()
-            .add_submessage(msg)
-            .add_attribute("controller", addr_human)
-    } else {
-        Response::new().add_attribute("controller", addr_human)
-    };
+        resp = resp.add_submessage(msg);
+    }
 
     Ok(resp)
 }
@@ -156,10 +162,9 @@ where
     // Ensure controller exists
     ensure_is_controller(deps.as_ref(), info.sender.as_ref())?;
 
-    let res = Response::new()
-        .add_messages(msgs)
-        .add_attribute("action", "execute");
-    Ok(res)
+    let event = Event::new("vectis.proxy.v1.MsgExecute");
+
+    Ok(Response::new().add_messages(msgs).add_event(event))
 }
 
 /// Executes relayed message fro a relayer
@@ -205,9 +210,9 @@ pub fn execute_relay(
                 Ok(controller)
             })?;
 
-            Ok(Response::new()
-                .add_message(msg)
-                .add_attribute("action", "execute_relay"))
+            let event = Event::new("vectis.proxy.v1.MsgRelay");
+
+            Ok(Response::new().add_message(msg).add_event(event))
         } else {
             Err(ContractError::InvalidMessage {
                 msg: msg.unwrap_err().to_string(),
@@ -234,7 +239,10 @@ pub fn execute_add_relayer(
 
     if !RELAYERS.has(deps.storage, &relayer_addr_canonical) {
         RELAYERS.save(deps.storage, &relayer_addr_canonical, &())?;
-        Ok(Response::new().add_attribute("action", format!("Relayer {:?} added", relayer_addr)))
+        let event =
+            Event::new("vectis.proxy.v1.MsgAddRelayer").add_attribute("address", relayer_addr);
+
+        Ok(Response::new().add_event(event))
     } else {
         Err(ContractError::RelayerAlreadyExists {})
     }
@@ -254,8 +262,9 @@ pub fn execute_remove_relayer(
 
     if RELAYERS.has(deps.storage, &relayer_addr_canonical) {
         RELAYERS.remove(deps.storage, &relayer_addr_canonical);
-
-        Ok(Response::new().add_attribute("action", format!("Relayer {:?} removed", relayer_addr)))
+        let event =
+            Event::new("vectis.proxy.v1.MsgRemoveRelayer").add_attribute("address", relayer_addr);
+        Ok(Response::new().add_event(event))
     } else {
         Err(ContractError::RelayerDoesNotExist {})
     }
@@ -276,9 +285,10 @@ pub fn execute_revert_freeze_status(
         Ok(frozen)
     })?;
 
-    let res = Response::new().add_attribute("action", if frozen { "frozen" } else { "unfrozen" });
+    let event = Event::new("vectis.proxy.v1.MsgRevertFreezeStatus")
+        .add_attribute("status", if frozen { "frozen" } else { "unfrozen" });
 
-    Ok(res)
+    Ok(Response::new().add_event(event))
 }
 
 /// Complete controller key rotation by changing it's address
@@ -300,18 +310,22 @@ pub fn execute_rotate_controller_key(
     let controller = CONTROLLER.load(deps.storage)?;
 
     // Ensure provided address is different from current
-    let new_controller_address = deps
+    let new_canon_addr = deps
         .api
         .addr_canonicalize(new_controller_address.as_ref())?;
-    controller.ensure_addresses_are_not_equal(&new_controller_address)?;
+    controller.ensure_addresses_are_not_equal(&new_canon_addr)?;
 
     // Update controller address
     CONTROLLER.update(deps.storage, |mut controller| -> StdResult<_> {
-        controller.set_address(new_controller_address);
+        controller.set_address(new_canon_addr);
         Ok(controller)
     })?;
 
-    Ok(Response::new().add_attribute("action", "execute_rotate_controller_key"))
+    let event = Event::new("vectis.proxy.v1.MsgRotateControllerKey")
+        .add_attribute("old_address", deps.api.addr_humanize(&controller.addr)?)
+        .add_attribute("new_address", new_controller_address);
+
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_update_guardians(
@@ -385,13 +399,20 @@ pub fn execute_update_guardians(
 
         PENDING_GUARDIAN_ROTATION.remove(deps.storage);
 
-        Ok(Response::new()
-            .add_submessage(msg)
-            .add_attribute("action", "Updated wallet guardians: Multisig"))
+        let event = Event::new("vectis.proxy.v1.MsgUpdateGuardians")
+            .add_attribute("guardians", format!("{:?}", guardians.addresses))
+            .add_attribute("multisig", "true")
+            .add_attribute("multisig_code_id", instantiation_code_id.to_string());
+
+        Ok(Response::new().add_submessage(msg).add_event(event))
     } else {
         MULTISIG_ADDRESS.save(deps.storage, &None)?;
         PENDING_GUARDIAN_ROTATION.remove(deps.storage);
-        Ok(Response::new().add_attribute("action", "Updated wallet guardians: Non-Multisig"))
+        let event = Event::new("vectis.proxy.v1.MsgUpdateGuardians")
+            .add_attribute("guardians", format!("{:?}", guardians.addresses))
+            .add_attribute("multisig", "false");
+
+        Ok(Response::new().add_event(event))
     }
 }
 
@@ -417,14 +438,24 @@ pub fn execute_request_update_guardians(
 
             PENDING_GUARDIAN_ROTATION.save(
                 deps.storage,
-                &GuardiansUpdateRequest::new(r.guardians, r.new_multisig_code_id, &env.block),
+                &GuardiansUpdateRequest::new(
+                    r.guardians.clone(),
+                    r.new_multisig_code_id,
+                    &env.block,
+                ),
             )?;
 
-            Ok(Response::new().add_attribute("action", "Request to update guardians created"))
+            let event = Event::new("vectis.proxy.v1.MsgRequestUpdateGuardians")
+                .add_attribute("create", "true")
+                .add_attribute("guardians", format!("{:?}", r.guardians.addresses));
+
+            Ok(Response::new().add_event(event))
         }
         None => {
             PENDING_GUARDIAN_ROTATION.remove(deps.storage);
-            Ok(Response::new().add_attribute("action", "Removed request to update guardians"))
+            let event = Event::new("vectis.proxy.v1.MsgRequestUpdateGuardians")
+                .add_attribute("create", "false");
+            Ok(Response::new().add_event(event))
         }
     }
 }
@@ -450,9 +481,10 @@ pub fn execute_update_label(
             Ok(new_label.clone())
         }
     })?;
-    Ok(Response::default()
-        .add_attribute("action", "update label")
-        .add_attribute("label", new_label))
+
+    let event = Event::new("vectis.proxy.v1.MsgUpdateLabel").add_attribute("label", new_label);
+
+    Ok(Response::default().add_event(event))
 }
 
 // Used to handle different multisig actions
@@ -465,9 +497,10 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
                 &Some(deps.api.addr_canonicalize(&res.contract_address)?),
             )?;
 
-            Ok(Response::new()
-                .add_attribute("action", "Fixed Multisig Stored")
-                .add_attribute("multisig_address", res.contract_address))
+            let event = Event::new("vectis.proxy.v1.MsgReplyMultisigInstantiate")
+                .add_attribute("multisig_address", res.contract_address);
+
+            Ok(Response::new().add_event(event))
         } else {
             Err(ContractError::MultisigInstantiationError {})
         }
