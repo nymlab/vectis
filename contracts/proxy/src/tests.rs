@@ -121,14 +121,26 @@ fn guardian_can_revert_freeze_status() {
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(response.events[0].attributes, [("status", "frozen")]);
+    assert_eq!(
+        response.events[0].attributes,
+        [
+            ("contract_address", "cosmos2contract"),
+            ("status", "frozen")
+        ]
+    );
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(wallet_info.is_frozen);
 
     let msg = ExecuteMsg::RevertFreezeStatus {};
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(response.events[0].attributes, [("status", "unfrozen")]);
+    assert_eq!(
+        response.events[0].attributes,
+        [
+            ("contract_address", "cosmos2contract"),
+            ("status", "unfrozen")
+        ]
+    );
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert!(!wallet_info.is_frozen);
@@ -156,7 +168,13 @@ fn frozen_contract_cannot_execute_controller_tx() {
     let env = mock_env();
     let msg = ExecuteMsg::RevertFreezeStatus {};
     let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(response.events[0].attributes, [("status", "frozen")]);
+    assert_eq!(
+        response.events[0].attributes,
+        [
+            ("contract_address", "cosmos2contract"),
+            ("status", "frozen")
+        ]
+    );
 
     let exec_msg: ExecuteMsg = ExecuteMsg::Execute {
         msgs: vec![CosmosMsg::Bank(BankMsg::Burn {
@@ -378,6 +396,7 @@ fn controller_can_create_update_guardians_request() {
     assert_eq!(
         response.events[0].attributes,
         [
+            ("contract_address", "cosmos2contract".to_string()),
             ("create", "true".to_string()),
             ("guardians", format!("{:?}", request.guardians.addresses))
         ]
@@ -401,7 +420,10 @@ fn controller_can_remove_update_guardians_request() {
     let msg = ExecuteMsg::RequestUpdateGuardians { request: None };
 
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(response.events[0].attributes, [("create", "false")]);
+    assert_eq!(
+        response.events[0].attributes,
+        [("contract_address", "cosmos2contract"), ("create", "false")]
+    );
 
     let query_request = query_guardian_update_request(deps.as_ref()).unwrap();
 
@@ -427,7 +449,10 @@ fn controller_can_add_relayer() {
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.events[0].attributes,
-        [("address", new_relayer_address.clone())]
+        [
+            ("contract_address", "cosmos2contract"),
+            ("address", new_relayer_address.clone().as_str())
+        ]
     );
 
     wallet_info.relayers.push(new_relayer_address);
@@ -454,7 +479,10 @@ fn controller_can_remove_relayer() {
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.events[0].attributes,
-        [("address", relayer_address.clone())]
+        [
+            ("contract_address", "cosmos2contract"),
+            ("address", relayer_address.clone().as_str())
+        ]
     );
 
     wallet_info
@@ -485,6 +513,7 @@ fn guardian_can_rotate_controller_key() {
     assert_eq!(
         response.events[0].attributes,
         [
+            ("contract_address", "cosmos2contract"),
             ("old_address", wallet_info.controller_addr.as_str()),
             ("new_address", new_address)
         ]
@@ -512,7 +541,14 @@ fn controller_can_update_label() {
     };
 
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(response.events[0].attributes, [("label", new_label)]);
+
+    assert_eq!(
+        response.events[0].attributes,
+        [
+            ("contract_address", "cosmos2contract"),
+            ("label", new_label)
+        ]
+    );
 
     let wallet_info = query_info(deps.as_ref()).unwrap();
     assert_eq!(new_label, wallet_info.label.as_str());
@@ -562,6 +598,7 @@ fn controller_can_rotate_controller_key() {
     assert_eq!(
         response.events[0].attributes,
         [
+            ("contract_address", "cosmos2contract".to_string()),
             ("old_address", controller_addr.to_string()),
             ("new_address", new_address.to_string())
         ]
