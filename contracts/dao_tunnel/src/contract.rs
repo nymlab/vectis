@@ -148,11 +148,11 @@ fn execute_update_ibc_transfer_channel(
     match channel {
         Some(c) => {
             // Update the channel
-            IBC_TRANSFER_MODULES.save(deps.storage, connection_id.to_owned(), &c)?;
+            IBC_TRANSFER_MODULES.save(deps.storage, connection_id, &c)?;
         }
         None => {
             // Remove it
-            IBC_TRANSFER_MODULES.remove(deps.storage, connection_id.to_owned());
+            IBC_TRANSFER_MODULES.remove(deps.storage, connection_id);
         }
     }
 
@@ -228,7 +228,7 @@ pub fn execute_ibc_transfer(
         .add_attribute("to", rcv.addr)
         .add_attribute("channel_id", channel_id)
         .add_attribute("amount", amount.to_string())
-        .add_attribute("denom", denom.to_string());
+        .add_attribute("denom", denom);
 
     Ok(Response::new().add_message(msg).add_event(event))
 }
