@@ -91,27 +91,21 @@ pub use vectis_remote_factory::contract::{
 
 pub use vectis_govec::{
     contract::{execute as govec_execute, instantiate as govec_instantiate, query as govec_query},
-    msg::{
-        ExecuteMsg as GovecExecuteMsg, InstantiateMsg as GovecInstantiateMsg,
-        QueryMsg as GovecQueryMsg,
-    },
+    msg::InstantiateMsg as GovecInstantiateMsg,
 };
 
-pub use vectis_proxy::{
-    contract::{
-        execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
-        query as proxy_query, reply as proxy_reply,
-    },
-    msg::ExecuteMsg as ProxyExecuteMsg,
-    msg::QueryMsg as ProxyQueryMsg,
+pub use vectis_proxy::contract::{
+    execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
+    query as proxy_query, reply as proxy_reply,
 };
 
 pub use vectis_wallet::{
-    pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
-    GuardiansUpdateRequest, MultiSig, ProposalExecuteMsg, RelayTransaction, StakeExecuteMsg,
-    ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
-    WalletFactoryExecuteMsg as FactoryExecuteMsg, WalletFactoryInstantiateMsg as InstantiateMsg,
-    WalletFactoryQueryMsg as FactoryQueryMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
+    pub_key_to_address, CodeIdType, CreateWalletMsg, GovecExecuteMsg, GovecQueryMsg, Guardians,
+    GuardiansUpdateMsg, GuardiansUpdateRequest, MultiSig, PluginParams, ProposalExecuteMsg,
+    ProxyExecuteMsg, ProxyQueryMsg, RelayTransaction, StakeExecuteMsg, ThresholdAbsoluteCount,
+    UnclaimedWalletList, WalletFactoryExecuteMsg, WalletFactoryExecuteMsg as FactoryExecuteMsg,
+    WalletFactoryInstantiateMsg as InstantiateMsg, WalletFactoryQueryMsg as FactoryQueryMsg,
+    GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
 pub const MINT_AMOUNT: u128 = 2u128;
