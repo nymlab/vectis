@@ -60,7 +60,7 @@ describe("Proxy Suite: ", () => {
         guardianProxyClient = new ProxyClient(hostGuardianClient, hostGuardianClient.sender, proxyWalletAddress);
     });
 
-    it.only("Should get correct info from proxy wallet", async () => {
+    it("Should get correct info from proxy wallet", async () => {
         const info = await proxyClient.info();
         expect(info.guardians).toContain(hostAccounts.guardian_1.address);
         expect(info.guardians).toContain(hostAccounts.guardian_2.address);
