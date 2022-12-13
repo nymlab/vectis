@@ -269,7 +269,11 @@ fn only_admin_can_update_ibc_transfer_modules() {
 
     assert_eq!(
         res.events[0].attributes,
-        vec![("connection_id", &conn), ("channel_id", &chan)]
+        vec![
+            ("connection_id", &conn),
+            ("channel_id", &chan),
+            ("action", &"update".to_string())
+        ]
     );
 
     let res: IbcTransferChannels = query_channels(deps.as_ref(), None, None).unwrap();
