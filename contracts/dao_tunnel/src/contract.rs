@@ -149,8 +149,8 @@ fn execute_update_ibc_transfer_channel(
             // Update the channel
             IBC_TRANSFER_MODULES.save(deps.storage, connection_id, &c)?;
             event = event
-                .add_attribute("action", "update")
                 .add_attribute("channel_id", &c)
+                .add_attribute("action", "update")
         }
         None => {
             // Remove it
