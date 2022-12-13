@@ -83,14 +83,14 @@ pub fn instantiate(
         RELAYERS.save(deps.storage, &relayer, &())?;
     }
 
-    let event = Event::new("vectis.proxy.v1.MsgInstantiate")
-        .add_attribute("contract_address", env.contract.address.clone())
-        .add_attribute("controller_address", addr_human)
-        .add_attribute("code_id", msg.code_id.to_string())
-        .add_attribute("multisig_code_id", msg.multisig_code_id.to_string())
-        .add_attribute("label", msg.create_wallet_msg.label)
-        .add_attribute("relayers", format!("{:?}", msg.create_wallet_msg.relayers))
-        .add_attribute("guardians", format!("{:?}", guardian_addresses));
+    let event = Event::new("vectis.proxy.v1.MsgInstantiate").add_attributes(vec![
+        ("controller_address", addr_human.to_string()),
+        ("code_id", msg.code_id.to_string()),
+        ("multisig_code_id", msg.multisig_code_id.to_string()),
+        ("label", msg.create_wallet_msg.label),
+        ("relayers", format!("{:?}", msg.create_wallet_msg.relayers)),
+        ("guardians", format!("{:?}", guardian_addresses)),
+    ]);
 
     let mut resp = Response::new().add_event(event);
 
@@ -126,17 +126,17 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Execute { msgs } => execute_execute(deps, env, info, msgs),
-        ExecuteMsg::Relay { transaction } => execute_relay(deps, env, info, transaction),
-        ExecuteMsg::RevertFreezeStatus {} => execute_revert_freeze_status(deps, env, info),
+        ExecuteMsg::Execute { msgs } => execute_execute(deps, info, msgs),
+        ExecuteMsg::Relay { transaction } => execute_relay(deps, info, transaction),
+        ExecuteMsg::RevertFreezeStatus {} => execute_revert_freeze_status(deps, info),
         ExecuteMsg::RotateControllerKey {
             new_controller_address,
-        } => execute_rotate_controller_key(deps, env, info, new_controller_address),
+        } => execute_rotate_controller_key(deps, info, new_controller_address),
         ExecuteMsg::AddRelayer {
             new_relayer_address,
-        } => execute_add_relayer(deps, env, info, new_relayer_address),
+        } => execute_add_relayer(deps, info, new_relayer_address),
         ExecuteMsg::RemoveRelayer { relayer_address } => {
-            execute_remove_relayer(deps, env, info, relayer_address)
+            execute_remove_relayer(deps, info, relayer_address)
         }
         ExecuteMsg::RequestUpdateGuardians { request } => {
             execute_request_update_guardians(deps, info, env, request)
@@ -149,7 +149,6 @@ pub fn execute(
 /// Executes message from the controller
 pub fn execute_execute<T>(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     msgs: Vec<CosmosMsg<T>>,
 ) -> Result<Response<T>, ContractError>
@@ -163,8 +162,7 @@ where
     // Ensure controller exists
     ensure_is_controller(deps.as_ref(), info.sender.as_ref())?;
 
-    let event = Event::new("vectis.proxy.v1.MsgExecute")
-        .add_attribute("contract_address", env.contract.address);
+    let event = Event::new("vectis.proxy.v1.MsgExecute");
 
     Ok(Response::new().add_messages(msgs).add_event(event))
 }
@@ -172,7 +170,6 @@ where
 /// Executes relayed message fro a relayer
 pub fn execute_relay(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     transaction: RelayTransaction,
 ) -> Result<Response, ContractError> {
@@ -213,8 +210,7 @@ pub fn execute_relay(
                 Ok(controller)
             })?;
 
-            let event = Event::new("vectis.proxy.v1.MsgRelay")
-                .add_attribute("contract_address", env.contract.address);
+            let event = Event::new("vectis.proxy.v1.MsgRelay");
 
             Ok(Response::new().add_message(msg).add_event(event))
         } else {
@@ -232,7 +228,6 @@ pub fn execute_relay(
 /// Add relayer to the relayers set
 pub fn execute_add_relayer(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     relayer_addr: Addr,
 ) -> Result<Response, ContractError> {
@@ -244,9 +239,8 @@ pub fn execute_add_relayer(
 
     if !RELAYERS.has(deps.storage, &relayer_addr_canonical) {
         RELAYERS.save(deps.storage, &relayer_addr_canonical, &())?;
-        let event = Event::new("vectis.proxy.v1.MsgAddRelayer")
-            .add_attribute("contract_address", env.contract.address)
-            .add_attribute("address", relayer_addr);
+        let event =
+            Event::new("vectis.proxy.v1.MsgAddRelayer").add_attribute("address", relayer_addr);
 
         Ok(Response::new().add_event(event))
     } else {
@@ -257,7 +251,6 @@ pub fn execute_add_relayer(
 /// Remove relayer from the relayers set
 pub fn execute_remove_relayer(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     relayer_addr: Addr,
 ) -> Result<Response, ContractError> {
@@ -269,9 +262,8 @@ pub fn execute_remove_relayer(
 
     if RELAYERS.has(deps.storage, &relayer_addr_canonical) {
         RELAYERS.remove(deps.storage, &relayer_addr_canonical);
-        let event = Event::new("vectis.proxy.v1.MsgRemoveRelayer")
-            .add_attribute("contract_address", env.contract.address)
-            .add_attribute("address", relayer_addr);
+        let event =
+            Event::new("vectis.proxy.v1.MsgRemoveRelayer").add_attribute("address", relayer_addr);
         Ok(Response::new().add_event(event))
     } else {
         Err(ContractError::RelayerDoesNotExist {})
@@ -282,7 +274,6 @@ pub fn execute_remove_relayer(
 /// Must be from a guardian or a guardian multisig contract
 pub fn execute_revert_freeze_status(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
     // Ensure caller is guardian or multisig
@@ -295,7 +286,6 @@ pub fn execute_revert_freeze_status(
     })?;
 
     let event = Event::new("vectis.proxy.v1.MsgRevertFreezeStatus")
-        .add_attribute("contract_address", env.contract.address)
         .add_attribute("status", if frozen { "frozen" } else { "unfrozen" });
 
     Ok(Response::new().add_event(event))
@@ -305,7 +295,6 @@ pub fn execute_revert_freeze_status(
 /// Must be from a guardian or a guardian multisig contract
 pub fn execute_rotate_controller_key(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     new_controller_address: String,
 ) -> Result<Response, ContractError> {
@@ -333,7 +322,6 @@ pub fn execute_rotate_controller_key(
     })?;
 
     let event = Event::new("vectis.proxy.v1.MsgRotateControllerKey")
-        .add_attribute("contract_address", env.contract.address)
         .add_attribute("old_address", deps.api.addr_humanize(&controller.addr)?)
         .add_attribute("new_address", new_controller_address);
 
@@ -375,6 +363,9 @@ pub fn execute_update_guardians(
         GUARDIANS.save(deps.storage, &deps.api.addr_canonicalize(guardian)?, &())?;
     }
 
+    let mut event = Event::new("vectis.proxy.v1.MsgUpdateGuardians")
+        .add_attribute("guardians", format!("{:?}", guardians.addresses));
+
     if let Some(multisig_settings) = guardians.guardians_multisig {
         let instantiation_code_id = if let Some(id) = new_multisig_code_id {
             id
@@ -411,9 +402,7 @@ pub fn execute_update_guardians(
 
         PENDING_GUARDIAN_ROTATION.remove(deps.storage);
 
-        let event = Event::new("vectis.proxy.v1.MsgUpdateGuardians")
-            .add_attribute("contract_address", env.contract.address)
-            .add_attribute("guardians", format!("{:?}", guardians.addresses))
+        event = event
             .add_attribute("multisig", "true")
             .add_attribute("multisig_code_id", instantiation_code_id.to_string());
 
@@ -421,9 +410,8 @@ pub fn execute_update_guardians(
     } else {
         MULTISIG_ADDRESS.save(deps.storage, &None)?;
         PENDING_GUARDIAN_ROTATION.remove(deps.storage);
-        let event = Event::new("vectis.proxy.v1.MsgUpdateGuardians")
-            .add_attribute("guardians", format!("{:?}", guardians.addresses))
-            .add_attribute("multisig", "false");
+
+        event = event.add_attribute("multisig", "false");
 
         Ok(Response::new().add_event(event))
     }
@@ -459,7 +447,6 @@ pub fn execute_request_update_guardians(
             )?;
 
             let event = Event::new("vectis.proxy.v1.MsgRequestUpdateGuardians")
-                .add_attribute("contract_address", env.contract.address)
                 .add_attribute("create", "true")
                 .add_attribute("guardians", format!("{:?}", r.guardians.addresses));
 
@@ -468,7 +455,6 @@ pub fn execute_request_update_guardians(
         None => {
             PENDING_GUARDIAN_ROTATION.remove(deps.storage);
             let event = Event::new("vectis.proxy.v1.MsgRequestUpdateGuardians")
-                .add_attribute("contract_address", env.contract.address)
                 .add_attribute("create", "false");
             Ok(Response::new().add_event(event))
         }
@@ -497,16 +483,14 @@ pub fn execute_update_label(
         }
     })?;
 
-    let event = Event::new("vectis.proxy.v1.MsgUpdateLabel")
-        .add_attribute("contract_address", env.contract.address)
-        .add_attribute("label", new_label);
+    let event = Event::new("vectis.proxy.v1.MsgUpdateLabel").add_attribute("label", new_label);
 
     Ok(Response::default().add_event(event))
 }
 
 // Used to handle different multisig actions
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     if reply.id == MULTISIG_INSTANTIATE_ID {
         if let Ok(res) = parse_reply_instantiate_data(reply) {
             MULTISIG_ADDRESS.save(
@@ -515,7 +499,6 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
             )?;
 
             let event = Event::new("vectis.proxy.v1.MsgReplyMultisigInstantiate")
-                .add_attribute("contract_address", env.contract.address)
                 .add_attribute("multisig_address", res.contract_address)
                 .add_attribute(
                     "multisig_code_id",

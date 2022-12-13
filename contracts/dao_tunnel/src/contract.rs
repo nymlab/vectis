@@ -91,8 +91,8 @@ fn execute_add_approved_controller(
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
     let mut event = Event::new("")
-        .add_attribute("connection_id", connection_id.clone())
-        .add_attribute("port_id", port_id.clone());
+        .add_attribute("connection_id", &connection_id)
+        .add_attribute("port_id", &port_id);
 
     if to_add {
         IBC_TUNNELS.save(deps.storage, (connection_id, port_id), &())?;
@@ -141,18 +141,21 @@ fn execute_update_ibc_transfer_channel(
 ) -> Result<Response, ContractError> {
     ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
 
-    let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
-        .add_attribute("connection_id", connection_id.clone())
-        .add_attribute("channel_id", channel.clone().unwrap_or_default());
+    let mut event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
+        .add_attribute("connection_id", &connection_id);
 
     match channel {
         Some(c) => {
             // Update the channel
             IBC_TRANSFER_MODULES.save(deps.storage, connection_id, &c)?;
+            event = event
+                .add_attribute("action", "update")
+                .add_attribute("channel_id", &c)
         }
         None => {
             // Remove it
             IBC_TRANSFER_MODULES.remove(deps.storage, connection_id);
+            event = event.add_attribute("action", "remove")
         }
     }
 
@@ -317,7 +320,7 @@ pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contra
 pub fn reply_dao_actions(reply: Reply) -> Result<Response, ContractError> {
     let res = Response::new();
     match reply.result {
-        SubMsgResult::Ok(_) => Ok(res.set_data(StdAck::success(&reply.id))),
+        SubMsgResult::Ok(_) => Ok(res.set_data(StdAck::success(reply.id))),
         SubMsgResult::Err(e) => Ok(res.set_data(StdAck::fail(e))),
     }
 }
