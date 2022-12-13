@@ -215,10 +215,19 @@ describe("DAO Suite for Config Tests:", () => {
             },
         });
         await daoClient.executeAdminMsg(msg);
-        await delay(8000);
-
         const newCodeId = await factoryClient.codeId({ ty: "proxy" });
         expect(newCodeId).toBe(codeId);
+
+        // revert changes
+        const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
+            update_code_id: {
+                new_code_id: oldCodeId,
+                ty: "proxy",
+            },
+        });
+        await daoClient.executeAdminMsg(msg);
+        const currentCodeId = await factoryClient.codeId({ ty: "proxy" });
+        expect(currentCodeId).toBe(oldCodeId);
     });
 
     it("DAO should be able to update wallet fee in Dao-chain factory", async () => {
@@ -235,8 +244,17 @@ describe("DAO Suite for Config Tests:", () => {
 
         await daoClient.executeAdminMsg(msg);
         await delay(8000);
-        const { wallet_fee: newFee } = await factoryClient.fees();
+        expect(newFee).toStrictEqual(fee);
 
+        // revert changes
+        const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
+            update_config_fee: {
+                new_fee: { wallet: oldFeefee },
+            },
+        });
+
+        await daoClient.executeAdminMsg(msg);
+        await delay(8000);
         expect(newFee).toStrictEqual(fee);
     });
 
