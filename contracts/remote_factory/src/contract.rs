@@ -100,6 +100,8 @@ fn claim_govec_or_remove_from_list(
         GOVEC_CLAIM_LIST.remove(deps.storage, claiming_controller);
         Err(ContractError::ClaimExpired {})
     } else {
+        // funds are held in this contract until we get an Ack on if this succeeds
+        // But what if there is a timeout?
         ensure_is_enough_claim_fee(deps.as_ref(), &info.funds)?;
 
         GOVEC_CLAIM_LIST.remove(deps.storage, claiming_controller.clone());

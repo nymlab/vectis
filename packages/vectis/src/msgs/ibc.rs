@@ -24,7 +24,8 @@ pub enum DaoTunnelPacketMsg {
         new_config: DaoConfig,
     },
     UpdateChainConfig {
-        new_config: ChainConfig,
+        new_denom: String,
+        new_remote_factory: Option<String>,
     },
     InstantiateFactory {
         code_id: u64,

@@ -7,6 +7,10 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
     const initial_funds = walletInitialFunds(hostChain);
     const { wallet_fee } = await factoryClient.fees();
     const totalFee: Number = Number(wallet_fee.amount) + Number(initial_funds.amount);
+    let walletAddress: string | null;
+    let walletMSAddress: string | null;
+
+    let oldWalletRes = await factoryClient.unclaimedGovecWallets({});
 
     await factoryClient.createWallet(
         {
@@ -26,7 +30,18 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
     );
 
     let walletRes = await factoryClient.unclaimedGovecWallets({});
-    const walletAddress = walletRes.wallets[0][0];
+    let oldAddr = oldWalletRes.wallets.map((s, e) => s[0]);
+    let newAddr = walletRes.wallets.map((s, e) => s[0]);
+
+    if (oldWalletRes.wallets.length == 0) {
+        walletAddress = walletRes.wallets[0][0];
+    } else {
+        for (let e of newAddr) {
+            if (!oldAddr.includes(e)) {
+                walletAddress = e;
+            }
+        }
+    }
 
     await factoryClient.createWallet(
         {
@@ -49,9 +64,14 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
         [coin(totalFee.toString(), hostChain.feeToken) as FactoryT.Coin]
     );
 
-    walletRes = await factoryClient.unclaimedGovecWallets({});
+    let MSwalletRes = await factoryClient.unclaimedGovecWallets({});
+    let MSAddrs = MSwalletRes.wallets.map((s, e) => s[0]);
 
-    const walletMSAddress = walletRes.wallets[0][0];
+    for (let e of MSAddrs) {
+        if (!newAddr.includes(e)) {
+            walletMSAddress = e;
+        }
+    }
 
-    return [walletAddress, walletMSAddress];
+    return [walletAddress!, walletMSAddress!];
 }

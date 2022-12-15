@@ -16,5 +16,5 @@ export const getDefaultMigrateFee = (chain: Chain) => calculateFee(1_200_000, ge
 export const getDefaultUpdateAdminFee = (chain: Chain) => calculateFee(800_000, getDefaultGasPrice(chain));
 export const getDefaultClearAdminFee = (chain: Chain) => calculateFee(800_000, getDefaultGasPrice(chain));
 
-export const walletInitialFunds = (chain: Chain) => coin(1000000, chain.feeToken) as Coin;
+export const walletInitialFunds = (chain: Chain) => coin(1500000, chain.feeToken) as Coin;
 export const govecClaimFee = (chain: Chain) => coin(1000000, chain.feeToken) as Coin;

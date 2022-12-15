@@ -3,7 +3,7 @@ import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import { Addr, CosmosMsgForEmpty as CosmosMsg, BankMsg, Coin } from "../interfaces/Proxy.types";
-import { FactoryClient, RelayerClient } from "../clients";
+import { GovecClient, FactoryClient, RelayerClient } from "../clients";
 import { coin } from "@cosmjs/stargate";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,
@@ -33,8 +33,10 @@ describe("Proxy Suite: ", () => {
     let proxyWalletMultisigAddress: Addr;
     let addrs: VectisDaoContractsAddrs;
 
+    let govecClient: GovecClient;
     let factoryClient: FactoryClient;
     let proxyClient: ProxyClient;
+    let msProxyClient: ProxyClient;
     let guardianProxyClient: ProxyClient;
     const relayerClient = new RelayerClient();
 
@@ -48,6 +50,7 @@ describe("Proxy Suite: ", () => {
         hostAdminClient = await CWClient.connectHostWithAccount("admin");
         hostGuardianClient = await CWClient.connectHostWithAccount("guardian_1");
         hostClient = await CosmWasmClient.connect(hostChain.rpcUrl);
+        govecClient = new GovecClient(hostUserClient, hostUserClient.sender, addrs.govecAddr);
 
         factoryClient = new FactoryClient(hostAdminClient, hostAdminClient.sender, addrs.factoryAddr);
 
@@ -57,7 +60,13 @@ describe("Proxy Suite: ", () => {
         proxyWalletMultisigAddress = walletMSAddr;
 
         proxyClient = new ProxyClient(hostUserClient, hostUserClient.sender, proxyWalletAddress);
+        msProxyClient = new ProxyClient(hostUserClient, hostUserClient.sender, proxyWalletMultisigAddress);
         guardianProxyClient = new ProxyClient(hostGuardianClient, hostGuardianClient.sender, proxyWalletAddress);
+        const msinfo = await msProxyClient.info();
+        const info = await proxyClient.info();
+
+        console.log("info ms: ", msinfo);
+        console.log("info: ", info);
     });
 
     it("Should get correct info from proxy wallet", async () => {
@@ -242,7 +251,7 @@ describe("Proxy Suite: ", () => {
         await guardianProxyClient.revertFreezeStatus();
     });
 
-    it("Should rotate user key as guardian", async () => {
+    it("Should ootate user key as guardian", async () => {
         assert(guardianProxyClient, "guardianProxyClient is not defined");
 
         // New owner is admin
@@ -270,7 +279,7 @@ describe("Proxy Suite: ", () => {
             expect(false).toBeTruthy();
         } catch (err) {
             expect(err).toBeInstanceOf(Error);
-            expect((err as Error).message).toContain("IsNotUser");
+            expect((err as Error).message).toContain("IsNotController");
         }
 
         // Return wallet to the user
@@ -289,7 +298,9 @@ describe("Proxy Suite: ", () => {
                 hostAccounts.user.address!,
                 proxyWalletMultisigAddress
             );
-            const { multisig_address } = await msProxyClient.info();
+            const info = await msProxyClient.info();
+            const multisig_address = info.multisig_address;
+            expect(multisig_address).toBeDefined();
 
             const rotateUserKey: CosmosMsg = {
                 wasm: {
@@ -298,8 +309,8 @@ describe("Proxy Suite: ", () => {
                         msg: toBase64(
                             toUtf8(
                                 JSON.stringify({
-                                    rotate_user_key: {
-                                        new_user_address: hostAccounts.admin.address,
+                                    rotate_controller_key: {
+                                        new_controller_address: hostAccounts.admin.address,
                                     },
                                 })
                             )
@@ -316,7 +327,12 @@ describe("Proxy Suite: ", () => {
                     latest: null,
                 },
             };
-            await clientG1.execute(clientG1.sender, multisig_address!, proposal, getDefaultRelayFee(hostChain));
+            const res = await clientG1.execute(
+                clientG1.sender,
+                multisig_address!,
+                proposal,
+                getDefaultRelayFee(hostChain)
+            );
 
             // Should have proposal in the list
             const queryProps: ProposalQueryMsg = { list_proposals: {} };
@@ -463,59 +479,30 @@ describe("Proxy Suite: ", () => {
         relayerClient.disconnect();
     });
 
-    it.skip("Should relay WASM message as a relayer", async () => {
+    it.only("Should relay WASM message as a relayer - mint govec", async () => {
         const relayerClient = await CWClient.connectHostWithAccount("relayer_1");
         const relayerProxyClient = new ProxyClient(relayerClient, relayerClient.sender, proxyWalletAddress);
+        const info = await relayerProxyClient.info();
 
-        // Instantiate a new CW20 contract giving the wallet some funds
-        const cw20Code = getContract(cw20CodePath!);
-        const cw20Res = await hostAdminClient.upload(
-            hostAccounts.admin.address,
-            cw20Code,
-            getDefaultUploadFee(hostChain)
-        );
-
-        const initAmount = "1000";
-        const cw20contract = await hostAdminClient.instantiate(
-            hostAccounts.admin.address,
-            cw20Res.codeId,
-            {
-                name: "scw-test",
-                symbol: "scw",
-                decimals: 10,
-                initial_balances: [{ address: proxyWalletAddress, amount: initAmount }],
-                mint: null,
-                marketing: null,
-            },
-            "SCW Test CW20",
-            "auto",
-            {
-                funds: [],
-            }
-        );
-        const transferAmount = "100";
-        const transferMsg = {
-            transfer: {
-                recipient: hostAccounts.guardian_1.address,
-                amount: transferAmount,
-            },
-        };
+        const { claim_fee } = await factoryClient.fees();
+        console.log("claim fee: ", claim_fee);
 
         const cosmosWasmMsg: CosmosMsg = {
             wasm: {
                 execute: {
-                    contract_addr: cw20contract.contractAddress,
-                    msg: toBase64(toUtf8(JSON.stringify(transferMsg))),
-                    funds: [],
+                    contract_addr: factoryClient.contractAddress,
+                    msg: toBase64(toUtf8(JSON.stringify({ claim_govec: {} }))),
+                    funds: [claim_fee],
                 },
             },
         };
 
         const relayTransaction = await CWClient.createRelayTransaction(
             hostAccounts.user.mnemonic,
-            1,
+            info.nonce,
             JSON.stringify(cosmosWasmMsg)
         );
+
         await relayerProxyClient.relay(
             {
                 transaction: relayTransaction,
@@ -523,11 +510,11 @@ describe("Proxy Suite: ", () => {
             "auto"
         );
 
-        const postFund = await relayerClient.queryContractSmart(cw20contract.contractAddress, {
-            balance: { address: proxyWalletAddress },
+        const mintAmount = await govecClient.mintAmount();
+        const { balance } = await govecClient.balance({
+            address: proxyClient.contractAddress,
         });
-
-        expect(postFund.balance).toEqual("900");
+        expect(balance).toBe(mintAmount);
         relayerClient.disconnect();
     });
 

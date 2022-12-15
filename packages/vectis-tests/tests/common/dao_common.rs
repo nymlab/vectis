@@ -554,6 +554,17 @@ impl DaoChainSuite {
         Ok(self.app.wrap().query_balance(addr.as_str(), "ucosm")?)
     }
 
+    pub fn query_govec_mint_amount(&self) -> Result<BalanceResponse, StdError> {
+        let r = self
+            .app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: self.govec.to_string(),
+                msg: to_binary(&GovecQueryMsg::MintAmount {})?,
+            }))?;
+        Ok(r)
+    }
+
     pub fn query_govec_balance(&self, proxy: &Addr) -> Result<BalanceResponse, StdError> {
         let r = self
             .app

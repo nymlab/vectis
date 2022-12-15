@@ -25,10 +25,13 @@ describe("Proxy Remote Suite: ", () => {
         hostUserClient = await CWClient.connectHostWithAccount("user");
         factoryClient = new RemoteFactoryClient(userClient, userClient.sender, addrs.remoteFactoryAddr);
         govecClient = new GovecClient(hostUserClient, hostUserClient.sender, addrs.govecAddr);
+        let wallet: string | null;
 
         const initialFunds = walletInitialFunds(remoteChain);
         const { wallet_fee } = await factoryClient.fees();
         const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
+
+        const { wallets: oldWallets } = await factoryClient.unclaimedGovecWallets({});
 
         await factoryClient.createWallet(
             {
@@ -47,8 +50,18 @@ describe("Proxy Remote Suite: ", () => {
             [coin(totalFee.toString(), remoteChain.feeToken) as Coin]
         );
 
-        const { wallets } = await factoryClient.unclaimedGovecWallets({});
-        proxyClient = new RemoteProxyClient(userClient, userClient.sender, wallets[0][0]);
+        const { wallets: newWallets } = await factoryClient.unclaimedGovecWallets({});
+
+        let oldAddrs = oldWallets.map((s, e) => s[0]);
+        let newAddrs = newWallets.map((s, e) => s[0]);
+
+        for (let addr of newAddrs) {
+            if (!oldAddrs.includes(addr)) {
+                wallet = addr;
+            }
+        }
+
+        proxyClient = new RemoteProxyClient(userClient, userClient.sender, wallet!);
     });
 
     it("should be able to do ibc transfer", async () => {
