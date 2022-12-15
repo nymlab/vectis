@@ -129,9 +129,15 @@ pub fn ibc_packet_receive(
                 DaoTunnelPacketMsg::UpdateDaoConfig { new_config } => {
                     receive_update_dao_config(deps, new_config, packet_msg.job_id)
                 }
-                DaoTunnelPacketMsg::UpdateChainConfig { new_config } => {
-                    receive_update_chain_config(deps, new_config, packet_msg.job_id)
-                }
+                DaoTunnelPacketMsg::UpdateChainConfig {
+                    new_denom,
+                    new_remote_factory,
+                } => receive_update_chain_config(
+                    deps,
+                    new_denom,
+                    new_remote_factory,
+                    packet_msg.job_id,
+                ),
                 DaoTunnelPacketMsg::InstantiateFactory { code_id, msg } => {
                     receive_instantiate(deps, code_id, msg, packet_msg.job_id)
                 }
@@ -250,10 +256,21 @@ pub fn receive_update_dao_config(
 
 pub fn receive_update_chain_config(
     deps: DepsMut,
-    new_config: ChainConfig,
+    denom: String,
+    new_remote_factory: Option<String>,
     job_id: u64,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    CHAIN_CONFIG.save(deps.storage, &new_config)?;
+    let remote_factory = new_remote_factory
+        .as_ref()
+        .map(|s| deps.api.addr_canonicalize(s))
+        .transpose()?;
+    CHAIN_CONFIG.save(
+        deps.storage,
+        &ChainConfig {
+            remote_factory,
+            denom,
+        },
+    )?;
     Ok(IbcReceiveResponse::new()
         .set_ack(StdAck::success(job_id))
         .add_attribute("action", "chain config updated"))

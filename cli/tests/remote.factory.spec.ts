@@ -15,6 +15,7 @@ describe("Remote Factory Suite:", () => {
     let proxyClient: ProxyClient;
     let govecClient: GovecClient;
     let addrs: VectisDaoContractsAddrs;
+    let wallet: string | null;
     const relayerClient = new RelayerClient();
     beforeAll(async () => {
         const { remoteFactoryAddr, govecAddr } = await import(deployReportPath);
@@ -29,8 +30,10 @@ describe("Remote Factory Suite:", () => {
         const initialFunds = walletInitialFunds(remoteChain);
         const { wallet_fee } = await factoryClient.fees();
         const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
+        console.log("totalFee: ", totalFee);
 
         const totalWalletBeforeCreation = await factoryClient.totalCreated();
+        let { wallets: oldWallets } = await factoryClient.unclaimedGovecWallets({});
 
         await factoryClient.createWallet(
             {
@@ -49,11 +52,23 @@ describe("Remote Factory Suite:", () => {
             [coin(totalFee.toString(), remoteChain.feeToken) as Coin]
         );
 
-        const { wallets } = await factoryClient.unclaimedGovecWallets({});
-        proxyClient = new ProxyClient(userClient, userClient.sender, wallets[0][0]);
+        let { wallets: newWallets } = await factoryClient.unclaimedGovecWallets({});
+
+        let oldAddrs = oldWallets.map((s, e) => s[0]);
+        let newAddrs = newWallets.map((s, e) => s[0]);
+
+        for (let addr of newAddrs) {
+            if (!oldAddrs.includes(addr)) {
+                wallet = addr;
+            }
+        }
+
+        proxyClient = new ProxyClient(userClient, userClient.sender, wallet!);
 
         const totalWalletAfterCreation = await factoryClient.totalCreated();
 
+        const balance = await userClient.getBalance(proxyClient.contractAddress, remoteChain.feeToken);
+        expect(balance).toEqual(initialFunds);
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });
 

@@ -144,21 +144,21 @@ describe("DAO Suite for Config Tests:", () => {
     });
 
     it("DAO should be able to dispatch an update of chain config on remote_tunnel", async () => {
-        const denom = Math.random().toString(36).slice(2, 9);
+        const newDenom = Math.random().toString(36).slice(2, 9);
         const previousConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
         expect(previousConfig.denom).toBe(remoteChain.feeToken);
 
-        await changeRemoteTunnelDenom(denom);
+        await changeRemoteTunnelDenom(newDenom, previousConfig.remote_factory);
 
         const currentConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
-        expect(currentConfig.denom).toBe(denom);
+        expect(currentConfig.denom).toBe(newDenom);
 
         // Revert changes
 
-        await changeRemoteTunnelDenom(previousConfig.denom);
+        await changeRemoteTunnelDenom(previousConfig.denom, previousConfig.remote_factory);
 
         const revertedConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
-        expect(revertedConfig.denom).toBe(previousConfig.denom);
+        expect(revertedConfig).toStrictEqual(previousConfig);
     });
 
     it("DAO should be able to change configuration on the remote factory", async () => {
@@ -217,6 +217,7 @@ describe("DAO Suite for Config Tests:", () => {
         await daoClient.executeAdminMsg(msg);
         const newCodeId = await factoryClient.codeId({ ty: "proxy" });
         expect(newCodeId).toBe(codeId);
+        console.log("ew code id: ", newCodeId);
 
         // revert changes
         const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
@@ -225,13 +226,14 @@ describe("DAO Suite for Config Tests:", () => {
                 ty: "proxy",
             },
         });
-        await daoClient.executeAdminMsg(msg);
+        await daoClient.executeAdminMsg(rmsg);
         const currentCodeId = await factoryClient.codeId({ ty: "proxy" });
+        console.log("current code id: ", currentCodeId);
         expect(currentCodeId).toBe(oldCodeId);
     });
 
     it("DAO should be able to update wallet fee in Dao-chain factory", async () => {
-        const fee = coin(1000, hostChain.feeToken);
+        const fee = coin(1010, hostChain.feeToken);
         const { wallet_fee: oldFee } = await factoryClient.fees();
 
         expect(oldFee).not.toStrictEqual(fee);
@@ -243,22 +245,22 @@ describe("DAO Suite for Config Tests:", () => {
         });
 
         await daoClient.executeAdminMsg(msg);
-        await delay(8000);
+        const { wallet_fee: newFee } = await factoryClient.fees();
         expect(newFee).toStrictEqual(fee);
 
         // revert changes
         const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
             update_config_fee: {
-                new_fee: { wallet: oldFeefee },
+                new_fee: { wallet: oldFee },
             },
         });
 
-        await daoClient.executeAdminMsg(msg);
-        await delay(8000);
-        expect(newFee).toStrictEqual(fee);
+        await daoClient.executeAdminMsg(rmsg);
+        const { wallet_fee: currentFee } = await factoryClient.fees();
+        expect(currentFee).toStrictEqual(oldFee);
     });
 
-    it("DAO should be able to govec addr in Dao-chain factory", async () => {
+    it("DAO should be able to update govec addr in Dao-chain factory", async () => {
         const account = await CWClient.generateRandomAccount(hostChain.addressPrefix);
         const [{ address }] = await account.getAccounts();
         const govecAddr = address;
@@ -273,10 +275,19 @@ describe("DAO Suite for Config Tests:", () => {
         });
 
         await daoClient.executeAdminMsg(msg);
-        await delay(8000);
         const newGovec = await factoryClient.govecAddr();
-
         expect(newGovec).toBe(govecAddr);
+
+        // revert changes
+        const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
+            update_govec_addr: {
+                addr: oldGovec,
+            },
+        });
+
+        await daoClient.executeAdminMsg(rmsg);
+        const currentGovec = await factoryClient.govecAddr();
+        expect(currentGovec).toBe(oldGovec);
     });
 
     const changeRemoteFactoryConfig = async (msgs: CosmosMsgForEmpty[]) => {
@@ -360,14 +371,15 @@ describe("DAO Suite for Config Tests:", () => {
         }));
     };
 
-    const changeRemoteTunnelDenom = async (denom: string) => {
+    const changeRemoteTunnelDenom = async (newDenom: string, newRemoteFactory: string | null) => {
         const msg: DaoTunnelExecuteMsg = {
             dispatch_action_on_remote_tunnel: {
                 channel_id: relayerClient.channels.wasm?.src.channelId as string,
                 job_id: 5,
                 msg: {
                     update_chain_config: {
-                        new_config: { denom },
+                        new_denom: newDenom,
+                        new_remote_factory: newRemoteFactory,
                     },
                 },
             },

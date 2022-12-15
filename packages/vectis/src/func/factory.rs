@@ -303,16 +303,20 @@ pub mod factory_queries {
         limit: Option<u32>,
     ) -> StdResult<UnclaimedWalletList> {
         let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-        let start = match start_after {
-            Some(s) => {
-                let wallet_addr = deps.api.addr_canonicalize(&s)?.to_vec();
-                Some(Bound::exclusive(wallet_addr))
-            }
-            None => None,
-        };
+        let start_bound = start_after
+            .map(|addr_str| deps.api.addr_canonicalize(&addr_str))
+            .transpose()
+            .map(|o| o.map(|b| Bound::exclusive::<Vec<u8>>(b.to_vec())))?;
+        //let start = match start_after {
+        //    Some(s) => {
+        //        let wallet_addr = deps.api.addr_canonicalize(&s)?.to_vec();
+        //        Some(Bound::exclusive(wallet_addr))
+        //    }
+        //    None => None,
+        //};
         let wallets: StdResult<Vec<(Addr, Expiration)>> = GOVEC_CLAIM_LIST
             .prefix(())
-            .range(deps.storage, start, None, Order::Ascending)
+            .range(deps.storage, start_bound, None, Order::Ascending)
             .take(limit)
             .map(|w| -> StdResult<(Addr, Expiration)> {
                 let ww = w?;
@@ -493,17 +497,16 @@ pub fn ensure_is_valid_migration_msg(
 }
 
 /// Ensure controller has sent in enought funds to cover the claim fee
-pub fn ensure_is_enough_claim_fee(deps: Deps, sent_fund: &[Coin]) -> Result<(), ContractError> {
+pub fn ensure_is_enough_claim_fee<'a>(
+    deps: Deps,
+    sent_fund: &'a [Coin],
+) -> Result<(), ContractError> {
     let claim_fee = CLAIM_FEE.load(deps.storage)?;
 
     let fund = sent_fund
         .iter()
         .find(|c| c.denom == claim_fee.denom)
-        .ok_or_else(|| {
-            ContractError::Std(StdError::GenericErr {
-                msg: format!("Expected denom fee: {}", claim_fee.denom),
-            })
-        })?;
+        .ok_or_else(|| ContractError::ClaimFeeRequired)?;
 
     if fund.amount < claim_fee.amount {
         return Err(ContractError::InvalidNativeFund(

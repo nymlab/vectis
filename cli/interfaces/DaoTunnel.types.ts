@@ -65,7 +65,8 @@ export type DaoTunnelPacketMsg =
       }
     | {
           update_chain_config: {
-              new_config: ChainConfig;
+              new_denom: string;
+              new_remote_factory?: string | null;
           };
       }
     | {
@@ -85,7 +86,6 @@ export type DaoTunnelPacketMsg =
               msgs: CosmosMsgForEmpty[];
           };
       };
-export type CanonicalAddr = string;
 export type Uint128 = string;
 export type CosmosMsgForEmpty =
     | {
@@ -250,10 +250,6 @@ export interface DaoConfig {
     connection_id: string;
     dao_tunnel_channel?: string | null;
     dao_tunnel_port_id: string;
-}
-export interface ChainConfig {
-    denom: string;
-    remote_factory?: CanonicalAddr | null;
 }
 export interface WalletFactoryInstantiateMsg {
     addr_prefix: string;

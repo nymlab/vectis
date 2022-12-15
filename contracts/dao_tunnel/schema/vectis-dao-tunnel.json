@@ -344,33 +344,6 @@
         "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
         "type": "string"
       },
-      "CanonicalAddr": {
-        "$ref": "#/definitions/Binary"
-      },
-      "ChainConfig": {
-        "type": "object",
-        "required": [
-          "denom"
-        ],
-        "properties": {
-          "denom": {
-            "description": "Denom of the current chain",
-            "type": "string"
-          },
-          "remote_factory": {
-            "description": "The Factory that has the remote features on the local chain",
-            "anyOf": [
-              {
-                "$ref": "#/definitions/CanonicalAddr"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "additionalProperties": false
-      },
       "Coin": {
         "type": "object",
         "required": [
@@ -562,11 +535,17 @@
               "update_chain_config": {
                 "type": "object",
                 "required": [
-                  "new_config"
+                  "new_denom"
                 ],
                 "properties": {
-                  "new_config": {
-                    "$ref": "#/definitions/ChainConfig"
+                  "new_denom": {
+                    "type": "string"
+                  },
+                  "new_remote_factory": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "additionalProperties": false

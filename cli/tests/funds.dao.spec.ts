@@ -65,7 +65,8 @@ describe("DAO Suite for DAO Funds:", () => {
     });
 
     it("DAO can instruct remote-tunnel to stake / delegate", async () => {
-        const funds = { amount: (1e7).toString(), denom: remoteChain.feeToken };
+        const funds = { amount: (1e7).toString(), denom: remoteChain.stakingToken };
+        console.log(funds);
         await userRemoteClient.sendTokens(userRemoteClient.sender, addrs.remoteTunnelAddr, [funds], "auto");
         let balanceBeforeStaking = "0";
         const { validators } = await remoteQueryClient.staking.validators("BOND_STATUS_BONDED");
@@ -202,7 +203,8 @@ describe("DAO Suite for DAO Funds:", () => {
 
         try {
             await daoClient.queryAdmin();
-            expect(false);
+            // force fail
+            expect(false).toBeTruthy();
         } catch (err) {}
         adminClient?.disconnect();
     });
