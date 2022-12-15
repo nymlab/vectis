@@ -99,6 +99,8 @@ pub enum FactoryError {
     ParseReplyError(#[from] ParseReplyError),
     #[error("Feature Not Supported By Current Chain")]
     NotSupportedByChain {},
+    #[error("Claim fee required")]
+    ClaimFeeRequired,
 }
 
 impl From<MigrationMsgError> for FactoryError {

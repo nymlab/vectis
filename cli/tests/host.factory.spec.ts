@@ -41,8 +41,13 @@ describe("Factory Suite: ", () => {
         const initialFunds = walletInitialFunds(hostChain);
         const { wallet_fee } = await factoryClient.fees();
         const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
+        console.log("total fee: ", totalFee);
+        console.log("init: ", initialFunds);
+        console.log("wallet: ", wallet_fee);
 
         const totalWalletBeforeCreation = await factoryClient.totalCreated();
+        let wallet: string | null;
+        let { wallets: oldWallets } = await factoryClient.unclaimedGovecWallets({});
 
         await factoryClient.createWallet(
             {
@@ -61,11 +66,21 @@ describe("Factory Suite: ", () => {
             [coin(totalFee.toString(), hostChain.feeToken) as Coin]
         );
 
-        const { wallets } = await factoryClient.unclaimedGovecWallets({});
-        proxyClient = new ProxyClient(userClient, userClient.sender, wallets[0][0]);
+        let { wallets: newWallets } = await factoryClient.unclaimedGovecWallets({});
 
+        let oldAddrs = oldWallets.map((s, e) => s[0]);
+        let newAddrs = newWallets.map((s, e) => s[0]);
+
+        for (let addr of newAddrs) {
+            if (!oldAddrs.includes(addr)) {
+                wallet = addr;
+            }
+        }
+
+        proxyClient = new ProxyClient(userClient, userClient.sender, wallet!);
+        const info = await proxyClient.info();
+        expect(info.controller_addr).toEqual(userClient.sender);
         const totalWalletAfterCreation = await factoryClient.totalCreated();
-
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });
 
@@ -125,10 +140,11 @@ describe("Factory Suite: ", () => {
         res = await factoryClient.unclaimedGovecWallets({});
         targetWallet = res.wallets.find(([w]: [string, Expiration]) => w === proxyClient.contractAddress);
         expect(targetWallet).toBeUndefined();
+        const mintAmount = await govecClient.mintAmount();
         const { balance } = await govecClient.balance({
             address: proxyClient.contractAddress,
         });
-        expect(balance).toBe("2");
+        expect(balance).toBe(mintAmount);
 
         const finalDAOBalance = (await client.getBalance(addrs.daoAddr, hostChain.feeToken)) as Coin;
 

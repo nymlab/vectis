@@ -125,7 +125,6 @@ class DaoClient {
             },
         };
         const res = await this.client.execute(this.client.sender, this.daoAddr, dao_msg, "auto");
-        console.log(`\nAdmin Message Result: \n`, JSON.stringify(res));
         return res;
     }
 

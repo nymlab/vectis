@@ -34,7 +34,8 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         ? channels
         : await relayerClient.createChannel("transfer", "transfer", "ics20-1");
 
-    console.log("\n ibc transfer channel: ", channelTransfer);
+    console.log("1. Create IBC transfer channel between chains");
+    console.log("ibc transfer channel: ", channelTransfer);
     console.log(connection);
 
     const adminHostClient = await CWClient.connectHostWithAccount("admin");
@@ -47,7 +48,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         mintAmount: "2",
     });
     const govecAddr = govecClient.contractAddress;
-    console.log("Instantiated Govec at: ", govecAddr);
+    console.log("2. Instantiated Govec at: ", govecAddr);
 
     // Instantiate DAO with Admin to help with deploy and dao-action tests
     // Admin will be removed at the end of the tests
@@ -74,9 +75,9 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         },
     };
 
-    console.log("\nInstantiate factory");
     let factoryInstRes = await daoClient.executeAdminMsg(deployFactoryMsg);
     const factoryAddr = CWClient.getContractAddrFromResult(factoryInstRes, "Vectis Factory instantiated");
+    console.log("\n3. Instantiate dao-chain factory at: ", factoryAddr);
 
     // Admin propose and execute dao deploy dao tunnel
     const daoTunnelInstMsg: DaoTunnelT.InstantiateMsg = {
@@ -98,9 +99,9 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     };
 
     // Propose instantiate dao tunnel
-    console.log("\nInstantiate dao_tunnel");
     let daoTunnelInstRes = await daoClient.executeAdminMsg(deployDaoTunnelMsg);
     const daoTunnelAddr = CWClient.getContractAddrFromResult(daoTunnelInstRes, "Vectis DAO-Tunnel instantiated");
+    console.log("\n4. Instantiate dao_tunnel at: ", daoTunnelAddr);
 
     // Instantiate Remote Tunnel
     const remoteTunnelClient = await RemoteTunnelClient.instantiate(adminRemoteClient, remoteTunnel.codeId, {
@@ -118,7 +119,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     });
 
     const remoteTunnelAddr = remoteTunnelClient.contractAddress;
-    console.log("\nInstantiated remote tunnel: ", remoteTunnelAddr);
+    console.log("\n5. Instantiated remote tunnel at: ", remoteTunnelAddr);
 
     // Admin execute add connection to dao tunnel
     const daoTunnelApproveControllerMsg = daoClient.addApprovedControllerMsg(
@@ -126,8 +127,8 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         relayerClient.connections.hostConnection,
         `wasm.${remoteTunnelAddr}`
     );
-    console.log("\nAdd Connection to dao_tunnel");
     await daoClient.executeAdminMsg(daoTunnelApproveControllerMsg);
+    console.log("\n6. Add Approved Connection (remote tunnel addr) to dao_tunnel");
 
     // Instantiate Factory in remote chain
 
@@ -138,7 +139,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         "vectis-v1"
     );
 
-    console.log("ibc wasm channel: ", channelWasm);
+    console.log("7. Relayer create channel between remote and dao tunnel: ", channelWasm);
 
     // Admin propose and execute dao deploy factory remote
     const createRemoteFactoryMsg: DaoTunnelT.ExecuteMsg = {
@@ -155,7 +156,6 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     };
 
     const msg = daoClient.executeMsg(daoTunnelAddr, createRemoteFactoryMsg);
-    console.log("\nCreate Remote Factory");
     await daoClient.executeAdminMsg(msg);
 
     // Relay packets and acknowledge
@@ -163,7 +163,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     await delay(10000);
 
     const { remote_factory: remoteFactoryAddr } = await remoteTunnelClient.chainConfig();
-    console.log("\nRemote Factory Addr: ", remoteFactoryAddr);
+    console.log("\n8. Instantiate remote chain Factory at ", remoteFactoryAddr);
 
     // Set dao-tunnel address in DAO
     // Update DAO with dao_tunnel addr
@@ -177,47 +177,47 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         },
     };
 
-    console.log("\nSet dao_tunnel address in DAO items");
+    console.log("\n9. Set dao_tunnel address in DAO items");
     let res = await daoClient.executeAdminMsg(daoSetItemMsg);
 
     // Update marketing address on Govec
     res = await govecClient.updateMarketing({
         marketing: daoClient.daoAddr,
     });
-    console.log("\n\nUpdated Marketing Address on Govec\n", JSON.stringify(res));
+    console.log("\n10. Updated Marketing Address on Govec\n", JSON.stringify(res));
 
     // Update Proposal address
     res = await govecClient.updateConfigAddr({
         newAddr: { proposal: daoClient.proposalAddr },
     });
-    console.log("\n\nUpdated Proposal Address on Govec\n", JSON.stringify(res));
+    console.log("\n11. Updated Proposal Address on Govec\n", JSON.stringify(res));
 
     // Add factory address to Govec
     res = await govecClient.updateConfigAddr({
         newAddr: { factory: factoryAddr },
     });
-    console.log("\n\nUpdated Factory Address on Govec\n", JSON.stringify(res));
+    console.log("\n12. Updated Factory Address on Govec\n", JSON.stringify(res));
 
     // Add staking address to Govec
     res = await govecClient.updateConfigAddr({
         newAddr: { staking: daoClient.stakingAddr },
     });
-    console.log("\n\nUpdated Staking Address on Govec\n", JSON.stringify(res));
+    console.log("\n13. Updated Staking Address on Govec\n", JSON.stringify(res));
 
     // Add dao_tunnel address to Govec
     res = await govecClient.updateConfigAddr({
         newAddr: { dao_tunnel: daoTunnelAddr },
     });
-    console.log("\n\nUpdated DaoTunnel Address on Govec\n", JSON.stringify(res));
+    console.log("\n14. Updated DaoTunnel Address on Govec\n", JSON.stringify(res));
 
     // Update DAO address on Govec
     res = await govecClient.updateConfigAddr({
         newAddr: { dao: daoClient.daoAddr },
     });
-    console.log("\n\nUpdated Dao Address on Govec\n", JSON.stringify(res));
+    console.log("\n15. Updated Dao Address on Govec\n", JSON.stringify(res));
 
     res = await adminHostClient.updateAdmin(adminHostClient.sender, govecAddr, daoClient.daoAddr, "auto");
-    console.log("\n\nUpdated Govec Contract Admin to DAO\n", JSON.stringify(res));
+    console.log("\n16. Updated Govec Contract Admin to DAO\n", JSON.stringify(res));
 
     const contracts = {
         remoteFactoryAddr: remoteFactoryAddr as string,
@@ -232,6 +232,7 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     };
 
     await verifyDeploy(contracts);
+    console.log("\n17. Verified deployment");
 
     writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
 })();
