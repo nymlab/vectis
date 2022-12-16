@@ -307,13 +307,6 @@ pub mod factory_queries {
             .map(|addr_str| deps.api.addr_canonicalize(&addr_str))
             .transpose()
             .map(|o| o.map(|b| Bound::exclusive::<Vec<u8>>(b.to_vec())))?;
-        //let start = match start_after {
-        //    Some(s) => {
-        //        let wallet_addr = deps.api.addr_canonicalize(&s)?.to_vec();
-        //        Some(Bound::exclusive(wallet_addr))
-        //    }
-        //    None => None,
-        //};
         let wallets: StdResult<Vec<(Addr, Expiration)>> = GOVEC_CLAIM_LIST
             .prefix(())
             .range(deps.storage, start_bound, None, Order::Ascending)
