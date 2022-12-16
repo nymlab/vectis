@@ -1,6 +1,6 @@
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-
+import assert from "assert";
 import { Addr, CosmosMsgForEmpty as CosmosMsg, BankMsg, Coin } from "../interfaces/Proxy.types";
 import { GovecClient, FactoryClient, RelayerClient } from "../clients";
 import { coin } from "@cosmjs/stargate";
