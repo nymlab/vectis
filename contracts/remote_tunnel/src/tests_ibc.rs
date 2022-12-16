@@ -365,10 +365,8 @@ fn handle_update_chain_config() {
         sender: DAO_ADDR.to_string(),
         job_id,
         msg: to_binary(&DaoTunnelPacketMsg::UpdateChainConfig {
-            new_config: ChainConfig {
-                remote_factory: None,
-                denom: "new_denom".to_string(),
-            },
+            new_remote_factory: None,
+            new_denom: "new_denom".to_string(),
         })
         .unwrap(),
     };
