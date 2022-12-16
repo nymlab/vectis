@@ -1,12 +1,12 @@
 import { CWClient, FactoryClient, GovecClient } from "../clients";
-import { coin } from "@cosmjs/stargate";
-import { deployReportPath, remoteChain, remoteAccounts } from "../utils/constants";
+import { deployReportPath, remoteChain } from "../utils/constants";
 import { ProxyClient } from "../interfaces";
-import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
+import { walletInitialFunds } from "../utils/fees";
 import { Coin, Expiration } from "../interfaces/Factory.types";
 import RelayerClient from "../clients/relayer";
 import { toCosmosMsg } from "../utils/enconding";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
+import { createSingleProxyWallet } from "./mocks/proxyWallet";
 
 describe("Remote Factory Suite:", () => {
     let userClient: CWClient;
@@ -27,47 +27,12 @@ describe("Remote Factory Suite:", () => {
         govecClient = new GovecClient(hostUserClient, hostUserClient.sender, govecAddr);
     });
     it("should create a proxy wallet", async () => {
-        const initialFunds = walletInitialFunds(remoteChain);
-        const { wallet_fee } = await factoryClient.fees();
-        const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
-        console.log("totalFee: ", totalFee);
-
         const totalWalletBeforeCreation = await factoryClient.totalCreated();
-        let { wallets: oldWallets } = await factoryClient.unclaimedGovecWallets({});
-
-        await factoryClient.createWallet(
-            {
-                createWalletMsg: {
-                    controller_addr: userClient.sender,
-                    label: "user-wallet",
-                    guardians: {
-                        addresses: [remoteAccounts.guardian_1.address, remoteAccounts.guardian_2.address],
-                    },
-                    relayers: [remoteAccounts.relayer_1.address],
-                    proxy_initial_funds: [initialFunds],
-                },
-            },
-            getDefaultWalletCreationFee(remoteChain),
-            undefined,
-            [coin(totalFee.toString(), remoteChain.feeToken) as Coin]
-        );
-
-        let { wallets: newWallets } = await factoryClient.unclaimedGovecWallets({});
-
-        let oldAddrs = oldWallets.map((s, e) => s[0]);
-        let newAddrs = newWallets.map((s, e) => s[0]);
-
-        for (let addr of newAddrs) {
-            if (!oldAddrs.includes(addr)) {
-                wallet = addr;
-            }
-        }
-
-        proxyClient = new ProxyClient(userClient, userClient.sender, wallet!);
-
+        const walletAddr = await createSingleProxyWallet(factoryClient, "remote");
+        proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr!);
         const totalWalletAfterCreation = await factoryClient.totalCreated();
-
         const balance = await userClient.getBalance(proxyClient.contractAddress, remoteChain.feeToken);
+        const initialFunds = walletInitialFunds(remoteChain);
         expect(balance).toEqual(initialFunds);
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });

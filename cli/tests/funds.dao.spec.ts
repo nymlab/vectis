@@ -1,6 +1,5 @@
 import { FactoryClient, GovecClient, CWClient, DaoClient, ProxyClient, RelayClient } from "../clients";
-import { hostAccounts, hostChain, remoteChain } from "../utils/constants";
-import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
+import { hostChain, remoteChain } from "../utils/constants";
 import { toCosmosMsg } from "../utils/enconding";
 import {
     BankExtension,
@@ -11,13 +10,10 @@ import {
     SigningStargateClient,
     StakingExtension,
 } from "@cosmjs/stargate";
-import { Coin } from "../interfaces/Factory.types";
-import { DaoTunnelClient } from "../interfaces";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { deployReportPath } from "../utils/constants";
 import { delay } from "../utils/promises";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-import long from "long";
 
 /**
  * This suite tests deployment scripts for deploying Vectis as a sovereign DAO
@@ -66,7 +62,6 @@ describe("DAO Suite for DAO Funds:", () => {
 
     it("DAO can instruct remote-tunnel to stake / delegate", async () => {
         const funds = { amount: (1e7).toString(), denom: remoteChain.stakingToken };
-        console.log(funds);
         await userRemoteClient.sendTokens(userRemoteClient.sender, addrs.remoteTunnelAddr, [funds], "auto");
         let balanceBeforeStaking = "0";
         const { validators } = await remoteQueryClient.staking.validators("BOND_STATUS_BONDED");

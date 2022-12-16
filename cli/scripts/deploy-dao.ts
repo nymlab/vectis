@@ -76,8 +76,8 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     };
 
     let factoryInstRes = await daoClient.executeAdminMsg(deployFactoryMsg);
-    const factoryAddr = CWClient.getContractAddrFromResult(factoryInstRes, "Vectis Factory instantiated");
-    console.log("\n3. Instantiate dao-chain factory at: ", factoryAddr);
+    const factoryAddr = CWClient.getContractAddrFromResult(factoryInstRes, "contract_address");
+    console.log("\n3. Instantiated dao-chain factory at: ", factoryAddr);
 
     // Admin propose and execute dao deploy dao tunnel
     const daoTunnelInstMsg: DaoTunnelT.InstantiateMsg = {
@@ -100,8 +100,8 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
 
     // Propose instantiate dao tunnel
     let daoTunnelInstRes = await daoClient.executeAdminMsg(deployDaoTunnelMsg);
-    const daoTunnelAddr = CWClient.getContractAddrFromResult(daoTunnelInstRes, "Vectis DAO-Tunnel instantiated");
-    console.log("\n4. Instantiate dao_tunnel at: ", daoTunnelAddr);
+    const daoTunnelAddr = CWClient.getContractAddrFromResult(daoTunnelInstRes, "contract_address");
+    console.log("\n4. Instantiated dao_tunnel at: ", daoTunnelAddr);
 
     // Instantiate Remote Tunnel
     const remoteTunnelClient = await RemoteTunnelClient.instantiate(adminRemoteClient, remoteTunnel.codeId, {
