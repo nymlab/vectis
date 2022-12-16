@@ -79,7 +79,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
 export async function createSingleProxyWallet(factoryClient: FactoryClient, chain: string): Promise<FactoryT.Addr> {
     const accounts = chain == "host" ? hostAccounts : remoteAccounts;
     const chains = chain == "host" ? hostChain : remoteChain;
-    const initialFunds = walletInitialFunds(hostChain);
+    const initialFunds = walletInitialFunds(chains);
     const { wallet_fee } = await factoryClient.fees();
     const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
     let walletAddress: string | null;

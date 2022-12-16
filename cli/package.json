@@ -13,7 +13,7 @@
         "test": "npm run test-dao-config && npm run test-dao-funds && npm run test-proxy-factory",
         "test-dao-config": "jest config.dao.spec.ts --runInBand",
         "test-dao-funds": "jest funds.dao.spec.ts --runInBand",
-        "test-proxy-factory": "jest .proxy.spec.ts --runInBand && jest .factory.spec.ts",
+        "test-proxy-factory": "jest .proxy.spec.ts --runInBand && jest .factory.spec.ts --runInBand",
         "upload": "ts-node scripts/upload.ts",
         "deploy:dao": "ts-node scripts/deploy-dao.ts",
         "types:build": "tsc --project ./interfaces/build/tsconfig.json",
