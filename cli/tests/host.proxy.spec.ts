@@ -1,4 +1,3 @@
-import { assert } from "@cosmjs/utils";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
@@ -9,9 +8,7 @@ import {
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/cw-proposal-single";
-import { getContract } from "../utils/fs";
-
-import { cw20CodePath, deployReportPath, hostAccounts, hostChain, remoteChain } from "../utils/constants";
+import { deployReportPath, hostAccounts, hostChain, remoteChain } from "../utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { CWClient } from "../clients";
 import { getDefaultRelayFee, getDefaultSendFee, getDefaultUploadFee } from "../utils/fees";
@@ -479,7 +476,7 @@ describe("Proxy Suite: ", () => {
         relayerClient.disconnect();
     });
 
-    it.only("Should relay WASM message as a relayer - mint govec", async () => {
+    it("Should relay WASM message as a relayer - mint govec", async () => {
         const relayerClient = await CWClient.connectHostWithAccount("relayer_1");
         const relayerProxyClient = new ProxyClient(relayerClient, relayerClient.sender, proxyWalletAddress);
         const info = await relayerProxyClient.info();
