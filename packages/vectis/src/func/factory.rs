@@ -2,7 +2,7 @@ use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
-    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw_storage_plus::Bound;
 use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
@@ -497,16 +497,13 @@ pub fn ensure_is_valid_migration_msg(
 }
 
 /// Ensure controller has sent in enought funds to cover the claim fee
-pub fn ensure_is_enough_claim_fee<'a>(
-    deps: Deps,
-    sent_fund: &'a [Coin],
-) -> Result<(), ContractError> {
+pub fn ensure_is_enough_claim_fee(deps: Deps, sent_fund: &[Coin]) -> Result<(), ContractError> {
     let claim_fee = CLAIM_FEE.load(deps.storage)?;
 
     let fund = sent_fund
         .iter()
         .find(|c| c.denom == claim_fee.denom)
-        .ok_or_else(|| ContractError::ClaimFeeRequired)?;
+        .ok_or(ContractError::ClaimFeeRequired)?;
 
     if fund.amount < claim_fee.amount {
         return Err(ContractError::InvalidNativeFund(
