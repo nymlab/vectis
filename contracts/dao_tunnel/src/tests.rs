@@ -281,14 +281,9 @@ fn only_admin_can_update_ibc_transfer_modules() {
 }
 
 fn default_update_chain_config_msg() -> DaoTunnelPacketMsg {
-    let mut encoded_factory = vec![0x0a, FACTORY_ADDR.len() as u8];
-    encoded_factory.extend(FACTORY_ADDR.as_bytes());
-
     DaoTunnelPacketMsg::UpdateChainConfig {
-        new_config: ChainConfig {
-            remote_factory: Some(CanonicalAddr::from(encoded_factory)),
-            denom: DENOM.to_string(),
-        },
+        new_remote_factory: Some(FACTORY_ADDR.to_string()),
+        new_denom: DENOM.to_string(),
     }
 }
 
