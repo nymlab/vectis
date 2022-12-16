@@ -1,12 +1,11 @@
-import { coin } from "@cosmjs/stargate";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-
-import { deployReportPath, hostAccounts, hostChain, uploadReportPath } from "../utils/constants";
+import { deployReportPath, hostChain, uploadReportPath } from "../utils/constants";
 import { CWClient, FactoryClient, GovecClient, ProxyClient } from "../clients";
-import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
+import { walletInitialFunds } from "../utils/fees";
 import { toCosmosMsg } from "../utils/enconding";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { Coin, Expiration } from "../interfaces/Factory.types";
+import { createSingleProxyWallet } from "./mocks/proxyWallet";
 
 /**
  * This suite tests Factory contract methods
@@ -38,49 +37,13 @@ describe("Factory Suite: ", () => {
     });
 
     it("should be able to create a proxy wallet", async () => {
-        const initialFunds = walletInitialFunds(hostChain);
-        const { wallet_fee } = await factoryClient.fees();
-        const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
-        console.log("total fee: ", totalFee);
-        console.log("init: ", initialFunds);
-        console.log("wallet: ", wallet_fee);
-
         const totalWalletBeforeCreation = await factoryClient.totalCreated();
-        let wallet: string | null;
-        let { wallets: oldWallets } = await factoryClient.unclaimedGovecWallets({});
-
-        await factoryClient.createWallet(
-            {
-                createWalletMsg: {
-                    controller_addr: userClient.sender,
-                    label: "user-wallet",
-                    guardians: {
-                        addresses: [hostAccounts.guardian_1.address, hostAccounts.guardian_2.address],
-                    },
-                    relayers: [],
-                    proxy_initial_funds: [initialFunds],
-                },
-            },
-            getDefaultWalletCreationFee(hostChain),
-            undefined,
-            [coin(totalFee.toString(), hostChain.feeToken) as Coin]
-        );
-
-        let { wallets: newWallets } = await factoryClient.unclaimedGovecWallets({});
-
-        let oldAddrs = oldWallets.map((s, e) => s[0]);
-        let newAddrs = newWallets.map((s, e) => s[0]);
-
-        for (let addr of newAddrs) {
-            if (!oldAddrs.includes(addr)) {
-                wallet = addr;
-            }
-        }
-
-        proxyClient = new ProxyClient(userClient, userClient.sender, wallet!);
-        const info = await proxyClient.info();
-        expect(info.controller_addr).toEqual(userClient.sender);
+        const walletAddr = await createSingleProxyWallet(factoryClient, "host");
+        proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr!);
         const totalWalletAfterCreation = await factoryClient.totalCreated();
+        const balance = await userClient.getBalance(proxyClient.contractAddress, hostChain.feeToken);
+        const initialFunds = walletInitialFunds(hostChain);
+        expect(balance).toEqual(initialFunds);
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });
 

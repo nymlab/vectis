@@ -1,8 +1,6 @@
 import { FactoryClient, GovecClient, CWClient, DaoClient, ProxyClient, RelayClient } from "../clients";
-import { hostAccounts, hostChain, remoteChain, uploadReportPath } from "../utils/constants";
-import { getDefaultWalletCreationFee, walletInitialFunds } from "../utils/fees";
+import { hostChain, remoteChain, uploadReportPath } from "../utils/constants";
 import { coin } from "@cosmjs/stargate";
-import { Coin } from "../interfaces/Factory.types";
 import { DaoTunnelClient } from "../interfaces";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { deployReportPath } from "../utils/constants";
@@ -168,6 +166,7 @@ describe("DAO Suite for Config Tests:", () => {
 
         const { codeId: oldCodeId, wallet_fee: oldWalletFee } = await queryRemoteFactoryConfig();
 
+        // we update the wallet fee
         const msgs = createMsgsForUpdateRemoteFactoryConfig(newCodeId, amount, denom);
         await changeRemoteFactoryConfig(msgs);
 
@@ -178,7 +177,6 @@ describe("DAO Suite for Config Tests:", () => {
         expect(currentWalletFee.denom).toBe(denom);
 
         // Revert changes
-
         const revertMsgs = createMsgsForUpdateRemoteFactoryConfig(oldCodeId, oldWalletFee.amount, oldWalletFee.denom);
         await changeRemoteFactoryConfig(revertMsgs);
 
@@ -211,24 +209,22 @@ describe("DAO Suite for Config Tests:", () => {
         const msg = daoClient.executeMsg(addrs.factoryAddr, {
             update_code_id: {
                 new_code_id: codeId,
-                ty: "proxy",
+                type: "proxy",
             },
         });
         await daoClient.executeAdminMsg(msg);
         const newCodeId = await factoryClient.codeId({ ty: "proxy" });
         expect(newCodeId).toBe(codeId);
-        console.log("ew code id: ", newCodeId);
 
         // revert changes
         const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
             update_code_id: {
                 new_code_id: oldCodeId,
-                ty: "proxy",
+                type: "proxy",
             },
         });
         await daoClient.executeAdminMsg(rmsg);
         const currentCodeId = await factoryClient.codeId({ ty: "proxy" });
-        console.log("current code id: ", currentCodeId);
         expect(currentCodeId).toBe(oldCodeId);
     });
 
@@ -240,7 +236,8 @@ describe("DAO Suite for Config Tests:", () => {
 
         const msg = daoClient.executeMsg(addrs.factoryAddr, {
             update_config_fee: {
-                new_fee: { wallet: fee },
+                new_fee: fee,
+                type: "wallet",
             },
         });
 
@@ -251,11 +248,12 @@ describe("DAO Suite for Config Tests:", () => {
         // revert changes
         const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
             update_config_fee: {
-                new_fee: { wallet: oldFee },
+                new_fee: oldFee,
+                type: "wallet",
             },
         });
 
-        await daoClient.executeAdminMsg(rmsg);
+        let res = await daoClient.executeAdminMsg(rmsg);
         const { wallet_fee: currentFee } = await factoryClient.fees();
         expect(currentFee).toStrictEqual(oldFee);
     });
@@ -347,17 +345,16 @@ describe("DAO Suite for Config Tests:", () => {
             {
                 update_code_id: {
                     new_code_id: newCodeId,
-                    ty: "proxy",
+                    type: "proxy",
                 },
             },
             {
                 update_config_fee: {
                     new_fee: {
-                        wallet: {
-                            amount,
-                            denom,
-                        },
+                        amount,
+                        denom,
                     },
+                    type: "wallet",
                 },
             },
         ].map((msg) => ({
