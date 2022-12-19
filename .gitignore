@@ -27,6 +27,7 @@
 # cli builds
 **/node_modules/
 **/build/
+cli/types/**
 
 # cache folders
 **/.cache

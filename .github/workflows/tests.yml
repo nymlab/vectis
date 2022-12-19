@@ -1,11 +1,10 @@
+name: Test, Lint and Build Checker
+
 on: 
   push:
     branches: 
       - main
   pull_request:
-
-
-name: Basic
 
 jobs:
 
@@ -42,7 +41,10 @@ jobs:
 
       - name: Upload Coverage
         run: bash <(curl -s https://codecov.io/bash) -f lcov.info
-
+  
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
       - name: Compile WASM contract factory dao chain
         run: cargo wasm-factory-dao-chain --locked
         env:

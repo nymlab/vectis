@@ -16,7 +16,7 @@
         "test-proxy-factory": "jest .proxy.spec.ts --runInBand && jest .factory.spec.ts --runInBand",
         "upload": "ts-node scripts/upload.ts",
         "deploy:dao": "ts-node scripts/deploy-dao.ts",
-        "types:build": "tsc --project ./interfaces/build/tsconfig.json",
+        "types:build": "tsc --project tsconfig.types.json",
         "types:generate": "ts-node scripts/types.ts && npm run prettier",
         "types:publish": "npm run publish:dev --prefix ./interfaces/build",
         "prettier": "prettier --write \"**/*.{js,ts}\""

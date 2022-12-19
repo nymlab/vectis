@@ -18,8 +18,10 @@ jobs:
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly
+            toolchain: nightly-2022-07-03
+            profile: minimal
             override: true
+            components: rust-docs
 
       - name: Building Documentation
         run: cargo +nightly doc --no-deps
