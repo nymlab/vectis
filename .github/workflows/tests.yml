@@ -22,7 +22,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.61.0
+          toolchain: stable
           target: wasm32-unknown-unknown
           override: true
 
@@ -45,6 +45,17 @@ jobs:
   build-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+    
       - name: Compile WASM contract factory dao chain
         run: cargo wasm-factory-dao-chain --locked
         env:
@@ -91,7 +102,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.64.0
+          toolchain: stable
           override: true
           components: rustfmt, clippy
 
