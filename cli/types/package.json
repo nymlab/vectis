@@ -6,7 +6,7 @@
         "giovanni-orciuolo <giovanni@orciuolo.it>",
         "j0nl1 <jonlitech@gmail.com>"
     ],
-    "version": "0.0.11",
+    "version": "0.0.12",
     "main": "index.js",
     "scripts": {
         "publish:dev": "npm publish --dry-run",

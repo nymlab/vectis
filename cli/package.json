@@ -18,7 +18,8 @@
         "deploy:dao": "ts-node scripts/deploy-dao.ts",
         "types:build": "tsc --project tsconfig.types.json",
         "types:generate": "ts-node scripts/types.ts && npm run prettier",
-        "types:publish": "npm run publish:dev --prefix ./interfaces/build",
+        "types:publish": "npm run --prefix ./types publish:prod",
+        "types:version": "npm --prefix ./types version",
         "prettier": "prettier --write \"**/*.{js,ts}\""
     },
     "devDependencies": {

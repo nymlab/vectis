@@ -8,23 +8,21 @@ on:
 
 jobs:
   deploy:
-    env: 
-      RUSTDOCFLAGS=: "--enable-index-page -Zunstable-options"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly
+            toolchain: stable
             profile: minimal
             override: true
             components: rust-docs
 
       - name: Building Documentation
-        run: cargo +nightly doc --no-deps
+        run: cargo doc --no-deps
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
