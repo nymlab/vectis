@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/proxy/src/state.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>state.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../vectis_proxy/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+</pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::cw_serde;
+
+<span class="kw">use </span><span class="kw">crate</span>::error::ContractError;
+<span class="kw">use </span>cosmwasm_std::CanonicalAddr;
+<span class="kw">use </span>cw_storage_plus::{Item, Map};
+<span class="kw">pub use </span>vectis_wallet::{factory_state::ADDR_PREFIX, GuardiansUpdateRequest, Nonce, RelayTxError};
+
+<span class="attribute">#[cw_serde]
+</span><span class="kw">pub struct </span>Controller {
+    <span class="kw">pub </span>addr: CanonicalAddr,
+    <span class="kw">pub </span>nonce: Nonce,
+}
+
+<span class="kw">impl </span>Controller {
+    <span class="doccomment">/// Increase nonce by 1
+    </span><span class="kw">pub fn </span>increment_nonce(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="self">self</span>.nonce += <span class="number">1</span>;
+    }
+
+    <span class="doccomment">/// Set new controller address
+    </span><span class="kw">pub fn </span>set_address(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: CanonicalAddr) {
+        <span class="self">self</span>.addr = address;
+    }
+
+    <span class="doccomment">/// Ensure nonces are equal
+    </span><span class="kw">pub fn </span>ensure_nonces_are_equal(<span class="kw-2">&amp;</span><span class="self">self</span>, nonce: <span class="kw-2">&amp;</span>Nonce) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
+        <span class="kw">if </span><span class="self">self</span>.nonce.eq(nonce) {
+            <span class="prelude-val">Ok</span>(())
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Err</span>(ContractError::RelayTxError(
+                RelayTxError::NoncesAreNotEqual {},
+            ))
+        }
+    }
+
+    <span class="doccomment">/// Ensure provided address is different from current.
+    </span><span class="kw">pub fn </span>ensure_addresses_are_not_equal(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        address: <span class="kw-2">&amp;</span>CanonicalAddr,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
+        <span class="kw">if </span><span class="self">self</span>.addr.ne(address) {
+            <span class="prelude-val">Ok</span>(())
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Err</span>(ContractError::AddressesAreEqual {})
+        }
+    }
+}
+
+<span class="kw">pub const </span>FROZEN: Item&lt;bool&gt; = Item::new(<span class="string">&quot;frozen&quot;</span>);
+<span class="kw">pub const </span>FACTORY: Item&lt;CanonicalAddr&gt; = Item::new(<span class="string">&quot;factory&quot;</span>);
+<span class="kw">pub const </span>CODE_ID: Item&lt;u64&gt; = Item::new(<span class="string">&quot;code_id&quot;</span>);
+<span class="kw">pub const </span>MULTISIG_CODE_ID: Item&lt;u64&gt; = Item::new(<span class="string">&quot;multisig_code_id&quot;</span>);
+<span class="kw">pub const </span>CONTROLLER: Item&lt;Controller&gt; = Item::new(<span class="string">&quot;controller&quot;</span>);
+<span class="kw">pub const </span>GUARDIANS: Map&lt;<span class="kw-2">&amp;</span>[u8], ()&gt; = Map::new(<span class="string">&quot;guardians&quot;</span>);
+<span class="kw">pub const </span>PENDING_GUARDIAN_ROTATION: Item&lt;GuardiansUpdateRequest&gt; =
+    Item::new(<span class="string">&quot;pending_guardian_rotation&quot;</span>);
+<span class="kw">pub const </span>RELAYERS: Map&lt;<span class="kw-2">&amp;</span>[u8], ()&gt; = Map::new(<span class="string">&quot;relayers&quot;</span>);
+<span class="kw">pub const </span>LABEL: Item&lt;String&gt; = Item::new(<span class="string">&quot;label&quot;</span>);
+<span class="comment">// An address of fixed multisig contract, used for guardians multisig support.
+</span><span class="kw">pub const </span>MULTISIG_ADDRESS: Item&lt;<span class="prelude-ty">Option</span>&lt;CanonicalAddr&gt;&gt; = Item::new(<span class="string">&quot;fixed_multisig_address&quot;</span>);
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="vectis_proxy" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0 (69f9c33d7 2022-12-12)" ></div></body></html>

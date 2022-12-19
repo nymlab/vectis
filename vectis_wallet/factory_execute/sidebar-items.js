@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["create_wallet","Creates a SCW by instantiating an instance of the `wallet_proxy` contract"],["migrate_wallet","Migrates the instantiated `wallet_proxy` instance to a new code id"],["purge_expired_claims",""],["update_code_id","Updates the latest code id for the supported `wallet_proxy`"],["update_config_fee",""],["update_dao_addr",""]]};
