@@ -1,11 +1,16 @@
 name: Publish Types to NPM Registry
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'cli/types/**'
+    inputs:
+      version_bump:
+        required: true
+        type: choice
+        description: "Define your bump version change"
+        default: "patch"
+        options:
+          - "major"
+          - "minor"
+          - "patch"
 
 jobs:
   publish:
@@ -20,7 +25,13 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
-      - run: npm run publish:prod
-        working-directory: cli/types
+      - run: npm --prefix ./types version ${{ github.event.inputs.version_bump }}
+      - run: npm --prefix ./types run publish:dev
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Commit Version
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actor
+          message: "bumping package version $( node -pe \"require('./types/package.json').version\")"
+          add: '.'
