@@ -6,3 +6,4 @@ wasm-govec = "build --release --target wasm32-unknown-unknown --package vectis-g
 wasm-dao-tunnel = "build --release --target wasm32-unknown-unknown --package vectis-dao-tunnel"
 wasm-remote-tunnel = "build --release --target wasm32-unknown-unknown --package vectis-remote-tunnel"
 wasm-remote-factory = "build --release --target wasm32-unknown-unknown --package vectis-remote-factory"
+wasm-plugin-registry = "build --release --lib --target wasm32-unknown-unknown --package vectis-plugin-registry"
