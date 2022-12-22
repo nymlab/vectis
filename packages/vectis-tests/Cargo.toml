@@ -13,6 +13,7 @@ path = "tests/lib.rs"
 vectis-factory = { path = "../../contracts/factory" }
 vectis-proxy = { path = "../../contracts/proxy", features = ["migration", "library"]}
 vectis-govec = { path = "../../contracts/govec", features = ["library"]}
+vectis-plugin-registry = { path = "../../contracts/plugin_registry", features = ["tests"]}
 vectis-dao-tunnel = {path = "../../contracts/dao_tunnel", features = ["library"]}
 vectis-remote-factory = {path = "../../contracts/remote_factory", features = ["library"]}
 vectis-remote-tunnel = {path = "../../contracts/remote_tunnel", features = ["library"]}
@@ -39,5 +40,5 @@ cw-core = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb21629
 cw20-staked-balance-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
 cw-proposal-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
 voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "1383ecb2162968a"}
-cw-multi-test = { version = "0.13.2" }
+cw-multi-test = { version = "0.16" }
 derivative = "2"

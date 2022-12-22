@@ -2,7 +2,7 @@ pub use anyhow::{anyhow, Result};
 pub use cosmwasm_std::testing::mock_dependencies;
 pub use cosmwasm_std::{
     coin, to_binary, Addr, Binary, BlockInfo, CanonicalAddr, Coin, CosmosMsg, Empty, Event,
-    QueryRequest, StdError, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 pub use cw20::BalanceResponse;
 pub use cw3::VoterListResponse;
@@ -62,6 +62,14 @@ pub use vectis_dao_tunnel::{
     msg::InstantiateMsg as DTunnelInstanstiateMsg,
 };
 
+pub use vectis_plugin_registry::{
+    contract::{
+        ExecMsg as PRegistryExecMsg, InstantiateMsg as PRegistryInstantiateMsg, Plugin,
+        PluginRegistry, QueryMsg as PRegistryQueryMsg,
+    },
+    error::ContractError as PRegistryContractError,
+    responses::{ConfigResponse, PluginsResponse},
+};
 pub use vectis_remote_tunnel::{
     contract::{
         execute as rtunnel_execute, instantiate as rtunnel_instantiate, query as rtunnel_query,
@@ -107,6 +115,7 @@ pub use vectis_wallet::{
 
 pub const MINT_AMOUNT: u128 = 2u128;
 pub const WALLET_FEE: u128 = 10u128;
+pub const REGISTRY_FEE: u128 = 100u128;
 pub const CLAIM_FEE: u128 = 10u128;
 pub const MINTER_CAP: u128 = 10000;
 pub const CONTROLLER_PRIV: &[u8; 32] = &[
@@ -192,6 +201,10 @@ pub fn contract_remote_tunnel() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(rtunnel_execute, rtunnel_instantiate, rtunnel_query)
         .with_reply(rtunnel_reply);
     Box::new(contract)
+}
+
+pub fn contract_plugin_registry<'a>() -> Box<dyn Contract<Empty>> {
+    Box::new(PluginRegistry::new())
 }
 
 pub fn proxy_exec(to_contract: &Addr, msg: &impl Serialize, funds: Vec<Coin>) -> ProxyExecuteMsg {

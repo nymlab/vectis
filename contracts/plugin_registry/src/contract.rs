@@ -156,6 +156,10 @@ impl PluginRegistry<'_> {
 
         // Remove plugin information from registry
         self.plugins.remove(deps.storage, id);
+        self.total_plugins
+            .update(deps.storage, |total| -> StdResult<_> {
+                Ok(total.checked_sub(1).expect("underflow"))
+            })?;
 
         let event = Event::new("vectis.plugin_registry.v1.MsgUnregisterPlugin")
             .add_attribute("plugin_id", id.to_string());
@@ -169,6 +173,7 @@ impl PluginRegistry<'_> {
         ctx: (DepsMut, Env, MessageInfo),
         id: u64,
         name: Option<String>,
+        creator: Option<String>,
         version: Option<String>,
         ipfs_hash: Option<String>,
         code_id: Option<u64>,
@@ -186,7 +191,11 @@ impl PluginRegistry<'_> {
                 Ok(Plugin {
                     id,
                     name: name.unwrap_or(p.name),
-                    creator: p.creator,
+                    creator: if creator.is_some() {
+                        deps.api.addr_canonicalize(&creator.unwrap())?
+                    } else {
+                        p.creator
+                    },
                     ipfs_hash: ipfs_hash.unwrap_or(p.ipfs_hash),
                     version: version.unwrap_or(p.version),
                     code_id: code_id.unwrap_or(p.code_id),

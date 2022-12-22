@@ -3,6 +3,9 @@ pub mod error;
 pub mod responses;
 pub mod validation;
 
+#[cfg(any(test, feature = "tests"))]
+pub mod multitest;
+
 #[cfg(not(feature = "library"))]
 mod entry_points {
     use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
