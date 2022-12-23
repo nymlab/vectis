@@ -65,7 +65,7 @@ impl PluginRegistry<'_> {
 
         let reviewers = reviewers
             .iter()
-            .map(|reviewer| deps.api.addr_canonicalize(&reviewer))
+            .map(|reviewer| deps.api.addr_canonicalize(reviewer))
             .collect::<StdResult<Vec<CanonicalAddr>>>()?;
 
         self.total_plugins.save(deps.storage, &0u64)?;
@@ -77,6 +77,7 @@ impl PluginRegistry<'_> {
     }
 
     #[msg(exec)]
+    #[allow(clippy::too_many_arguments)]
     pub fn register_plugin(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -168,6 +169,7 @@ impl PluginRegistry<'_> {
     }
 
     #[msg(exec)]
+    #[allow(clippy::too_many_arguments)]
     pub fn update_plugin(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -248,14 +250,13 @@ impl PluginRegistry<'_> {
 
         self.dao_addr
             .update(deps.storage, |_| -> StdResult<CanonicalAddr> {
-                Ok(deps
-                    .api
-                    .addr_canonicalize(deps.api.addr_validate(&new_addr)?.as_str())?)
+                deps.api
+                    .addr_canonicalize(deps.api.addr_validate(new_addr.as_str())?.as_str())
             })?;
 
         Ok(Response::default().add_event(
             Event::new("vectis.plugin_registry.v1.MsgUpdateDaoAddr")
-                .add_attribute("new_addr", new_addr.to_string()),
+                .add_attribute("new_addr", new_addr),
         ))
     }
 
@@ -274,10 +275,10 @@ impl PluginRegistry<'_> {
 
         self.reviewers
             .update(deps.storage, |_| -> StdResult<Vec<CanonicalAddr>> {
-                Ok(reviewers
+                reviewers
                     .iter()
                     .map(|addr| deps.api.addr_canonicalize(addr))
-                    .collect::<StdResult<Vec<CanonicalAddr>>>()?)
+                    .collect::<StdResult<Vec<CanonicalAddr>>>()
             })?;
 
         Ok(Response::default().add_event(
