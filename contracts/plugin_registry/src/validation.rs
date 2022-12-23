@@ -4,7 +4,7 @@ use crate::error::ContractError;
 
 pub fn ensure_is_reviewer(
     deps: Deps,
-    reviewers: &Vec<CanonicalAddr>,
+    reviewers: &[CanonicalAddr],
     reviewer: &str,
 ) -> Result<(), ContractError> {
     if !reviewers.contains(&deps.api.addr_canonicalize(reviewer)?) {
