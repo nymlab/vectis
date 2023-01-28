@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ContractExecMsg",""],["ContractQueryMsg",""],["ExecMsg",""],["QueryMsg",""]],"struct":[["InstantiateMsg",""],["Plugin",""],["PluginRegistry",""]]};
