@@ -16,7 +16,7 @@ SCW also provide functions that allow businesses to satisfy regulatory requireme
 transparency,
 separation of control duties and verifiability.
 
-VectisDAO is the organisation that provides governance to the this infrastructure.
+VectisDAO is the organisation that provides governance to this infrastructure.
 VectisDAO lives on [Juno Network] and leverages the [DAO DAO] stack.
 Every SCW wallet has the right to purchase a set amount of Govec tokens at a set price,
 the Govec will be minted and can be staked to vote.
@@ -96,7 +96,7 @@ The deployment of the DAO on the host chain has the following steps:
 1. _DAO Chain_: Admin updates Govec contract admin as DAO (for future upgrades)
 1. _DAO Chain_: Admin unstakes and burn its govec (exits system)
 
-After upload and deploy contracts it will check the contract have the right checksum and the contracts have DAO as admin.
+After upload and deploy contracts it will check the contracts have the right checksum and the contracts have DAO as admin.
 
 #### Native Local Node
 
