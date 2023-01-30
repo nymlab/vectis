@@ -63,7 +63,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
         },
         code_id: 0,
         multisig_code_id: MULTISIG_CODE_ID,
-        guardians: vec![Addr::unchecked(GUARD2), Addr::unchecked(GUARD1)],
+        guardians: vec![Addr::unchecked(GUARD1), Addr::unchecked(GUARD2)],
         relayers: vec![Addr::unchecked(RELAYER2), Addr::unchecked(RELAYER1)],
         is_frozen: false,
         multisig_address: None,

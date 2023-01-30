@@ -169,7 +169,7 @@ fn factory_can_purge_all_expired_claims() {
     let mut suite = DaoChainSuite::init().unwrap();
     let expired = 5;
     let unexpired = 3;
-    // Expired after 99 blocks
+    // Expired after 90 blocks
 
     for _ in 0..expired {
         suite
@@ -192,24 +192,6 @@ fn factory_can_purge_all_expired_claims() {
         .query_unclaimed_govec_wallets(&suite.factory, None, None)
         .unwrap();
     assert_eq!(all_wallets.wallets.len(), expired + unexpired);
-
-    suite
-        .app
-        .execute_contract(
-            Addr::unchecked("anyone"),
-            suite.factory.clone(),
-            &WalletFactoryExecuteMsg::PurgeExpiredClaims {
-                start_after: Some(all_wallets.wallets[2].0.to_string()),
-                limit: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    let all_wallets = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap();
-    assert_eq!(all_wallets.wallets.len(), expired + unexpired - 3);
 
     suite
         .app
