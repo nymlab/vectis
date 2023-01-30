@@ -2,8 +2,8 @@ use cosmwasm_schema::schemars;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order,
-    Reply, Response, StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
+    Order, Reply, Response, StdResult, SubMsg, WasmMsg,
 };
 use cw1::CanExecuteResponse;
 use cw2::set_contract_version;

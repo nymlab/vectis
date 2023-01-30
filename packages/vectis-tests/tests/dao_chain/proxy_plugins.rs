@@ -91,13 +91,16 @@ fn cronkitty_plugin_works() {
         .unwrap();
 
     let inst_msg = CCInstantMsg {
+        chain_name: String::from("chain"),
         denom: "ucosm".into(),
         cw_rules_addr: croncat_rules.into(),
         owner_id: Some(suite.deployer.clone().into()),
         gas_base_fee: None,
         gas_action_fee: None,
-        gas_fraction: None,
         agent_nomination_duration: None,
+        gas_query_fee: None,
+        gas_wasm_query_fee: None,
+        gas_price: None,
     };
 
     let croncat = suite
@@ -186,6 +189,8 @@ fn cronkitty_plugin_works() {
         amount: vec![coin(to_send_amount, "ucosm")],
     });
     let tq = TaskRequest {
+        queries: None,
+        transforms: None,
         interval: Interval::Block(5),
         boundary: None,
         stop_on_fail: false,
@@ -193,7 +198,6 @@ fn cronkitty_plugin_works() {
             msg: msg.clone(),
             gas_limit: Some(150_000),
         }],
-        rules: None,
         cw20_coins: vec![],
     };
 
