@@ -17,24 +17,35 @@ pub use derivative::Derivative;
 pub use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 pub use serde::{de::DeserializeOwned, Serialize};
 
-pub use cw_core::{
+pub use dao_voting::{
+    pre_propose::PreProposeInfo, proposal::SingleChoiceProposeMsg, threshold::Threshold,
+    voting::Vote,
+};
+
+pub use dao_core::{
     contract::{
         execute as dao_execute, instantiate as dao_instantiate, query as dao_query,
         reply as dao_reply,
     },
-    msg::{Admin, InstantiateMsg as DaoInstMsg, ModuleInstantiateInfo, QueryMsg as DaoQueryMsg},
+    msg::{InstantiateMsg as DaoInstMsg, QueryMsg as DaoQueryMsg},
 };
 
-pub use cw_proposal_single::{
+pub use dao_interface::{Admin, ModuleInstantiateInfo};
+
+pub use dao_pre_propose_approval_single::contract::{
+    execute as preprop_execute, instantiate as preprop_instantiate, query as preprop_query,
+};
+
+pub use dao_proposal_single::{
     contract::{
         execute as prop_execute, instantiate as prop_instantiate, query as prop_query,
         reply as prop_reply,
     },
-    msg::{DepositInfo, DepositToken, InstantiateMsg as PropInstMsg, QueryMsg as PropQueryMsg},
+    msg::{InstantiateMsg as PropInstMsg, QueryMsg as PropQueryMsg},
     query::{ProposalListResponse, ProposalResponse},
 };
 
-pub use cw20_staked_balance_voting::{
+pub use dao_voting_cw20_staked::{
     contract::{
         execute as vote_execute, instantiate as vote_instantiate, query as vote_query,
         reply as vote_reply,
