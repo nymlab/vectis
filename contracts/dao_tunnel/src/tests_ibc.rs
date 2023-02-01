@@ -503,26 +503,29 @@ fn invalid_proposal_action_fails() {
 }
 
 #[test]
-fn recieve_proposal_actions_work() {
+fn recieve_pre_proposal_actions_work() {
     let mut deps = do_instantiate();
     add_mock_controller(deps.as_mut(), SRC_PORT_ID_RCV);
 
+    let pre_module_addr = "Some PreProp Addr";
     let prop_module_addr = "Some Prop Addr";
 
     // Propose
     //
     // test match sub messages, attributes and ack
     let action_id = VectisDaoActionIds::ProposalPropose as u64;
-    let propose = ProposalExecuteMsg::Propose {
-        title: "title".to_string(),
-        description: "des".to_string(),
-        msgs: vec![],
-        relayed_from: Some(WALLET_ADDR.to_string()),
+    let pre_propose = PrePropExecuteMsg::Propose {
+        msg: ProposeMessage::Propose {
+            title: "t".to_string(),
+            description: "d".to_string(),
+            msgs: vec![],
+            relayed_from: Some(WALLET_ADDR.to_string()),
+        },
     };
 
-    let ibc_propose = RemoteTunnelPacketMsg::ProposalActions {
-        prop_module_addr: prop_module_addr.to_string(),
-        msg: propose.clone(),
+    let ibc_propose = RemoteTunnelPacketMsg::PreProposalActions {
+        pre_prop_module_addr: pre_module_addr.to_string(),
+        msg: pre_propose.clone(),
     };
 
     let rec_res = test_rec_ibc_package(deps.as_mut(), &ibc_propose, JOB_ID).unwrap();
@@ -533,23 +536,20 @@ fn recieve_proposal_actions_work() {
         .unwrap();
     assert_eq!(
         rec_res.messages[0].msg,
-        CosmosMsg::Wasm(wasm_execute(prop_module_addr, &propose, vec![]).unwrap())
+        CosmosMsg::Wasm(wasm_execute(pre_module_addr, &pre_propose, vec![]).unwrap())
     );
     assert_eq!(
         rec_res.attributes,
         vec![
-            ("action", "vectis_tunnel_receive_proposal_actions"),
-            ("prop module addr", prop_module_addr),
+            ("action", "vectis_tunnel_receive_pre_proposal_actions"),
+            ("pre prop module addr", pre_module_addr),
         ]
     );
     assert_eq!(from_binary::<u64>(&ack).unwrap(), action_id);
 
     // Close
     let action_id = VectisDaoActionIds::ProposalClose as u64;
-    let close = ProposalExecuteMsg::Close {
-        proposal_id: 12,
-        relayed_from: Some(WALLET_ADDR.to_string()),
-    };
+    let close = ProposalExecuteMsg::Close { proposal_id: 12 };
 
     let ibc_msg = RemoteTunnelPacketMsg::ProposalActions {
         prop_module_addr: prop_module_addr.to_string(),
@@ -580,6 +580,7 @@ fn recieve_proposal_actions_work() {
     let vote = ProposalExecuteMsg::Vote {
         proposal_id: 12,
         vote: Vote::Yes,
+        rationale: None,
         relayed_from: Some(WALLET_ADDR.to_string()),
     };
 

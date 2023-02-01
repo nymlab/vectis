@@ -1,7 +1,7 @@
 pub use crate::common::common::*;
 
+use dao_voting::voting::Threshold;
 use vectis_wallet::PluginListResponse;
-use voting::Threshold;
 
 /// DaoChainSuite
 ///
@@ -115,32 +115,36 @@ impl DaoChainSuite {
                             active_threshold: None,
                         })
                         .unwrap(),
-                        admin: Admin::CoreContract {},
+                        admin: Admin::CoreModule {},
                         label: String::from("Vectis Vote Module"),
                     },
                     proposal_modules_instantiate_info: vec![ModuleInstantiateInfo {
-                        code_id: proposal_id,
-                        msg: to_binary(&PropInstMsg {
-                            threshold: Threshold::AbsoluteCount {
-                                threshold: Uint128::new(1u128),
-                            },
-                            max_voting_period: Duration::Height(99u64),
-                            min_voting_period: None,
-                            only_members_execute: false,
-                            allow_revoting: false,
-                            deposit_info: Some(DepositInfo {
-                                token: DepositToken::Token {
-                                    address: govec.to_string(),
-                                },
-                                deposit: Uint128::one(),
-                                refund_failed_proposals: true,
-                            }),
-                        })
-                        .unwrap(),
-                        admin: Admin::CoreContract {},
-                        label: String::from("Vectis Dao Prop single"),
-                    }],
+                                        code_id: proposal_id,
+                                        msg: to_binary(&PropInstMsg {
+                                            threshold: Threshold::AbsoluteCount {
+                                                threshold: Uint128::new(1u128),
+                                            },
+                                            max_voting_period: Duration::Height(99u64),
+                                            min_voting_period: None,
+                                            only_members_execute: false,
+                                            allow_revoting: false,
+                                            pre_propose_info: PreProposeInfo::ModuleMayPropose {
+                                                info: ModuleInstantiateInfo {
+                    code_id: u64,
+                    msg: Binary,
+                    admin: Option<Admin>,
+                    label: String,
+
+                                                },
+                                            },
+                                            close_proposal_on_execution_failure: false,
+                                        })
+                                        .unwrap(),
+                                        admin: Admin::CoreModule {},
+                                        label: String::from("Vectis Dao Prop single"),
+                                    }],
                     initial_items: None,
+                    dao_uri: None,
                 },
                 &[],
                 "dao",

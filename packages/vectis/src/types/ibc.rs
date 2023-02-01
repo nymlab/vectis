@@ -16,11 +16,12 @@ pub enum VectisDaoActionIds {
     GovecExit,
     StakeUnstake,
     StakeClaim,
-    ProposalPropose,
+    ProposalUpdateRationale,
     ProposalVote,
     ProposalExecute,
     ProposalClose,
     FactoryInstantiated,
+    PrePropExecute,
 }
 
 impl TryFrom<u64> for VectisDaoActionIds {
@@ -33,11 +34,12 @@ impl TryFrom<u64> for VectisDaoActionIds {
             13 => Ok(Self::GovecExit),
             14 => Ok(Self::StakeUnstake),
             15 => Ok(Self::StakeClaim),
-            16 => Ok(Self::ProposalPropose),
+            16 => Ok(Self::ProposalUpdateRationale),
             17 => Ok(Self::ProposalVote),
             18 => Ok(Self::ProposalExecute),
             19 => Ok(Self::ProposalClose),
             20 => Ok(Self::FactoryInstantiated),
+            21 => Ok(Self::PrePropExecute),
             _ => Err(IbcError::InvalidDaoActionId {}),
         }
     }

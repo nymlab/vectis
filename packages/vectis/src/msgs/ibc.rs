@@ -2,7 +2,8 @@ use cosmwasm_schema::{cw_serde, schemars};
 use cosmwasm_std::{to_binary, Binary, CosmosMsg, StdResult, WasmMsg};
 
 pub use cw20_stake::msg::ExecuteMsg as StakeExecuteMsg;
-pub use cw_proposal_single::msg::ExecuteMsg as ProposalExecuteMsg;
+pub use dao_pre_propose_approval_single::msg::{ExecuteMsg as PrePropExecuteMsg, ProposeMessage};
+pub use dao_proposal_single::msg::ExecuteMsg as ProposalExecuteMsg;
 
 pub use crate::{
     ChainConfig, DaoConfig, GovecExecuteMsg, IbcError, Receiver, StdAck, WalletFactoryExecuteMsg,
@@ -64,6 +65,10 @@ pub enum RemoteTunnelPacketMsg {
     },
     GovecActions(GovecExecuteMsg),
     StakeActions(StakeExecuteMsg),
+    PreProposalActions {
+        pre_prop_module_addr: String,
+        msg: PrePropExecuteMsg,
+    },
     ProposalActions {
         prop_module_addr: String,
         msg: ProposalExecuteMsg,

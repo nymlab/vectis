@@ -10,13 +10,13 @@ pub use cosmwasm_std::{
     WasmMsg,
 };
 
+pub use dao_voting::voting::Vote;
 pub use vectis_wallet::{
     ChainConfig, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, IbcTransferChannels, PacketMsg,
-    ProposalExecuteMsg, Receiver, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
-    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_ORDER, IBC_APP_VERSION,
-    PACKET_LIFETIME,
+    PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, Receiver, RemoteTunnelPacketMsg, StdAck,
+    VectisDaoActionIds, WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_ORDER,
+    IBC_APP_VERSION, PACKET_LIFETIME,
 };
-pub use voting::Vote;
 
 pub use crate::contract::{execute, instantiate, query_controllers, query_dao, query_govec, reply};
 use crate::contract::{execute_ibc_transfer, query_channels};
