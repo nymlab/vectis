@@ -1,6 +1,7 @@
 pub use crate::common::common::*;
 
-use dao_voting::voting::Threshold;
+use dao_pre_propose_approval_single::state::PendingProposal;
+use dao_voting::{pre_propose::ProposalCreationPolicy, threshold::Threshold};
 use vectis_wallet::PluginListResponse;
 
 /// DaoChainSuite
@@ -22,6 +23,8 @@ pub struct DaoChainSuite {
     pub deployer: Addr,
     // Controller
     pub controller: Addr,
+    // PropApprovalMSig
+    pub prop_approver: Addr,
     // govec address
     pub govec: Addr,
     // factory address
@@ -30,6 +33,8 @@ pub struct DaoChainSuite {
     pub dao_tunnel: Addr,
     // dao address
     pub dao: Addr,
+    // pre proposal addr
+    pub pre_prop: Addr,
     // proposal module address
     pub proposal: Addr,
     // cw20_stake addr
@@ -47,6 +52,7 @@ impl DaoChainSuite {
         let genesis_funds = vec![coin(10_000_000_000_000, "ucosm")];
         let deployer = Addr::unchecked("deployer");
         let controller = Addr::unchecked(CONTROLLER_ADDR);
+        let prop_approver = Addr::unchecked(PROP_APPROVER);
         let mut app = App::new(|router, _, storage| {
             router
                 .bank
@@ -62,6 +68,7 @@ impl DaoChainSuite {
         let dao_id = app.store_code(contract_dao());
         let vote_id = app.store_code(contract_vote());
         let proposal_id = app.store_code(contract_proposal());
+        let pre_proposal_id = app.store_code(contract_pre_proposal());
         let stake_id = app.store_code(contract_stake());
         let factory_id = app.store_code(contract_factory());
         let proxy_id = app.store_code(contract_proxy());
@@ -115,34 +122,40 @@ impl DaoChainSuite {
                             active_threshold: None,
                         })
                         .unwrap(),
-                        admin: Admin::CoreModule {},
+                        admin: Some(Admin::CoreModule {}),
                         label: String::from("Vectis Vote Module"),
                     },
                     proposal_modules_instantiate_info: vec![ModuleInstantiateInfo {
-                                        code_id: proposal_id,
-                                        msg: to_binary(&PropInstMsg {
-                                            threshold: Threshold::AbsoluteCount {
-                                                threshold: Uint128::new(1u128),
-                                            },
-                                            max_voting_period: Duration::Height(99u64),
-                                            min_voting_period: None,
-                                            only_members_execute: false,
-                                            allow_revoting: false,
-                                            pre_propose_info: PreProposeInfo::ModuleMayPropose {
-                                                info: ModuleInstantiateInfo {
-                    code_id: u64,
-                    msg: Binary,
-                    admin: Option<Admin>,
-                    label: String,
-
-                                                },
-                                            },
-                                            close_proposal_on_execution_failure: false,
-                                        })
-                                        .unwrap(),
-                                        admin: Admin::CoreModule {},
-                                        label: String::from("Vectis Dao Prop single"),
-                                    }],
+                        code_id: proposal_id,
+                        msg: to_binary(&PropInstMsg {
+                            threshold: Threshold::AbsoluteCount {
+                                threshold: Uint128::new(1u128),
+                            },
+                            max_voting_period: Duration::Height(99u64),
+                            min_voting_period: None,
+                            only_members_execute: false,
+                            allow_revoting: false,
+                            pre_propose_info: PreProposeInfo::ModuleMayPropose {
+                                info: ModuleInstantiateInfo {
+                                    code_id: pre_proposal_id,
+                                    msg: to_binary(&PrePropInstMsg {
+                                        // Option<UncheckedDepositInfo>
+                                        deposit_info: None,
+                                        open_proposal_submission: false,
+                                        extension: InstantiateExt {
+                                            approver: PROP_APPROVER.to_string(),
+                                        },
+                                    })?,
+                                    admin: Some(Admin::CoreModule {}),
+                                    label: "Pre Proposal Module".to_string(),
+                                },
+                            },
+                            close_proposal_on_execution_failure: false,
+                        })
+                        .unwrap(),
+                        admin: Some(Admin::CoreModule {}),
+                        label: String::from("Vectis Dao Prop single"),
+                    }],
                     initial_items: None,
                     dao_uri: None,
                 },
@@ -152,17 +165,29 @@ impl DaoChainSuite {
             )
             .unwrap();
 
-        let prop_list: Vec<Addr> = app
+        let prop_list: Vec<ProposalModule> = app
             .wrap()
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: dao.to_string(),
                 msg: to_binary(&DaoQueryMsg::ProposalModules {
-                    start_at: None,
+                    start_after: None,
                     limit: None,
                 })
                 .unwrap(),
             }))
             .unwrap();
+
+        let pre_prop: Option<Addr> = match app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: prop_list[0].address.to_string(),
+                msg: to_binary(&PropQueryMsg::ProposalCreationPolicy {}).unwrap(),
+            }))
+            .unwrap()
+        {
+            ProposalCreationPolicy::Anyone {} => None,
+            ProposalCreationPolicy::Module { addr } => Some(addr),
+        };
 
         let voting: Addr = app
             .wrap()
@@ -258,7 +283,7 @@ impl DaoChainSuite {
             deployer.clone(),
             govec.clone(),
             &GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Proposal(prop_list[0].to_string()),
+                new_addr: vectis_wallet::UpdateAddrReq::Proposal(prop_list[0].address.to_string()),
             },
             &[],
         )
@@ -269,11 +294,13 @@ impl DaoChainSuite {
             controller: Addr::unchecked(CONTROLLER_ADDR),
             app,
             deployer,
+            prop_approver,
             govec,
             factory,
             dao_tunnel,
             dao,
-            proposal: prop_list[0].clone(),
+            pre_prop: pre_prop.unwrap(),
+            proposal: prop_list[0].address.clone(),
             cw20_stake,
             voting,
         })
@@ -593,6 +620,22 @@ impl DaoChainSuite {
                 contract_addr: self.govec.to_string(),
                 msg: to_binary(&GovecQueryMsg::Balance {
                     address: proxy.to_string(),
+                })?,
+            }))?;
+        Ok(r)
+    }
+
+    pub fn query_pre_proposals(&self) -> Result<Vec<PendingProposal>, StdError> {
+        let r = self
+            .app
+            .wrap()
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: self.pre_prop.to_string(),
+                msg: to_binary(&PrePropQueryMsg::QueryExtension {
+                    msg: PrePropQueryExt::PendingProposals {
+                        start_after: None,
+                        limit: None,
+                    },
                 })?,
             }))?;
         Ok(r)

@@ -513,7 +513,7 @@ fn recieve_pre_proposal_actions_work() {
     // Propose
     //
     // test match sub messages, attributes and ack
-    let action_id = VectisDaoActionIds::ProposalPropose as u64;
+    let action_id = VectisDaoActionIds::PrePropExecute as u64;
     let pre_propose = PrePropExecuteMsg::Propose {
         msg: ProposeMessage::Propose {
             title: "t".to_string(),
