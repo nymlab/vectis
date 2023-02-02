@@ -2009,6 +2009,7 @@ dependencies = [
  "dao-core",
  "dao-interface",
  "dao-pre-propose-approval-single",
+ "dao-pre-propose-base",
  "dao-proposal-single",
  "dao-voting",
  "dao-voting-cw20-staked",

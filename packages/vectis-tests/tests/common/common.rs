@@ -18,8 +18,8 @@ pub use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, Secre
 pub use serde::{de::DeserializeOwned, Serialize};
 
 pub use dao_voting::{
-    pre_propose::PreProposeInfo, proposal::SingleChoiceProposeMsg, threshold::Threshold,
-    voting::Vote,
+    deposit::UncheckedDepositInfo, pre_propose::PreProposeInfo, proposal::SingleChoiceProposeMsg,
+    threshold::Threshold, voting::Vote,
 };
 
 pub use dao_core::{
@@ -28,12 +28,25 @@ pub use dao_core::{
         reply as dao_reply,
     },
     msg::{InstantiateMsg as DaoInstMsg, QueryMsg as DaoQueryMsg},
+    state::ProposalModule,
 };
 
 pub use dao_interface::{Admin, ModuleInstantiateInfo};
 
-pub use dao_pre_propose_approval_single::contract::{
-    execute as preprop_execute, instantiate as preprop_instantiate, query as preprop_query,
+pub use dao_pre_propose_approval_single::{
+    contract::{
+        execute as preprop_execute, instantiate as preprop_instantiate, query as preprop_query,
+    },
+    msg::{
+        ExecuteExt as PrePropExecExt, ExecuteMsg as PrePropExecMsg, InstantiateExt,
+        InstantiateMsg as PrePropInstMsg, ProposeMessage, QueryExt as PrePropQueryExt,
+    },
+};
+
+pub type PrePropQueryMsg = PrePropBaseQueryMsg<PrePropQueryExt>;
+
+pub use dao_pre_propose_base::msg::{
+    InstantiateMsg as PrePropBaseInstMsg, QueryMsg as PrePropBaseQueryMsg,
 };
 
 pub use dao_proposal_single::{
@@ -45,6 +58,7 @@ pub use dao_proposal_single::{
     query::{ProposalListResponse, ProposalResponse},
 };
 
+// constract_vote()
 pub use dao_voting_cw20_staked::{
     contract::{
         execute as vote_execute, instantiate as vote_instantiate, query as vote_query,
@@ -56,6 +70,7 @@ pub use dao_voting_cw20_staked::{
     },
 };
 
+// constract_stake()
 pub use cw20_stake::{
     contract::{execute as stake_execute, instantiate as stake_instantiate, query as stake_query},
     msg::{
@@ -134,6 +149,7 @@ pub const NON_CONTROLLER_PRIV: &[u8; 32] = &[
 ];
 pub const CONTROLLER_ADDR: &str = "wasm1ky4epcqzk0mngu7twqz06qzmpgrxstxhfch6yl";
 pub const MULTISIG_THRESHOLD: ThresholdAbsoluteCount = 2;
+pub const PROP_APPROVER: &str = "approver";
 pub const GUARD1: &str = "guardian1";
 pub const GUARD2: &str = "guardian2";
 pub const GUARD3: &str = "guardian3";
@@ -185,6 +201,11 @@ pub fn contract_dao() -> Box<dyn Contract<Empty>> {
 pub fn contract_proposal() -> Box<dyn Contract<Empty>> {
     let contract =
         ContractWrapper::new(prop_execute, prop_instantiate, prop_query).with_reply(prop_reply);
+    Box::new(contract)
+}
+
+pub fn contract_pre_proposal() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(preprop_execute, preprop_instantiate, preprop_query);
     Box::new(contract)
 }
 

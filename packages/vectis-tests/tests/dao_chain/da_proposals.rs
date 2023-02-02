@@ -1,8 +1,22 @@
 use crate::common::common::*;
 use crate::common::dao_common::*;
 
+fn get_pre_proposal_msg() -> PrePropExecMsg {
+    PrePropExecMsg::Propose {
+        msg: ProposeMessage::Propose {
+            title: String::from("title"),
+            description: String::from("des"),
+            msgs: vec![CosmosMsg::Bank(cosmwasm_std::BankMsg::Send {
+                to_address: "some_addr".to_string(),
+                amount: vec![coin(123, "ucosm")],
+            })],
+            relayed_from: None,
+        },
+    }
+}
+
 #[test]
-fn cannot_propose_without_govec() {
+fn cannot_pre_propose_without_govec() {
     let mut suite = DaoChainSuite::init().unwrap();
     // Create a new wallet
     let wallet_addr = suite
@@ -10,29 +24,19 @@ fn cannot_propose_without_govec() {
         .unwrap();
 
     // Controller propose with wallet
-    let propose_msg = ProposalExecuteMsg::Propose {
-        title: String::from("title"),
-        description: String::from("des"),
-        msgs: vec![CosmosMsg::Bank(cosmwasm_std::BankMsg::Send {
-            to_address: "some_addr".to_string(),
-            amount: vec![coin(123, "ucosm")],
-        })],
-        relayed_from: None,
-    };
-
     suite
         .app
         .execute_contract(
             suite.controller.clone(),
             wallet_addr,
-            &proxy_exec(&suite.proposal, &propose_msg, vec![]),
+            &proxy_exec(&suite.pre_prop, &get_pre_proposal_msg(), vec![]),
             &[],
         )
         .unwrap_err();
 }
 
 #[test]
-fn with_govec_can_propose() {
+fn with_govec_can_pre_propose_and_approver_can_approve() {
     let mut suite = DaoChainSuite::init().unwrap();
     // Create a new wallet
     let wallet_addr = suite
@@ -81,29 +85,43 @@ fn with_govec_can_propose() {
 
     suite.fast_forward_block_time(1000);
 
-    // Controller propose with wallet
-    let propose_msg = ProposalExecuteMsg::Propose {
-        title: String::from("title"),
-        description: String::from("des"),
-        msgs: vec![CosmosMsg::Bank(cosmwasm_std::BankMsg::Send {
-            to_address: "some_addr".to_string(),
-            amount: vec![coin(123, "ucosm")],
-        })],
-        relayed_from: None,
-    };
+    let pre_proposals = suite.query_pre_proposals().unwrap();
+    assert_eq!(pre_proposals.len(), 0);
 
     suite
         .app
         .execute_contract(
             suite.controller.clone(),
             wallet_addr,
-            &proxy_exec(&suite.proposal, &propose_msg, vec![]),
+            &proxy_exec(&suite.pre_prop, &get_pre_proposal_msg(), vec![]),
             &[],
         )
         .unwrap();
 
+    let pre_proposals = suite.query_pre_proposals().unwrap();
+    assert_eq!(pre_proposals.len(), 1);
+    let id = pre_proposals[0].approval_id;
+
+    // No Proposal yet
+    let proposals = suite.query_proposals().unwrap();
+    assert_eq!(proposals.proposals.len(), 0);
+
+    // Approver can approve pre_propose
+    suite
+        .app
+        .execute_contract(
+            suite.prop_approver.clone(),
+            suite.pre_prop.clone(),
+            &PrePropExecMsg::Extension {
+                msg: PrePropExecExt::Approve { id },
+            },
+            &[],
+        )
+        .unwrap();
+
+    // TODO check deposit
     let proposals = suite.query_proposals().unwrap();
     assert_eq!(proposals.proposals.len(), 1);
-    let proposal = suite.query_proposal(proposals.proposals[0].id).unwrap();
-    assert_eq!(proposal.proposal.title, "title");
+    let pre_proposals = suite.query_pre_proposals().unwrap();
+    assert_eq!(pre_proposals.len(), 0);
 }
