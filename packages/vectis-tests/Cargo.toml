@@ -48,10 +48,10 @@ cw20-stake = { workspace = true }
 dao-voting = { workspace = true }
 dao-interface = { workspace = true }
 
-# croncat plugin contracts
-cronkitty = { path = "../../../vectis-plugins/cronkitty" }
-cw-croncat = { path = "../../../../cw-croncat/contracts/cw-croncat" }
-cw-rules= { path = "../../../../cw-croncat/contracts/cw-rules" }
-cw-croncat-core = { path = "../../../../cw-croncat/packages/cw-croncat-core" }
-cw-rules-core = { path = "../../../../cw-croncat/packages/cw-rules-core" }
+
+
+
+
+
+
 

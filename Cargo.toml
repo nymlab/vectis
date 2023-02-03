@@ -55,10 +55,3 @@ dao-voting-cw20-staked = {git = "https://github.com/nymlab/dao-contracts",  rev 
 cw20-stake = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e"}
 dao-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e"}
 dao-interface = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e"}
-
-# croncat plugin contracts
-cronkitty = { path = "../../../vectis-plugins/cronkitty" }
-cw-croncat = { path = "../../../../cw-croncat/contracts/cw-croncat" }
-cw-rules= { path = "../../../../cw-croncat/contracts/cw-rules" }
-cw-croncat-core = { path = "../../../../cw-croncat/packages/cw-croncat-core" }
-cw-rules-core = { path = "../../../../cw-croncat/packages/cw-rules-core" }

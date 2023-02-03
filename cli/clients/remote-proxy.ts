@@ -2,7 +2,7 @@ import CWClient from "./cosmwasm";
 import { ProxyClient as ProxyC, RemoteTunnelT } from "../interfaces";
 import { toCosmosMsg } from "../utils/enconding";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import { Vote } from "@dao-dao/types/contracts/cw-proposal-single";
+import { Vote } from "@dao-dao/types/contracts/Vote";
 import { Coin } from "../interfaces/Factory.types";
 
 class RemoteProxyClient extends ProxyC {

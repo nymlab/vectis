@@ -26,10 +26,10 @@ tsGenerator({
             name: "remoteTunnel",
             dir: contractsPath("remote_tunnel/schema"),
         },
-        {
-            name: "remoteFactory",
-            dir: contractsPath("remote_factory/schema"),
-        },
+        //{
+        //    name: "remoteFactory",
+        //    dir: contractsPath("remote_factory/schema"),
+        //},
     ],
     outPath,
     options: {
