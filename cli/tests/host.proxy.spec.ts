@@ -7,7 +7,7 @@ import { coin } from "@cosmjs/stargate";
 import {
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
-} from "@dao-dao/types/contracts/cw-proposal-single";
+} from "@dao-dao/types/contracts/DaoProposalSingle.v2";
 import { deployReportPath, hostAccounts, hostChain, remoteChain } from "../utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { CWClient } from "../clients";

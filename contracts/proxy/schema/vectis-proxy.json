@@ -699,7 +699,12 @@
                     "minimum": 0.0
                   },
                   "vote": {
-                    "$ref": "#/definitions/VoteOption"
+                    "description": "The vote option.\n\nThis should be called \"option\" for consistency with Cosmos SDK. Sorry for that. See <https://github.com/CosmWasm/cosmwasm/issues/1571>.",
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/VoteOption"
+                      }
+                    ]
                   }
                 }
               }
@@ -1135,7 +1140,7 @@
             "additionalProperties": false
           },
           {
-            "description": "Instantiates a new contracts from previously uploaded Wasm code.\n\nThis is translated to a [MsgInstantiateContract](https://github.com/CosmWasm/wasmd/blob/v0.16.0-alpha1/x/wasm/internal/types/tx.proto#L47-L61). `sender` is automatically filled with the current contract's address.",
+            "description": "Instantiates a new contracts from previously uploaded Wasm code.\n\nThe contract address is non-predictable. But it is guaranteed that when emitting the same Instantiate message multiple times, multiple instances on different addresses will be generated. See also Instantiate2.\n\nThis is translated to a [MsgInstantiateContract](https://github.com/CosmWasm/wasmd/blob/v0.29.2/proto/cosmwasm/wasm/v1/tx.proto#L53-L71). `sender` is automatically filled with the current contract's address.",
             "type": "object",
             "required": [
               "instantiate"
@@ -1370,7 +1375,8 @@
         "can_execute": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "guardians_update_request": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1438,7 +1444,8 @@
               ],
               "properties": {
                 "never": {
-                  "type": "object"
+                  "type": "object",
+                  "additionalProperties": false
                 }
               },
               "additionalProperties": false
@@ -1627,7 +1634,8 @@
               "description": "version is any string that this implementation knows. It may be simple counter \"1\", \"2\". or semantic version on release tags \"v0.7.0\", or some custom feature flag list. the only code that needs to understand the version parsing is code that knows how to migrate from the given contract (and is tied to it's implementation somehow)",
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       }
     },
