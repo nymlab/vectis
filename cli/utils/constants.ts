@@ -23,32 +23,47 @@ export const contractsFileNames = {
     vectis_remote_proxy: "vectis_proxy.wasm",
     vectis_remote_factory: "vectis_remote_factory.wasm",
     cw3_mutltisig: "cw3_fixed_multisig.wasm",
+    cw3_flex_mutltisig: "cw3_flex_multisig.wasm",
+    cw4_group: "cw4_group.wasm",
     cw20_base: "cw20_base.wasm",
-    cw_dao: "cw_core.wasm",
+    cw_dao: "dao_core.wasm",
     cw20_staking: "cw20_stake.wasm",
-    cw20_voting: "cw20_staked_balance_voting.wasm",
-    cw_proposal_single: "cw_proposal_single.wasm",
+    cw20_voting: "dao_voting_cw20_staked.wasm",
+    cw_proposal_single: "dao_proposal_single.wasm",
+    cw_pre_proposal_approval_single: "dao_pre_propose_approval_single.wasm",
 };
 
 // Contracts Versioning
-const cwPlusReleaseVer = "v0.13.4";
-const daodaoReleaseVer = "v1.0.0";
-
+const cwPlusReleaseVer = "v0.16.0";
+const daodaoReleaseVer = "v2.0.1";
 // Contracts Links CWPlus
 export const cw20BaseDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw20_base.wasm`;
 export const cw3FixedMulDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_fixed_multisig.wasm`;
+export const cw3FlexMulDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_flex_multisig.wasm`;
+export const cw4GroupDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw4_group.wasm`;
 
-// Contracts Links DAODAO
-export const cwDaoDownloadLink = `https://github.com/DA0-DA0/dao-contracts/releases/download/${daodaoReleaseVer}/cw_core.wasm`;
-export const cw20StakingDownloadLink = `https://github.com/DA0-DA0/dao-contracts/releases/download/${daodaoReleaseVer}/cw20_stake.wasm`;
-export const cw20VotingDownloadLink = `https://github.com/DA0-DA0/dao-contracts/releases/download/${daodaoReleaseVer}/cw20_staked_balance_voting.wasm`;
-export const cw20ProposalSingleDownloadLink = `https://github.com/DA0-DA0/dao-contracts/releases/download/${daodaoReleaseVer}/cw_proposal_single.wasm`;
+// Schema links
+export const cw3flexSchemaLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3-flex-multisig.json`;
+export const cw4GroupSchemaLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw4-group.json`;
+
+// Contracts Links dao-contract (Vectis)
+export const cwDaoDownloadLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/dao_core.wasm`;
+export const cw20StakingDownloadLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/cw20_stake.wasm`;
+export const cw20VotingDownloadLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/dao_voting_cw20_staked.wasm`;
+export const cw20ProposalSingleDownloadLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/dao_proposal_single.wasm`;
+export const cwPreProposalSingleDownloadLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/dao_pre_propose_approval_single.wasm`;
+
+// Schema Links dao-contract types (Vectis)
+export const proposalSingleSchemaLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/dao-proposal-single.json`;
+export const prePropSingleApprovalSchemaLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/dao-pre-propose-approval-single.json`;
+export const cw20StakeSchemaLink = `https://github.com/nymlab/dao-contracts/releases/download/${daodaoReleaseVer}/cw20-stake.json`;
 
 // Paths
 export const cachePath = path.join(__dirname, "../.cache");
 export const configPath = path.join(__dirname, "../config");
 export const contractPath = path.join(__dirname, "../contracts");
 export const downloadContractPath = path.join(cachePath, "/contracts");
+export const downloadSchemaPath = path.join(cachePath, "/schemas");
 export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
 export const deployReportPath = path.join(cachePath, "deployInfo.json");
 export const ibcReportPath = path.join(cachePath, "ibcInfo.json");
@@ -69,9 +84,15 @@ export const remoteFactoryCodePath = path.join(remoteContractsPath, contractsFil
 // CWPlus Contracts
 export const fixMultiSigCodePath = path.join(downloadContractPath, contractsFileNames.cw3_mutltisig);
 export const cw20CodePath = path.join(downloadContractPath, contractsFileNames.cw20_base);
+export const cw3FlexCodePath = path.join(downloadContractPath, contractsFileNames.cw3_flex_mutltisig);
+export const cw4GroupCodePath = path.join(downloadContractPath, contractsFileNames.cw4_group);
 
 // DAODAO Contracts
 export const daoCodePath = path.join(downloadContractPath, contractsFileNames.cw_dao);
-export const stakingCodePath = path.join(contractPath, contractsFileNames.cw20_staking);
-export const voteCodePath = path.join(contractPath, contractsFileNames.cw20_voting);
-export const proposalSingleCodePath = path.join(contractPath, contractsFileNames.cw_proposal_single);
+export const stakingCodePath = path.join(downloadContractPath, contractsFileNames.cw20_staking);
+export const voteCodePath = path.join(downloadContractPath, contractsFileNames.cw20_voting);
+export const proposalSingleCodePath = path.join(downloadContractPath, contractsFileNames.cw_proposal_single);
+export const preProposalSingleCodePath = path.join(
+    downloadContractPath,
+    contractsFileNames.cw_pre_proposal_approval_single
+);

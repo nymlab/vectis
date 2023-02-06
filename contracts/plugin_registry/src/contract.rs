@@ -11,7 +11,6 @@ use cosmwasm_std::{
 use crate::{
     error::ContractError,
     responses::{ConfigResponse, PluginsResponse},
-    validation::ensure_is_reviewer,
 };
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -35,7 +34,7 @@ pub struct PluginRegistry<'a> {
     pub(crate) total_plugins: Item<'a, u64>,
     pub(crate) registry_fee: Item<'a, Coin>,
     pub(crate) dao_addr: Item<'a, CanonicalAddr>,
-    pub(crate) reviewers: Item<'a, Vec<CanonicalAddr>>,
+    pub(crate) reviewer: Item<'a, CanonicalAddr>,
     pub(crate) plugins: Map<'a, u64, Plugin>,
 }
 
@@ -46,7 +45,7 @@ impl PluginRegistry<'_> {
             total_plugins: Item::new("total_plugins"),
             registry_fee: Item::new("registry_fee"),
             dao_addr: Item::new("dao_addr"),
-            reviewers: Item::new("reviewers"),
+            reviewer: Item::new("reviewers"),
             plugins: Map::new("plugins"),
         }
     }
@@ -57,21 +56,20 @@ impl PluginRegistry<'_> {
         ctx: (DepsMut, Env, MessageInfo),
         registry_fee: Coin,
         dao_addr: String,
-        reviewers: Vec<String>,
+        reviewer: String,
     ) -> Result<Response, ContractError> {
         let (deps, ..) = ctx;
         set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
         let dao_addr = deps.api.addr_canonicalize(&dao_addr)?;
 
-        let reviewers = reviewers
-            .iter()
-            .map(|reviewer| deps.api.addr_canonicalize(reviewer))
-            .collect::<StdResult<Vec<CanonicalAddr>>>()?;
+        let reviewer_multisig = deps
+            .api
+            .addr_canonicalize(&deps.api.addr_validate(&reviewer)?.as_str())?;
 
         self.total_plugins.save(deps.storage, &0u64)?;
         self.registry_fee.save(deps.storage, &registry_fee)?;
         self.dao_addr.save(deps.storage, &dao_addr)?;
-        self.reviewers.save(deps.storage, &reviewers)?;
+        self.reviewer.save(deps.storage, &reviewer_multisig)?;
 
         Ok(Response::default())
     }
@@ -107,8 +105,10 @@ impl PluginRegistry<'_> {
         };
 
         // Check if the caller is a reviewer
-        let reviewers = self.reviewers.load(deps.storage)?;
-        ensure_is_reviewer(deps.as_ref(), &reviewers, info.sender.as_str())?;
+        let reviewer = self.reviewer.load(deps.storage)?;
+        if deps.api.addr_humanize(&reviewer)? != info.sender {
+            return Err(ContractError::Unauthorized);
+        }
 
         // Store plugin information in PLUGINS Map<u64(id), Plugin>
         let id = self
@@ -152,8 +152,7 @@ impl PluginRegistry<'_> {
         let (deps, _env, info) = ctx;
 
         // Check if the caller is a reviewer
-        let reviewers = self.reviewers.load(deps.storage)?;
-        ensure_is_reviewer(deps.as_ref(), &reviewers, info.sender.as_str())?;
+        let reviewers = self.reviewer.load(deps.storage)?;
 
         // Remove plugin information from registry
         self.plugins.remove(deps.storage, id);
@@ -183,8 +182,10 @@ impl PluginRegistry<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _env, info) = ctx;
 
-        let reviewers = self.reviewers.load(deps.storage)?;
-        ensure_is_reviewer(deps.as_ref(), &reviewers, info.sender.as_str())?;
+        let reviewer = self.reviewer.load(deps.storage)?;
+        if deps.api.addr_humanize(&reviewer)? != info.sender {
+            return Err(ContractError::Unauthorized);
+        }
 
         let plugin = self
             .plugins

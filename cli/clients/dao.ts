@@ -1,35 +1,60 @@
-import CWClient from "./cosmwasm";
-import { toCosmosMsg } from "../utils/enconding";
 import { uploadReportPath } from "../utils/constants";
+import { toCosmosMsg } from "../utils/enconding";
+
+import CWClient from "./cosmwasm";
+
+import type {
+    InstantiateMsg as CwPrePropSingleInstantiateMsg,
+    ExecuteMsg as CwPrePropSingleExecuteMsg,
+    UncheckedDepositInfo,
+    DepositToken,
+} from "../interfaces/DaoPreProposeApprovalSingel.types";
 
 import type {
     InstantiateMsg as CwPropSingleInstantiateMsg,
     ExecuteMsg as CwPropSingleExecuteMsg,
-    Vote,
-    DepositInfo,
-    Duration,
-    Threshold,
-} from "@dao-dao/types/contracts/cw-proposal-single";
+    PreProposeInfo,
+} from "@dao-dao/types/contracts/DaoProposalSingle.v2";
+import { Vote, Threshold } from "@dao-dao/types/contracts/DaoProposalSingle.common";
+
+import { DepositRefundPolicy } from "@dao-dao/types/contracts/common";
+import type { Duration } from "@dao-dao/types/contracts/common";
 import type {
     InstantiateMsg as Cw20SBVInstantiateMsg,
     TokenInfo,
-    Duration as StakeDuration,
-} from "@dao-dao/types/contracts/cw20-staked-balance-voting";
-// Proposal
-//
-// Cool down period for unstaking, time in seconds
-// if it is not null, dao-deploy will need to wait for unstaked and claim
-export const unstakeDuration: StakeDuration | null = null;
-// Deposit required for creating proposal
-export const depositInfo: DepositInfo | null = null;
+    ActiveThreshold,
+} from "@dao-dao/types/contracts/DaoVotingCw20Staked";
+import { ModuleInstantiateInfo } from "@dao-dao/types/contracts";
+
+// Proposal config
+export const closeProposalOnExecutionFailure: boolean = false;
+export const onlyMemberExecute: boolean = false;
 // Length of  max Voting Period, Time in seconds
-export const maxVotingPeriod: Duration | null = { time: 60 * 60 * 24 * 14 };
+export const maxVotingPeriod: Duration = {
+    time: 60 * 60 * 24 * 14,
+};
 // Length of  min Voting Period , Time in seconds
 export const minVotingPeriod: Duration | null = null;
 // Can members change their votes before expiry
 // It is easier for it to be false for deployment
-export const allowRevote: Boolean = false;
-// Details - https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
+export const allowRevote: boolean = false;
+
+// Duration for unstake
+export const unstakingDuration: Duration = { time: 6 * 60 * 24 };
+
+export const activeThreshold: ActiveThreshold | null = null;
+/// For Pre Proposal which handles the deposit now
+export const depositInfo: UncheckedDepositInfo = {
+    amount: "2",
+    denom: { voting_module_token: {} },
+    refund_policy: DepositRefundPolicy.Always,
+};
+
+// Bool if anyway cal submit pre-proposals
+const openPropSub: boolean = true;
+//
+// Details -
+// https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
 export const threshold: Threshold = {
     threshold_quorum: {
         quorum: {
@@ -41,29 +66,20 @@ export const threshold: Threshold = {
     },
 };
 
-export function getDepositInfo(deposit: string, refundFailedProposal: boolean, govecAddr: string): DepositInfo {
-    return {
-        // The number of tokens that must be deposited to create a proposal.
-        deposit: deposit,
-        //  If failed proposals should have their deposits refunded.
-        refund_failed_proposals: refundFailedProposal,
-        // The address of the cw20 token to be used for proposal deposits.
-        token: { token: { address: govecAddr } },
-    };
-}
-
 class DaoClient {
     daoAddr: string;
     voteAddr: string;
     proposalAddr: string;
+    preProposalAddr: string;
     stakingAddr: string;
     constructor(
         private readonly client: CWClient,
-        { daoAddr, voteAddr, proposalAddr, stakingAddr }: Record<string, string>
+        { daoAddr, voteAddr, preProposalAddr, proposalAddr, stakingAddr }: Record<string, string>
     ) {
         this.daoAddr = daoAddr;
         this.voteAddr = voteAddr;
         this.proposalAddr = proposalAddr;
+        this.preProposalAddr = preProposalAddr;
         this.stakingAddr = stakingAddr;
     }
 
@@ -139,28 +155,66 @@ class DaoClient {
         return res;
     }
 
-    static async instantiate(client: CWClient, govecAddr: string, daoAdmin: string | null) {
+    static async instantiate(client: CWClient, govecAddr: string, daoAdmin: string | null, prePropApprover: string) {
         const { host } = await import(uploadReportPath);
-        const { stakingRes, voteRes, daoRes, proposalSingleRes } = host;
+        const { stakingRes, voteRes, daoRes, proposalSingleRes, preProposalSingleRes } = host;
 
-        const tokenInfo = DaoClient.createTokenInfo(govecAddr, stakingRes.codeId, unstakeDuration);
-        const voteInstMsg = DaoClient.createVoteInstMsg(tokenInfo);
-        // cw-proposal-single instantiation msg
-        const propInstMsg = DaoClient.createPropInstMsg(
+        const prePropInstMsg: CwPrePropSingleInstantiateMsg = DaoClient.createPrePropInstMsg(
             depositInfo,
+            openPropSub,
+            prePropApprover
+        );
+        // cw-proposal-single instantiation msg
+        const preProposalInfo: PreProposeInfo = {
+            module_may_propose: {
+                info: {
+                    admin: {
+                        core_module: {},
+                    },
+                    code_id: preProposalSingleRes.code_id,
+                    label: "Vectis Pre Prop Module",
+                    msg: toCosmosMsg<CwPrePropSingleInstantiateMsg>(prePropInstMsg),
+                },
+            },
+        };
+        const propInstMsg: CwPropSingleInstantiateMsg = DaoClient.createPropInstMsg(
             maxVotingPeriod,
             minVotingPeriod,
             threshold,
-            allowRevote
+            allowRevote,
+            closeProposalOnExecutionFailure,
+            preProposalInfo,
+            onlyMemberExecute
         );
 
         // dao-core instantiation msg
-        // TODO: the module types `ModuleInstantiateInfo` do not work with the @daodao/types,
-        // therefore not using interfaces. There is versioning issues
+        // TODO: the module types `ModuleInstantiateInfo` do not work with the
+        // @daodao/types, therefore not using interfaces. There is versioning
+        // issues
         // https://github.com/DA0-DA0/dao-contracts/pull/347#pullrequestreview-1011556931
-        const govModInstInfo = DaoClient.createGovModInstInfo(proposalSingleRes.codeId, propInstMsg as any);
-        const voteModInstInfo = DaoClient.createVoteModInstInfo(voteRes.codeId, voteInstMsg);
-        const daoInstMsg = DaoClient.createDaoInstMsg(govModInstInfo, voteModInstInfo, daoAdmin);
+        const propModInstInfo: ModuleInstantiateInfo = DaoClient.createGovModInstInfo(
+            proposalSingleRes.codeId,
+            propInstMsg as any
+        );
+
+        const tokenInfo: TokenInfo = {
+            existing: {
+                address: govecAddr,
+                staking_contract: {
+                    new: {
+                        staking_code_id: stakingRes.code_id,
+                        unstaking_duration: unstakingDuration,
+                    },
+                },
+            },
+        };
+        const voteInstMsg: Cw20SBVInstantiateMsg = {
+            active_threshold: activeThreshold,
+            token_info: tokenInfo,
+        };
+
+        const voteModInstInfo: ModuleInstantiateInfo = DaoClient.createVoteModInstInfo(voteRes.codeId, voteInstMsg);
+        const daoInstMsg = DaoClient.createDaoInstMsg(propModInstInfo, voteModInstInfo, daoAdmin);
 
         console.log("dao code id: ", daoRes.codeId);
 
@@ -181,6 +235,7 @@ class DaoClient {
         const stakingAddr = await client.queryContractSmart(voteAddr, {
             staking_contract: {},
         });
+
         console.log("Instantiated DAO at: ", daoAddr);
         console.log("Instantiated Vote at: ", voteAddr);
         console.log("Instantiated proposal at: ", proposalAddr);
@@ -194,10 +249,13 @@ class DaoClient {
         });
     }
 
-    static createGovModInstInfo(proposalCodeId: number, propInstMsg: CwPropSingleInstantiateMsg) {
+    static createGovModInstInfo(
+        proposalCodeId: number,
+        propInstMsg: CwPropSingleInstantiateMsg
+    ): ModuleInstantiateInfo {
         return {
             admin: {
-                core_contract: {},
+                core_module: {},
             },
             code_id: proposalCodeId,
             label: "Vectis Proposal Module",
@@ -208,7 +266,7 @@ class DaoClient {
     static createVoteModInstInfo(voteCodeId: number, voteInstMsg: Cw20SBVInstantiateMsg) {
         return {
             admin: {
-                core_contract: {},
+                core_module: {},
             },
             code_id: voteCodeId,
             label: "Vectis Vote Module",
@@ -249,22 +307,26 @@ class DaoClient {
     }
 
     static createPropInstMsg(
-        depositInfo: DepositInfo | null,
-        maxVotingPeriod: Duration | null,
+        maxVotingPeriod: Duration,
         minVotingPeriod: Duration | null,
         threshold: Threshold,
-        allow_revoting: Boolean
+        allow_revoting: boolean,
+        close_proposal_on_execution_failure: boolean,
+        preProposalInfo: PreProposeInfo,
+        only_members_execute: boolean
     ) {
         return {
-            // deposit required for creating proposal
-            deposit_info: depositInfo,
+            close_proposal_on_execution_failure: close_proposal_on_execution_failure,
+
+            pre_propose_info: preProposalInfo,
             // time in seconds
             // {
             //     time: 60 * 60 * 24 * 14,
             // }
             max_voting_period: maxVotingPeriod,
-            only_members_execute: false,
-            // details - https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
+            only_members_execute: only_members_execute,
+            // details -
+            // https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
             // threshold_quorum: {
             //     quorum: {
             //         percent: "0.6",
@@ -287,6 +349,19 @@ class DaoClient {
             allow_revoting: allow_revoting,
         };
     }
+
+    static createPrePropInstMsg(
+        depositInfo: UncheckedDepositInfo | null,
+        open_proposal_submission: boolean,
+        approver: string
+    ) {
+        return {
+            deposit_info: depositInfo,
+            extension: { approver: approver },
+            open_proposal_submission: open_proposal_submission,
+        };
+    }
+
     static addApprovedControllerMsg(daoTunnelAddr: string, connectId: string, portId: string) {
         return {
             wasm: {
