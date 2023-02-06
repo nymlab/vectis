@@ -25,6 +25,9 @@ export interface VectisDaoContractsAddrs {
     factoryAddr: string;
     stakingAddr: string;
     proposalAddr: string;
+    preproposalAddr: string;
+    preproposalApproverAddr: string;
+    preproposalGroupAddr: string;
     voteAddr: string;
 }
 
@@ -33,4 +36,5 @@ export interface DaoDaoContracts {
     staking: Code;
     vote: Code;
     proposalSingle: Code;
+    preProposalSingle: Code;
 }

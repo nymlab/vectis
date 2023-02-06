@@ -5,3 +5,5 @@ export { default as GovecClient } from "./govec";
 export { default as FactoryClient } from "./factory";
 export { default as RelayerClient } from "./relayer";
 export { default as ProxyClient } from "./proxy";
+export { default as Cw3FlexClient } from "./cw3flex";
+export { default as Cw4GroupClient } from "./cw4group";

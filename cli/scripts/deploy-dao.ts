@@ -1,5 +1,13 @@
 import assert from "assert";
-import { FactoryClient, GovecClient, DaoClient, RelayerClient, CWClient } from "../clients";
+import {
+    FactoryClient,
+    GovecClient,
+    DaoClient,
+    RelayerClient,
+    CWClient,
+    Cw3FlexClient,
+    Cw4GroupClient,
+} from "../clients";
 import { marketingDescription, marketingProject } from "../clients/govec";
 import RemoteTunnelClient from "../clients/remote-tunnel";
 import { govecGenesisBalances } from "../config/govec_init_balances";
@@ -49,6 +57,19 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
     });
     const govecAddr = govecClient.contractAddress;
     console.log("2. Instantiated Govec at: ", govecAddr);
+
+    // Instantiate Govec
+    const prePropApprover = await Cw3FlexClient.instantiate(
+        adminHostClient,
+        cw3FlexRes.codeId
+
+        //cw4Addr: string,
+        //maxVotingPeriod: Cw3FlexT.Duration,
+        //threshold: Cw3FlexT.Threshold,
+        //label: string
+    );
+    const preproposalApproverAddr = prePropApprover.contractAddress;
+    console.log("3. Instantiated prePropApprover cw3 at: ", preproposalApproverAddr);
 
     // Instantiate DAO with Admin to help with deploy and dao-action tests
     // Admin will be removed at the end of the tests
@@ -228,6 +249,9 @@ import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
         daoAddr: daoClient.daoAddr,
         stakingAddr: daoClient.stakingAddr,
         proposalAddr: daoClient.proposalAddr,
+        preproposalAddr: "",
+        preproposalApproverAddr: "",
+        preproposalGroupAddr: "",
         voteAddr: daoClient.voteAddr,
     };
 

@@ -15,17 +15,23 @@ import {
     factoryCodePath,
     proxyCodePath,
     fixMultiSigCodePath,
+    cw3FlexCodePath,
+    cw4GroupCodePath,
     govecCodePath,
     stakingCodePath,
     daoCodePath,
     voteCodePath,
     proposalSingleCodePath,
+    preProposalSingleCodePath,
     cw3FixedMulDownloadLink,
+    cw3FlexMulDownloadLink,
+    cw4GroupDownloadLink,
     cw20BaseDownloadLink,
     cwDaoDownloadLink,
     cw20StakingDownloadLink,
     cw20VotingDownloadLink,
     cw20ProposalSingleDownloadLink,
+    cwPreProposalSingleDownloadLink,
     contractsFileNames,
     daoTunnelCodetPath,
     remoteTunnelCodePath,
@@ -119,8 +125,9 @@ class CWClient extends SigningCosmWasmClient {
         const dao = await this.getOnchainContracts(codeIds.dao.id);
         const vote = await this.getOnchainContracts(codeIds.vote.id);
         const proposalSingle = await this.getOnchainContracts(codeIds.proposalSingle.id);
+        const preProposalSingle = await this.getOnchainContracts(codeIds.preProposalSingle.id);
 
-        return { staking, dao, vote, proposalSingle };
+        return { staking, dao, vote, proposalSingle, preProposalSingle };
     }
 
     async uploadContract(
@@ -153,35 +160,42 @@ class CWClient extends SigningCosmWasmClient {
         factoryRes: UploadResult;
         proxyRes: UploadResult;
         multisigRes: UploadResult;
+        flexMultisigRes: UploadResult;
+        multisigGroupRes: UploadResult;
         govecRes: UploadResult;
         stakingRes: UploadResult | Code;
         daoRes: UploadResult | Code;
         voteRes: UploadResult | Code;
         proposalSingleRes: UploadResult | Code;
+        preProposalSingleRes: UploadResult | Code;
     }> {
-        // Upload required contracts
+        const daodaoCodes = CODES[hostChainName as keyof typeof CODES];
+
+        const { staking, dao, vote, proposalSingle, preProposalSingle } = daodaoCodes
+            ? await this.getDaoDaoOnChainContracts(daodaoCodes)
+            : await this.uploadDaoDaoContracts();
+
         const daoTunnelRes = await this.uploadContract(daoTunnelCodetPath);
         const factoryRes = await this.uploadContract(factoryCodePath);
         const proxyRes = await this.uploadContract(proxyCodePath);
         const multisigRes = await this.uploadContract(fixMultiSigCodePath);
+        const flexMultisigRes = await this.uploadContract(cw3FlexCodePath);
+        const multisigGroupRes = await this.uploadContract(cw4GroupCodePath);
         const govecRes = await this.uploadContract(govecCodePath);
-
-        const daodaoCodes = CODES[hostChainName as keyof typeof CODES];
-
-        const { staking, dao, vote, proposalSingle } = daodaoCodes
-            ? await this.getDaoDaoOnChainContracts(daodaoCodes)
-            : await this.uploadDaoDaoContracts();
 
         return {
             daoTunnelRes,
             factoryRes,
             proxyRes,
             multisigRes,
+            flexMultisigRes,
+            multisigGroupRes,
             govecRes,
             stakingRes: staking,
             daoRes: dao,
             voteRes: vote,
             proposalSingleRes: proposalSingle,
+            preProposalSingleRes: preProposalSingle,
         };
     }
 
@@ -204,8 +218,9 @@ class CWClient extends SigningCosmWasmClient {
         const dao = await this.uploadContract(daoCodePath);
         const vote = await this.uploadContract(voteCodePath);
         const proposalSingle = await this.uploadContract(proposalSingleCodePath);
+        const preProposalSingle = await this.uploadContract(preProposalSingleCodePath);
 
-        return { staking, dao, vote, proposalSingle };
+        return { staking, dao, vote, proposalSingle, preProposalSingle };
     }
 
     private static async connectWithAccount(chain: Chain, { mnemonic }: Account) {
@@ -230,9 +245,12 @@ export async function downloadContracts() {
     // Download CwPlus Contracts
     await downloadContract(cw3FixedMulDownloadLink, contractsFileNames.cw3_mutltisig);
     await downloadContract(cw20BaseDownloadLink, contractsFileNames.cw20_base);
+    await downloadContract(cw3FlexMulDownloadLink, contractsFileNames.cw3_flex_mutltisig);
+    await downloadContract(cw4GroupDownloadLink, contractsFileNames.cw4_group);
     // Download DAODAO Contracts
     await downloadContract(cwDaoDownloadLink, contractsFileNames.cw_dao);
     await downloadContract(cw20StakingDownloadLink, contractsFileNames.cw20_staking);
     await downloadContract(cw20VotingDownloadLink, contractsFileNames.cw20_voting);
     await downloadContract(cw20ProposalSingleDownloadLink, contractsFileNames.cw_proposal_single);
+    await downloadContract(cwPreProposalSingleDownloadLink, contractsFileNames.cw_pre_proposal_approval_single);
 }

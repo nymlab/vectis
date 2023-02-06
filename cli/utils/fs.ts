@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import { cachePath, downloadContractPath, contractsFileNames, configPath } from "./constants";
+import { cachePath, downloadSchemaPath, downloadContractPath, contractsFileNames, configPath } from "./constants";
 
 export function getContract(path: string): Uint8Array {
     return fs.readFileSync(path);
@@ -40,8 +40,20 @@ export async function downloadContract(url: string, fileName: string): Promise<v
     await downloadFile(url, `contracts/${fileName}`);
 }
 
+export async function downloadTypeSchema(url: string, contractName: string, fileName: string): Promise<void> {
+    let dir = path.join(downloadSchemaPath, contractName);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    await downloadFile(url, `schemas/${contractName}/${fileName}`);
+}
+
 export function areContractsDownloaded(): boolean {
     if (!fs.existsSync(downloadContractPath)) return false;
     const downloadContractPathFiles = fs.readdirSync(downloadContractPath);
-    return downloadContractPathFiles.length === 6;
+    return downloadContractPathFiles.length === 9;
+}
+
+export function areTypesSchemasDownloaded(): boolean {
+    if (!fs.existsSync(downloadSchemaPath)) return false;
+    const files = fs.readdirSync(downloadSchemaPath);
+    return files.length === 5;
 }

@@ -80,7 +80,7 @@ The deployment of the DAO on the host chain has the following steps:
 
 1. _Relayer_: Creates channels between Dao-tunnel and Remote-tunnel
 1. Upload all required contracts (in ./upload.ts) to dao chain + remote chains
-   1. Host: Factory, Govec, Proxy, Dao-tunnel, Dao contracts (core, proposal, vote, cw20-staking, pre-proposal)
+   1. Host: Factory, Govec, Proxy, Dao-tunnel, Dao contracts (core, proposal, vote, cw20-staking, pre-proposal-approval)
    1. Remote: Remote-Factory, Proxy, Remote-tunnel, Remote ICA
 1. _DAO Chain_: Instantiate Govec contract (with admin having initial balance for proposing for DAO to deploy Factory)
 1. _DAO Chain_: Instantiate dao-core contract (which will instantiate one proposal module and one vote module contracts)
