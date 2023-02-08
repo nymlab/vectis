@@ -29,12 +29,30 @@ const common = {
             "material often similar patrol please flat van toast agree milk grass pause glow rhythm voyage reason potato sunset great govern pave decade critic lens",
         address: "wasm1yjammmgqu62lz4sxk5seu7ml4fzdu7gkatgswc",
     },
+    committee1: {
+        mnemonic:
+            "cave topple history exercise carpet crash answer correct one benefit fury tiger medal emerge canoe acquire pig chuckle mystery confirm alley security exit mixture",
+        address: "wasm1dfd5vtxy2ty5gqqv0cs2z23pfucnpym92kjfzm",
+    },
+    committee2: {
+        mnemonic:
+            "divorce park goat subject cake arrive liar reward favorite shed market spot harsh garden wet general enlist limb chair message current grant curtain that",
+        address: "wasm1ndxfpxzxg267ujpc6wwhw9fs2rvgfh0675s7yr",
+    },
 };
 export const wasm_mainnet = {
     ...common,
     admin: {
         mnemonic: process.env.WASM_ADMIN_MNEMONIC,
         address: process.env.WASM_ADMIN_ADDRESS,
+    },
+    committee1: {
+        mnemonic: process.env.WASM_COMMITTEE1_MNEMONIC,
+        address: process.env.WASM_COMMITTEE1_ADDRESS,
+    },
+    committee2: {
+        mnemonic: process.env.WASM_COMMITTEE2_MNEMONIC,
+        address: process.env.WASM_COMMITTEE2_ADDRESS,
     },
 };
 export const wasm_testnet = { ...common };

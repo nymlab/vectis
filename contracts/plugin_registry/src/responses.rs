@@ -13,5 +13,5 @@ pub struct PluginsResponse {
 pub struct ConfigResponse {
     pub registry_fee: Coin,
     pub dao_addr: String,
-    pub reviewers: Vec<String>,
+    pub reviewer: String,
 }

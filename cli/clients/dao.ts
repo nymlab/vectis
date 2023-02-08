@@ -10,6 +10,8 @@ import type {
     DepositToken,
 } from "../interfaces/DaoPreProposeApprovalSingel.types";
 
+import type { Threshold as Cw3Threshold } from "../interfaces/Cw3Flex.types";
+
 import type {
     InstantiateMsg as CwPropSingleInstantiateMsg,
     ExecuteMsg as CwPropSingleExecuteMsg,
@@ -17,7 +19,7 @@ import type {
 } from "@dao-dao/types/contracts/DaoProposalSingle.v2";
 import { Vote, Threshold } from "@dao-dao/types/contracts/DaoProposalSingle.common";
 
-import { DepositRefundPolicy } from "@dao-dao/types/contracts/common";
+import type { DepositRefundPolicy } from "@dao-dao/types/contracts/common";
 import type { Duration } from "@dao-dao/types/contracts/common";
 import type {
     InstantiateMsg as Cw20SBVInstantiateMsg,
@@ -47,7 +49,7 @@ export const activeThreshold: ActiveThreshold | null = null;
 export const depositInfo: UncheckedDepositInfo = {
     amount: "2",
     denom: { voting_module_token: {} },
-    refund_policy: DepositRefundPolicy.Always,
+    refund_policy: "always" as DepositRefundPolicy,
 };
 
 // Bool if anyway cal submit pre-proposals
@@ -65,6 +67,19 @@ export const threshold: Threshold = {
         },
     },
 };
+
+// PreProposal Multisig config
+// Length of  max Voting Period, Time in seconds
+export const preProMaxVotingPeriod: Duration = {
+    time: 60 * 60 * 24 * 14,
+};
+
+export const prePropThreshold: Cw3Threshold = {
+    absolute_percentage: { percentage: "40" },
+};
+
+export const committe1Weight: number = 50;
+export const committe2Weight: number = 50;
 
 class DaoClient {
     daoAddr: string;
@@ -171,7 +186,7 @@ class DaoClient {
                     admin: {
                         core_module: {},
                     },
-                    code_id: preProposalSingleRes.code_id,
+                    code_id: preProposalSingleRes.codeId,
                     label: "Vectis Pre Prop Module",
                     msg: toCosmosMsg<CwPrePropSingleInstantiateMsg>(prePropInstMsg),
                 },
@@ -202,7 +217,7 @@ class DaoClient {
                 address: govecAddr,
                 staking_contract: {
                     new: {
-                        staking_code_id: stakingRes.code_id,
+                        staking_code_id: stakingRes.codeId,
                         unstaking_duration: unstakingDuration,
                     },
                 },

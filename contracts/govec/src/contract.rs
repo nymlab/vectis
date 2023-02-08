@@ -16,7 +16,7 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
     TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_AMOUNT, MINT_CAP,
-    PROP_MODULES, STAKING_ADDR, TOKEN_INFO,
+    PRE_PROP_APPROVAL, STAKING_ADDR, TOKEN_INFO,
 };
 use cw20_stake::{
     contract::{
@@ -125,9 +125,6 @@ pub fn execute(
             amount,
             relayed_from,
         } => execute_transfer(deps, info, recipient, amount, relayed_from),
-        ExecuteMsg::ProposalTransfer { proposer, deposit } => {
-            execute_transfer_deposit(deps, info, proposer, deposit)
-        }
         ExecuteMsg::Burn { amount } => execute_burn(deps, env, info, amount),
         ExecuteMsg::Exit { relayed_from } => execute_exit(deps, env, info, relayed_from),
         ExecuteMsg::Send {
@@ -177,7 +174,7 @@ pub fn execute_transfer(
     // TODO: catch error that is the wrong prefix
     // let rcpt_addr = deps.api.addr_validate(&recipient)?;
     let rcpt_addr = Addr::unchecked(recipient);
-    ensure_is_staking_or_wallet(deps.as_ref(), &rcpt_addr)?;
+    ensure_is_wallet_or_authorised(deps.as_ref(), &rcpt_addr)?;
 
     BALANCES.update(
         deps.storage,
@@ -200,41 +197,6 @@ pub fn execute_transfer(
         .add_attribute("to", rcpt_addr)
         .add_attribute("amount", amount);
     Ok(res)
-}
-
-/// This is exclusive used by proposal module
-pub fn execute_transfer_deposit(
-    deps: DepsMut,
-    info: MessageInfo,
-    proposer: String,
-    deposit: Uint128,
-) -> Result<Response, ContractError> {
-    if PROP_MODULES.load(deps.storage, info.sender.clone()).is_ok() {
-        let prop = Addr::unchecked(&proposer);
-        BALANCES.update(
-            deps.storage,
-            &prop,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(deposit)?)
-            },
-        )?;
-        BALANCES.update(
-            deps.storage,
-            &info.sender,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_add(deposit)?)
-            },
-        )?;
-
-        let res = Response::new()
-            .add_attribute("action", "proposal tranfer")
-            .add_attribute("from", proposer)
-            .add_attribute("to", info.sender)
-            .add_attribute("amount", deposit);
-        Ok(res)
-    } else {
-        Err(ContractError::Unauthorized {})
-    }
 }
 
 /// Burning of Govec
@@ -399,7 +361,7 @@ pub fn execute_send(
     };
 
     let contract = deps.api.addr_validate(&contract)?;
-    ensure_is_staking_or_wallet(deps.as_ref(), &contract)?;
+    ensure_is_wallet_or_authorised(deps.as_ref(), &contract)?;
 
     // move the tokens to the contract
     BALANCES.update(
@@ -549,19 +511,19 @@ pub fn execute_update_config_addr(
                 .add_attribute("action", "update_staking")
                 .add_attribute("new_addr", addr)
         }
-        UpdateAddrReq::Proposal(addr) => {
+        UpdateAddrReq::PreProposal(addr) => {
             let prop = deps.api.addr_validate(&addr)?;
-            match PROP_MODULES.may_load(deps.storage, prop.clone())? {
+            match PRE_PROP_APPROVAL.may_load(deps.storage, &prop)? {
                 Some(_) => {
-                    PROP_MODULES.remove(deps.storage, prop.clone());
+                    PRE_PROP_APPROVAL.remove(deps.storage, &prop);
                     Response::new()
-                        .add_attribute("action", "removed proposal module")
+                        .add_attribute("action", "removed pre proposal module")
                         .add_attribute("addr", prop)
                 }
                 None => {
-                    PROP_MODULES.save(deps.storage, prop.clone(), &())?;
+                    PRE_PROP_APPROVAL.save(deps.storage, &prop, &())?;
                     Response::new()
-                        .add_attribute("action", "added proposal module")
+                        .add_attribute("action", "added pre proposal module")
                         .add_attribute("addr", prop)
                 }
             }
@@ -613,13 +575,19 @@ fn ensure_is_dao<'a>(deps: Deps, sender: &'a Addr) -> Result<&'a Addr, ContractE
     Ok(sender)
 }
 
-fn ensure_is_staking_or_wallet(deps: Deps, contract: &Addr) -> Result<(), ContractError> {
+// transfer is ok if the recipient is a wallet (is in the balances ledger)
+// or, it is staking / pre_preposal contracts
+fn ensure_is_wallet_or_authorised(deps: Deps, contract: &Addr) -> Result<(), ContractError> {
     let staking = STAKING_ADDR.may_load(deps.storage)?;
+    let pre_proposal = PRE_PROP_APPROVAL.may_load(deps.storage, contract)?;
     let wallet = BALANCES.may_load(deps.storage, contract)?;
     if let Some(staking_addr) = staking {
         if contract == &deps.api.addr_humanize(&staking_addr)? {
             return Ok(());
         }
+    }
+    if pre_proposal.is_some() {
+        return Ok(());
     }
     if wallet.is_some() {
         return Ok(());

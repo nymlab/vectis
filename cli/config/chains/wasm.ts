@@ -1,14 +1,14 @@
 export const wasm_testnet = {
-    chainId: "cliffnet-1",
+    chainId: "malaga-420",
     chainName: "Wasmd Testnet",
     addressPrefix: "wasm",
-    rpcUrl: "https://rpc.cliffnet.cosmwasm.com/",
-    httpUrl: "https://lcd.cliffnet.cosmwasm.com/",
-    feeToken: "upebble",
-    stakingToken: "urock",
+    rpcUrl: "https://rpc.malaga-420.cosmwasm.com:443",
+    httpUrl: "https://api.malaga-420.cosmwasm.com",
+    feeToken: "umlg",
+    stakingToken: "uand",
     estimatedBlockTime: 7000,
     estimatedIndexerTime: 250,
-    gasPrice: 0.025,
+    gasPrice: 0.08,
 };
 
 export const wasm_localnet = {

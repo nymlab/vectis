@@ -17,3 +17,4 @@ export interface Chain {
 export * from "./juno";
 export * from "./wasm";
 export * from "./tgrade";
+export * from "./archway";

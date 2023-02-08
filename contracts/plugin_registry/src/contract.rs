@@ -45,7 +45,7 @@ impl PluginRegistry<'_> {
             total_plugins: Item::new("total_plugins"),
             registry_fee: Item::new("registry_fee"),
             dao_addr: Item::new("dao_addr"),
-            reviewer: Item::new("reviewers"),
+            reviewer: Item::new("reviewer"),
             plugins: Map::new("plugins"),
         }
     }
@@ -152,7 +152,10 @@ impl PluginRegistry<'_> {
         let (deps, _env, info) = ctx;
 
         // Check if the caller is a reviewer
-        let reviewers = self.reviewer.load(deps.storage)?;
+        let reviewer = self.reviewer.load(deps.storage)?;
+        if deps.api.addr_humanize(&reviewer)? != info.sender {
+            return Err(ContractError::Unauthorized);
+        }
 
         // Remove plugin information from registry
         self.plugins.remove(deps.storage, id);
@@ -262,10 +265,10 @@ impl PluginRegistry<'_> {
     }
 
     #[msg(exec)]
-    pub fn update_reviewers(
+    pub fn update_reviewer(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
-        reviewers: Vec<String>,
+        reviewer: String,
     ) -> Result<Response, ContractError> {
         let (deps, _env, info) = ctx;
         ensure_eq!(
@@ -274,17 +277,15 @@ impl PluginRegistry<'_> {
             ContractError::Unauthorized
         );
 
-        self.reviewers
-            .update(deps.storage, |_| -> StdResult<Vec<CanonicalAddr>> {
-                reviewers
-                    .iter()
-                    .map(|addr| deps.api.addr_canonicalize(addr))
-                    .collect::<StdResult<Vec<CanonicalAddr>>>()
-            })?;
-
+        self.reviewer.save(
+            deps.storage,
+            &deps
+                .api
+                .addr_canonicalize(&deps.api.addr_validate(&reviewer)?.as_str())?,
+        )?;
         Ok(Response::default().add_event(
-            Event::new("vectis.plugin_registry.v1.MsgUpdateReviewers")
-                .add_attribute("reviewers", format!("{:?}", reviewers)),
+            Event::new("vectis.plugin_registry.v1.MsgUpdateReviewer")
+                .add_attribute("reviewer", format!("{:?}", reviewer)),
         ))
     }
 
@@ -297,12 +298,10 @@ impl PluginRegistry<'_> {
                 .api
                 .addr_humanize(&self.dao_addr.load(deps.storage)?)?
                 .to_string(),
-            reviewers: self
-                .reviewers
-                .load(deps.storage)?
-                .iter()
-                .map(|addr| deps.api.addr_humanize(addr).unwrap().to_string())
-                .collect(),
+            reviewer: deps
+                .api
+                .addr_humanize(&self.reviewer.load(deps.storage)?)?
+                .to_string(),
         })
     }
 

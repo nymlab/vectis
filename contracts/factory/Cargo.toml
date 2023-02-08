@@ -38,6 +38,6 @@ assert_matches = "1"
 cosmwasm-schema = { workspace = true }
 cw-multi-test = { workspace = true }
 cw3 = { workspace = true }
-cw3-fixed-multisig = "0.13"
+cw3-fixed-multisig = "0.16"
 cw20-stake = { workspace = true }
 vectis-proxy = { path = "../proxy", features = ["migration", "library"]}

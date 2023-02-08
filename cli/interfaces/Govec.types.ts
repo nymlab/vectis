@@ -42,12 +42,6 @@ export type ExecuteMsg =
           };
       }
     | {
-          proposal_transfer: {
-              deposit: Uint128;
-              proposer: string;
-          };
-      }
-    | {
           burn: {
               amount: Uint128;
           };
@@ -110,7 +104,7 @@ export type UpdateAddrReq =
           staking: string;
       }
     | {
-          proposal: string;
+          pre_proposal: string;
       };
 export type Logo =
     | {

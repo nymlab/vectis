@@ -26,4 +26,4 @@ pub const FACTORY: Item<CanonicalAddr> = Item::new("Factory");
 
 // We update this with the DAO, we can query the DAO but this might run out of gas,
 // see https://github.com/nymlab/dao-contracts/blob/v1.0.0-vectis/contracts/cw-core/src/contract.rs#L517
-pub const PROP_MODULES: Map<Addr, ()> = Map::new("proposal_modules");
+pub const PRE_PROP_APPROVAL: Map<&Addr, ()> = Map::new("proposal_modules");
