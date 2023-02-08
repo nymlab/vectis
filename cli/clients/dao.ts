@@ -75,7 +75,7 @@ export const preProMaxVotingPeriod: Duration = {
 };
 
 export const prePropThreshold: Cw3Threshold = {
-    absolute_percentage: { percentage: "40" },
+    absolute_percentage: { percentage: "0.5" },
 };
 
 export const committe1Weight: number = 50;
@@ -244,7 +244,7 @@ class DaoClient {
         const voteAddr = await client.queryContractSmart(daoAddr, {
             voting_module: {},
         });
-        const [proposalAddr] = await client.queryContractSmart(daoAddr, {
+        const proposals = await client.queryContractSmart(daoAddr, {
             proposal_modules: {},
         });
         const stakingAddr = await client.queryContractSmart(voteAddr, {
@@ -253,13 +253,19 @@ class DaoClient {
 
         console.log("Instantiated DAO at: ", daoAddr);
         console.log("Instantiated Vote at: ", voteAddr);
-        console.log("Instantiated proposal at: ", proposalAddr);
+        console.log("Instantiated proposal at: ", proposals[0].address);
         console.log("Instantiated staking at: ", stakingAddr);
-
+        const policy = await client.queryContractSmart(proposals[0].address, {
+            proposal_creation_policy: {},
+        });
+        console.log("policy: ", policy);
+        console.log("Instantiated preproposal at: ", policy.addr);
+        const preProposalAddr = policy.addr;
         return new DaoClient(client, {
             daoAddr,
             voteAddr,
-            proposalAddr,
+            proposalAddr: proposals[0].address,
+            preProposalAddr,
             stakingAddr,
         });
     }

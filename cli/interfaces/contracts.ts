@@ -26,7 +26,7 @@ export interface VectisDaoContractsAddrs {
     stakingAddr: string;
     proposalAddr: string;
     preproposalAddr: string;
-    preproposalApproverAddr: string;
+    preProposalMultiSigAddr: string;
     preproposalGroupAddr: string;
     voteAddr: string;
 }

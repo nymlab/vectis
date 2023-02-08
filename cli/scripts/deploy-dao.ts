@@ -220,23 +220,35 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
             execute: {
                 contract_addr: daoClient.daoAddr,
                 funds: [],
-                msg: toCosmosMsg({ set_item: { key: "dao-tunnel", addr: daoTunnelAddr } }),
+                msg: toCosmosMsg({ set_item: { key: "dao-tunnel", value: daoTunnelAddr } }),
             },
         },
     };
 
-    console.log("\n12. Set dao_tunnel address in DAO items");
-    let res = await daoClient.executeAdminMsg(daoSetItemMsg);
+    // Update DAO with dao_tunnel addr
+    const prePropSetItemMsg: ProxyT.CosmosMsgForEmpty = {
+        wasm: {
+            execute: {
+                contract_addr: daoClient.daoAddr,
+                funds: [],
+                msg: toCosmosMsg({ set_item: { key: "committee", value: committeeGroupAddr } }),
+            },
+        },
+    };
+
+    await daoClient.executeAdminMsg(daoSetItemMsg);
+    await daoClient.executeAdminMsg(prePropSetItemMsg);
+    console.log("\n12. Set dao_tunnel and committee address in DAO items");
 
     // Update marketing address on Govec
-    res = await govecClient.updateMarketing({
+    let res = await govecClient.updateMarketing({
         marketing: daoClient.daoAddr,
     });
     console.log("\n13. Updated Marketing Address on Govec\n", JSON.stringify(res));
 
     // Update Pre Proposal address
     res = await govecClient.updateConfigAddr({
-        newAddr: { pre_proposal: daoClient.preProposalAddr },
+        newAddr: { pre_proposal: preProposalMultiSigAddr },
     });
     console.log("\n14. Updated Proposal Address on Govec\n", JSON.stringify(res));
 
@@ -271,7 +283,7 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
     console.log("\n20. Updated committee Group (cw4) Admin Role to DAO\n", JSON.stringify(res));
 
     res = await adminHostClient.updateAdmin(adminHostClient.sender, committeeGroupAddr, daoClient.daoAddr, "auto");
-    console.log("\n19. Updated committee Group (cw4) Contract Admin to DAO\n", JSON.stringify(res));
+    console.log("\n21. Updated committee Group (cw4) Contract Admin to DAO\n", JSON.stringify(res));
 
     const contracts = {
         remoteFactoryAddr: remoteFactoryAddr as string,
@@ -282,14 +294,14 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         daoAddr: daoClient.daoAddr,
         stakingAddr: daoClient.stakingAddr,
         proposalAddr: daoClient.proposalAddr,
-        preproposalAddr: "",
-        preproposalApproverAddr: "",
-        preproposalGroupAddr: "",
+        preproposalAddr: daoClient.preProposalAddr,
+        preProposalMultiSigAddr,
+        preproposalGroupAddr: committeeGroupAddr,
         voteAddr: daoClient.voteAddr,
     };
 
     await verifyDeploy(contracts);
-    console.log("\n17. Verified deployment");
+    console.log("\nEND. Verified deployment");
 
     writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
 })();
