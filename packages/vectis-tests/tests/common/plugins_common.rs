@@ -76,7 +76,7 @@ impl PluginsSuite {
                 &PRegistryInstantiateMsg {
                     dao_addr: dao.to_string(),
                     registry_fee: coin(REGISTRY_FEE, "ucosm"),
-                    reviewers: vec![deployer.to_string()],
+                    reviewer: deployer.to_string(),
                 },
                 &[],
                 "plugin-registry",
@@ -278,16 +278,16 @@ impl PluginsSuite {
             .map(|_| ())
     }
 
-    pub fn update_reviewers(
+    pub fn update_reviewer(
         &mut self,
         sender: &Addr,
-        reviewers: Vec<String>,
+        reviewer: String,
     ) -> Result<(), PRegistryContractError> {
         self.app
             .execute_contract(
                 sender.clone(),
                 self.plugin_registry.clone(),
-                &PRegistryExecMsg::UpdateReviewers { reviewers },
+                &PRegistryExecMsg::UpdateReviewer { reviewer },
                 &[],
             )
             .map_err(|err| err.downcast().unwrap())

@@ -15,7 +15,7 @@ pub enum UpdateAddrReq {
     Factory(String),
     Staking(String),
     // if addr already exists; this will remove it
-    Proposal(String),
+    PreProposal(String),
 }
 
 #[cw_serde]
@@ -26,10 +26,6 @@ pub enum GovecExecuteMsg {
         amount: Uint128,
         relayed_from: Option<String>,
     },
-    /// This is implemented such that the sender MUST be a DAO proposal module
-    /// The recipient will always be the sender, aka the proposal contract
-    /// called by `get_deposit_msg` required interface in proposal_single
-    ProposalTransfer { proposer: String, deposit: Uint128 },
     /// Burn amount specified from total supply
     /// permission: executed by dao only
     Burn { amount: Uint128 },

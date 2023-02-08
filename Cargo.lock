@@ -15,9 +15,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.68"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cb2f989d18dd141ab8ae82f64d1a8cdd37e0840f73a406896cf5e99502fab61"
+checksum = "224afbd727c3d6e4b90103ece64b8d1b67fbb1973b1046c2281eed3f3803f800"
 
 [[package]]
 name = "assert_matches"
@@ -87,9 +87,9 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "bytes"
-version = "1.3.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
+checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 
 [[package]]
 name = "cc"
@@ -126,9 +126,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-crypto"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb56fffc2233212e9546df66e01267277173d55f6237ab939690ef2c5cfd50c2"
+checksum = "7fecd74d3a0041114110d1260f77fcb644c5d2403549b37096c44f0e643a5177"
 dependencies = [
  "digest 0.10.6",
  "ed25519-zebra",
@@ -139,18 +139,18 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-derive"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e26a78e202d602a23fd5d13dff898732814ebe7a8bde20f1bf71eb0209d56d56"
+checksum = "d5abeeb891e6d0098402e4d3d042f90451db52651d2fe14b170e69a1dd3e4115"
 dependencies = [
  "syn",
 ]
 
 [[package]]
 name = "cosmwasm-schema"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a3dfcfa0c6f4b9aef8820c0a999410f239828a4503a388ce8e55f59fe3ac863"
+checksum = "9118e36843df6648fd0a626c46438f87038f296ec750cef3832cafc483c483f9"
 dependencies = [
  "cosmwasm-schema-derive",
  "schemars",
@@ -161,9 +161,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-schema-derive"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e19cd48063eef5b92a0aabcf0687705802178ae175571dfdc5f3b925d0741d39"
+checksum = "78d6fc9854ac14e46cb69b0f396547893f93d2847aef975950ebbe73342324f3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -172,9 +172,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-std"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b50f4deaed6196047a3ceec9bc23e85d4292b73442d77af63723842d8b6049d"
+checksum = "5034c772c1369b160731aa00bb81f93733ab2884928edd8d588733d607ac5af4"
 dependencies = [
  "base64",
  "cosmwasm-crypto",
@@ -192,9 +192,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-storage"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c91b9880577b6fa389f60bbcc8daab202996150c51ed0d14e6532a87a764a7d5"
+checksum = "18b4c99c6479e554ef1516950f1fa3d88bd7d0a8fc2367321c07ca0a33997dfc"
 dependencies = [
  "cosmwasm-std",
  "serde",
@@ -677,22 +677,6 @@ dependencies = [
  "cw-utils 0.16.0",
  "schemars",
  "serde",
-]
-
-[[package]]
-name = "cw3-fixed-multisig"
-version = "0.13.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df54aa54c13f405ec4ab36b6217538bc957d439eee58f89312db05a79caf6706"
-dependencies = [
- "cosmwasm-std",
- "cw-storage-plus 0.13.4",
- "cw-utils 0.13.4",
- "cw2 0.13.4",
- "cw3 0.13.4",
- "schemars",
- "serde",
- "thiserror",
 ]
 
 [[package]]
@@ -1242,9 +1226,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.50"
+version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ef7d57beacfaf2d8aee5937dab7b7f28de3cb8b1828479bb5de2a7106f2bae2"
+checksum = "5d727cae5b39d21da60fa540906919ad737832fe0b1c165da3a34d6548c849d6"
 dependencies = [
  "unicode-ident",
 ]
@@ -1449,9 +1433,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.91"
+version = "1.0.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "877c235533714907a8c2464236f5c4b2a17262ef1bd71f38f35ea592c8da6883"
+checksum = "7434af0dc1cbd59268aa98b4c22c131c0584d2232f6fb166efb993e2832e896a"
 dependencies = [
  "itoa",
  "ryu",
@@ -1617,9 +1601,9 @@ checksum = "84a22b9f218b40614adcb3f4ff08b703773ad44fa9423e4e0d346d5db86e4ebc"
 
 [[package]]
 name = "unicode-segmentation"
-version = "1.10.0"
+version = "1.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fdbf052a0783de01e944a6ce7a8cb939e295b1e7be835a1112c3b9a7f047a5a"
+checksum = "1dd624098567895118886609431a7c3b8f516e41d30e0643f03d94592a147e36"
 
 [[package]]
 name = "vectis-contract-tests"
@@ -1636,7 +1620,7 @@ dependencies = [
  "cw20 0.16.0",
  "cw20-stake 2.0.1",
  "cw3 0.16.0",
- "cw3-fixed-multisig 0.16.0",
+ "cw3-fixed-multisig",
  "dao-core",
  "dao-interface",
  "dao-pre-propose-approval-single",
@@ -1689,7 +1673,7 @@ dependencies = [
  "cw20 0.16.0",
  "cw20-stake 2.0.1",
  "cw3 0.16.0",
- "cw3-fixed-multisig 0.13.4",
+ "cw3-fixed-multisig",
  "derivative",
  "thiserror",
  "vectis-govec",
@@ -1743,7 +1727,7 @@ dependencies = [
  "cw2 0.16.0",
  "cw20 0.16.0",
  "cw3 0.16.0",
- "cw3-fixed-multisig 0.16.0",
+ "cw3-fixed-multisig",
  "sha2 0.9.9",
  "thiserror",
  "vectis-wallet",
@@ -1765,7 +1749,7 @@ dependencies = [
  "cw20 0.16.0",
  "cw20-stake 2.0.1",
  "cw3 0.16.0",
- "cw3-fixed-multisig 0.16.0",
+ "cw3-fixed-multisig",
  "derivative",
  "thiserror",
  "vectis-proxy",

@@ -15,7 +15,7 @@ fn cannot_register_plugins_without_fee() {
 }
 
 #[test]
-fn no_reviewers_cannot_register_plugins() {
+fn no_reviewer_cannot_register_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
@@ -26,7 +26,7 @@ fn no_reviewers_cannot_register_plugins() {
 }
 
 #[test]
-fn no_reviewers_cannot_unregister_plugins() {
+fn no_reviewer_cannot_unregister_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
@@ -37,7 +37,7 @@ fn no_reviewers_cannot_unregister_plugins() {
 }
 
 #[test]
-fn no_reviewers_cannot_update_plugins() {
+fn no_reviewer_cannot_update_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
@@ -57,11 +57,11 @@ fn no_reviewers_cannot_update_plugins() {
 }
 
 #[test]
-fn no_dao_cannot_update_reviewers() {
+fn no_dao_cannot_update_reviewer() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
-        .update_reviewers(&suite.controller.clone(), vec![])
+        .update_reviewer(&suite.controller.clone(), "update".to_string())
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -90,7 +90,7 @@ fn no_dao_cannot_update_dao_addr() {
 }
 
 #[test]
-fn reviewers_should_be_able_to_register_plugins() {
+fn reviewer_should_be_able_to_register_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let dao_previous_balance = suite.query_balance(&suite.dao.clone()).unwrap();
@@ -116,7 +116,7 @@ fn reviewers_should_be_able_to_register_plugins() {
 }
 
 #[test]
-fn reviewers_should_be_able_to_unregister_plugins() {
+fn reviewer_should_be_able_to_unregister_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     suite
@@ -135,7 +135,7 @@ fn reviewers_should_be_able_to_unregister_plugins() {
 }
 
 #[test]
-fn reviewers_should_be_able_to_update_plugins() {
+fn reviewer_should_be_able_to_update_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     suite
@@ -180,18 +180,18 @@ fn reviewers_should_be_able_to_update_plugins() {
 }
 
 #[test]
-fn dao_should_be_able_to_update_reviewers() {
+fn dao_should_be_able_to_update_reviewer() {
     let mut suite = PluginsSuite::init().unwrap();
 
-    let new_reviewers = vec![suite.deployer.to_string(), suite.controller.to_string()];
+    let new_reviewer = suite.controller.to_string();
 
     suite
-        .update_reviewers(&suite.dao.clone(), new_reviewers.clone())
+        .update_reviewer(&suite.dao.clone(), new_reviewer.clone())
         .unwrap();
 
     let config = suite.query_config().unwrap();
 
-    assert_eq!(config.reviewers, new_reviewers);
+    assert_eq!(config.reviewer, new_reviewer);
 }
 
 #[test]

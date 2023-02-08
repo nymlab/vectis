@@ -283,7 +283,9 @@ impl DaoChainSuite {
             deployer.clone(),
             govec.clone(),
             &GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Proposal(prop_list[0].address.to_string()),
+                new_addr: vectis_wallet::UpdateAddrReq::PreProposal(
+                    pre_prop.clone().unwrap().to_string(),
+                ),
             },
             &[],
         )

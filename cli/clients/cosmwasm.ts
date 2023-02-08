@@ -6,11 +6,22 @@ import {
     SigningCosmWasmClientOptions,
     ExecuteResult,
 } from "@cosmjs/cosmwasm-stargate";
-import { AccountData, DirectSecp256k1HdWallet, OfflineSigner } from "@cosmjs/proto-signing";
+import { DirectSecp256k1HdWallet, GeneratedType, OfflineSigner, Registry } from "@cosmjs/proto-signing";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { GasPrice } from "@cosmjs/stargate";
+import { AminoTypes, GasPrice } from "@cosmjs/stargate";
+import {
+    cosmosAminoConverters,
+    cosmosProtoRegistry,
+    cosmwasmAminoConverters,
+    cosmwasmProtoRegistry,
+    ibcProtoRegistry,
+    ibcAminoConverters,
+    osmosisAminoConverters,
+    osmosisProtoRegistry,
+} from "osmojs";
+
 import {
     factoryCodePath,
     proxyCodePath,
@@ -160,8 +171,8 @@ class CWClient extends SigningCosmWasmClient {
         factoryRes: UploadResult;
         proxyRes: UploadResult;
         multisigRes: UploadResult;
-        flexMultisigRes: UploadResult;
-        multisigGroupRes: UploadResult;
+        Cw3FlexRes: UploadResult;
+        Cw4GroupRes: UploadResult;
         govecRes: UploadResult;
         stakingRes: UploadResult | Code;
         daoRes: UploadResult | Code;
@@ -179,8 +190,8 @@ class CWClient extends SigningCosmWasmClient {
         const factoryRes = await this.uploadContract(factoryCodePath);
         const proxyRes = await this.uploadContract(proxyCodePath);
         const multisigRes = await this.uploadContract(fixMultiSigCodePath);
-        const flexMultisigRes = await this.uploadContract(cw3FlexCodePath);
-        const multisigGroupRes = await this.uploadContract(cw4GroupCodePath);
+        const Cw3FlexRes = await this.uploadContract(cw3FlexCodePath);
+        const Cw4GroupRes = await this.uploadContract(cw4GroupCodePath);
         const govecRes = await this.uploadContract(govecCodePath);
 
         return {
@@ -188,8 +199,8 @@ class CWClient extends SigningCosmWasmClient {
             factoryRes,
             proxyRes,
             multisigRes,
-            flexMultisigRes,
-            multisigGroupRes,
+            Cw3FlexRes,
+            Cw4GroupRes,
             govecRes,
             stakingRes: staking,
             daoRes: dao,
@@ -224,18 +235,66 @@ class CWClient extends SigningCosmWasmClient {
     }
 
     private static async connectWithAccount(chain: Chain, { mnemonic }: Account) {
-        const { addressPrefix, rpcUrl, gasPrice, feeToken } = chain;
+        const { addressPrefix, rpcUrl, gasPrice, feeToken, chainId, estimatedBlockTime } = chain;
 
         const signer = await CWClient.getSignerWithMnemonic(chain, mnemonic);
         const [{ address }] = await signer.getAccounts();
 
         const tmClient = await Tendermint34Client.connect(rpcUrl);
+
+        const protoRegistry: ReadonlyArray<[string, GeneratedType]> = [
+            ...cosmosProtoRegistry,
+            ...cosmwasmProtoRegistry,
+            ...ibcProtoRegistry,
+            ...osmosisProtoRegistry,
+        ];
+
+        const aminoConverters = {
+            ...cosmosAminoConverters,
+            ...cosmwasmAminoConverters,
+            ...ibcAminoConverters,
+            ...osmosisAminoConverters,
+        };
+
+        const extraOptions = chainId.includes("osmo") ? { protoRegistry, aminoConverters } : {};
+
         return new CWClient(tmClient, address, signer, {
+            broadcastPollIntervalMs: 500,
+            gasPrice: GasPrice.fromString(gasPrice + feeToken),
+            prefix: addressPrefix,
+            ...extraOptions,
+        });
+    }
+
+    static async connectWithOsmo(chain: Chain, signer: any) {
+        const { addressPrefix, rpcUrl, gasPrice, feeToken } = chain;
+        const protoRegistry: ReadonlyArray<[string, GeneratedType]> = [
+            ...cosmosProtoRegistry,
+            ...cosmwasmProtoRegistry,
+            ...ibcProtoRegistry,
+            ...osmosisProtoRegistry,
+        ];
+
+        const aminoConverters = {
+            ...cosmosAminoConverters,
+            ...cosmwasmAminoConverters,
+            ...ibcAminoConverters,
+            ...osmosisAminoConverters,
+        };
+
+        const registry = new Registry(protoRegistry);
+        const aminoTypes = new AminoTypes(aminoConverters);
+
+        const stargateClient = await SigningCosmWasmClient.connectWithSigner(rpcUrl, signer, {
             broadcastPollIntervalMs: 300,
             broadcastTimeoutMs: 8_000,
             gasPrice: GasPrice.fromString(gasPrice + feeToken),
             prefix: addressPrefix,
+            registry,
+            aminoTypes,
         });
+
+        return stargateClient;
     }
 }
 

@@ -1,9 +1,9 @@
 export const juno_testnet = {
-    chainId: "uni-5",
+    chainId: "uni-6",
     chainName: "Juno Testnet",
     addressPrefix: "juno",
-    rpcUrl: "https://rpc.uni.junonetwork.io/",
-    httpUrl: "https://api.uni.junonetwork.io/",
+    rpcUrl: "https://uni-rpc.reece.sh/",
+    httpUrl: "https://uni-api.reece.sh/",
     feeToken: "ujunox",
     stakingToken: "ujunox",
     estimatedBlockTime: 7000,

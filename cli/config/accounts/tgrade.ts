@@ -29,14 +29,32 @@ const common = {
             "glory humble barrel attack mind relief opinion excess surface media setup approve dynamic weird industry matrix hero later detail crush scene carpet hope ginger ",
         address: "tgrade1g02slnahvg29csd3ealu86yhqpcps6d6wfm79l",
     },
+    committee1: {
+        mnemonic:
+            "cave topple history exercise carpet crash answer correct one benefit fury tiger medal emerge canoe acquire pig chuckle mystery confirm alley security exit mixture",
+        address: "tgrade1dfd5vtxy2ty5gqqv0cs2z23pfucnpym9t2tz9q",
+    },
+    committee2: {
+        mnemonic:
+            "divorce park goat subject cake arrive liar reward favorite shed market spot harsh garden wet general enlist limb chair message current grant curtain that",
+        address: "tgrade1ndxfpxzxg267ujpc6wwhw9fs2rvgfh06lgf4rc",
+    },
 };
 
 export const tgrade_mainnet = {
     ...common,
     admin: {
-        mnemonic: process.env.TGRADE_ADMIN_MNEMONIC,
-        address: process.env.TGRADE_ADMIN_ADDRESS,
+        mnemonic: process.env.TGRADE_ADMIN_MNEMONIC as string,
+        address: process.env.TGRADE_ADMIN_ADDRESS as string,
+    },
+    committee1: {
+        mnemonic: process.env.WASM_COMMITTEE1_MNEMONIC,
+        address: process.env.WASM_COMMITTEE1_ADDRESS,
+    },
+    committee2: {
+        mnemonic: process.env.WASM_COMMITTEE2_MNEMONIC,
+        address: process.env.WASM_COMMITTEE2_ADDRESS,
     },
 };
-export const juno_testnet = { ...common };
-export const juno_localnet = { ...common };
+export const tgrade_testnet = { ...common };
+export const tgrade_localnet = { ...common };

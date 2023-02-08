@@ -21,7 +21,7 @@ cw-utils = { workspace = true }
 cw1 = { workspace = true }
 cw2 = { workspace = true }
 cw20 = { workspace = true }
-cw20-stake = { workspace = true }
+cw20-stake = { workspace = true, features = ["library"] }
 thiserror = { workspace = true }
 derivative = "2"
 vectis-wallet = {path = "../../packages/vectis"}
