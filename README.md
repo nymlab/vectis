@@ -1,11 +1,10 @@
 # Vectis - Smart Contract Wallet
 
-[![Cosmowasm 0.20.0](https://img.shields.io/badge/CosmWasm-0.20.0-green)](https://github.com/CosmWasm/wasmd/releases)
+[![Website](https://img.shields.io/badge/WEBSITE-https%3A%2F%2Fvectis.space-green?style=for-the-badge)](https://vectis.space)
+[![Discord](https://img.shields.io/discord/989088257323188264?color=green&logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/xp3vFSAMgS)
+
+[![Cosmowasm 0.28.0](https://img.shields.io/badge/CosmWasm-0.28.0-green)](https://github.com/CosmWasm/wasmd/releases)
 [![codecov_img](https://img.shields.io/codecov/c/github/nymlab/vectis)](https://img.shields.io/codecov/c/github/nymlab/vectis)
-
-[![Website](https://img.shields.io/badge/WEBSITE-https%3A%2F%2Fvectis.nymlab.it%2F-green?style=for-the-badge)](https://vectis.nymlab.it/)
-
-[![Discord](https://discord.com/api/guilds/989088257323188264/widget.png?style=banner2)](https://discord.gg/xp3vFSAMgS)
 
 ## Overview
 
