@@ -92,7 +92,7 @@ pub fn instantiate(
         ("multisig_code_id", msg.multisig_code_id.to_string()),
         ("label", msg.create_wallet_msg.label),
         ("relayers", format!("{:?}", msg.create_wallet_msg.relayers)),
-        ("guardians", format!("{:?}", guardian_addresses)),
+        ("guardians", format!("{guardian_addresses:?}")),
     ]);
 
     let mut resp = Response::new().add_event(event);
@@ -184,7 +184,7 @@ pub fn execute_inst_plugin(
             code_id,
             msg,
             funds: info.funds,
-            label: label.into(),
+            label,
         };
         let msg = SubMsg::reply_always(instantiate_msg, PLUGIN_INSTANTIATE_ID);
         Ok(Response::new().add_submessage(msg))
@@ -204,7 +204,7 @@ pub fn execute_update_plugin(
     ensure_is_controller(deps.as_ref(), info.sender.as_str())?;
     let addr = deps
         .api
-        .addr_canonicalize(&deps.api.addr_validate(&plugin_addr)?.as_str())?;
+        .addr_canonicalize(deps.api.addr_validate(&plugin_addr)?.as_str())?;
     let res = Response::new().add_attribute("Plugin Addr", &plugin_addr);
     match PLUGINS.may_load(deps.storage, addr.as_slice())? {
         Some(_) => match migrate_msg {
@@ -237,7 +237,7 @@ pub fn execute_plugin_msgs(
     info: MessageInfo,
     msgs: Vec<CosmosMsg>,
 ) -> Result<Response, ContractError> {
-    let plugin = deps.api.addr_canonicalize(&info.sender.as_str())?;
+    let plugin = deps.api.addr_canonicalize(info.sender.as_str())?;
     PLUGINS.load(deps.storage, plugin.as_slice())?;
     Ok(Response::new()
         .add_messages(msgs)
@@ -702,7 +702,7 @@ pub fn query_plugins(
         .take(limit)
         .map(|w| -> StdResult<Addr> {
             let ww = w?;
-            Ok(deps.api.addr_humanize(&CanonicalAddr::from(ww.0))?)
+            deps.api.addr_humanize(&CanonicalAddr::from(ww.0))
         })
         .collect();
 

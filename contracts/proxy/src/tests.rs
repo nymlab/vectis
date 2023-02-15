@@ -427,7 +427,7 @@ fn controller_can_add_relayer() {
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.events[0].attributes,
-        [("address", new_relayer_address.clone().as_str())]
+        [("address", new_relayer_address.as_str())]
     );
 
     wallet_info.relayers.push(new_relayer_address);

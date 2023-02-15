@@ -121,7 +121,7 @@ pub fn ibc_packet_receive(
         }
     })()
     .or_else(|e| {
-        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {}", e))))
+        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {e}"))))
     })
 }
 
@@ -138,7 +138,7 @@ pub fn ibc_packet_ack(
         StdAck::Result(id) => {
             let reply_id: u64 = from_binary(&id)?;
             // id maps to VectisDaoActionIds
-            format!("Success: {}", reply_id)
+            format!("Success: {reply_id}")
         }
         StdAck::Error(e) => e,
     };
@@ -315,7 +315,7 @@ pub fn receive_pre_proposal_actions(
                 VectisDaoActionIds::PrePropExecute as u64,
             )
         }
-        _ => return Err(ContractError::Unauthorized {}),
+        _ => return Err(ContractError::InvalidMsg("PreProposal".to_string())),
     };
 
     // Ack is set in the reply

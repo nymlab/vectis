@@ -8,14 +8,17 @@ import {
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/DaoProposalSingle.v2";
+import { Vote } from "@dao-dao/types/contracts/DaoProposalSingle.common";
 import { deployReportPath, hostAccounts, hostChain, remoteChain } from "../utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { CWClient } from "../clients";
 import { getDefaultRelayFee, getDefaultSendFee, getDefaultUploadFee } from "../utils/fees";
 import { ProxyClient } from "../interfaces";
+import { ProxyClient as ProxyHostClient } from "../clients";
 import { randomAddress } from "@confio/relayer/build/lib/helpers";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { toCosmosMsg } from "../utils/enconding";
+import { QueryMsg as prePropQueryMsg } from "../interfaces/DaoPreProposeApprovalSingel.types";
 
 /**
  * This suite tests Proxy contract methods
@@ -33,6 +36,7 @@ describe("Proxy Suite: ", () => {
     let govecClient: GovecClient;
     let factoryClient: FactoryClient;
     let proxyClient: ProxyClient;
+    let proxyHostClient: ProxyHostClient;
     let msProxyClient: ProxyClient;
     let guardianProxyClient: ProxyClient;
     const relayerClient = new RelayerClient();
@@ -52,18 +56,13 @@ describe("Proxy Suite: ", () => {
         factoryClient = new FactoryClient(hostAdminClient, hostAdminClient.sender, addrs.factoryAddr);
 
         const [walletAddr, walletMSAddr] = await createTestProxyWallets(factoryClient);
-        console.log(walletAddr, walletMSAddr);
         proxyWalletAddress = walletAddr;
         proxyWalletMultisigAddress = walletMSAddr;
 
         proxyClient = new ProxyClient(hostUserClient, hostUserClient.sender, proxyWalletAddress);
+        proxyHostClient = new ProxyHostClient(hostUserClient, hostUserClient.sender, proxyWalletAddress);
         msProxyClient = new ProxyClient(hostUserClient, hostUserClient.sender, proxyWalletMultisigAddress);
         guardianProxyClient = new ProxyClient(hostGuardianClient, hostGuardianClient.sender, proxyWalletAddress);
-        const msinfo = await msProxyClient.info();
-        const info = await proxyClient.info();
-
-        console.log("info ms: ", msinfo);
-        console.log("info: ", info);
     });
 
     it("Should get correct info from proxy wallet", async () => {
@@ -316,7 +315,7 @@ describe("Proxy Suite: ", () => {
                     },
                 },
             };
-            const proposal: CwPropSingleExecuteMsg = {
+            const proposal = {
                 propose: {
                     title: "Rotate user key",
                     description: "Need to rotate user key",
@@ -340,7 +339,7 @@ describe("Proxy Suite: ", () => {
 
             // At this point, since Guardian1 proposed, his vote is already YES
             // Now Guardian2 votes YES
-            const voteYes: CwPropSingleExecuteMsg = {
+            const voteYes = {
                 vote: {
                     proposal_id: propId,
                     vote: "yes",
@@ -410,7 +409,7 @@ describe("Proxy Suite: ", () => {
 
             // At this point, since Guardian1 proposed, his vote is already YES
             // Now Guardian2 votes YES
-            const voteYes: CwPropSingleExecuteMsg = {
+            const voteYes = {
                 vote: {
                     proposal_id: propId,
                     vote: "yes",
@@ -482,7 +481,6 @@ describe("Proxy Suite: ", () => {
         const info = await relayerProxyClient.info();
 
         const { claim_fee } = await factoryClient.fees();
-        console.log("claim fee: ", claim_fee);
 
         const cosmosWasmMsg: CosmosMsg = {
             wasm: {
@@ -513,6 +511,34 @@ describe("Proxy Suite: ", () => {
         });
         expect(balance).toBe(mintAmount);
         relayerClient.disconnect();
+    });
+
+    it("Should be able to do pre-proposal", async () => {
+        const msg: CosmosMsg = {
+            bank: {
+                send: {
+                    from_address: addrs.daoAddr,
+                    to_address: addrs.daoTunnelAddr,
+                    amount: [coin("100000", hostChain.feeToken) as Coin],
+                },
+            },
+        };
+
+        // order is desending
+        let queryMsg: prePropQueryMsg = { query_extension: { msg: { pending_proposals: {} } } };
+        let previousPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
+
+        let res = await proxyHostClient.createPreProposal(
+            addrs.preproposalAddr,
+            "title_proposal",
+            "description_proposal",
+            [msg]
+        );
+        let currentPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
+        const { approval_id, proposer, msg: prepmsg, deposit } = currentPreProposals[0];
+
+        expect(previousPreProposals.length + 1).toBe(currentPreProposals.length);
+        expect(proposer).toBe(proxyHostClient.contractAddress);
     });
 
     afterAll(() => {

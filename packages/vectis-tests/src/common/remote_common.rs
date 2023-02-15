@@ -31,7 +31,11 @@ impl RemoteChainSuite {
                 .init_balance(storage, &deployer, genesis_funds)
                 .unwrap();
         });
-        app.send_tokens(deployer.clone(), controller.clone(), &[coin(50000, "uremote")])?;
+        app.send_tokens(
+            deployer.clone(),
+            controller.clone(),
+            &[coin(50000, "uremote")],
+        )?;
 
         let factory_id = app.store_code(contract_remote_factory());
         let proxy_id = app.store_code(contract_proxy());

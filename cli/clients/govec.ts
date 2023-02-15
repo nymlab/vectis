@@ -10,7 +10,6 @@ interface InstantiateGovec {
     minterCap?: string;
     mintAmount: string;
     marketing?: GovecT.MarketingInfoResponse;
-    dao_tunnel?: string | null;
     staking_addr?: string | null;
 }
 
@@ -29,7 +28,6 @@ class GovecClient extends GovecC {
             mint_amount: msg.mintAmount,
             marketing: msg.marketing,
             staking_addr: msg.staking_addr,
-            dao_tunnel: msg.dao_tunnel,
         };
 
         const { contractAddress } = await client.instantiate(

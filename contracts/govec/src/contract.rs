@@ -15,8 +15,8 @@ use crate::error::ContractError;
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    TokenInfo, BALANCES, DAO_ADDR, DAO_TUNNEL, FACTORY, MARKETING_INFO, MINT_AMOUNT, MINT_CAP,
-    PRE_PROP_APPROVAL, STAKING_ADDR, TOKEN_INFO,
+    TokenInfo, BALANCES, DAO_ADDR, FACTORY, ITEMS, MARKETING_INFO, MINT_AMOUNT, MINT_CAP,
+    STAKING_ADDR, TOKEN_INFO,
 };
 use cw20_stake::{
     contract::{
@@ -87,9 +87,6 @@ pub fn instantiate(
     if let Some(addr) = msg.factory {
         FACTORY.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
     }
-    if let Some(addr) = msg.dao_tunnel {
-        DAO_TUNNEL.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
-    }
     if let Some(amount) = msg.mint_cap {
         MINT_CAP.save(deps.storage, &amount)?;
     }
@@ -125,6 +122,11 @@ pub fn execute(
             amount,
             relayed_from,
         } => execute_transfer(deps, info, recipient, amount, relayed_from),
+        ExecuteMsg::TransferFrom {
+            owner,
+            recipient,
+            amount,
+        } => execute_transfer_from(deps, info, owner, recipient, amount),
         ExecuteMsg::Burn { amount } => execute_burn(deps, env, info, amount),
         ExecuteMsg::Exit { relayed_from } => execute_exit(deps, env, info, relayed_from),
         ExecuteMsg::Send {
@@ -194,6 +196,55 @@ pub fn execute_transfer(
     let res = Response::new()
         .add_attribute("action", "transfer")
         .add_attribute("from", from)
+        .add_attribute("to", rcpt_addr)
+        .add_attribute("amount", amount);
+    Ok(res)
+}
+
+pub fn execute_transfer_from(
+    deps: DepsMut,
+    info: MessageInfo,
+    owner: String,
+    recipient: String,
+    amount: Uint128,
+) -> Result<Response, ContractError> {
+    if amount == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
+    let dao = DAO_ADDR.load(deps.storage)?;
+    let pre_proposal = ITEMS
+        .query(
+            &deps.querier,
+            deps.api.addr_humanize(&dao)?,
+            "pre-proposal".into(),
+        )?
+        .ok_or(ContractError::NotFound {})?;
+    if info.sender != pre_proposal {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let rcpt_addr = Addr::unchecked(recipient);
+    ensure_is_wallet_or_authorised(deps.as_ref(), &rcpt_addr)?;
+
+    BALANCES.update(
+        deps.storage,
+        &Addr::unchecked(owner),
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_sub(amount)?)
+        },
+    )?;
+    BALANCES.update(
+        deps.storage,
+        &rcpt_addr,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_add(amount)?)
+        },
+    )?;
+
+    let res = Response::new()
+        .add_attribute("action", "transfer_from")
+        .add_attribute("from", info.sender)
         .add_attribute("to", rcpt_addr)
         .add_attribute("amount", amount);
     Ok(res)
@@ -280,16 +331,25 @@ pub enum Role {
 
 fn ensure_is_minter(deps: Deps, sender: Addr) -> Result<Role, ContractError> {
     let d = DAO_ADDR.load(deps.storage)?;
-    let t = DAO_TUNNEL.load(deps.storage)?;
+    let t = ITEMS
+        .query(
+            &deps.querier,
+            deps.api.addr_humanize(&d)?,
+            "dao-tunnel".into(),
+        )?
+        .ok_or_else(|| {
+            println!("cannot get query");
+            ContractError::NotFound {}
+        })?;
     let f = FACTORY.load(deps.storage)?;
-    let s = deps.api.addr_canonicalize(sender.as_str())?;
-    if s == t {
+    if sender == t {
         Ok(Role::DaoTunnel)
-    } else if s == f {
+    } else if sender == deps.api.addr_humanize(&f)? {
         Ok(Role::Factory)
-    } else if s == d {
+    } else if sender == deps.api.addr_humanize(&d)? {
         Ok(Role::Dao)
     } else {
+        println!("NOT TUNNEL");
         Err(ContractError::Unauthorized {})
     }
 }
@@ -318,7 +378,7 @@ pub fn execute_mint(
         // We do validate remote wallet address with Bech32 as prefix will be different
         // Validation is done on the remote-tunnel channel
         Role::DaoTunnel => Addr::unchecked(new_wallet.clone()),
-        Role::Dao => todo!(),
+        Role::Dao => Addr::unchecked(new_wallet.clone()),
     };
 
     // add amount to recipient balance
@@ -390,22 +450,6 @@ pub fn execute_send(
             }
             .into_cosmos_msg(contract)?,
         );
-    Ok(res)
-}
-
-pub fn execute_update_staking(
-    deps: DepsMut,
-    info: MessageInfo,
-    new_addr: String,
-) -> Result<Response, ContractError> {
-    ensure_is_dao(deps.as_ref(), &info.sender)?;
-
-    STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&new_addr)?)?;
-
-    let res = Response::new()
-        .add_attribute("action", "update_staking_address")
-        .add_attribute("new_addr", new_addr);
-
     Ok(res)
 }
 
@@ -489,17 +533,6 @@ pub fn execute_update_config_addr(
                 .add_attribute("action", "update_factory")
                 .add_attribute("new_addr", addr)
         }
-        UpdateAddrReq::DaoTunnel(addr) => {
-            DAO_TUNNEL.save(
-                deps.storage,
-                &deps
-                    .api
-                    .addr_canonicalize(deps.api.addr_validate(&addr)?.as_str())?,
-            )?;
-            Response::new()
-                .add_attribute("action", "update_dao_tunnel")
-                .add_attribute("new_addr", addr)
-        }
         UpdateAddrReq::Staking(addr) => {
             STAKING_ADDR.save(
                 deps.storage,
@@ -510,23 +543,6 @@ pub fn execute_update_config_addr(
             Response::new()
                 .add_attribute("action", "update_staking")
                 .add_attribute("new_addr", addr)
-        }
-        UpdateAddrReq::PreProposal(addr) => {
-            let prop = deps.api.addr_validate(&addr)?;
-            match PRE_PROP_APPROVAL.may_load(deps.storage, &prop)? {
-                Some(_) => {
-                    PRE_PROP_APPROVAL.remove(deps.storage, &prop);
-                    Response::new()
-                        .add_attribute("action", "removed pre proposal module")
-                        .add_attribute("addr", prop)
-                }
-                None => {
-                    PRE_PROP_APPROVAL.save(deps.storage, &prop, &())?;
-                    Response::new()
-                        .add_attribute("action", "added pre proposal module")
-                        .add_attribute("addr", prop)
-                }
-            }
         }
     };
 
@@ -560,8 +576,15 @@ pub fn govec_execute_upload_logo(
 }
 
 fn ensure_is_dao_tunnel(deps: Deps, sender: Addr) -> Result<Addr, ContractError> {
-    let dao = DAO_TUNNEL.load(deps.storage)?;
-    if dao != deps.api.addr_canonicalize(sender.as_str())? {
+    let dao = DAO_ADDR.load(deps.storage)?;
+    let dao_tunnel = ITEMS
+        .query(
+            &deps.querier,
+            deps.api.addr_humanize(&dao)?,
+            "dao-tunnel".into(),
+        )?
+        .ok_or(ContractError::NotFound {})?;
+    if dao_tunnel != sender {
         return Err(ContractError::Unauthorized {});
     }
     Ok(sender)
@@ -578,18 +601,23 @@ fn ensure_is_dao<'a>(deps: Deps, sender: &'a Addr) -> Result<&'a Addr, ContractE
 // transfer is ok if the recipient is a wallet (is in the balances ledger)
 // or, it is staking / pre_preposal contracts
 fn ensure_is_wallet_or_authorised(deps: Deps, contract: &Addr) -> Result<(), ContractError> {
+    let dao = DAO_ADDR.load(deps.storage)?;
+    let pre_proposal = ITEMS.query(
+        &deps.querier,
+        deps.api.addr_humanize(&dao)?,
+        "pre-proposal".into(),
+    )?;
     let staking = STAKING_ADDR.may_load(deps.storage)?;
-    let pre_proposal = PRE_PROP_APPROVAL.may_load(deps.storage, contract)?;
     let wallet = BALANCES.may_load(deps.storage, contract)?;
     if let Some(staking_addr) = staking {
         if contract == &deps.api.addr_humanize(&staking_addr)? {
             return Ok(());
         }
     }
-    if pre_proposal.is_some() {
+    if wallet.is_some() {
         return Ok(());
     }
-    if wallet.is_some() {
+    if pre_proposal.is_some() {
         return Ok(());
     }
     Err(ContractError::Unauthorized {})
@@ -649,7 +677,12 @@ pub fn query_mint_amount(deps: Deps) -> StdResult<Uint128> {
 }
 
 pub fn query_minter(deps: Deps) -> StdResult<MintResponse> {
-    let d = DAO_TUNNEL.may_load(deps.storage)?;
+    let dao = DAO_ADDR.load(deps.storage)?;
+    let d = ITEMS.query(
+        &deps.querier,
+        deps.api.addr_humanize(&dao)?,
+        "dao-tunnel".into(),
+    )?;
     let f = FACTORY.may_load(deps.storage)?;
     let cap = MINT_CAP.may_load(deps.storage)?;
     let minters = if d.is_none() && f.is_none() {
@@ -657,7 +690,7 @@ pub fn query_minter(deps: Deps) -> StdResult<MintResponse> {
     } else {
         let mut v = Vec::new();
         if let Some(daot) = d {
-            v.push(deps.api.addr_humanize(&daot)?.to_string());
+            v.push(daot);
         }
         if let Some(factory) = f {
             v.push(deps.api.addr_humanize(&factory)?.to_string());
@@ -677,7 +710,17 @@ pub fn query_dao(deps: Deps) -> StdResult<Addr> {
 }
 
 pub fn query_dao_tunnel(deps: Deps) -> StdResult<Addr> {
-    deps.api.addr_humanize(&DAO_TUNNEL.load(deps.storage)?)
+    let dao = DAO_ADDR.load(deps.storage)?;
+    let d = ITEMS
+        .query(
+            &deps.querier,
+            deps.api.addr_humanize(&dao)?,
+            "dao-tunnel".into(),
+        )?
+        .ok_or(StdError::NotFound {
+            kind: "DAO tunnel not found".to_string(),
+        })?;
+    deps.api.addr_validate(&d)
 }
 
 pub fn query_factory(deps: Deps) -> StdResult<Addr> {

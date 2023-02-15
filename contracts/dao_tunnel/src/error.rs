@@ -16,6 +16,8 @@ pub enum ContractError {
     InvalidReplyId,
     #[error("Unauthorized")]
     Unauthorized,
+    #[error("InvalidMsg {0}")]
+    InvalidMsg(String),
     #[error("Channel not found for connection_id: {0}")]
     ChannelNotFound(String),
     #[error("Empty Funds")]

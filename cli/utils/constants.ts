@@ -35,7 +35,7 @@ export const contractsFileNames = {
 
 // Contracts Versioning
 const cwPlusReleaseVer = "v0.16.0";
-const daodaoReleaseVer = "v2.0.1";
+const daodaoReleaseVer = "v2.0.1-vectis-1.0";
 // Contracts Links CWPlus
 export const cw20BaseDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw20_base.wasm`;
 export const cw3FixedMulDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_fixed_multisig.wasm`;

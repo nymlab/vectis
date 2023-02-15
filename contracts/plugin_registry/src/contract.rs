@@ -64,7 +64,7 @@ impl PluginRegistry<'_> {
 
         let reviewer_multisig = deps
             .api
-            .addr_canonicalize(&deps.api.addr_validate(&reviewer)?.as_str())?;
+            .addr_canonicalize(deps.api.addr_validate(&reviewer)?.as_str())?;
 
         self.total_plugins.save(deps.storage, &0u64)?;
         self.registry_fee.save(deps.storage, &registry_fee)?;
@@ -211,7 +211,7 @@ impl PluginRegistry<'_> {
 
         let event = Event::new("vectis.plugin_registry.v1.MsgUpdatePlugin")
             .add_attribute("id", id.to_string())
-            .add_attribute("plugin", format!("{:?}", plugin));
+            .add_attribute("plugin", format!("{plugin:?}"));
 
         Ok(Response::new().add_event(event))
     }
@@ -281,11 +281,11 @@ impl PluginRegistry<'_> {
             deps.storage,
             &deps
                 .api
-                .addr_canonicalize(&deps.api.addr_validate(&reviewer)?.as_str())?,
+                .addr_canonicalize(deps.api.addr_validate(&reviewer)?.as_str())?,
         )?;
         Ok(Response::default().add_event(
             Event::new("vectis.plugin_registry.v1.MsgUpdateReviewer")
-                .add_attribute("reviewer", format!("{:?}", reviewer)),
+                .add_attribute("reviewer", format!("{reviewer:?}")),
         ))
     }
 

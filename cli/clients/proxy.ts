@@ -86,20 +86,23 @@ class ProxyClient extends ProxyC {
         });
     }
 
-    async createProposal(proposalAddr: string, title: string, description: string, msgs: unknown[]) {
+    async createPreProposal(preproposalAddr: string, title: string, description: string, msgs: unknown[]) {
         return await this.execute({
             msgs: [
                 {
                     wasm: {
                         execute: {
-                            contract_addr: proposalAddr,
+                            contract_addr: preproposalAddr,
                             funds: [],
                             msg: toCosmosMsg({
                                 propose: {
-                                    description,
-                                    latest: null,
-                                    msgs,
-                                    title,
+                                    msg: {
+                                        propose: {
+                                            description,
+                                            msgs,
+                                            title,
+                                        },
+                                    },
                                 },
                             }),
                         },

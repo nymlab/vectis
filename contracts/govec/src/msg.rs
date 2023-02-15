@@ -15,7 +15,6 @@ pub struct InstantiateMsg {
     pub mint_cap: Option<Uint128>,
     pub mint_amount: Uint128,
     pub factory: Option<String>,
-    pub dao_tunnel: Option<String>,
     pub marketing: Option<MarketingInfoResponse>,
 }
 

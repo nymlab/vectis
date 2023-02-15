@@ -81,7 +81,7 @@ fn cannot_mint_govec_without_paying_fee() {
         .app
         .execute_contract(
             suite.controller.clone(),
-            wallet_addr.clone(),
+            wallet_addr,
             &ProxyExecuteMsg::Execute {
                 msgs: vec![mint_govec_msg],
             },

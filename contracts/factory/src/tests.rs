@@ -98,7 +98,7 @@ fn admin_upgrade_code_id_works() {
         assert_eq!(
             response.events[0].attributes,
             [
-                ("type", &format!("{:?}", t)),
+                ("type", &format!("{t:?}")),
                 ("code_id", &(new_code_id + i as u64).to_string())
             ]
         );
@@ -140,7 +140,7 @@ fn admin_update_fee_works() {
         [
             ("type", &format!("{:?}", FeeType::Wallet)),
             ("amount", &new_wallet_fee.amount.to_string()),
-            ("denom", &new_wallet_fee.denom.to_string())
+            ("denom", &new_wallet_fee.denom)
         ]
     );
 
@@ -153,13 +153,13 @@ fn admin_update_fee_works() {
         new_fee: new_claim_fee.clone(),
     };
 
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+    let response = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         response.events[0].attributes,
         [
             ("type", &format!("{:?}", FeeType::Claim)),
             ("amount", &new_claim_fee.amount.to_string()),
-            ("denom", &new_wallet_fee.denom.to_string())
+            ("denom", &new_wallet_fee.denom)
         ]
     );
 
@@ -177,7 +177,7 @@ fn admin_updates_addresses_work() {
         initial_code_id,
         initial_code_id,
         "wasm",
-        fee.clone(),
+        fee,
         coin(1, "ucosm"),
         None,
     );

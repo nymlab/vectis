@@ -379,7 +379,7 @@ fn ibc_transfer_works_with_channel_connected() {
             ("to", "receiver"),
             ("channel_id", &chan),
             ("amount", &total_fund.amount.to_string()),
-            ("denom", &total_fund.denom.to_string())
+            ("denom", &total_fund.denom)
         ]
     )
 }

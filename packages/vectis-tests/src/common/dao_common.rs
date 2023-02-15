@@ -62,7 +62,7 @@ impl DaoChainSuite {
         app.send_tokens(
             deployer.clone(),
             controller,
-            &[coin(10_000_000_00, "ucosm")],
+            &[coin(1_000_000_000, "ucosm")],
         )?;
 
         let dao_id = app.store_code(contract_dao());
@@ -89,7 +89,6 @@ impl DaoChainSuite {
                     mint_cap: None,
                     mint_amount: Uint128::new(MINT_AMOUNT),
                     factory: None,
-                    dao_tunnel: None,
                 },
                 &[],
                 "govec",
@@ -245,9 +244,56 @@ impl DaoChainSuite {
             )
             .unwrap();
 
-        // Give Govec the correct contractg addresses
         app.execute_contract(
             deployer.clone(),
+            govec.clone(),
+            &GovecExecuteMsg::UpdateConfigAddr {
+                new_addr: vectis_wallet::UpdateAddrReq::Dao(dao.to_string()),
+            },
+            &[],
+        )
+        .map_err(|err| anyhow!(err))
+        .unwrap();
+
+        app.execute_contract(
+            deployer.clone(),
+            dao.clone(),
+            &DaoExecMsg::ExecuteAdminMsgs {
+                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: dao.to_string(),
+                    msg: to_binary(&DaoExecMsg::SetItem {
+                        key: "dao-tunnel".to_string(),
+                        value: dao_tunnel.to_string(),
+                    })?,
+                    funds: vec![],
+                })],
+            },
+            &[],
+        )
+        .map_err(|err| anyhow!(err))
+        .unwrap();
+
+        app.execute_contract(
+            deployer.clone(),
+            dao.clone(),
+            &DaoExecMsg::ExecuteAdminMsgs {
+                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: dao.to_string(),
+                    msg: to_binary(&DaoExecMsg::SetItem {
+                        key: "pre-proposal".to_string(),
+                        value: pre_prop.clone().unwrap().to_string(),
+                    })?,
+                    funds: vec![],
+                })],
+            },
+            &[],
+        )
+        .map_err(|err| anyhow!(err))
+        .unwrap();
+
+        // Give Govec the correct contractg addresses
+        app.execute_contract(
+            dao.clone(),
             govec.clone(),
             &GovecExecuteMsg::UpdateConfigAddr {
                 new_addr: vectis_wallet::UpdateAddrReq::Factory(factory.to_string()),
@@ -258,34 +304,10 @@ impl DaoChainSuite {
         .unwrap();
 
         app.execute_contract(
-            deployer.clone(),
-            govec.clone(),
-            &GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::DaoTunnel(dao_tunnel.to_string()),
-            },
-            &[],
-        )
-        .map_err(|err| anyhow!(err))
-        .unwrap();
-
-        app.execute_contract(
-            deployer.clone(),
+            dao.clone(),
             govec.clone(),
             &GovecExecuteMsg::UpdateConfigAddr {
                 new_addr: vectis_wallet::UpdateAddrReq::Staking(cw20_stake.to_string()),
-            },
-            &[],
-        )
-        .map_err(|err| anyhow!(err))
-        .unwrap();
-
-        app.execute_contract(
-            deployer.clone(),
-            govec.clone(),
-            &GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::PreProposal(
-                    pre_prop.clone().unwrap().to_string(),
-                ),
             },
             &[],
         )
@@ -503,6 +525,20 @@ impl DaoChainSuite {
             .unwrap();
 
         Ok(r)
+    }
+
+    pub fn proxy_execute(
+        &mut self,
+        wallet_addr: &Addr,
+        msgs: Vec<CosmosMsg>,
+        fees: Vec<Coin>,
+    ) -> Result<AppResponse> {
+        self.app.execute_contract(
+            self.controller.clone(),
+            wallet_addr.clone(),
+            &ProxyExecuteMsg::Execute { msgs },
+            &fees,
+        )
     }
 
     pub fn fast_forward_block_time(&mut self, forward_time_sec: u64) {

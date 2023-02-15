@@ -45,7 +45,7 @@ export type RemoteTunnelPacketMsg =
           govec_actions: GovecExecuteMsg;
       }
     | {
-          stake_actions: ExecuteMsg1;
+          stake_actions: Cw20StakeExecuteMsg;
       }
     | {
           pre_proposal_actions: {
@@ -55,7 +55,7 @@ export type RemoteTunnelPacketMsg =
       }
     | {
           proposal_actions: {
-              msg: ExecuteMsg1;
+              msg: ProposalSingleExecuteMsg;
               prop_module_addr: string;
           };
       };
@@ -68,9 +68,10 @@ export type GovecExecuteMsg =
           };
       }
     | {
-          proposal_transfer: {
-              deposit: Uint128;
-              proposer: string;
+          transfer_from: {
+              amount: Uint128;
+              owner: string;
+              recipient: string;
           };
       }
     | {
@@ -127,16 +128,13 @@ export type UpdateAddrReq =
           dao: string;
       }
     | {
-          dao_tunnel: string;
-      }
-    | {
           factory: string;
       }
     | {
           staking: string;
       }
     | {
-          proposal: string;
+          pre_proposal: string;
       };
 export type Logo =
     | {
@@ -152,7 +150,7 @@ export type EmbeddedLogo =
     | {
           png: Binary;
       };
-export type ExecuteMsg1 =
+export type Cw20StakeExecuteMsg =
     | {
           receive: Cw20ReceiveMsg;
       }
@@ -444,6 +442,116 @@ export type ExecuteExt =
           };
       };
 export type Status = "open" | "rejected" | "passed" | "executed" | "closed" | "execution_failed";
+export type ProposalSingleExecuteMsg =
+    | {
+          propose: SingleChoiceProposeMsg;
+      }
+    | {
+          vote: {
+              proposal_id: number;
+              rationale?: string | null;
+              relayed_from?: string | null;
+              vote: Vote;
+          };
+      }
+    | {
+          update_rationale: {
+              proposal_id: number;
+              rationale?: string | null;
+              relayed_from?: string | null;
+          };
+      }
+    | {
+          execute: {
+              proposal_id: number;
+              relayed_from?: string | null;
+          };
+      }
+    | {
+          close: {
+              proposal_id: number;
+          };
+      }
+    | {
+          update_config: {
+              allow_revoting: boolean;
+              close_proposal_on_execution_failure: boolean;
+              dao: string;
+              max_voting_period: Duration;
+              min_voting_period?: Duration | null;
+              only_members_execute: boolean;
+              threshold: Threshold;
+          };
+      }
+    | {
+          update_pre_propose_info: {
+              info: PreProposeInfo;
+          };
+      }
+    | {
+          add_proposal_hook: {
+              address: string;
+          };
+      }
+    | {
+          remove_proposal_hook: {
+              address: string;
+          };
+      }
+    | {
+          add_vote_hook: {
+              address: string;
+          };
+      }
+    | {
+          remove_vote_hook: {
+              address: string;
+          };
+      };
+export type Vote = "yes" | "no" | "abstain";
+export type Threshold =
+    | {
+          absolute_percentage: {
+              percentage: PercentageThreshold;
+          };
+      }
+    | {
+          threshold_quorum: {
+              quorum: PercentageThreshold;
+              threshold: PercentageThreshold;
+          };
+      }
+    | {
+          absolute_count: {
+              threshold: Uint128;
+          };
+      };
+export type PercentageThreshold =
+    | {
+          majority: {};
+      }
+    | {
+          percent: Decimal;
+      };
+export type Decimal = string;
+export type PreProposeInfo =
+    | {
+          anyone_may_propose: {};
+      }
+    | {
+          module_may_propose: {
+              info: ModuleInstantiateInfo;
+          };
+      };
+export type Admin =
+    | {
+          address: {
+              addr: string;
+          };
+      }
+    | {
+          core_module: {};
+      };
 export interface Cw20ReceiveMsg {
     amount: Uint128;
     msg: Binary;
@@ -471,6 +579,18 @@ export interface UncheckedDepositInfo {
     amount: Uint128;
     denom: DepositToken;
     refund_policy: DepositRefundPolicy;
+}
+export interface SingleChoiceProposeMsg {
+    description: string;
+    msgs: CosmosMsgForEmpty[];
+    proposer?: string | null;
+    title: string;
+}
+export interface ModuleInstantiateInfo {
+    admin?: Admin | null;
+    code_id: number;
+    label: string;
+    msg: Binary;
 }
 export interface Receiver {
     addr: string;
