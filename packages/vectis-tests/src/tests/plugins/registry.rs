@@ -1,7 +1,6 @@
 use cosmwasm_std::coins;
-
-use crate::common::common::*;
-use crate::common::plugins_common::*;
+use vectis_contract_tests::common::common::*;
+use vectis_contract_tests::common::plugins_common::*;
 
 #[test]
 fn cannot_register_plugins_without_fee() {

@@ -7,12 +7,12 @@ publish = false
 
 [[test]]
 name = "multi-contracts-integration-tests"
-path = "tests/lib.rs"
+path = "src/tests/lib.rs"
 
 [features]
 croncat-plugin = []
 
-[dev-dependencies]
+[dependencies]
 vectis-factory = { path = "../../contracts/factory" }
 vectis-proxy = { path = "../../contracts/proxy", features = ["migration", "library"]}
 vectis-govec = { path = "../../contracts/govec", features = ["library"]}
@@ -47,11 +47,3 @@ dao-voting-cw20-staked = { workspace = true }
 cw20-stake = { workspace = true }
 dao-voting = { workspace = true }
 dao-interface = { workspace = true }
-
-
-
-
-
-
-
-

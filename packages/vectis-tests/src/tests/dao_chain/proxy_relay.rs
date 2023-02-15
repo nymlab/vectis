@@ -3,7 +3,8 @@ use cw_multi_test::Executor;
 use vectis_proxy::{msg::ExecuteMsg as ProxyExecuteMsg, ContractError};
 use vectis_wallet::WalletInfo;
 
-use crate::common::{common::*, dao_common::*};
+use vectis_contract_tests::common::common::*;
+use vectis_contract_tests::common::dao_common::*;
 
 #[test]
 fn relay_proxy_controller_tx_succeeds() {

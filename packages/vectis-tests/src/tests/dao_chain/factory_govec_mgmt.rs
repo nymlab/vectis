@@ -1,5 +1,5 @@
-use crate::common::common::*;
-use crate::common::dao_common::*;
+use vectis_contract_tests::common::common::*;
+use vectis_contract_tests::common::dao_common::*;
 
 #[test]
 fn proxy_mint_govec_works() {
