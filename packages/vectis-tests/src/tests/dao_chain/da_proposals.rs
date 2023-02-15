@@ -1,5 +1,5 @@
-use crate::common::common::*;
-use crate::common::dao_common::*;
+use vectis_contract_tests::common::common::*;
+use vectis_contract_tests::common::dao_common::*;
 
 fn get_pre_proposal_msg() -> PrePropExecMsg {
     PrePropExecMsg::Propose {

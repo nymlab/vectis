@@ -7,8 +7,8 @@ use vectis_factory::ContractError;
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{MultiSig, WalletInfo};
 
-use crate::common::common::*;
-use crate::common::dao_common::*;
+use vectis_contract_tests::common::common::*;
+use vectis_contract_tests::common::dao_common::*;
 
 #[test]
 fn create_new_proxy() {

@@ -127,11 +127,11 @@ pub use vectis_proxy::contract::{
 
 pub use vectis_wallet::{
     pub_key_to_address, CodeIdType, CreateWalletMsg, GovecExecuteMsg, GovecQueryMsg, Guardians,
-    GuardiansUpdateMsg, GuardiansUpdateRequest, MultiSig, PluginParams, ProposalExecuteMsg,
-    ProxyExecuteMsg, ProxyQueryMsg, RelayTransaction, StakeExecuteMsg, ThresholdAbsoluteCount,
-    UnclaimedWalletList, WalletFactoryExecuteMsg, WalletFactoryExecuteMsg as FactoryExecuteMsg,
-    WalletFactoryInstantiateMsg as InstantiateMsg, WalletFactoryQueryMsg as FactoryQueryMsg,
-    GOVEC_CLAIM_DURATION_DAY_MUL,
+    GuardiansUpdateMsg, GuardiansUpdateRequest, MultiSig, PluginListResponse, PluginParams,
+    ProposalExecuteMsg, ProxyExecuteMsg, ProxyQueryMsg, RelayTransaction, StakeExecuteMsg,
+    ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
+    WalletFactoryExecuteMsg as FactoryExecuteMsg, WalletFactoryInstantiateMsg as InstantiateMsg,
+    WalletFactoryQueryMsg as FactoryQueryMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
 pub const MINT_AMOUNT: u128 = 2u128;

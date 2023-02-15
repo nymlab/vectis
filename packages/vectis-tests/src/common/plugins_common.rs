@@ -16,6 +16,8 @@ pub struct PluginsSuite {
     pub dao: Addr,
     // Controller
     pub controller: Addr,
+    // proxy address
+    pub proxy: Addr,
     // plugin registry address
     pub plugin_registry: Addr,
     // factory address
@@ -24,7 +26,8 @@ pub struct PluginsSuite {
 
 impl PluginsSuite {
     pub fn init() -> Result<PluginsSuite> {
-        let genesis_funds = vec![coin(100000, "ucosm")];
+        let init_proxy_fund: Coin = coin(90, "ucosm");
+        let genesis_funds = vec![coin(40_000_000, "ucosm")];
         let deployer = Addr::unchecked("deployer");
         let dao: Addr = Addr::unchecked("dao");
         let controller = Addr::unchecked(CONTROLLER_ADDR);
@@ -37,7 +40,7 @@ impl PluginsSuite {
         app.send_tokens(
             deployer.clone(),
             controller.clone(),
-            &[coin(50000, "ucosm")],
+            &[coin(20_000_000, "ucosm")],
         )?;
 
         let plugin_registry_id = app.store_code(contract_plugin_registry());
@@ -84,11 +87,47 @@ impl PluginsSuite {
             )
             .unwrap();
 
+        let create_wallet_msg = CreateWalletMsg {
+            controller_addr: controller.to_string(),
+            guardians: Guardians {
+                addresses: vec![GUARD1.to_owned()],
+                guardians_multisig: None,
+            },
+            relayers: vec![],
+            proxy_initial_funds: vec![init_proxy_fund.clone()],
+            label: "initial label".to_string(),
+        };
+
+        let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
+
+        let res = app
+            .execute_contract(
+                controller.clone(),
+                factory.clone(),
+                &execute,
+                &[coin(WALLET_FEE, "ucosm"), init_proxy_fund],
+            )
+            .map_err(|err| anyhow!(err))?;
+
+        let wasm_events: Vec<Event> = res
+            .events
+            .iter()
+            .cloned()
+            .filter(|ev| ev.ty.as_str() == "wasm")
+            .collect();
+
+        // This event
+        let ev = wasm_events
+            .iter()
+            .find(|event| event.attributes.iter().any(|at| at.key == "proxy_address"));
+        let proxy = &ev.unwrap().attributes[2].value;
+
         Ok(PluginsSuite {
             controller,
             app,
             dao,
             deployer,
+            proxy: Addr::unchecked(proxy),
             plugin_registry,
             factory,
         })
@@ -335,5 +374,26 @@ impl PluginsSuite {
         self.app
             .wrap()
             .query_wasm_smart(self.plugin_registry.clone(), &msg)
+    }
+
+    pub fn query_installed_plugins(
+        &self,
+        limit: Option<u32>,
+        start_after: Option<String>,
+    ) -> StdResult<PluginListResponse> {
+        let msg = ProxyQueryMsg::Plugins { start_after, limit };
+        self.app.wrap().query_wasm_smart(self.proxy.clone(), &msg)
+    }
+
+    pub fn fast_forward_block_time(&mut self, forward_time_sec: u64) {
+        let block = self.app.block_info();
+
+        let mock_block = BlockInfo {
+            height: block.height + 10,
+            chain_id: block.chain_id,
+            time: block.time.plus_seconds(forward_time_sec),
+        };
+
+        self.app.set_block(mock_block);
     }
 }
