@@ -47,11 +47,11 @@ quote = "1.0"
 syn = { version = "1.0", features = ["derive"] }
 
 # daodao contracts
-dao-core = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e", features = ["library"]}
-dao-proposal-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e", features = ["library"]}
-dao-pre-propose-approval-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e", features = ["library"]}
-dao-pre-propose-base = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e"}
-dao-voting-cw20-staked = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e", features = ["library"]}
-cw20-stake = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e", features = ["library"]}
-dao-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e"}
-dao-interface = {git = "https://github.com/nymlab/dao-contracts",  rev = "4d8364e"}
+dao-core = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190", features = ["library"]}
+dao-proposal-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190", features = ["library"]}
+dao-pre-propose-approval-single = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190", features = ["library"]}
+dao-pre-propose-base = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190"}
+dao-voting-cw20-staked = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190", features = ["library"]}
+cw20-stake = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190", features = ["library"]}
+dao-voting = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190"}
+dao-interface = {git = "https://github.com/nymlab/dao-contracts",  rev = "f17b3e74e8190"}

@@ -159,7 +159,7 @@ pub fn ibc_packet_receive(
         }
     })()
     .or_else(|e| {
-        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {}", e))))
+        Ok(IbcReceiveResponse::new().set_ack(StdAck::fail(format!("IBC Packet Error: {e}"))))
     })
 }
 

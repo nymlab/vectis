@@ -1,9 +1,9 @@
 use cosmwasm_schema::{cw_serde, schemars};
 use cosmwasm_std::{to_binary, Binary, CosmosMsg, StdResult, WasmMsg};
 
-pub use cw20_stake::msg::ExecuteMsg as StakeExecuteMsg;
+pub use cw20_stake::msg::Cw20StakeExecuteMsg as StakeExecuteMsg;
 pub use dao_pre_propose_approval_single::msg::{ExecuteMsg as PrePropExecuteMsg, ProposeMessage};
-pub use dao_proposal_single::msg::ExecuteMsg as ProposalExecuteMsg;
+pub use dao_proposal_single::msg::ProposalSingleExecuteMsg as ProposalExecuteMsg;
 
 pub use crate::{
     ChainConfig, DaoConfig, GovecExecuteMsg, IbcError, Receiver, StdAck, WalletFactoryExecuteMsg,

@@ -324,7 +324,7 @@ dependencies = [
 [[package]]
 name = "cw-denom"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -335,7 +335,7 @@ dependencies = [
 [[package]]
 name = "cw-hooks"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -399,7 +399,7 @@ dependencies = [
 [[package]]
 name = "cw-paginate"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -636,7 +636,7 @@ dependencies = [
 [[package]]
 name = "cw20-stake"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -724,7 +724,7 @@ dependencies = [
 [[package]]
 name = "dao-core"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -743,7 +743,7 @@ dependencies = [
 [[package]]
 name = "dao-interface"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -755,7 +755,7 @@ dependencies = [
 [[package]]
 name = "dao-macros"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "proc-macro2",
@@ -766,7 +766,7 @@ dependencies = [
 [[package]]
 name = "dao-pre-propose-approval-single"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -782,7 +782,7 @@ dependencies = [
 [[package]]
 name = "dao-pre-propose-base"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -801,7 +801,7 @@ dependencies = [
 [[package]]
 name = "dao-proposal-hooks"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -812,7 +812,7 @@ dependencies = [
 [[package]]
 name = "dao-proposal-single"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -839,7 +839,7 @@ dependencies = [
 [[package]]
 name = "dao-vote-hooks"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -850,7 +850,7 @@ dependencies = [
 [[package]]
 name = "dao-voting"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -867,7 +867,7 @@ dependencies = [
 [[package]]
 name = "dao-voting-cw20-staked"
 version = "2.0.1"
-source = "git+https://github.com/nymlab/dao-contracts?rev=4d8364e#4d8364e60ad8997000d61b31b45149dd61465d02"
+source = "git+https://github.com/nymlab/dao-contracts?rev=f17b3e74e8190#f17b3e74e8190d59276235a38e1942b664965f98"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",

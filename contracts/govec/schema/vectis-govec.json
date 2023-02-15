@@ -13,12 +13,6 @@
       "symbol"
     ],
     "properties": {
-      "dao_tunnel": {
-        "type": [
-          "string",
-          "null"
-        ]
-      },
       "factory": {
         "type": [
           "string",
@@ -190,6 +184,36 @@
                   "string",
                   "null"
                 ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Only the pre-proposal approval single contract can call this message and recieve tokens For Approval, Vectis plugins should be used",
+        "type": "object",
+        "required": [
+          "transfer_from"
+        ],
+        "properties": {
+          "transfer_from": {
+            "type": "object",
+            "required": [
+              "amount",
+              "owner",
+              "recipient"
+            ],
+            "properties": {
+              "amount": {
+                "$ref": "#/definitions/Uint128"
+              },
+              "owner": {
+                "type": "string"
+              },
+              "recipient": {
+                "type": "string"
               }
             },
             "additionalProperties": false
@@ -500,18 +524,6 @@
             ],
             "properties": {
               "dao": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "required": [
-              "dao_tunnel"
-            ],
-            "properties": {
-              "dao_tunnel": {
                 "type": "string"
               }
             },

@@ -4,6 +4,7 @@ import RemoteProxyClient from "../clients/remote-proxy";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { Coin } from "../interfaces/Factory.types";
 import { RemoteFactoryClient } from "../interfaces/RemoteFactory.client";
+import { QueryMsg as prePropQueryMsg, CosmosMsgForEmpty } from "../interfaces/DaoPreProposeApprovalSingel.types";
 import { deployReportPath, hostChain, remoteChain } from "../utils/constants";
 import { delay } from "../utils/promises";
 import { generateRandomAddress } from "./mocks/addresses";
@@ -49,6 +50,7 @@ describe("Proxy Remote Suite: ", () => {
 
     it("should be able to mint govec", async () => {
         const { claim_fee } = await factoryClient.fees();
+        let unclaimedBefore = await factoryClient.unclaimedGovecWallets({});
         await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
         await relayerClient.relayAll();
         const { accounts } = await govecClient.allAccounts({ limit: 50 });
@@ -59,87 +61,30 @@ describe("Proxy Remote Suite: ", () => {
 
     it("should be able to transfer govec", async () => {
         const { balance: previousBalance } = await govecClient.balance({ address: addrs.daoAddr });
+        const { balance: contractPreviousBalance } = await govecClient.balance({
+            address: proxyClient.contractAddress,
+        });
 
         await proxyClient.transferGovec(addrs.remoteTunnelAddr, addrs.daoAddr, "1");
         await relayerClient.relayAll();
         await delay(8000);
 
         const { balance: currentBalance } = await govecClient.balance({ address: addrs.daoAddr });
+        const { balance: contractCurrentBalance } = await govecClient.balance({
+            address: proxyClient.contractAddress,
+        });
         expect(-+previousBalance + +currentBalance).toBe(1);
+        expect(+contractPreviousBalance + -+contractCurrentBalance).toBe(1);
     });
 
     it("should be able to stake", async () => {
-        await proxyClient.stakeGovec(addrs.remoteTunnelAddr, addrs.stakingAddr, "1");
+        let stakeRes = await proxyClient.stakeGovec(addrs.remoteTunnelAddr, addrs.stakingAddr, "1");
         await relayerClient.relayAll();
         await delay(8000);
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
         });
-        await delay(8000);
         expect(value).toBe("1");
-    });
-
-    it("should be able to do proposal, vote them and execute them", async () => {
-        await hostUserClient.sendTokens(
-            hostUserClient.sender,
-            addrs.daoAddr,
-            [coin("1000000", hostChain.feeToken) as Coin],
-            "auto"
-        );
-
-        const msg = {
-            bank: {
-                send: {
-                    from_address: addrs.daoAddr,
-                    to_address: addrs.daoTunnelAddr,
-                    amount: [coin("100000", hostChain.feeToken) as Coin],
-                },
-            },
-        };
-
-        const { proposals: previousProposals } = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
-            list_proposals: {},
-        });
-
-        await proxyClient.createProposal(
-            addrs.remoteTunnelAddr,
-            addrs.proposalAddr,
-            "title proposal",
-            "description proposal",
-            [msg]
-        );
-        await relayerClient.relayAll();
-
-        let proposalsResult = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
-            list_proposals: {},
-        });
-
-        const { id, proposal: createdProposal } = proposalsResult.proposals[proposalsResult.proposals.length - 1];
-
-        expect(previousProposals.length + 1).toBe(proposalsResult.proposals.length);
-        expect(createdProposal.proposer).toBe(proxyClient.contractAddress);
-
-        await proxyClient.voteProposal(addrs.remoteTunnelAddr, addrs.proposalAddr, id, "yes");
-        await relayerClient.relayAll();
-
-        proposalsResult = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
-            list_proposals: {},
-        });
-
-        const { proposal: votedProposal } = proposalsResult.proposals[proposalsResult.proposals.length - 1];
-
-        expect(votedProposal.votes["yes"]).toBe("1");
-
-        await proxyClient.executeProposal(addrs.remoteTunnelAddr, addrs.proposalAddr, id);
-        await relayerClient.relayAll();
-
-        proposalsResult = await hostUserClient.queryContractSmart(addrs.proposalAddr, {
-            list_proposals: {},
-        });
-
-        const { proposal: executedProposal } = proposalsResult.proposals[proposalsResult.proposals.length - 1];
-
-        expect(executedProposal.status).toBe("executed");
     });
 
     it("should be able to unstake", async () => {
@@ -152,5 +97,78 @@ describe("Proxy Remote Suite: ", () => {
             staked_value: { address: proxyClient.contractAddress },
         });
         expect(value).toBe("0");
+    });
+});
+
+describe("Proxy Remote (Proposal flow) suite: ", () => {
+    let addrs: VectisDaoContractsAddrs;
+    let userClient: CWClient;
+    let hostUserClient: CWClient;
+    let factoryClient: RemoteFactoryClient;
+    let proxyClient: RemoteProxyClient;
+    let govecClient: GovecClient;
+    const relayerClient = new RelayerClient();
+    beforeAll(async () => {
+        addrs = await import(deployReportPath);
+        await relayerClient.connect();
+        await relayerClient.loadChannels();
+        userClient = await CWClient.connectRemoteWithAccount("user");
+        hostUserClient = await CWClient.connectHostWithAccount("user");
+        factoryClient = new RemoteFactoryClient(userClient, userClient.sender, addrs.remoteFactoryAddr);
+        govecClient = new GovecClient(hostUserClient, hostUserClient.sender, addrs.govecAddr);
+        const walletAddr = await createSingleProxyWallet(factoryClient, "remote");
+        proxyClient = new RemoteProxyClient(userClient, userClient.sender, walletAddr!);
+    });
+
+    it("should be able to mint govec", async () => {
+        const { claim_fee } = await factoryClient.fees();
+        await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
+        await relayerClient.relayAll();
+        const { accounts } = await govecClient.allAccounts({ limit: 50 });
+        const { balance } = await govecClient.balance({ address: proxyClient.contractAddress });
+        expect(accounts.includes(proxyClient.contractAddress)).toBeTruthy();
+        expect(balance).toBe("2");
+
+        let unclaimed = await factoryClient.unclaimedGovecWallets({});
+    });
+
+    it("should be able to do pre proposal", async () => {
+        await hostUserClient.sendTokens(
+            hostUserClient.sender,
+            addrs.daoAddr,
+            [coin("1000000", hostChain.feeToken) as Coin],
+            "auto"
+        );
+
+        // order is desending
+        let queryMsg: prePropQueryMsg = { query_extension: { msg: { pending_proposals: {} } } };
+        const previousPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
+        const msg: CosmosMsgForEmpty = {
+            bank: {
+                send: {
+                    from_address: addrs.daoAddr,
+                    to_address: addrs.daoTunnelAddr,
+                    amount: [coin("100000", hostChain.feeToken) as Coin],
+                },
+            },
+        };
+
+        let res = await proxyClient.createPreProposal(
+            addrs.remoteTunnelAddr,
+            addrs.preproposalAddr,
+            "title_proposal",
+            "description_proposal",
+            [msg]
+        );
+
+        await relayerClient.relayAll();
+        await delay(8000);
+
+        let currentPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
+
+        const { approval_id, proposer, msg: prepmsg, deposit } = currentPreProposals[0];
+
+        expect(previousPreProposals.length + 1).toBe(currentPreProposals.length);
+        expect(proposer).toBe(proxyClient.contractAddress);
     });
 });

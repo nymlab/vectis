@@ -212,7 +212,7 @@ pub mod factory_execute {
         }
 
         let event = Event::new("vectis.factory.v1.MsgUpdateCodeId")
-            .add_attribute("type", format!("{:?}", ty))
+            .add_attribute("type", format!("{ty:?}"))
             .add_attribute("code_id", new_code_id.to_string());
 
         Ok(Response::new().add_event(event))
@@ -236,7 +236,7 @@ pub mod factory_execute {
         };
 
         let event = Event::new("vectis.factory.v1.MsgUpdateConfigFee")
-            .add_attribute("type", format!("{:?}", ty))
+            .add_attribute("type", format!("{ty:?}"))
             .add_attribute("amount", new_fee.amount.to_string())
             .add_attribute("denom", new_fee.denom);
 

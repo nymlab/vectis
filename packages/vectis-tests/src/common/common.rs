@@ -27,7 +27,7 @@ pub use dao_core::{
         execute as dao_execute, instantiate as dao_instantiate, query as dao_query,
         reply as dao_reply,
     },
-    msg::{InstantiateMsg as DaoInstMsg, QueryMsg as DaoQueryMsg},
+    msg::{ExecuteMsg as DaoExecMsg, InstantiateMsg as DaoInstMsg, QueryMsg as DaoQueryMsg},
     state::ProposalModule,
 };
 
@@ -54,7 +54,7 @@ pub use dao_proposal_single::{
         execute as prop_execute, instantiate as prop_instantiate, query as prop_query,
         reply as prop_reply,
     },
-    msg::{InstantiateMsg as PropInstMsg, QueryMsg as PropQueryMsg},
+    msg::{ProposalSingleInstantiateMsg as PropInstMsg, ProposalSingleQueryMsg as PropQueryMsg},
     query::{ProposalListResponse, ProposalResponse},
 };
 
@@ -74,7 +74,7 @@ pub use dao_voting_cw20_staked::{
 pub use cw20_stake::{
     contract::{execute as stake_execute, instantiate as stake_instantiate, query as stake_query},
     msg::{
-        InstantiateMsg as StakeInstMsg, QueryMsg as StakeQueryMsg, ReceiveMsg,
+        Cw20StakeInstantiateMsg as StakeInstMsg, Cw20StakeQueryMsg as StakeQueryMsg, ReceiveMsg,
         StakedBalanceAtHeightResponse,
     },
 };
@@ -230,7 +230,7 @@ pub fn contract_remote_tunnel() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-pub fn contract_plugin_registry<'a>() -> Box<dyn Contract<Empty>> {
+pub fn contract_plugin_registry() -> Box<dyn Contract<Empty>> {
     Box::new(PluginRegistry::new())
 }
 

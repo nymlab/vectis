@@ -12,7 +12,6 @@ export type LogoInfo =
     | "embedded";
 export type Addr = string;
 export interface InstantiateMsg {
-    dao_tunnel?: string | null;
     factory?: string | null;
     initial_balances: Cw20Coin[];
     marketing?: MarketingInfoResponse | null;
@@ -39,6 +38,13 @@ export type ExecuteMsg =
               amount: Uint128;
               recipient: string;
               relayed_from?: string | null;
+          };
+      }
+    | {
+          transfer_from: {
+              amount: Uint128;
+              owner: string;
+              recipient: string;
           };
       }
     | {
@@ -93,9 +99,6 @@ export type Binary = string;
 export type UpdateAddrReq =
     | {
           dao: string;
-      }
-    | {
-          dao_tunnel: string;
       }
     | {
           factory: string;

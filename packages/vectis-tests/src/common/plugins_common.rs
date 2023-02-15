@@ -209,6 +209,7 @@ impl PluginsSuite {
         Ok(self.app.wrap().query_balance(addr.as_str(), "ucosm")?)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn register_plugin(
         &mut self,
         sender: &Addr,
@@ -271,6 +272,7 @@ impl PluginsSuite {
             .map(|_| ())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn update_plugin(
         &mut self,
         sender: &Addr,

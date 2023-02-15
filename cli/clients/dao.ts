@@ -110,6 +110,12 @@ class DaoClient {
         });
     }
 
+    async querySetItems(k: string) {
+        return await this.client.queryContractSmart(this.daoAddr, {
+            list_items: {},
+        });
+    }
+
     async createProposal(title: string, description: string, msgs: Record<string, unknown>[]) {
         const proposal = {
             propose: {
@@ -259,8 +265,8 @@ class DaoClient {
             proposal_creation_policy: {},
         });
         console.log("policy: ", policy);
-        console.log("Instantiated preproposal at: ", policy.addr);
-        const preProposalAddr = policy.addr;
+        console.log("Instantiated preproposal at: ", policy.module.addr);
+        const preProposalAddr = policy.module.addr;
         return new DaoClient(client, {
             daoAddr,
             voteAddr,

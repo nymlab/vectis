@@ -89,12 +89,7 @@ fn relay_proxy_controller_tx_invalid_msg_fails() {
     let relayer = String::from("relayer");
     let execute_msg_err: ContractError = suite
         .app
-        .execute_contract(
-            Addr::unchecked(relayer),
-            wallet_address.clone(),
-            &relay_msg,
-            &[],
-        )
+        .execute_contract(Addr::unchecked(relayer), wallet_address, &relay_msg, &[])
         .unwrap_err()
         .downcast()
         .unwrap();
@@ -135,12 +130,7 @@ fn relay_proxy_controller_tx_invalid_relayer_fails() {
     let relayer = String::from("invalid_relayer");
     let execute_msg_err: ContractError = suite
         .app
-        .execute_contract(
-            Addr::unchecked(relayer),
-            wallet_address.clone(),
-            &relay_msg,
-            &[],
-        )
+        .execute_contract(Addr::unchecked(relayer), wallet_address, &relay_msg, &[])
         .unwrap_err()
         .downcast()
         .unwrap();
@@ -181,12 +171,7 @@ fn relay_proxy_controller_tx_is_not_controller_fails() {
     let relayer = String::from("relayer");
     let execute_msg_err: ContractError = suite
         .app
-        .execute_contract(
-            Addr::unchecked(relayer),
-            wallet_address.clone(),
-            &relay_msg,
-            &[],
-        )
+        .execute_contract(Addr::unchecked(relayer), wallet_address, &relay_msg, &[])
         .unwrap_err()
         .downcast()
         .unwrap();

@@ -225,8 +225,8 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         },
     };
 
-    // Update DAO with dao_tunnel addr
-    const prePropSetItemMsg: ProxyT.CosmosMsgForEmpty = {
+    // Update DAO with committee addr
+    const committeeSetItemMsg: ProxyT.CosmosMsgForEmpty = {
         wasm: {
             execute: {
                 contract_addr: daoClient.daoAddr,
@@ -236,7 +236,19 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         },
     };
 
+    // Update DAO with pre-proposal addr
+    const prePropSetItemMsg: ProxyT.CosmosMsgForEmpty = {
+        wasm: {
+            execute: {
+                contract_addr: daoClient.daoAddr,
+                funds: [],
+                msg: toCosmosMsg({ set_item: { key: "pre-proposal", value: daoClient.preProposalAddr } }),
+            },
+        },
+    };
+
     await daoClient.executeAdminMsg(daoSetItemMsg);
+    await daoClient.executeAdminMsg(committeeSetItemMsg);
     await daoClient.executeAdminMsg(prePropSetItemMsg);
     console.log("\n12. Set dao_tunnel and committee address in DAO items");
 
@@ -245,12 +257,6 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         marketing: daoClient.daoAddr,
     });
     console.log("\n13. Updated Marketing Address on Govec\n", JSON.stringify(res));
-
-    // Update Pre Proposal address
-    res = await govecClient.updateConfigAddr({
-        newAddr: { pre_proposal: preProposalMultiSigAddr },
-    });
-    console.log("\n14. Updated Proposal Address on Govec\n", JSON.stringify(res));
 
     // Add factory address to Govec
     res = await govecClient.updateConfigAddr({
@@ -263,12 +269,6 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         newAddr: { staking: daoClient.stakingAddr },
     });
     console.log("\n16. Updated Staking Address on Govec\n", JSON.stringify(res));
-
-    // Add dao_tunnel address to Govec
-    res = await govecClient.updateConfigAddr({
-        newAddr: { dao_tunnel: daoTunnelAddr },
-    });
-    console.log("\n17. Updated DaoTunnel Address on Govec\n", JSON.stringify(res));
 
     // Update DAO address on Govec
     res = await govecClient.updateConfigAddr({
@@ -299,6 +299,7 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         preproposalGroupAddr: committeeGroupAddr,
         voteAddr: daoClient.voteAddr,
     };
+    console.log("\n Contracts: ", contracts);
 
     await verifyDeploy(contracts);
     console.log("\nEND. Verified deployment");

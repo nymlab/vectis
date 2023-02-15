@@ -161,6 +161,20 @@ export interface GovecInterface extends GovecReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    transferFrom: (
+        {
+            amount,
+            owner,
+            recipient,
+        }: {
+            amount: Uint128;
+            owner: string;
+            recipient: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
     burn: (
         {
             amount,
@@ -264,6 +278,7 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
         this.sender = sender;
         this.contractAddress = contractAddress;
         this.transfer = this.transfer.bind(this);
+        this.transferFrom = this.transferFrom.bind(this);
         this.burn = this.burn.bind(this);
         this.exit = this.exit.bind(this);
         this.send = this.send.bind(this);
@@ -297,6 +312,35 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
                     amount,
                     recipient,
                     relayed_from: relayedFrom,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    transferFrom = async (
+        {
+            amount,
+            owner,
+            recipient,
+        }: {
+            amount: Uint128;
+            owner: string;
+            recipient: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                transfer_from: {
+                    amount,
+                    owner,
+                    recipient,
                 },
             },
             fee,

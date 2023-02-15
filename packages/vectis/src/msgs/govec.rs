@@ -11,11 +11,8 @@ pub const GOVEC_CLAIM_DURATION_DAY_MUL: u64 = 90;
 #[cw_serde]
 pub enum UpdateAddrReq {
     Dao(String),
-    DaoTunnel(String),
     Factory(String),
     Staking(String),
-    // if addr already exists; this will remove it
-    PreProposal(String),
 }
 
 #[cw_serde]
@@ -25,6 +22,13 @@ pub enum GovecExecuteMsg {
         recipient: String,
         amount: Uint128,
         relayed_from: Option<String>,
+    },
+    /// Only the pre-proposal approval single contract can call this message and recieve tokens
+    /// For Approval, Vectis plugins should be used
+    TransferFrom {
+        owner: String,
+        recipient: String,
+        amount: Uint128,
     },
     /// Burn amount specified from total supply
     /// permission: executed by dao only

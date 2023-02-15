@@ -21,9 +21,11 @@ pub const MINT_AMOUNT: Item<Uint128> = Item::new("Mint_amount");
 // updated by `UpdateConfigAddr`
 pub const STAKING_ADDR: Item<CanonicalAddr> = Item::new("staking_addr");
 pub const DAO_ADDR: Item<CanonicalAddr> = Item::new("DAO_addr");
-pub const DAO_TUNNEL: Item<CanonicalAddr> = Item::new("DAO_tunnel");
 pub const FACTORY: Item<CanonicalAddr> = Item::new("Factory");
 
 // We update this with the DAO, we can query the DAO but this might run out of gas,
 // see https://github.com/nymlab/dao-contracts/blob/v1.0.0-vectis/contracts/cw-core/src/contract.rs#L517
 pub const PRE_PROP_APPROVAL: Map<&Addr, ()> = Map::new("proposal_modules");
+
+/// To query the pre-proposal and dao tunnel address on the DAO core
+pub const ITEMS: Map<String, String> = Map::new("items");

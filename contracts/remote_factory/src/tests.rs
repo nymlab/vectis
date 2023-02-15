@@ -174,7 +174,7 @@ fn admin_updates_addresses_work() {
         initial_code_id,
         initial_code_id,
         "wasm",
-        fee.clone(),
+        fee,
         coin(1, "ucosm"),
         None,
     );

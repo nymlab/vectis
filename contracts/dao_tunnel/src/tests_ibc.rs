@@ -664,7 +664,7 @@ fn ack_emits_reply_id() {
     let res = ibc_packet_ack(deps.as_mut(), env, ibc_ack).unwrap();
 
     assert_eq!(res.attributes[0].value, job_id.to_string());
-    assert_eq!(res.attributes[1].value, format!("Success: {}", reply_id));
+    assert_eq!(res.attributes[1].value, format!("Success: {reply_id}"));
 }
 
 #[test]
