@@ -291,7 +291,7 @@ impl DaoChainSuite {
         .map_err(|err| anyhow!(err))
         .unwrap();
 
-        // Give Govec the correct contractg addresses
+        // Give Govec the correct contract addresses
         app.execute_contract(
             dao.clone(),
             govec.clone(),
@@ -539,6 +539,15 @@ impl DaoChainSuite {
             &ProxyExecuteMsg::Execute { msgs },
             &fees,
         )
+    }
+
+    pub fn govec_execute(
+        &mut self,
+        wallet_addr: Addr,
+        msg: GovecExecuteMsg,
+    ) -> Result<AppResponse> {
+        self.app
+            .execute_contract(wallet_addr, self.govec.clone(), &msg, &[])
     }
 
     pub fn fast_forward_block_time(&mut self, forward_time_sec: u64) {
