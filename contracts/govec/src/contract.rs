@@ -349,7 +349,6 @@ fn ensure_is_minter(deps: Deps, sender: Addr) -> Result<Role, ContractError> {
     } else if sender == deps.api.addr_humanize(&d)? {
         Ok(Role::Dao)
     } else {
-        println!("NOT TUNNEL");
         Err(ContractError::Unauthorized {})
     }
 }
@@ -678,6 +677,9 @@ pub fn query_mint_amount(deps: Deps) -> StdResult<Uint128> {
 
 pub fn query_minter(deps: Deps) -> StdResult<MintResponse> {
     let dao = DAO_ADDR.load(deps.storage)?;
+    let mut v = Vec::new();
+    v.push(deps.api.addr_humanize(&dao)?.to_string());
+
     let d = ITEMS.query(
         &deps.querier,
         deps.api.addr_humanize(&dao)?,
@@ -685,20 +687,17 @@ pub fn query_minter(deps: Deps) -> StdResult<MintResponse> {
     )?;
     let f = FACTORY.may_load(deps.storage)?;
     let cap = MINT_CAP.may_load(deps.storage)?;
-    let minters = if d.is_none() && f.is_none() {
-        None
-    } else {
-        let mut v = Vec::new();
-        if let Some(daot) = d {
-            v.push(daot);
-        }
-        if let Some(factory) = f {
-            v.push(deps.api.addr_humanize(&factory)?.to_string());
-        }
-        Some(v)
-    };
+    if let Some(daot) = d {
+        v.push(daot);
+    }
+    if let Some(factory) = f {
+        v.push(deps.api.addr_humanize(&factory)?.to_string());
+    }
 
-    Ok(MintResponse { minters, cap })
+    Ok(MintResponse {
+        minters: Some(v),
+        cap,
+    })
 }
 
 pub fn query_staking(deps: Deps) -> StdResult<Addr> {
