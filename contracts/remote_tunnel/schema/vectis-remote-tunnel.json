@@ -2585,18 +2585,6 @@
               }
             },
             "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "required": [
-              "pre_proposal"
-            ],
-            "properties": {
-              "pre_proposal": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
           }
         ]
       },

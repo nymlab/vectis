@@ -360,7 +360,10 @@ async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
 
     // Govec should have factory addr and dao_tunnel addr
     const { minters } = await govecClient.minters();
-    assert.deepStrictEqual(minters, [addrs.daoTunnelAddr, addrs.factoryAddr]);
+    assert.ok(minters?.includes(addrs.daoAddr));
+    assert.ok(minters?.includes(addrs.daoTunnelAddr));
+    assert.ok(minters?.includes(addrs.factoryAddr));
+    assert.equal(minters?.length, 3);
 
     // Govec should have have vectis project and description
     const marketingInfo = await govecClient.marketingInfo();

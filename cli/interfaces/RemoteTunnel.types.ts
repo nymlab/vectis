@@ -132,9 +132,6 @@ export type UpdateAddrReq =
       }
     | {
           staking: string;
-      }
-    | {
-          pre_proposal: string;
       };
 export type Logo =
     | {
