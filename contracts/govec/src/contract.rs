@@ -616,8 +616,10 @@ fn ensure_is_wallet_or_authorised(deps: Deps, contract: &Addr) -> Result<(), Con
     if wallet.is_some() {
         return Ok(());
     }
-    if pre_proposal.is_some() {
-        return Ok(());
+    if let Some(prep) = pre_proposal {
+        if *contract == prep {
+            return Ok(());
+        }
     }
     Err(ContractError::Unauthorized {})
 }
