@@ -512,7 +512,7 @@
         }
     })()
     .or_else(|e| {
-        <span class="prelude-val">Ok</span>(IbcReceiveResponse::new().set_ack(StdAck::fail(<span class="macro">format!</span>(<span class="string">&quot;IBC Packet Error: {}&quot;</span>, e))))
+        <span class="prelude-val">Ok</span>(IbcReceiveResponse::new().set_ack(StdAck::fail(<span class="macro">format!</span>(<span class="string">&quot;IBC Packet Error: {e}&quot;</span>))))
     })
 }
 

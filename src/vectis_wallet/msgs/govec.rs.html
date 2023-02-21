@@ -149,11 +149,8 @@
 <span class="attr">#[cw_serde]
 </span><span class="kw">pub enum </span>UpdateAddrReq {
     Dao(String),
-    DaoTunnel(String),
     Factory(String),
     Staking(String),
-    <span class="comment">// if addr already exists; this will remove it
-    </span>Proposal(String),
 }
 
 <span class="attr">#[cw_serde]
@@ -164,10 +161,13 @@
         amount: Uint128,
         relayed_from: <span class="prelude-ty">Option</span>&lt;String&gt;,
     },
-    <span class="doccomment">/// This is implemented such that the sender MUST be a DAO proposal module
-    /// The recipient will always be the sender, aka the proposal contract
-    /// called by `get_deposit_msg` required interface in proposal_single
-    </span>ProposalTransfer { proposer: String, deposit: Uint128 },
+    <span class="doccomment">/// Only the pre-proposal approval single contract can call this message and recieve tokens
+    /// For Approval, Vectis plugins should be used
+    </span>TransferFrom {
+        owner: String,
+        recipient: String,
+        amount: Uint128,
+    },
     <span class="doccomment">/// Burn amount specified from total supply
     /// permission: executed by dao only
     </span>Burn { amount: Uint128 },
@@ -224,8 +224,8 @@
     </span><span class="attr">#[returns(BalanceResponse)]
     </span>Balance { address: String },
     <span class="doccomment">/// Returns Some(balance) if address has ever been issued a token,
-    /// If the current balance is 0, returns Some(0)
-    /// IF address has never been issued a token, None is returned
+    /// If the current balance is 0 but not explicitly called exit, returns Some(0)
+    /// IF address has explicitly called exit, returns None
     </span><span class="attr">#[returns(<span class="prelude-ty">Option</span>&lt;BalanceResponse&gt;)]
     </span>Joined { address: String },
     <span class="doccomment">/// Returns metadata on the contract - name, decimals, supply, etc.

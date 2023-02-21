@@ -21,6 +21,8 @@
 <a href="#21" id="21">21</a>
 <a href="#22" id="22">22</a>
 <a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_std::StdError;
 <span class="kw">use </span>thiserror::Error;
 <span class="kw">use </span>vectis_wallet::IbcError;
@@ -39,6 +41,8 @@
     </span>InvalidReplyId,
     <span class="attr">#[error(<span class="string">&quot;Unauthorized&quot;</span>)]
     </span>Unauthorized,
+    <span class="attr">#[error(<span class="string">&quot;InvalidMsg {0}&quot;</span>)]
+    </span>InvalidMsg(String),
     <span class="attr">#[error(<span class="string">&quot;Channel not found for connection_id: {0}&quot;</span>)]
     </span>ChannelNotFound(String),
     <span class="attr">#[error(<span class="string">&quot;Empty Funds&quot;</span>)]

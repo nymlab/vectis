@@ -348,7 +348,6 @@
 <span class="kw">use crate</span>::{
     error::ContractError,
     responses::{ConfigResponse, PluginsResponse},
-    validation::ensure_is_reviewer,
 };
 
 <span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>);
@@ -372,7 +371,7 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) total_plugins: Item&lt;<span class="lifetime">&#39;a</span>, u64&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) registry_fee: Item&lt;<span class="lifetime">&#39;a</span>, Coin&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) dao_addr: Item&lt;<span class="lifetime">&#39;a</span>, CanonicalAddr&gt;,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) reviewers: Item&lt;<span class="lifetime">&#39;a</span>, Vec&lt;CanonicalAddr&gt;&gt;,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) reviewer: Item&lt;<span class="lifetime">&#39;a</span>, CanonicalAddr&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) plugins: Map&lt;<span class="lifetime">&#39;a</span>, u64, Plugin&gt;,
 }
 
@@ -383,7 +382,7 @@
             total_plugins: Item::new(<span class="string">&quot;total_plugins&quot;</span>),
             registry_fee: Item::new(<span class="string">&quot;registry_fee&quot;</span>),
             dao_addr: Item::new(<span class="string">&quot;dao_addr&quot;</span>),
-            reviewers: Item::new(<span class="string">&quot;reviewers&quot;</span>),
+            reviewer: Item::new(<span class="string">&quot;reviewer&quot;</span>),
             plugins: Map::new(<span class="string">&quot;plugins&quot;</span>),
         }
     }
@@ -394,21 +393,20 @@
         ctx: (DepsMut, Env, MessageInfo),
         registry_fee: Coin,
         dao_addr: String,
-        reviewers: Vec&lt;String&gt;,
+        reviewer: String,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>(deps, ..) = ctx;
         set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)<span class="question-mark">?</span>;
         <span class="kw">let </span>dao_addr = deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>dao_addr)<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>reviewers = reviewers
-            .iter()
-            .map(|reviewer| deps.api.addr_canonicalize(reviewer))
-            .collect::&lt;StdResult&lt;Vec&lt;CanonicalAddr&gt;&gt;&gt;()<span class="question-mark">?</span>;
+        <span class="kw">let </span>reviewer_multisig = deps
+            .api
+            .addr_canonicalize(deps.api.addr_validate(<span class="kw-2">&amp;</span>reviewer)<span class="question-mark">?</span>.as_str())<span class="question-mark">?</span>;
 
         <span class="self">self</span>.total_plugins.save(deps.storage, <span class="kw-2">&amp;</span><span class="number">0u64</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.registry_fee.save(deps.storage, <span class="kw-2">&amp;</span>registry_fee)<span class="question-mark">?</span>;
         <span class="self">self</span>.dao_addr.save(deps.storage, <span class="kw-2">&amp;</span>dao_addr)<span class="question-mark">?</span>;
-        <span class="self">self</span>.reviewers.save(deps.storage, <span class="kw-2">&amp;</span>reviewers)<span class="question-mark">?</span>;
+        <span class="self">self</span>.reviewer.save(deps.storage, <span class="kw-2">&amp;</span>reviewer_multisig)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(Response::default())
     }
@@ -444,8 +442,10 @@
         };
 
         <span class="comment">// Check if the caller is a reviewer
-        </span><span class="kw">let </span>reviewers = <span class="self">self</span>.reviewers.load(deps.storage)<span class="question-mark">?</span>;
-        ensure_is_reviewer(deps.as_ref(), <span class="kw-2">&amp;</span>reviewers, info.sender.as_str())<span class="question-mark">?</span>;
+        </span><span class="kw">let </span>reviewer = <span class="self">self</span>.reviewer.load(deps.storage)<span class="question-mark">?</span>;
+        <span class="kw">if </span>deps.api.addr_humanize(<span class="kw-2">&amp;</span>reviewer)<span class="question-mark">? </span>!= info.sender {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Unauthorized);
+        }
 
         <span class="comment">// Store plugin information in PLUGINS Map&lt;u64(id), Plugin&gt;
         </span><span class="kw">let </span>id = <span class="self">self
@@ -489,8 +489,10 @@
         <span class="kw">let </span>(deps, _env, info) = ctx;
 
         <span class="comment">// Check if the caller is a reviewer
-        </span><span class="kw">let </span>reviewers = <span class="self">self</span>.reviewers.load(deps.storage)<span class="question-mark">?</span>;
-        ensure_is_reviewer(deps.as_ref(), <span class="kw-2">&amp;</span>reviewers, info.sender.as_str())<span class="question-mark">?</span>;
+        </span><span class="kw">let </span>reviewer = <span class="self">self</span>.reviewer.load(deps.storage)<span class="question-mark">?</span>;
+        <span class="kw">if </span>deps.api.addr_humanize(<span class="kw-2">&amp;</span>reviewer)<span class="question-mark">? </span>!= info.sender {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Unauthorized);
+        }
 
         <span class="comment">// Remove plugin information from registry
         </span><span class="self">self</span>.plugins.remove(deps.storage, id);
@@ -520,8 +522,10 @@
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>(deps, _env, info) = ctx;
 
-        <span class="kw">let </span>reviewers = <span class="self">self</span>.reviewers.load(deps.storage)<span class="question-mark">?</span>;
-        ensure_is_reviewer(deps.as_ref(), <span class="kw-2">&amp;</span>reviewers, info.sender.as_str())<span class="question-mark">?</span>;
+        <span class="kw">let </span>reviewer = <span class="self">self</span>.reviewer.load(deps.storage)<span class="question-mark">?</span>;
+        <span class="kw">if </span>deps.api.addr_humanize(<span class="kw-2">&amp;</span>reviewer)<span class="question-mark">? </span>!= info.sender {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Unauthorized);
+        }
 
         <span class="kw">let </span>plugin = <span class="self">self
             </span>.plugins
@@ -544,7 +548,7 @@
 
         <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgUpdatePlugin&quot;</span>)
             .add_attribute(<span class="string">&quot;id&quot;</span>, id.to_string())
-            .add_attribute(<span class="string">&quot;plugin&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, plugin));
+            .add_attribute(<span class="string">&quot;plugin&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{plugin:?}&quot;</span>));
 
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
     }
@@ -598,10 +602,10 @@
     }
 
     <span class="attr">#[msg(exec)]
-    </span><span class="kw">pub fn </span>update_reviewers(
+    </span><span class="kw">pub fn </span>update_reviewer(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         ctx: (DepsMut, Env, MessageInfo),
-        reviewers: Vec&lt;String&gt;,
+        reviewer: String,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>(deps, _env, info) = ctx;
         <span class="macro">ensure_eq!</span>(
@@ -610,17 +614,15 @@
             ContractError::Unauthorized
         );
 
-        <span class="self">self</span>.reviewers
-            .update(deps.storage, |<span class="kw">_</span>| -&gt; StdResult&lt;Vec&lt;CanonicalAddr&gt;&gt; {
-                reviewers
-                    .iter()
-                    .map(|addr| deps.api.addr_canonicalize(addr))
-                    .collect::&lt;StdResult&lt;Vec&lt;CanonicalAddr&gt;&gt;&gt;()
-            })<span class="question-mark">?</span>;
-
+        <span class="self">self</span>.reviewer.save(
+            deps.storage,
+            <span class="kw-2">&amp;</span>deps
+                .api
+                .addr_canonicalize(deps.api.addr_validate(<span class="kw-2">&amp;</span>reviewer)<span class="question-mark">?</span>.as_str())<span class="question-mark">?</span>,
+        )<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(Response::default().add_event(
-            Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgUpdateReviewers&quot;</span>)
-                .add_attribute(<span class="string">&quot;reviewers&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, reviewers)),
+            Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgUpdateReviewer&quot;</span>)
+                .add_attribute(<span class="string">&quot;reviewer&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{reviewer:?}&quot;</span>)),
         ))
     }
 
@@ -633,12 +635,10 @@
                 .api
                 .addr_humanize(<span class="kw-2">&amp;</span><span class="self">self</span>.dao_addr.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
                 </span>.to_string(),
-            reviewers: <span class="self">self
-                </span>.reviewers
-                .load(deps.storage)<span class="question-mark">?
-                </span>.iter()
-                .map(|addr| deps.api.addr_humanize(addr).unwrap().to_string())
-                .collect(),
+            reviewer: deps
+                .api
+                .addr_humanize(<span class="kw-2">&amp;</span><span class="self">self</span>.reviewer.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
+                </span>.to_string(),
         })
     }
 

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["contract",""],["error",""],["multitest",""],["responses",""],["validation",""]]};
+window.SIDEBAR_ITEMS = {"mod":[["contract",""],["error",""],["multitest",""],["responses",""]]};

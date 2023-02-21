@@ -106,11 +106,17 @@
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::{cw_serde, schemars};
 <span class="kw">use </span>cosmwasm_std::{to_binary, Binary, CosmosMsg, StdResult, WasmMsg};
 
-<span class="kw">pub use </span>cw20_stake::msg::ExecuteMsg <span class="kw">as </span>StakeExecuteMsg;
-<span class="kw">pub use </span>cw_proposal_single::msg::ExecuteMsg <span class="kw">as </span>ProposalExecuteMsg;
+<span class="kw">pub use </span>cw20_stake::msg::Cw20StakeExecuteMsg <span class="kw">as </span>StakeExecuteMsg;
+<span class="kw">pub use </span>dao_pre_propose_approval_single::msg::{ExecuteMsg <span class="kw">as </span>PrePropExecuteMsg, ProposeMessage};
+<span class="kw">pub use </span>dao_proposal_single::msg::ProposalSingleExecuteMsg <span class="kw">as </span>ProposalExecuteMsg;
 
 <span class="kw">pub use crate</span>::{
     ChainConfig, DaoConfig, GovecExecuteMsg, IbcError, Receiver, StdAck, WalletFactoryExecuteMsg,
@@ -172,6 +178,10 @@
     },
     GovecActions(GovecExecuteMsg),
     StakeActions(StakeExecuteMsg),
+    PreProposalActions {
+        pre_prop_module_addr: String,
+        msg: PrePropExecuteMsg,
+    },
     ProposalActions {
         prop_module_addr: String,
         msg: ProposalExecuteMsg,

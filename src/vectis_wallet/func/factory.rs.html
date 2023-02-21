@@ -525,10 +525,6 @@
 <a href="#525" id="525">525</a>
 <a href="#526" id="526">526</a>
 <a href="#527" id="527">527</a>
-<a href="#528" id="528">528</a>
-<a href="#529" id="529">529</a>
-<a href="#530" id="530">530</a>
-<a href="#531" id="531">531</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::ops::{Add, Mul};
 
 <span class="kw">use </span>cosmwasm_std::{
@@ -544,12 +540,8 @@
 <span class="kw">use crate</span>::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, FactoryError <span class="kw">as </span>ContractError, Guardians,
     ProxyMigrationTxMsg, ProxyQueryMsg, RelayTxError,
-    WalletFactoryInstantiateMsg <span class="kw">as </span>InstantiateMsg, WalletInfo,
+    WalletFactoryInstantiateMsg <span class="kw">as </span>InstantiateMsg, WalletInfo, DEFAULT_LIMIT, MAX_LIMIT,
 };
-
-<span class="comment">// settings for pagination for unclaimed govec wallet list
-</span><span class="kw">const </span>MAX_LIMIT: u32 = <span class="number">1000</span>;
-<span class="kw">const </span>DEFAULT_LIMIT: u32 = <span class="number">50</span>;
 
 <span class="kw">pub fn </span>factory_instantiate(
     deps: DepsMut,
@@ -747,7 +739,7 @@
         }
 
         <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgUpdateCodeId&quot;</span>)
-            .add_attribute(<span class="string">&quot;type&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ty))
+            .add_attribute(<span class="string">&quot;type&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{ty:?}&quot;</span>))
             .add_attribute(<span class="string">&quot;code_id&quot;</span>, new_code_id.to_string());
 
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
@@ -771,7 +763,7 @@
         };
 
         <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgUpdateConfigFee&quot;</span>)
-            .add_attribute(<span class="string">&quot;type&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ty))
+            .add_attribute(<span class="string">&quot;type&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{ty:?}&quot;</span>))
             .add_attribute(<span class="string">&quot;amount&quot;</span>, new_fee.amount.to_string())
             .add_attribute(<span class="string">&quot;denom&quot;</span>, new_fee.denom);
 

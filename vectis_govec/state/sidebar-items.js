@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["BALANCES",""],["DAO_ADDR",""],["DAO_TUNNEL",""],["FACTORY",""],["LOGO",""],["MARKETING_INFO",""],["MINT_AMOUNT",""],["MINT_CAP",""],["PROP_MODULES",""],["STAKING_ADDR",""],["TOKEN_INFO",""]],"struct":[["TokenInfo",""]]};
+window.SIDEBAR_ITEMS = {"constant":[["BALANCES",""],["DAO_ADDR",""],["FACTORY",""],["ITEMS","To query the pre-proposal and dao tunnel address on the DAO core"],["LOGO",""],["MARKETING_INFO",""],["MINT_AMOUNT",""],["MINT_CAP",""],["PRE_PROP_APPROVAL",""],["STAKING_ADDR",""],["TOKEN_INFO",""]],"struct":[["TokenInfo",""]]};

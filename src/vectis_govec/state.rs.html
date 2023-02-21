@@ -27,6 +27,8 @@
 <a href="#27" id="27">27</a>
 <a href="#28" id="28">28</a>
 <a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::cw_serde;
 <span class="kw">use </span>cw20::{Logo, MarketingInfoResponse};
 
@@ -50,11 +52,13 @@
 <span class="comment">// updated by `UpdateConfigAddr`
 </span><span class="kw">pub const </span>STAKING_ADDR: Item&lt;CanonicalAddr&gt; = Item::new(<span class="string">&quot;staking_addr&quot;</span>);
 <span class="kw">pub const </span>DAO_ADDR: Item&lt;CanonicalAddr&gt; = Item::new(<span class="string">&quot;DAO_addr&quot;</span>);
-<span class="kw">pub const </span>DAO_TUNNEL: Item&lt;CanonicalAddr&gt; = Item::new(<span class="string">&quot;DAO_tunnel&quot;</span>);
 <span class="kw">pub const </span>FACTORY: Item&lt;CanonicalAddr&gt; = Item::new(<span class="string">&quot;Factory&quot;</span>);
 
 <span class="comment">// We update this with the DAO, we can query the DAO but this might run out of gas,
 // see https://github.com/nymlab/dao-contracts/blob/v1.0.0-vectis/contracts/cw-core/src/contract.rs#L517
-</span><span class="kw">pub const </span>PROP_MODULES: Map&lt;Addr, ()&gt; = Map::new(<span class="string">&quot;proposal_modules&quot;</span>);
+</span><span class="kw">pub const </span>PRE_PROP_APPROVAL: Map&lt;<span class="kw-2">&amp;</span>Addr, ()&gt; = Map::new(<span class="string">&quot;proposal_modules&quot;</span>);
+
+<span class="doccomment">/// To query the pre-proposal and dao tunnel address on the DAO core
+</span><span class="kw">pub const </span>ITEMS: Map&lt;String, String&gt; = Map::new(<span class="string">&quot;items&quot;</span>);
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_govec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
