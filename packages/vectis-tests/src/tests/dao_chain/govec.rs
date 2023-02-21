@@ -62,11 +62,47 @@ fn transfer_works() {
         .unwrap(),
         funds: vec![],
     });
-
-    // Controller execute proxy to transfer govec
     suite
         .proxy_execute(&wallet_addr, vec![transfer_msg], vec![])
         .unwrap_err();
+
+    let other_wallet = Addr::unchecked("other-chain");
+    suite
+        .govec_execute(
+            suite.dao.clone(),
+            GovecExecuteMsg::Mint {
+                new_wallet: other_wallet.to_string(),
+            },
+        )
+        .unwrap();
+
+    // ONLY dao-tunnel can relay
+    suite
+        .govec_execute(
+            suite.factory.clone(),
+            GovecExecuteMsg::Transfer {
+                recipient: suite.dao.to_string(),
+                amount: Uint128::one(),
+                relayed_from: Some(other_wallet.to_string()),
+            },
+        )
+        .unwrap_err();
+
+    // dao-tunnel can relay
+    suite
+        .govec_execute(
+            suite.dao_tunnel.clone(),
+            GovecExecuteMsg::Transfer {
+                recipient: suite.dao.to_string(),
+                amount: Uint128::one(),
+                relayed_from: Some(other_wallet.to_string()),
+            },
+        )
+        .unwrap();
+
+    let wallet_after = suite.query_govec_balance(&other_wallet).unwrap().balance;
+
+    assert_eq!(wallet_after + Uint128::one(), Uint128::from(MINT_AMOUNT),)
 }
 
 #[test]
@@ -273,359 +309,173 @@ fn send_works() {
             GovecExecuteMsg::Send {
                 contract: suite.dao.to_string(),
                 amount: Uint128::from(MINT_AMOUNT - 1),
-                msg: send_msg,
+                msg: send_msg.clone(),
                 relayed_from: None,
             },
         )
         .unwrap();
     let after = suite.query_govec_balance(&new_wallet).unwrap().balance;
-    assert_eq!(after + Uint128::from(MINT_AMOUNT - 1), before)
+    assert_eq!(after + Uint128::from(MINT_AMOUNT - 1), before);
+
+    // only dao-tunnel an relay
+    suite
+        .govec_execute(
+            new_wallet.clone(),
+            GovecExecuteMsg::Send {
+                contract: suite.dao.to_string(),
+                amount: Uint128::from(MINT_AMOUNT - 1),
+                msg: send_msg.clone(),
+                relayed_from: Some(new_wallet.to_string()),
+            },
+        )
+        .unwrap_err();
+
+    // relay works
+    suite
+        .govec_execute(
+            suite.dao_tunnel.clone(),
+            GovecExecuteMsg::Send {
+                contract: suite.dao.to_string(),
+                amount: Uint128::one(),
+                msg: send_msg,
+                relayed_from: Some(new_wallet.to_string()),
+            },
+        )
+        .unwrap();
+    let after_relay = suite.query_govec_balance(&new_wallet).unwrap().balance;
+    assert_eq!(after_relay + Uint128::one(), after)
 }
-//#[test]
-//fn dao_can_update_dao_addr_and_transfer_tokens() {
-//    let mut deps = mock_dependencies();
-//    let dao_balance = Uint128::new(5);
-//    let limit = Uint128::new(12);
-//
-//    let new_dao = String::from("new_dao");
-//
-//    do_instantiate(
-//        deps.as_mut(),
-//        vec![DAO_ADDR],
-//        vec![dao_balance],
-//        Some(FACTORY),
-//        Some(limit),
-//        Uint128::new(2),
-//        None,
-//    );
-//    assert_eq!(
-//        query_balance(deps.as_ref(), DAO_ADDR.to_string())
-//            .unwrap()
-//            .balance,
-//        Uint128::new(5)
-//    );
-//    let msg = ExecuteMsg::UpdateConfigAddr {
-//        new_addr: UpdateAddrReq::Dao(new_dao.clone()),
-//    };
-//
-//    // only dao can update DAO
-//    let info = mock_info(FACTORY, &[]);
-//    let env = mock_env();
-//    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
-//    assert_eq!(err, ContractError::Unauthorized {});
-//
-//    let info = mock_info(DAO_ADDR, &[]);
-//    let env = mock_env();
-//    let res = execute(deps.as_mut(), env, info, msg).unwrap();
-//    assert_eq!(0, res.messages.len());
-//    assert_eq!(query_dao(deps.as_ref()).unwrap(), new_dao);
-//    assert_eq!(
-//        query_balance(deps.as_ref(), DAO_ADDR.to_string())
-//            .unwrap()
-//            .balance,
-//        Uint128::new(0)
-//    );
-//    assert_eq!(
-//        query_balance(deps.as_ref(), new_dao).unwrap().balance,
-//        Uint128::new(5)
-//    );
-//}
-//
-//#[test]
-//fn transfer() {
-//    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-//    let addr1 = String::from("addr0001");
-//    let addr2 = String::from("addr0002");
-//    let not_wallet = String::from("not_wallet");
-//    let amount1 = Uint128::from(12340000u128);
-//    let transfer = Uint128::from(76543u128);
-//    let too_much = Uint128::from(12340321u128);
-//
-//    do_instantiate(
-//        deps.as_mut(),
-//        vec![addr1.as_str(), addr2.as_str()],
-//        vec![amount1, Uint128::zero()],
-//        Some(FACTORY),
-//        None,
-//        Uint128::new(2),
-//        None,
-//    );
-//
-//    // cannot transfer nothing
-//    let info = mock_info(addr1.as_ref(), &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Transfer {
-//        recipient: addr2.clone(),
-//        amount: Uint128::zero(),
-//        relayed_from: None,
-//    };
-//    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-//    assert_eq!(err, ContractError::InvalidZeroAmount {});
-//
-//    // cannot send more than we have
-//    let info = mock_info(addr1.as_ref(), &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Transfer {
-//        recipient: addr2.clone(),
-//        amount: too_much,
-//        relayed_from: None,
-//    };
-//    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-//    assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
-//
-//    // cannot send from empty account
-//    let info = mock_info(not_wallet.as_ref(), &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Transfer {
-//        recipient: addr1.clone(),
-//        amount: transfer,
-//        relayed_from: None,
-//    };
-//    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-//    assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
-//
-//    // cannot send to non-existing accounts
-//    let info = mock_info(addr1.as_ref(), &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Transfer {
-//        recipient: not_wallet,
-//        amount: transfer,
-//        relayed_from: None,
-//    };
-//    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-//    assert_eq!(err, ContractError::Unauthorized {});
-//    assert_eq!(get_balance(deps.as_ref(), addr1.clone()), amount1);
-//    assert_eq!(
-//        query_token_info(deps.as_ref()).unwrap().total_supply,
-//        amount1
-//    );
-//
-//    // valid transfer, aka vote delegation
-//    let info = mock_info(addr1.as_ref(), &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Transfer {
-//        recipient: addr2.clone(),
-//        amount: transfer,
-//        relayed_from: None,
-//    };
-//    let res = execute(deps.as_mut(), env, info, msg).unwrap();
-//
-//    assert_eq!(
-//        res.attributes,
-//        [
-//            ("action", "transfer"),
-//            ("from", &addr1),
-//            ("to", &addr2),
-//            ("amount", &transfer.to_string())
-//        ]
-//    );
-//
-//    assert_eq!(get_balance(deps.as_ref(), addr2), transfer);
-//    assert_eq!(
-//        query_token_info(deps.as_ref()).unwrap().total_supply,
-//        amount1
-//    );
-//}
-//#[test]
-//fn remote_relayed_transfer() {
-//    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-//    let remote_addr = String::from("remote_addr0001");
-//    let dao_addr = String::from("dao_addr0002");
-//    let not_wallet = String::from("not_wallet");
-//    let amount1 = Uint128::from(12340000u128);
-//    let transfer = Uint128::from(76543u128);
-//
-//    do_instantiate(
-//        deps.as_mut(),
-//        vec![remote_addr.as_str(), dao_addr.as_str()],
-//        vec![amount1, Uint128::zero()],
-//        Some(FACTORY),
-//        Some(DAO_TUNNEL),
-//        None,
-//        Uint128::new(2),
-//        None,
-//    );
-//
-//    // dao_tunnel can relay transfer
-//    let info = mock_info(DAO_TUNNEL, &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Transfer {
-//        recipient: dao_addr.clone(),
-//        amount: transfer,
-//        relayed_from: Some(remote_addr.clone()),
-//    };
-//    let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-//    assert_eq!(
-//        res.attributes,
-//        [
-//            ("action", "transfer"),
-//            ("from", &remote_addr),
-//            ("to", &dao_addr),
-//            ("amount", &transfer.to_string())
-//        ]
-//    );
-//
-//    assert_eq!(get_balance(deps.as_ref(), dao_addr.clone()), transfer);
-//    assert_eq!(
-//        get_balance(deps.as_ref(), remote_addr),
-//        amount1.saturating_sub(transfer)
-//    );
-//    assert_eq!(
-//        query_token_info(deps.as_ref()).unwrap().total_supply,
-//        amount1
-//    );
-//
-//    // dao_tunnel cannot relay message from non existing wallets
-//    let failing_msg = ExecuteMsg::Transfer {
-//        recipient: dao_addr.clone(),
-//        amount: transfer,
-//        relayed_from: Some(not_wallet.clone()),
-//    };
-//    let err = execute(deps.as_mut(), env.clone(), info, failing_msg).unwrap_err();
-//    assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
-//
-//    // not dao tunnel cannot relay transfers
-//    let failing_msg = ExecuteMsg::Transfer {
-//        recipient: dao_addr,
-//        amount: transfer,
-//        relayed_from: Some(not_wallet),
-//    };
-//    let info_wrong_dao_tunnel = mock_info("not_dao_tunnel", &[]);
-//    let err = execute(deps.as_mut(), env, info_wrong_dao_tunnel, failing_msg).unwrap_err();
-//    assert_eq!(err, ContractError::Unauthorized {});
-//}
-//
-//#[test]
-//fn exit() {
-//    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-//
-//    let remote_addr = String::from("remote_addr0001");
-//
-//    do_instantiate(
-//        deps.as_mut(),
-//        vec![remote_addr.as_str()],
-//        vec![Uint128::new(10)],
-//        Some(FACTORY),
-//        Some(DAO_TUNNEL),
-//        None,
-//        Uint128::new(2),
-//        None,
-//    );
-//
-//    // valid exit update from dao_tunnel remove account from BALANCES
-//    let info = mock_info(DAO_TUNNEL, &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Exit {
-//        relayed_from: Some(remote_addr.clone()),
-//    };
-//    let res = execute(deps.as_mut(), env.clone(), info, msg.clone()).unwrap();
-//    assert_eq!(res.messages.len(), 0);
-//
-//    let data = query(
-//        deps.as_ref(),
-//        env.clone(),
-//        QueryMsg::Balance {
-//            address: remote_addr,
-//        },
-//    )
-//    .unwrap();
-//    let balance: BalanceResponse = from_binary(&data).unwrap();
-//    assert_eq!(balance.balance, Uint128::new(0));
-//
-//    let data = query(
-//        deps.as_ref(),
-//        env.clone(),
-//        QueryMsg::Balance {
-//            address: DAO_ADDR.to_string(),
-//        },
-//    )
-//    .unwrap();
-//    let balance: BalanceResponse = from_binary(&data).unwrap();
-//    assert_eq!(balance.balance, Uint128::new(10));
-//
-//    // invalid dao_tunnel cannot relay
-//    let failing_info = mock_info("not_dao_tunnel", &[]);
-//    let err = execute(deps.as_mut(), env, failing_info, msg).unwrap_err();
-//    assert_eq!(err, ContractError::Unauthorized {});
-//}
-//
-//#[test]
-//fn send() {
-//    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-//    let addr1 = String::from("addr0001");
-//    let addr2 = String::from("addr0002");
-//    let amount1 = Uint128::from(12340000u128);
-//    let transfer = Uint128::from(76543u128);
-//    let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
-//
-//    do_instantiate(
-//        deps.as_mut(),
-//        vec![addr1.as_str(), addr2.as_str()],
-//        vec![amount1, Uint128::new(0)],
-//        Some(FACTORY),
-//        Some(DAO_TUNNEL),
-//        None,
-//        Uint128::new(2),
-//        None,
-//    );
-//
-//    // valid transfer to existing addr
-//    let info = mock_info(DAO_TUNNEL, &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Send {
-//        contract: addr2.to_string(),
-//        amount: transfer,
-//        msg: send_msg.clone(),
-//        relayed_from: Some(addr1.clone()),
-//    };
-//    let res = execute(deps.as_mut(), env, info, msg).unwrap();
-//    assert_eq!(
-//        res.attributes,
-//        [
-//            ("action", "send"),
-//            ("from", &addr1),
-//            ("to", &addr2),
-//            ("amount", &transfer.to_string())
-//        ]
-//    );
-//
-//    // ensure proper send message sent
-//    // this is the message we want delivered to the other side
-//    let binary_msg = Cw20ReceiveMsg {
-//        sender: addr1.clone(),
-//        amount: transfer,
-//        msg: send_msg.clone(),
-//    }
-//    .into_binary()
-//    .unwrap();
-//    // and this is how it must be wrapped for the vm to process it
-//    assert_eq!(
-//        res.messages[0],
-//        SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-//            contract_addr: addr2.to_string(),
-//            msg: binary_msg,
-//            funds: vec![],
-//        }))
-//    );
-//
-//    // ensure balance is properly transferred
-//    let remainder = amount1.checked_sub(transfer).unwrap();
-//    assert_eq!(get_balance(deps.as_ref(), &addr1), remainder);
-//    assert_eq!(get_balance(deps.as_ref(), &addr2), transfer);
-//    assert_eq!(
-//        query_token_info(deps.as_ref()).unwrap().total_supply,
-//        amount1
-//    );
-//
-//    // not dao_tunnel sender cannot relay send
-//    let failing_info = mock_info(addr1.as_ref(), &[]);
-//    let env = mock_env();
-//    let msg = ExecuteMsg::Send {
-//        contract: addr2,
-//        amount: transfer,
-//        msg: send_msg,
-//        relayed_from: Some(addr1),
-//    };
-//    let err = execute(deps.as_mut(), env, failing_info, msg).unwrap_err();
-//    assert_eq!(err, ContractError::Unauthorized {});
-//}
+
+#[test]
+fn dao_can_update_dao_addr_and_transfer_balance() {
+    let mut suite = DaoChainSuite::init().unwrap();
+    let new_dao = "new_dao".to_string();
+
+    suite
+        .govec_execute(
+            suite.dao.clone(),
+            GovecExecuteMsg::Mint {
+                new_wallet: suite.dao.to_string(),
+            },
+        )
+        .unwrap();
+    let dao_before = suite.query_govec_balance(&suite.dao).unwrap().balance;
+
+    // Not dao cannot update address
+    suite
+        .govec_execute(
+            suite.deployer.clone(),
+            GovecExecuteMsg::UpdateConfigAddr {
+                new_addr: vectis_wallet::UpdateAddrReq::Dao(new_dao.clone()),
+            },
+        )
+        .unwrap_err();
+
+    // Dao can change address
+    suite
+        .govec_execute(
+            suite.dao.clone(),
+            GovecExecuteMsg::UpdateConfigAddr {
+                new_addr: vectis_wallet::UpdateAddrReq::Dao(new_dao.clone()),
+            },
+        )
+        .unwrap();
+
+    let dao_after = suite.query_govec_balance(&suite.dao).unwrap().balance;
+    let new_dao_after = suite
+        .query_govec_balance(&Addr::unchecked(new_dao.clone()))
+        .unwrap()
+        .balance;
+
+    let r: Addr = suite
+        .app
+        .wrap()
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: suite.govec.to_string(),
+            msg: to_binary(&GovecQueryMsg::Dao {}).unwrap(),
+        }))
+        .unwrap();
+
+    assert_eq!(r.to_string(), new_dao);
+    assert_eq!(dao_after + Uint128::from(MINT_AMOUNT), dao_before);
+    assert_eq!(new_dao_after, Uint128::from(MINT_AMOUNT));
+}
+
+#[test]
+fn exit_works() {
+    let mut suite = DaoChainSuite::init().unwrap();
+    let wallet = Addr::unchecked("wallet");
+    suite
+        .govec_execute(
+            suite.dao.clone(),
+            GovecExecuteMsg::Mint {
+                new_wallet: wallet.to_string(),
+            },
+        )
+        .unwrap();
+
+    suite
+        .govec_execute(wallet.clone(), GovecExecuteMsg::Exit { relayed_from: None })
+        .unwrap();
+
+    let after_wallet = suite.query_govec_balance(&wallet).unwrap().balance;
+    let after_dao = suite.query_govec_balance(&suite.dao).unwrap().balance;
+
+    assert_eq!(after_wallet + Uint128::from(MINT_AMOUNT), after_dao);
+
+    let r: Option<BalanceResponse> = suite
+        .app
+        .wrap()
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: suite.govec.to_string(),
+            msg: to_binary(&GovecQueryMsg::Joined {
+                address: wallet.to_string(),
+            })
+            .unwrap(),
+        }))
+        .unwrap();
+    assert!(r.is_none());
+
+    // not dao-tunnel cannot relay
+    let relayed_wallet = Addr::unchecked("walletr");
+    suite
+        .govec_execute(
+            suite.dao.clone(),
+            GovecExecuteMsg::Mint {
+                new_wallet: relayed_wallet.to_string(),
+            },
+        )
+        .unwrap();
+
+    suite
+        .govec_execute(
+            suite.dao.clone(),
+            GovecExecuteMsg::Exit {
+                relayed_from: Some(relayed_wallet.to_string()),
+            },
+        )
+        .unwrap_err();
+
+    // dao-tunnel can relay
+    suite
+        .govec_execute(
+            suite.dao_tunnel.clone(),
+            GovecExecuteMsg::Exit {
+                relayed_from: Some(relayed_wallet.to_string()),
+            },
+        )
+        .unwrap();
+
+    let r: Option<BalanceResponse> = suite
+        .app
+        .wrap()
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: suite.govec.to_string(),
+            msg: to_binary(&GovecQueryMsg::Joined {
+                address: wallet.to_string(),
+            })
+            .unwrap(),
+        }))
+        .unwrap();
+    assert!(r.is_none());
+}

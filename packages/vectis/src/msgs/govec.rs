@@ -86,8 +86,8 @@ pub enum GovecQueryMsg {
     #[returns(BalanceResponse)]
     Balance { address: String },
     /// Returns Some(balance) if address has ever been issued a token,
-    /// If the current balance is 0, returns Some(0)
-    /// IF address has never been issued a token, None is returned
+    /// If the current balance is 0 but not explicitly called exit, returns Some(0)
+    /// IF address has explicitly called exit, returns None
     #[returns(Option<BalanceResponse>)]
     Joined { address: String },
     /// Returns metadata on the contract - name, decimals, supply, etc.
