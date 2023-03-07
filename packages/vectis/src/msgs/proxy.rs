@@ -11,7 +11,8 @@ use std::fmt;
 #[cw_serde]
 pub struct ProxyInstantiateMsg {
     pub create_wallet_msg: CreateWalletMsg,
-    /// Fixed Multisig Code Id for guardians
+    /// multisig_code_id,
+    /// use if CrateWalletMsg uses MS guardians
     pub multisig_code_id: u64,
     /// Code Id used to instantiate the contract
     pub code_id: u64,
@@ -74,7 +75,7 @@ where
     /// Instantiates the plugin contract
     /// Priviledge: User
     InstantiatePlugin {
-        code_id: u64,
+        src: PluginSource,
         instantiate_msg: Binary,
         plugin_params: PluginParams,
         label: String,
@@ -89,6 +90,14 @@ where
     /// Similar to Execute but called by plugins,
     /// this has some checks and limitations
     PluginExecute { msgs: Vec<CosmosMsg<T>> },
+}
+
+/// The source of the plugin code.
+///
+#[cw_serde]
+pub enum PluginSource {
+    VectisRegistry(u64),
+    CodeId(u64),
 }
 
 #[cw_serde]

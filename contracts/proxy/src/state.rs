@@ -1,9 +1,12 @@
 use cosmwasm_schema::cw_serde;
 
 use crate::error::ContractError;
-use cosmwasm_std::CanonicalAddr;
+use cosmwasm_std::{Addr, CanonicalAddr, Coin};
 use cw_storage_plus::{Item, Map};
-pub use vectis_wallet::{factory_state::ADDR_PREFIX, GuardiansUpdateRequest, Nonce, RelayTxError};
+pub use vectis_wallet::{
+    factory_state::{ADDR_PREFIX, DAO, PROXY_MULTISIG_CODE_ID},
+    GuardiansUpdateRequest, Nonce, RelayTxError,
+};
 
 #[cw_serde]
 pub struct Controller {
@@ -47,9 +50,7 @@ impl Controller {
 }
 
 pub const FROZEN: Item<bool> = Item::new("frozen");
-pub const FACTORY: Item<CanonicalAddr> = Item::new("factory");
 pub const CODE_ID: Item<u64> = Item::new("code_id");
-pub const MULTISIG_CODE_ID: Item<u64> = Item::new("multisig_code_id");
 pub const CONTROLLER: Item<Controller> = Item::new("controller");
 pub const GUARDIANS: Map<&[u8], ()> = Map::new("guardians");
 pub const PENDING_GUARDIAN_ROTATION: Item<GuardiansUpdateRequest> =
@@ -60,3 +61,7 @@ pub const LABEL: Item<String> = Item::new("label");
 pub const MULTISIG_ADDRESS: Item<Option<CanonicalAddr>> = Item::new("fixed_multisig_address");
 /// Plugins
 pub const PLUGINS: Map<&[u8], ()> = Map::new("plugins");
+/// To query the pre-proposal and dao tunnel address on the DAO core
+pub const ITEMS: Map<String, String> = Map::new("items");
+pub const INSTALL_FEE: Item<Coin> = Item::new("install_fee");
+pub const DAO_ADDR: Item<Addr> = Item::new("dao-addr");

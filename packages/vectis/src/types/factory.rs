@@ -10,7 +10,7 @@ pub mod factory_state {
     pub const TOTAL_CREATED: Item<u64> = Item::new("total_created");
     /// The DAO address where the fees for new wallet goes to, also the admin of the contract.
     /// On a remote chain, this is the remote-tunnel contract
-    pub const DAO: Item<CanonicalAddr> = Item::new("admin");
+    pub const DAO: Item<CanonicalAddr> = Item::new("dao_addr");
     /// The latest supported `wallet_proxy` code id stored onchain
     pub const PROXY_CODE_ID: Item<u64> = Item::new("proxy_code_id");
     /// The latest default `multisig` code id stored onchain for the proxy

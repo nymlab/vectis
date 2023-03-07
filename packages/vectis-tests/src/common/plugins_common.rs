@@ -79,7 +79,6 @@ impl PluginsSuite {
                 &PRegistryInstantiateMsg {
                     dao_addr: dao.to_string(),
                     registry_fee: coin(REGISTRY_FEE, "ucosm"),
-                    reviewer: deployer.to_string(),
                 },
                 &[],
                 "plugin-registry",

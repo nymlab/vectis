@@ -55,14 +55,13 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
 
     let expected_info = WalletInfo {
         controller_addr: Addr::unchecked("controller_addr"),
-        factory: Addr::unchecked("creator"),
+        dao: Addr::unchecked("test-dao"),
         nonce: 0,
         version: ContractVersion {
             contract: "crates.io:smart-contract-wallet-proxy".to_string(),
             version: "0.1.0".to_string(),
         },
         code_id: 0,
-        multisig_code_id: MULTISIG_CODE_ID,
         guardians: vec![Addr::unchecked(GUARD1), Addr::unchecked(GUARD2)],
         relayers: vec![Addr::unchecked(RELAYER2), Addr::unchecked(RELAYER1)],
         is_frozen: false,
