@@ -10,9 +10,9 @@ use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use std::fmt;
 use vectis_wallet::{
-    pub_key_to_address, query_verify_cosmos, CodeIdType, GuardiansUpdateMsg,
-    GuardiansUpdateRequest, PluginListResponse, PluginParams, RelayTransaction, RelayTxError,
-    WalletFactoryQueryMsg, WalletInfo, DEFAULT_LIMIT, MAX_LIMIT,
+    pub_key_to_address, query_verify_cosmos, DaoActors, GuardiansUpdateMsg, GuardiansUpdateRequest,
+    PluginListResponse, PluginParams, PluginSource, RelayTransaction, RelayTxError, WalletInfo,
+    DEFAULT_LIMIT, MAX_LIMIT,
 };
 
 use crate::error::ContractError;
@@ -24,11 +24,15 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, FACTORY, FROZEN, GUARDIANS, LABEL,
-    MULTISIG_ADDRESS, MULTISIG_CODE_ID, PENDING_GUARDIAN_ROTATION, PLUGINS, RELAYERS,
+    Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, DAO as DAO_ON_FACTORY, DAO_ADDR, FROZEN,
+    GUARDIANS, ITEMS, LABEL, MULTISIG_ADDRESS, PENDING_GUARDIAN_ROTATION, PLUGINS,
+    PROXY_MULTISIG_CODE_ID, RELAYERS,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
-use cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
+use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Duration, Threshold};
+use vectis_plugin_registry::{
+    contract::ContractExecMsg as PluginRegExecMsg, installable::InstallableExecMsg,
+};
 
 #[cfg(feature = "migration")]
 use vectis_wallet::ProxyMigrateMsg;
@@ -43,7 +47,8 @@ const MAX_MULTISIG_VOTING_PERIOD: Duration = Duration::Time(2 << 27);
 // set resasonobly high value to not interfere with multisigs
 /// Used to spot an multisig instantiate reply
 const MULTISIG_INSTANTIATE_ID: u64 = u64::MAX;
-const PLUGIN_INSTANTIATE_ID: u64 = u64::MAX - 1u64;
+const PLUGIN_INST_ID: u64 = u64::MAX - 1u64;
+const REG_PLUGIN_INST_ID: u64 = u64::MAX - 2u64;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -66,12 +71,19 @@ pub fn instantiate(
     CONTROLLER.save(deps.storage, &Controller { addr, nonce: 0 })?;
 
     FROZEN.save(deps.storage, &false)?;
-    FACTORY.save(
+
+    #[cfg(not(test))]
+    DAO_ADDR.save(
         deps.storage,
-        &deps.api.addr_canonicalize(info.sender.as_ref())?,
+        &deps
+            .api
+            .addr_humanize(&DAO_ON_FACTORY.query(&deps.querier, info.sender)?)?,
     )?;
+
+    #[cfg(test)]
+    DAO_ADDR.save(deps.storage, &Addr::unchecked("test-dao"))?;
+
     CODE_ID.save(deps.storage, &msg.code_id)?;
-    MULTISIG_CODE_ID.save(deps.storage, &msg.multisig_code_id)?;
     LABEL.save(deps.storage, &msg.create_wallet_msg.label)?;
 
     let guardian_addresses = &msg.create_wallet_msg.guardians.addresses;
@@ -89,7 +101,6 @@ pub fn instantiate(
     let event = Event::new("vectis.proxy.v1.MsgInstantiate").add_attributes(vec![
         ("controller_address", addr_human.to_string()),
         ("code_id", msg.code_id.to_string()),
-        ("multisig_code_id", msg.multisig_code_id.to_string()),
         ("label", msg.create_wallet_msg.label),
         ("relayers", format!("{:?}", msg.create_wallet_msg.relayers)),
         ("guardians", format!("{guardian_addresses:?}")),
@@ -146,19 +157,11 @@ pub fn execute(
         ExecuteMsg::UpdateGuardians {} => execute_update_guardians(deps, env, info),
         ExecuteMsg::UpdateLabel { new_label } => execute_update_label(deps, info, env, new_label),
         ExecuteMsg::InstantiatePlugin {
-            code_id,
+            src,
             instantiate_msg,
             plugin_params,
             label,
-        } => execute_inst_plugin(
-            deps,
-            env,
-            info,
-            code_id,
-            instantiate_msg,
-            plugin_params,
-            label,
-        ),
+        } => execute_inst_plugin(deps, env, info, src, instantiate_msg, plugin_params, label),
         ExecuteMsg::UpdatePlugins {
             plugin_addr,
             migrate_msg,
@@ -172,22 +175,48 @@ pub fn execute_inst_plugin(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    code_id: u64,
+    src: PluginSource,
     msg: Binary,
     plugin_params: PluginParams,
     label: String,
 ) -> Result<Response, ContractError> {
     ensure_is_controller(deps.as_ref(), info.sender.as_str())?;
     if plugin_params.has_full_access() {
-        let instantiate_msg = WasmMsg::Instantiate {
-            admin: Some(env.contract.address.to_string()),
-            code_id,
-            msg,
-            funds: info.funds,
-            label,
+        let sub_msg = match src {
+            PluginSource::VectisRegistry(id) => {
+                let registry = ITEMS
+                    .query(
+                        &deps.querier,
+                        DAO_ADDR.load(deps.storage)?,
+                        DaoActors::PluginRegisty.to_string(),
+                    )?
+                    .ok_or(ContractError::ContractNotFound)?;
+                SubMsg::reply_always(
+                    WasmMsg::Execute {
+                        contract_addr: registry,
+                        msg: to_binary(&PluginRegExecMsg::Installable(
+                            InstallableExecMsg::ProxyInstallPlugin {
+                                id,
+                                instantiate_msg: msg,
+                            },
+                        ))?,
+                        funds: info.funds,
+                    },
+                    REG_PLUGIN_INST_ID,
+                )
+            }
+            PluginSource::CodeId(code_id) => SubMsg::reply_always(
+                WasmMsg::Instantiate {
+                    admin: Some(env.contract.address.to_string()),
+                    code_id,
+                    msg,
+                    funds: info.funds,
+                    label,
+                },
+                PLUGIN_INST_ID,
+            ),
         };
-        let msg = SubMsg::reply_always(instantiate_msg, PLUGIN_INSTANTIATE_ID);
-        Ok(Response::new().add_submessage(msg))
+        Ok(Response::new().add_submessage(sub_msg))
     } else {
         // Instantiate through grantor contract to get partial access
         Err(ContractError::FeatureNotSupported)
@@ -279,13 +308,18 @@ pub fn execute_relay(
         return Err(ContractError::Frozen {});
     }
 
+    let factory = ITEMS
+        .query(
+            &deps.querier,
+            DAO_ADDR.load(deps.storage)?,
+            DaoActors::Factory.to_string(),
+        )?
+        .ok_or(ContractError::ContractNotFound)?;
+
     // Get controller addr from it's pubkey
     let addr = pub_key_to_address(
         &deps.as_ref(),
-        &ADDR_PREFIX.query(
-            &deps.querier,
-            deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
-        )?,
+        &ADDR_PREFIX.query(&deps.querier, Addr::unchecked(&factory))?,
         &transaction.controller_pubkey.0,
     )?;
 
@@ -467,19 +501,15 @@ pub fn execute_update_guardians(
         let instantiation_code_id = if let Some(id) = new_multisig_code_id {
             id
         } else {
-            match MULTISIG_CODE_ID.may_load(deps.storage)? {
-                Some(id) => id,
-                None => deps.querier.query_wasm_smart(
-                    deps.api.addr_humanize(&FACTORY.load(deps.storage)?)?,
-                    &{
-                        WalletFactoryQueryMsg::CodeId {
-                            ty: CodeIdType::Multisig,
-                        }
-                    },
-                )?,
-            }
+            let factory = ITEMS
+                .query(
+                    &deps.querier,
+                    DAO_ADDR.load(deps.storage)?,
+                    DaoActors::Factory.to_string(),
+                )?
+                .ok_or(ContractError::ContractNotFound)?;
+            PROXY_MULTISIG_CODE_ID.query(&deps.querier, Addr::unchecked(factory))?
         };
-        MULTISIG_CODE_ID.save(deps.storage, &instantiation_code_id)?;
         let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
             voters: addresses_to_voters(&guardians.addresses),
             threshold: Threshold::AbsoluteCount {
@@ -595,17 +625,13 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             )?;
 
             let event = Event::new("vectis.proxy.v1.MsgReplyMultisigInstantiate")
-                .add_attribute("multisig_address", res.contract_address)
-                .add_attribute(
-                    "multisig_code_id",
-                    MULTISIG_CODE_ID.load(deps.storage)?.to_string(),
-                );
+                .add_attribute("multisig_address", res.contract_address);
 
             Ok(Response::new().add_event(event))
         } else {
             Err(ContractError::MultisigInstantiationError {})
         }
-    } else if reply.id == PLUGIN_INSTANTIATE_ID {
+    } else if reply.id == PLUGIN_INST_ID {
         if let Ok(res) = parse_reply_instantiate_data(reply) {
             PLUGINS.save(
                 deps.storage,
@@ -618,6 +644,20 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             Ok(Response::new()
                 .add_attribute("action", "Plugin Stored")
                 .add_attribute("plugin_address", res.contract_address))
+        } else {
+            Err(ContractError::PluginInstantiationError {})
+        }
+    } else if reply.id == REG_PLUGIN_INST_ID {
+        if let Ok(res) = parse_reply_execute_data(reply) {
+            let addr = res.data.ok_or(ContractError::PluginInstantiationError {})?;
+            PLUGINS.save(deps.storage, &addr, &())?;
+
+            Ok(Response::new()
+                .add_attribute("action", "Plugin Stored")
+                .add_attribute(
+                    "plugin_address",
+                    deps.api.addr_humanize(&addr.into())?.into_string(),
+                ))
         } else {
             Err(ContractError::PluginInstantiationError {})
         }
@@ -650,15 +690,13 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
     };
 
     let controller = CONTROLLER.load(deps.storage)?;
-    let factory = FACTORY.load(deps.storage)?;
 
     Ok(WalletInfo {
         controller_addr: deps.api.addr_humanize(&controller.addr)?,
-        factory: deps.api.addr_humanize(&factory)?,
+        dao: DAO_ADDR.load(deps.storage)?,
         nonce: controller.nonce,
         version: cw2::get_contract_version(deps.storage)?,
         code_id: CODE_ID.load(deps.storage)?,
-        multisig_code_id: MULTISIG_CODE_ID.load(deps.storage)?,
         guardians,
         relayers,
         is_frozen: FROZEN.load(deps.storage)?,

@@ -13,6 +13,7 @@ pub use crate::types::error::*;
 pub use crate::types::factory::*;
 pub use crate::types::ibc::*;
 pub use crate::types::wallet::*;
+pub use crate::types::DaoActors;
 
 mod func;
 mod msgs;

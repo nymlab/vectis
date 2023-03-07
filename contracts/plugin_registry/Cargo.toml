@@ -23,6 +23,7 @@ cw-utils = "1.0.1"
 thiserror = { workspace = true }
 anyhow = { version = "1.0.68", optional = true}
 cw-multi-test = {  workspace = true, optional = true  }
+vectis-wallet = { path = "../../packages/vectis" }
 
 
 [dev-dependencies]

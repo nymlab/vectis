@@ -51,4 +51,6 @@ pub enum ContractError {
     GuardianRequestNotExecutable {},
     #[error("Feature is not yet supported")]
     FeatureNotSupported,
+    #[error("DAO Actor Contract Not Found")]
+    ContractNotFound,
 }

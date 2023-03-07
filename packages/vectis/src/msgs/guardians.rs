@@ -55,10 +55,9 @@ impl GuardiansUpdateRequest {
 
 /// If the `Guardians.guardian_multisig` is given,
 /// we will instantiate a new multisig contract.
-/// This contract can be an instance of 3 code ids.
-/// - 1: exisiting stored `MULTISIG_CODE_ID` if `new_multisig_code_id == None`
-/// - 2: the `new_multisig_code_id` if given
-/// - 3: if 1 nor 2 are available, the supported multisig from the FACTORY will be used.
+/// This contract can be an instance of 2 code ids.
+/// - 1: the `new_multisig_code_id` if given, OR
+/// - 2: the supported multisig from the facotry will be used.
 #[cw_serde]
 pub struct GuardiansUpdateMsg {
     pub guardians: Guardians,

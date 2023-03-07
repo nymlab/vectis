@@ -4,13 +4,17 @@ use cw_storage_plus::{Bound, Item, Map};
 use sylvia::{contract, schemars};
 
 use cosmwasm_std::{
-    ensure_eq, BankMsg, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
-    Order, Response, StdResult,
+    ensure_eq, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
+    MessageInfo, Order, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
+
+use vectis_wallet::DaoActors;
 
 use crate::{
     error::ContractError,
+    interface::*,
     responses::{ConfigResponse, PluginsResponse},
+    INSTALL_REPLY,
 };
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -34,19 +38,76 @@ pub struct PluginRegistry<'a> {
     pub(crate) total_plugins: Item<'a, u64>,
     pub(crate) registry_fee: Item<'a, Coin>,
     pub(crate) dao_addr: Item<'a, CanonicalAddr>,
-    pub(crate) reviewer: Item<'a, CanonicalAddr>,
+    pub(crate) items: Map<'a, String, String>,
     pub(crate) plugins: Map<'a, u64, Plugin>,
+    pub install_fee: Item<'a, Coin>,
+}
+
+impl Installable for PluginRegistry<'_> {
+    type Error = ContractError;
+
+    fn proxy_install_plugin(
+        &self,
+        ctx: (DepsMut, Env, MessageInfo),
+        id: u64,
+        instantiate_msg: Binary,
+    ) -> Result<Response, ContractError> {
+        let (deps, _env, mut info) = ctx;
+        let plugin = self.plugins.load(deps.storage, id)?;
+        // ensure proxy sent enough fee for registry
+        let install_fee = self.install_fee.load(deps.storage)?;
+        self.sub_required_fee(&mut info.funds, &install_fee)?;
+
+        // install the plugin for the proxy
+        //
+        // TODO: extra check can be done on cosmwasm_std v1.2
+        // let code_info = deps.querier.query_wasm_code_info(plugin.code_id)?;
+        // if code_info.checksum != plugin.checksum {
+        //     return Err(ContractError::ChecksumVerificationFailed);
+        // }
+
+        let sub_msg = SubMsg::reply_always(
+            WasmMsg::Instantiate {
+                admin: Some(info.sender.to_string()),
+                code_id: plugin.code_id,
+                msg: instantiate_msg,
+                funds: info.funds.to_owned(),
+                label: format!("{}-{}", plugin.name, plugin.version),
+            },
+            INSTALL_REPLY,
+        );
+
+        // Send funds to the DAO
+        let msg = CosmosMsg::Bank(BankMsg::Send {
+            to_address: deps
+                .api
+                .addr_humanize(&self.dao_addr.load(deps.storage)?)?
+                .to_string(),
+            amount: vec![install_fee],
+        });
+
+        let event = Event::new("vectis.plugin_registry.v1.MsgInstallPluginRequested")
+            .add_attribute("plugin_id", id.to_string())
+            .add_attribute("wallet", info.sender);
+
+        Ok(Response::new()
+            .add_submessage(sub_msg)
+            .add_message(msg)
+            .add_event(event))
+    }
 }
 
 #[contract]
+#[messages(installable as Installable)]
 impl PluginRegistry<'_> {
     pub const fn new() -> Self {
         Self {
             total_plugins: Item::new("total_plugins"),
             registry_fee: Item::new("registry_fee"),
             dao_addr: Item::new("dao_addr"),
-            reviewer: Item::new("reviewer"),
+            items: Map::new("items"),
             plugins: Map::new("plugins"),
+            install_fee: Item::new("install_fee"),
         }
     }
 
@@ -55,23 +116,58 @@ impl PluginRegistry<'_> {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         registry_fee: Coin,
-        dao_addr: String,
-        reviewer: String,
+        install_fee: Coin,
     ) -> Result<Response, ContractError> {
-        let (deps, ..) = ctx;
+        let (deps, _env, info) = ctx;
         set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-        let dao_addr = deps.api.addr_canonicalize(&dao_addr)?;
-
-        let reviewer_multisig = deps
-            .api
-            .addr_canonicalize(deps.api.addr_validate(&reviewer)?.as_str())?;
 
         self.total_plugins.save(deps.storage, &0u64)?;
         self.registry_fee.save(deps.storage, &registry_fee)?;
-        self.dao_addr.save(deps.storage, &dao_addr)?;
-        self.reviewer.save(deps.storage, &reviewer_multisig)?;
-
+        self.install_fee.save(deps.storage, &install_fee)?;
+        self.dao_addr.save(
+            deps.storage,
+            &deps.api.addr_canonicalize(&info.sender.as_str())?,
+        )?;
         Ok(Response::default())
+    }
+
+    fn ensure_is_reviewer(&self, deps: Deps, sender: &str) -> Result<(), ContractError> {
+        let dao_addr = self.dao_addr.load(deps.storage)?;
+        let reviewer = self
+            .items
+            .query(
+                &deps.querier,
+                deps.api.addr_humanize(&dao_addr)?,
+                DaoActors::PluginCommitte.to_string(),
+            )?
+            .ok_or(ContractError::PluginCommitteeNotFound)?;
+        if reviewer != sender {
+            return Err(ContractError::Unauthorized);
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Subtracts the required fees defined in the registry to be sent to DAO treasury
+    /// and return the remaining funds sent to this contract - presumably for the plugin
+    fn sub_required_fee<'a>(
+        &'a self,
+        provided: &'a mut Vec<Coin>,
+        required: &Coin,
+    ) -> Result<(), ContractError> {
+        let fund = provided
+            .iter_mut()
+            .find(|c| c.denom == required.denom)
+            .ok_or(ContractError::InsufficientFee(
+                required.amount,
+                Uint128::zero(),
+            ))?;
+        fund.amount = fund
+            .amount
+            .checked_sub(required.amount)
+            .map_err(|_| ContractError::InsufficientFee(required.amount, fund.amount))?;
+
+        Ok(())
     }
 
     #[msg(exec)]
@@ -86,29 +182,14 @@ impl PluginRegistry<'_> {
         code_id: u64,
         checksum: String,
     ) -> Result<Response, ContractError> {
-        let (deps, _env, info) = ctx;
+        let (deps, _env, mut info) = ctx;
 
         // Check if the caller has enough funds to pay the fee
         let registry_fee = self.registry_fee.load(deps.storage)?;
-
-        let fund = info
-            .funds
-            .iter()
-            .find(|c| c.denom == registry_fee.denom)
-            .ok_or(ContractError::RegistryFeeRequired)?;
-
-        if fund.amount < registry_fee.amount {
-            return Err(ContractError::InsufficientFee(
-                registry_fee.amount,
-                fund.amount,
-            ));
-        };
+        self.sub_required_fee(&mut info.funds, &registry_fee)?;
 
         // Check if the caller is a reviewer
-        let reviewer = self.reviewer.load(deps.storage)?;
-        if deps.api.addr_humanize(&reviewer)? != info.sender {
-            return Err(ContractError::Unauthorized);
-        }
+        self.ensure_is_reviewer(deps.as_ref(), info.sender.as_str())?;
 
         // Store plugin information in PLUGINS Map<u64(id), Plugin>
         let id = self
@@ -135,7 +216,7 @@ impl PluginRegistry<'_> {
                 .api
                 .addr_humanize(&self.dao_addr.load(deps.storage)?)?
                 .to_string(),
-            amount: vec![self.registry_fee.load(deps.storage)?],
+            amount: vec![registry_fee],
         });
 
         Ok(Response::new()
@@ -152,10 +233,7 @@ impl PluginRegistry<'_> {
         let (deps, _env, info) = ctx;
 
         // Check if the caller is a reviewer
-        let reviewer = self.reviewer.load(deps.storage)?;
-        if deps.api.addr_humanize(&reviewer)? != info.sender {
-            return Err(ContractError::Unauthorized);
-        }
+        self.ensure_is_reviewer(deps.as_ref(), info.sender.as_str())?;
 
         // Remove plugin information from registry
         self.plugins.remove(deps.storage, id);
@@ -185,10 +263,8 @@ impl PluginRegistry<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _env, info) = ctx;
 
-        let reviewer = self.reviewer.load(deps.storage)?;
-        if deps.api.addr_humanize(&reviewer)? != info.sender {
-            return Err(ContractError::Unauthorized);
-        }
+        // Check if the caller is a reviewer
+        self.ensure_is_reviewer(deps.as_ref(), info.sender.as_str())?;
 
         let plugin = self
             .plugins
@@ -264,31 +340,6 @@ impl PluginRegistry<'_> {
         ))
     }
 
-    #[msg(exec)]
-    pub fn update_reviewer(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        reviewer: String,
-    ) -> Result<Response, ContractError> {
-        let (deps, _env, info) = ctx;
-        ensure_eq!(
-            deps.api.addr_humanize(&self.dao_addr.load(deps.storage)?)?,
-            info.sender,
-            ContractError::Unauthorized
-        );
-
-        self.reviewer.save(
-            deps.storage,
-            &deps
-                .api
-                .addr_canonicalize(deps.api.addr_validate(&reviewer)?.as_str())?,
-        )?;
-        Ok(Response::default().add_event(
-            Event::new("vectis.plugin_registry.v1.MsgUpdateReviewer")
-                .add_attribute("reviewer", format!("{reviewer:?}")),
-        ))
-    }
-
     #[msg(query)]
     pub fn get_config(&self, ctx: (Deps, Env)) -> StdResult<ConfigResponse> {
         let (deps, ..) = ctx;
@@ -297,10 +348,6 @@ impl PluginRegistry<'_> {
             dao_addr: deps
                 .api
                 .addr_humanize(&self.dao_addr.load(deps.storage)?)?
-                .to_string(),
-            reviewer: deps
-                .api
-                .addr_humanize(&self.reviewer.load(deps.storage)?)?
                 .to_string(),
         })
     }
@@ -333,5 +380,50 @@ impl PluginRegistry<'_> {
     pub fn get_plugin_by_id(&self, ctx: (Deps, Env), id: u64) -> StdResult<Option<Plugin>> {
         let (deps, ..) = ctx;
         self.plugins.may_load(deps.storage, id)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cosmwasm_std::coin;
+
+    #[test]
+    fn sub_required_fee_works() {
+        let registry_fee = coin(10u128, "ucosm");
+        let mut provided = vec![coin(20u128, "ucosm")];
+        let registry = PluginRegistry::new();
+        registry
+            .sub_required_fee(&mut provided, &registry_fee)
+            .unwrap();
+        assert_eq!(provided[0].amount, Uint128::new(10u128));
+    }
+
+    #[test]
+    fn sub_required_fee_fails_when_no_denom_found() {
+        let no_denom_registry_fee = coin(10u128, "ujunox");
+        let mut provided = vec![coin(20u128, "ucosm")];
+        let registry = PluginRegistry::new();
+        let err = registry
+            .sub_required_fee(&mut provided, &no_denom_registry_fee)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            ContractError::InsufficientFee(Uint128::new(10), Uint128::zero())
+        )
+    }
+
+    #[test]
+    fn sub_required_fee_fails_insuffient_fees() {
+        let too_much_registry_fee = coin(100u128, "ucosm");
+        let mut provided = vec![coin(20u128, "ucosm")];
+        let registry = PluginRegistry::new();
+        let err = registry
+            .sub_required_fee(&mut provided, &too_much_registry_fee)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            ContractError::InsufficientFee(Uint128::new(100), Uint128::new(20))
+        )
     }
 }

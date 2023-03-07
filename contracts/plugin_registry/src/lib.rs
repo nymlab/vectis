@@ -1,16 +1,23 @@
 pub mod contract;
 pub mod error;
+pub mod interface;
 pub mod responses;
+pub use interface::*;
+
+pub const INSTALL_REPLY: u64 = u64::MIN;
 
 #[cfg(any(test, feature = "tests"))]
 pub mod multitest;
 
 #[cfg(not(feature = "library"))]
 mod entry_points {
-    use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
-
     use crate::contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg, PluginRegistry};
     use crate::error::ContractError;
+    use crate::INSTALL_REPLY;
+    use cosmwasm_std::{
+        ensure_eq, entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    };
+    use cw_utils::parse_reply_instantiate_data;
 
     const CONTRACT: PluginRegistry = PluginRegistry::new();
 
@@ -37,6 +44,15 @@ mod entry_points {
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: ContractQueryMsg) -> Result<Binary, ContractError> {
         msg.dispatch(&CONTRACT, (deps, env))
+    }
+
+    /// reply hooks handles replies from plugin instantiation
+    /// `set_data` tells the proxy what its installed plugin address is
+    #[cfg_attr(not(feature = "library"), entry_point)]
+    pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
+        ensure_eq!(reply.id, INSTALL_REPLY, ContractError::NotSupportedReplyId);
+        let data = parse_reply_instantiate_data(reply)?;
+        Ok(Response::new().set_data(deps.api.addr_canonicalize(&data.contract_address)?))
     }
 }
 

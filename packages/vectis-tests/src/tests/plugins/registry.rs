@@ -179,21 +179,6 @@ fn reviewer_should_be_able_to_update_plugins() {
 }
 
 #[test]
-fn dao_should_be_able_to_update_reviewer() {
-    let mut suite = PluginsSuite::init().unwrap();
-
-    let new_reviewer = suite.controller.to_string();
-
-    suite
-        .update_reviewer(&suite.dao.clone(), new_reviewer.clone())
-        .unwrap();
-
-    let config = suite.query_config().unwrap();
-
-    assert_eq!(config.reviewer, new_reviewer);
-}
-
-#[test]
 fn dao_should_be_able_to_update_registry_fee() {
     let mut suite = PluginsSuite::init().unwrap();
 
