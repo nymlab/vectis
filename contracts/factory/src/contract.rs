@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
+    from_binary, to_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
     StdError, StdResult,
 };
 use cw_utils::parse_reply_execute_data;
@@ -9,9 +9,9 @@ use cw_utils::parse_reply_execute_data;
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::helpers::{create_mint_msg, ensure_has_govec, handle_govec_minted};
+use crate::helpers::{create_mint_msg, handle_govec_minted};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
-use crate::state::{GOVEC_CLAIM_LIST, GOVEC_MINTER, TOTAL_CREATED};
+use crate::state::{GOVEC_CLAIM_LIST, TOTAL_CREATED};
 
 use vectis_wallet::CreateWalletMsg;
 
@@ -24,7 +24,7 @@ use vectis_wallet::factory_queries::{
     query_wallet_claim_expiration,
 };
 use vectis_wallet::{
-    ensure_is_dao, ensure_is_enough_claim_fee, factory_execute, factory_instantiate,
+    ensure_is_enough_claim_fee, factory_execute, factory_instantiate,
     handle_proxy_instantion_reply, GOVEC_REPLY_ID,
 };
 
@@ -36,9 +36,6 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    if let Some(mint) = msg.govec_minter.clone() {
-        GOVEC_MINTER.save(deps.storage, &deps.api.addr_canonicalize(&mint)?)?;
-    };
     factory_instantiate(deps, env, info, msg)
 }
 
@@ -63,7 +60,6 @@ pub fn execute(
         ExecuteMsg::UpdateConfigFee { ty, new_fee } => {
             factory_execute::update_config_fee(deps, info, ty, new_fee)
         }
-        ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => factory_execute::update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec_or_remove_from_list(deps, env, info),
         ExecuteMsg::GovecMinted {
@@ -83,21 +79,7 @@ fn create_wallet(
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -> Result<Response, ContractError> {
-    ensure_has_govec(deps.as_ref())?;
     factory_execute::create_wallet(deps, info, env, create_wallet_msg)
-}
-
-fn update_govec_addr(
-    deps: DepsMut,
-    info: MessageInfo,
-    addr: String,
-) -> Result<Response, ContractError> {
-    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
-    GOVEC_MINTER.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
-
-    let event = Event::new("vectis.factory.v1.MsgUpdateGovecAddr").add_attribute("address", addr);
-
-    Ok(Response::new().add_event(event))
 }
 
 fn claim_govec_or_remove_from_list(
@@ -172,7 +154,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fees {} => to_binary(&query_fees(deps)?),
-        QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
         QueryMsg::DaoAddr {} => to_binary(&query_dao_addr(deps)?),
         QueryMsg::TotalCreated {} => to_binary(&query_total(deps)?),
     }
@@ -186,9 +167,4 @@ pub fn query_pending_unclaim_wallet_list(
     Err(StdError::GenericErr {
         msg: String::from("Not supported"),
     })
-}
-
-/// Returns govec token address
-pub fn query_govec_addr(deps: Deps) -> StdResult<Addr> {
-    deps.api.addr_humanize(&GOVEC_MINTER.load(deps.storage)?)
 }

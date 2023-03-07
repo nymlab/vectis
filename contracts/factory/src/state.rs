@@ -1,7 +1,5 @@
-use cosmwasm_std::CanonicalAddr;
-use cw_storage_plus::Item;
-
+use cw_storage_plus::Map;
 pub use vectis_wallet::{factory_state::*, WalletInfo};
 
-/// Governing token minting contract
-pub const GOVEC_MINTER: Item<CanonicalAddr> = Item::new("govec-minter");
+/// To query the pre-proposal and dao tunnel address on the DAO core
+pub const ITEMS: Map<String, String> = Map::new("items");

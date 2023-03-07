@@ -6,7 +6,7 @@ use vectis_wallet::CodeIdType;
 use vectis_wallet::{factory_queries::query_dao_addr, FeeType};
 
 use crate::{
-    contract::{execute, instantiate, query_govec_addr},
+    contract::{execute, instantiate},
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, UnclaimedWalletList},
 };
@@ -185,15 +185,6 @@ fn admin_updates_addresses_work() {
     let info = mock_info("admin", &[]);
     let env = mock_env();
 
-    // update govec
-    let msg = ExecuteMsg::UpdateGovecAddr {
-        addr: "new_govec".to_string(),
-    };
-    let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-    assert_eq!(response.events[0].attributes, [("address", "new_govec")]);
-    let new_govec = query_govec_addr(deps.as_ref()).unwrap();
-    assert_eq!(new_govec, "new_govec");
-
     // update admin
     let msg = ExecuteMsg::UpdateDao {
         addr: "new_dao".to_string(),
@@ -211,13 +202,6 @@ fn admin_updates_addresses_work() {
     };
 
     let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    let msg = ExecuteMsg::UpdateGovecAddr {
-        addr: "new_govec".to_string(),
-    };
-
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 }
 

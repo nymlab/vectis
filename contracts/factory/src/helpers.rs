@@ -1,27 +1,23 @@
-use cosmwasm_std::{
-    to_binary, BankMsg, CanonicalAddr, CosmosMsg, Deps, DepsMut, Response, StdResult, SubMsg,
-    WasmMsg,
-};
+use cosmwasm_std::{to_binary, BankMsg, CosmosMsg, Deps, DepsMut, Response, SubMsg, WasmMsg};
 
-use crate::state::{CLAIM_FEE, DAO, GOVEC_CLAIM_LIST, GOVEC_MINTER};
+use crate::state::{CLAIM_FEE, DAO, GOVEC_CLAIM_LIST, ITEMS};
 use crate::ContractError;
 
 use vectis_govec::msg::ExecuteMsg::Mint;
-use vectis_wallet::GOVEC_REPLY_ID;
+use vectis_wallet::{DaoActors, GOVEC_REPLY_ID};
 
-pub fn ensure_has_govec(deps: Deps) -> Result<CanonicalAddr, ContractError> {
-    GOVEC_MINTER
-        .may_load(deps.storage)?
-        .ok_or(ContractError::GovecNotSet {})
-}
-
-pub fn create_mint_msg(deps: Deps, wallet: String) -> StdResult<SubMsg> {
+pub fn create_mint_msg(deps: Deps, wallet: String) -> Result<SubMsg, ContractError> {
+    let dao = DAO.load(deps.storage)?;
+    let govec = ITEMS
+        .query(
+            &deps.querier,
+            deps.api.addr_humanize(&dao)?,
+            DaoActors::Govec.to_string(),
+        )?
+        .ok_or(ContractError::GovecNotSet {})?;
     Ok(SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: deps
-                .api
-                .addr_humanize(&GOVEC_MINTER.load(deps.storage)?)?
-                .to_string(),
+            contract_addr: govec,
             msg: to_binary(&Mint { new_wallet: wallet })?,
             funds: vec![],
         }),
