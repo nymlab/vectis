@@ -10,7 +10,7 @@ use vectis_wallet::GOVEC_CLAIM_DURATION_DAY_MUL;
 use crate::{
     contract::{execute, instantiate, query_pending_unclaim_wallet_list},
     error::ContractError,
-    msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    msg::{ExecuteMsg, InstantiateMsg},
     state::GOVEC_CLAIM_LIST,
 };
 
@@ -42,12 +42,6 @@ fn do_instantiate(
     assert_eq!(dao.as_str(), "admin");
 }
 
-#[test]
-fn not_found_query() {
-    use crate::contract::query;
-    let deps = mock_dependencies();
-    query(deps.as_ref(), mock_env(), QueryMsg::GovecAddr {}).unwrap_err();
-}
 #[test]
 fn non_admin_cannot_call_minted() {
     let mut deps = mock_dependencies();
@@ -181,13 +175,6 @@ fn admin_updates_addresses_work() {
 
     let info = mock_info("admin", &[]);
     let env = mock_env();
-
-    let msg = ExecuteMsg::UpdateGovecAddr {
-        addr: "new_govec".to_string(),
-    };
-
-    let err = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
-    assert_eq!(err, ContractError::NotSupportedByChain {});
 
     // update admin
     let msg = ExecuteMsg::UpdateDao {

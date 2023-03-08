@@ -10,9 +10,9 @@ use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use std::fmt;
 use vectis_wallet::{
-    pub_key_to_address, query_verify_cosmos, DaoActors, GuardiansUpdateMsg, GuardiansUpdateRequest,
-    PluginListResponse, PluginParams, PluginSource, RelayTransaction, RelayTxError, WalletInfo,
-    DEFAULT_LIMIT, MAX_LIMIT,
+    get_items_from_dao, pub_key_to_address, query_verify_cosmos, DaoActors, GuardiansUpdateMsg,
+    GuardiansUpdateRequest, PluginListResponse, PluginParams, PluginSource, RelayTransaction,
+    RelayTxError, WalletInfo, DAO, DEFAULT_LIMIT, MAX_LIMIT,
 };
 
 use crate::error::ContractError;
@@ -24,9 +24,8 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{
-    Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, DAO as DAO_ON_FACTORY, DAO_ADDR, FROZEN,
-    GUARDIANS, ITEMS, LABEL, MULTISIG_ADDRESS, PENDING_GUARDIAN_ROTATION, PLUGINS,
-    PROXY_MULTISIG_CODE_ID, RELAYERS,
+    Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
+    PENDING_GUARDIAN_ROTATION, PLUGINS, PROXY_MULTISIG_CODE_ID, RELAYERS,
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Duration, Threshold};
@@ -73,15 +72,13 @@ pub fn instantiate(
     FROZEN.save(deps.storage, &false)?;
 
     #[cfg(not(test))]
-    DAO_ADDR.save(
-        deps.storage,
-        &deps
-            .api
-            .addr_humanize(&DAO_ON_FACTORY.query(&deps.querier, info.sender)?)?,
-    )?;
+    DAO.save(deps.storage, &DAO.query(&deps.querier, info.sender)?)?;
 
     #[cfg(test)]
-    DAO_ADDR.save(deps.storage, &Addr::unchecked("test-dao"))?;
+    {
+        let canon_addr = deps.api.addr_canonicalize("test-dao")?;
+        DAO.save(deps.storage, &canon_addr)?;
+    }
 
     CODE_ID.save(deps.storage, &msg.code_id)?;
     LABEL.save(deps.storage, &msg.create_wallet_msg.label)?;
@@ -184,13 +181,7 @@ pub fn execute_inst_plugin(
     if plugin_params.has_full_access() {
         let sub_msg = match src {
             PluginSource::VectisRegistry(id) => {
-                let registry = ITEMS
-                    .query(
-                        &deps.querier,
-                        DAO_ADDR.load(deps.storage)?,
-                        DaoActors::PluginRegisty.to_string(),
-                    )?
-                    .ok_or(ContractError::ContractNotFound)?;
+                let registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginCommitte)?;
                 SubMsg::reply_always(
                     WasmMsg::Execute {
                         contract_addr: registry,
@@ -308,14 +299,7 @@ pub fn execute_relay(
         return Err(ContractError::Frozen {});
     }
 
-    let factory = ITEMS
-        .query(
-            &deps.querier,
-            DAO_ADDR.load(deps.storage)?,
-            DaoActors::Factory.to_string(),
-        )?
-        .ok_or(ContractError::ContractNotFound)?;
-
+    let factory = get_items_from_dao(deps.as_ref(), DaoActors::Factory)?;
     // Get controller addr from it's pubkey
     let addr = pub_key_to_address(
         &deps.as_ref(),
@@ -501,13 +485,7 @@ pub fn execute_update_guardians(
         let instantiation_code_id = if let Some(id) = new_multisig_code_id {
             id
         } else {
-            let factory = ITEMS
-                .query(
-                    &deps.querier,
-                    DAO_ADDR.load(deps.storage)?,
-                    DaoActors::Factory.to_string(),
-                )?
-                .ok_or(ContractError::ContractNotFound)?;
+            let factory = get_items_from_dao(deps.as_ref(), DaoActors::Factory)?;
             PROXY_MULTISIG_CODE_ID.query(&deps.querier, Addr::unchecked(factory))?
         };
         let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
@@ -693,7 +671,7 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
 
     Ok(WalletInfo {
         controller_addr: deps.api.addr_humanize(&controller.addr)?,
-        dao: DAO_ADDR.load(deps.storage)?,
+        dao: deps.api.addr_humanize(&DAO.load(deps.storage)?)?,
         nonce: controller.nonce,
         version: cw2::get_contract_version(deps.storage)?,
         code_id: CODE_ID.load(deps.storage)?,

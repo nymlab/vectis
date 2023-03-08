@@ -2,6 +2,7 @@ use cosmwasm_std::{
     testing::mock_ibc_channel_close_init, wasm_execute, IbcChannelCloseMsg, IbcReceiveResponse,
     Response,
 };
+use vectis_wallet::DaoActors;
 
 use crate::{ibc::ibc_channel_close, tests::*};
 
@@ -11,7 +12,7 @@ pub fn add_mock_controller(mut deps: DepsMut, src_port_id: &str) {
     execute(
         deps.branch(),
         env,
-        mock_info(ADMIN_ADDR, &[]),
+        mock_info(DAO_ADDR, &[]),
         ExecuteMsg::AddApprovedController {
             connection_id: TEST_CONNECTION_ID.to_string(),
             port_id: src_port_id.to_string(),
@@ -214,7 +215,7 @@ fn returns_ack_failure_when_invalid_inner_remote_tunnel_msg() {
     let mut deps = do_instantiate();
     add_mock_controller(deps.as_mut(), SRC_PORT_ID_RCV);
     let incorrect_inner_msg = PacketMsg {
-        sender: ADMIN_ADDR.to_string(),
+        sender: DAO_ADDR.to_string(),
         job_id: 1,
         // dao tunnel expects RemoteTunnelPacketMsg
         msg: to_binary(&[2; 0]).unwrap(),
@@ -270,7 +271,7 @@ fn recieve_mint_govec_works() {
     let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
 
     let expected_sub_msg = WasmMsg::Execute {
-        contract_addr: GOVEC_ADDR.to_string(),
+        contract_addr: DaoActors::Govec.to_string(),
         msg: to_binary(&GovecExecuteMsg::Mint {
             new_wallet: WALLET_ADDR.to_string(),
         })
@@ -392,7 +393,7 @@ fn recieve_govec_actions_works() {
         .unwrap();
     assert_eq!(
         rec_res.messages[0].msg,
-        CosmosMsg::Wasm(wasm_execute(GOVEC_ADDR, &exit, vec![]).unwrap())
+        CosmosMsg::Wasm(wasm_execute(DaoActors::Govec.to_string(), &exit, vec![]).unwrap())
     );
     assert_eq!(
         rec_res.attributes,
@@ -425,7 +426,7 @@ fn recieve_govec_actions_works() {
         .unwrap();
     assert_eq!(
         rec_res.messages[0].msg,
-        CosmosMsg::Wasm(wasm_execute(GOVEC_ADDR, &transfer, vec![]).unwrap())
+        CosmosMsg::Wasm(wasm_execute(DaoActors::Govec.to_string(), &transfer, vec![]).unwrap())
     );
     assert_eq!(
         rec_res.attributes,
@@ -459,7 +460,7 @@ fn recieve_govec_actions_works() {
         .unwrap();
     assert_eq!(
         rec_res.messages[0].msg,
-        CosmosMsg::Wasm(wasm_execute(GOVEC_ADDR, &send, vec![]).unwrap())
+        CosmosMsg::Wasm(wasm_execute(DaoActors::Govec.to_string(), &send, vec![]).unwrap())
     );
     assert_eq!(
         rec_res.attributes,

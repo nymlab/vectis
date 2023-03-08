@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, CanonicalAddr, Coin};
+use cosmwasm_std::{CanonicalAddr, Coin};
 use cw_storage_plus::{Item, Map};
 pub use vectis_wallet::{
     factory_state::{ADDR_PREFIX, DAO, PROXY_MULTISIG_CODE_ID},
@@ -61,7 +61,4 @@ pub const LABEL: Item<String> = Item::new("label");
 pub const MULTISIG_ADDRESS: Item<Option<CanonicalAddr>> = Item::new("fixed_multisig_address");
 /// Plugins
 pub const PLUGINS: Map<&[u8], ()> = Map::new("plugins");
-/// To query the pre-proposal and dao tunnel address on the DAO core
-pub const ITEMS: Map<String, String> = Map::new("items");
 pub const INSTALL_FEE: Item<Coin> = Item::new("install_fee");
-pub const DAO_ADDR: Item<Addr> = Item::new("dao-addr");

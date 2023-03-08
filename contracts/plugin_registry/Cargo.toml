@@ -29,3 +29,4 @@ vectis-wallet = { path = "../../packages/vectis" }
 [dev-dependencies]
 anyhow = { version = "1.0.68" }
 cw-multi-test = {  workspace = true  }
+vectis-wallet = {path = "../../packages/vectis", features = ["test_utils"]}

@@ -5,6 +5,17 @@ use thiserror::Error;
 
 /// Relay transaction related errors
 #[derive(Error, Debug, PartialEq)]
+pub enum DaoItemsQueryError {
+    #[error("{0}")]
+    Std(#[from] StdError),
+    #[error("Item not set for {0}")]
+    ItemNotSet(String),
+    #[error("Dao Addr Not Found")]
+    DaoAddrNotFound,
+}
+
+/// Relay transaction related errors
+#[derive(Error, Debug, PartialEq)]
 pub enum RelayTxError {
     #[error("MismatchControllerAddr")]
     IsNotController {},

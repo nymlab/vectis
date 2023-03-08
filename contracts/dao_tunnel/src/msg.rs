@@ -5,8 +5,6 @@ use vectis_wallet::{DaoTunnelPacketMsg, IbcTransferChannels, Receiver};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    /// Govec contract address
-    pub govec_minter: String,
     /// Any remote tunnel endpoints to be included initially
     /// No channels has been established
     pub init_remote_tunnels: Option<RemoteTunnels>,
@@ -31,9 +29,6 @@ pub enum ExecuteMsg {
         port_id: String,
     },
     UpdateDaoAddr {
-        new_addr: String,
-    },
-    UpdateGovecAddr {
         new_addr: String,
     },
     /// The connections and channel_id this chain supports
@@ -65,8 +60,6 @@ pub enum QueryMsg {
         start_after: Option<(String, String)>,
         limit: Option<u32>,
     },
-    #[returns(Option<Addr>)]
-    Govec {},
     #[returns(Option<Addr>)]
     Dao {},
     #[returns(IbcTransferChannels)]

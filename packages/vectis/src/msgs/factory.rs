@@ -101,9 +101,6 @@ pub enum WalletFactoryExecuteMsg {
         ty: FeeType,
         new_fee: Coin,
     },
-    UpdateGovecAddr {
-        addr: String,
-    },
     UpdateDao {
         addr: String,
     },
@@ -152,9 +149,6 @@ pub enum WalletFactoryQueryMsg {
     /// Fee goes to the DAO
     #[returns(FeesResponse)]
     Fees {},
-    /// Returns the address of the Govec Voting Tokens Contract
-    #[returns(Addr)]
-    GovecAddr {},
     /// Returns the address of the DAO which holds the admin role of this contract
     #[returns(Addr)]
     DaoAddr {},

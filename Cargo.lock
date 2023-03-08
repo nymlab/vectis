@@ -1713,6 +1713,7 @@ dependencies = [
  "sylvia",
  "sylvia-derive",
  "thiserror",
+ "vectis-wallet",
 ]
 
 [[package]]
@@ -1730,6 +1731,7 @@ dependencies = [
  "cw3-fixed-multisig",
  "sha2 0.9.9",
  "thiserror",
+ "vectis-plugin-registry",
  "vectis-wallet",
 ]
 

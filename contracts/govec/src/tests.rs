@@ -14,9 +14,8 @@ pub use cw20::{
     BalanceResponse, Cw20Coin, Cw20ReceiveMsg, Logo, MarketingInfoResponse, TokenInfoResponse,
 };
 pub use cw20_stake::contract::{query_download_logo, query_marketing_info};
-pub use vectis_wallet::{MintResponse, UpdateAddrReq};
+pub use vectis_wallet::MintResponse;
 
-pub const FACTORY: &str = "factory";
 pub const DAO_ADDR: &str = "dao";
 
 pub fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
@@ -28,7 +27,6 @@ pub fn do_instantiate(
     mut deps: DepsMut,
     addr: Vec<&str>,
     amount: Vec<Uint128>,
-    factory: Option<&str>,
     mint_cap: Option<Uint128>,
     mint_amount: Uint128,
     marketing: Option<MarketingInfoResponse>,
@@ -46,10 +44,8 @@ pub fn do_instantiate(
         name: "Auto Gen".to_string(),
         symbol: "AUTO".to_string(),
         initial_balances: coins,
-        staking_addr: None,
         mint_cap,
         mint_amount,
-        factory: factory.map(|e| e.to_string()),
         marketing,
     };
 
@@ -92,8 +88,6 @@ fn can_instantiate_accounts() {
                 amount,
             },
         ],
-        staking_addr: None,
-        factory: None,
         mint_cap: Some(limit),
         mint_amount: Uint128::new(2),
         marketing: None,
@@ -128,10 +122,8 @@ fn cannot_mint_over_cap() {
             address: String::from("addr0000"),
             amount,
         }],
-        factory: None,
         mint_cap: Some(limit),
         mint_amount: Uint128::new(2),
-        staking_addr: None,
         marketing: None,
     };
     let info = mock_info("creator", &[]);
@@ -155,7 +147,6 @@ fn query_joined_works() {
         deps.as_mut(),
         vec![genesis.as_str()],
         vec![amount],
-        Some(FACTORY),
         Some(limit),
         Uint128::new(2),
         None,
@@ -183,61 +174,16 @@ fn query_joined_works() {
 }
 
 #[test]
-fn dao_can_update_staking_addr() {
-    let mut deps = mock_dependencies();
-    let genesis = String::from("genesis");
-    let amount = Uint128::new(0);
-    let limit = Uint128::new(12);
-
-    let new_staking = String::from("new_staking");
-
-    do_instantiate(
-        deps.as_mut(),
-        vec![genesis.as_str()],
-        vec![amount],
-        Some(FACTORY),
-        Some(limit),
-        Uint128::new(2),
-        None,
-    );
-
-    let msg = ExecuteMsg::UpdateConfigAddr {
-        new_addr: UpdateAddrReq::Staking(new_staking.clone()),
-    };
-
-    // only dao can update staking
-    let info = mock_info(FACTORY, &[]);
-    let env = mock_env();
-    let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // dao can update staking
-    let info = mock_info(DAO_ADDR, &[]);
-    let env = mock_env();
-    let res = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(0, res.messages.len());
-    assert_eq!(query_staking(deps.as_ref()).unwrap(), new_staking);
-}
-
-#[test]
 fn dao_can_update_mint_amount() {
     let mut deps = mock_dependencies();
     let new_amount = Uint128::new(123);
 
-    do_instantiate(
-        deps.as_mut(),
-        vec![],
-        vec![],
-        Some(FACTORY),
-        None,
-        Uint128::new(2),
-        None,
-    );
+    do_instantiate(deps.as_mut(), vec![], vec![], None, Uint128::new(2), None);
 
     let msg = ExecuteMsg::UpdateMintAmount { new_amount };
 
     // only dao can update mint data
-    let info = mock_info(FACTORY, &[]);
+    let info = mock_info("not dao", &[]);
     let env = mock_env();
     let err = execute(deps.as_mut(), env, info, msg.clone()).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -261,7 +207,6 @@ fn queries_work() {
         deps.as_mut(),
         vec![addr1],
         vec![amount1],
-        Some(FACTORY),
         Some(limit),
         Uint128::new(2),
         None,
@@ -318,7 +263,6 @@ fn burn() {
         deps.as_mut(),
         vec![DAO_ADDR],
         vec![all],
-        Some(FACTORY),
         None,
         Uint128::new(2),
         None,
@@ -377,7 +321,6 @@ fn exit() {
         deps.as_mut(),
         vec![addr1],
         vec![all],
-        Some(FACTORY),
         None,
         Uint128::new(2),
         None,
@@ -431,7 +374,6 @@ fn query_all_accounts_works() {
             Uint128::new(1),
             Uint128::new(1),
         ],
-        Some(FACTORY),
         None,
         Uint128::new(2),
         None,
@@ -472,7 +414,6 @@ fn query_marketing_info_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        Some(FACTORY),
         None,
         Uint128::new(2),
         Some(marketing_msg),
@@ -487,15 +428,7 @@ fn query_marketing_info_works() {
 fn query_download_logo_works() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
-    do_instantiate(
-        deps.as_mut(),
-        vec![],
-        vec![],
-        None,
-        None,
-        Uint128::new(2),
-        None,
-    );
+    do_instantiate(deps.as_mut(), vec![], vec![], None, Uint128::new(2), None);
 
     let logo = query_download_logo(deps.as_ref()).expect_err("NotFound");
 
@@ -522,7 +455,6 @@ fn execute_update_marketing_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        None,
         None,
         Uint128::new(2),
         Some(marketing_msg),
@@ -573,7 +505,6 @@ fn execute_update_logo_works() {
         deps.as_mut(),
         vec![],
         vec![],
-        None,
         None,
         Uint128::new(2),
         Some(marketing_msg),

@@ -9,13 +9,6 @@ pub use cw20::{
 pub const GOVEC_CLAIM_DURATION_DAY_MUL: u64 = 90;
 
 #[cw_serde]
-pub enum UpdateAddrReq {
-    Dao(String),
-    Factory(String),
-    Staking(String),
-}
-
-#[cw_serde]
 pub enum GovecExecuteMsg {
     /// Transfer is a base message to move tokens to another account without triggering actions
     Transfer {
@@ -55,7 +48,7 @@ pub enum GovecExecuteMsg {
     UpdateMintAmount { new_amount: Uint128 },
     /// Updates the staking contract address.Authorized by the DAO
     /// permission: executed by dao only
-    UpdateConfigAddr { new_addr: UpdateAddrReq },
+    UpdateDaoAddr { new_addr: String },
     /// If authorized, updates marketing metadata.
     /// Setting None/null for any of these will leave it unchanged.
     /// Setting Some("") will clear this field on the contract storage
@@ -101,18 +94,9 @@ pub enum GovecQueryMsg {
     /// Return type: MintResponse
     #[returns(MintResponse)]
     Minters {},
-    /// Returns the staking contract address
-    #[returns(Addr)]
-    Staking {},
     /// Returns the dao contract address
     #[returns(Addr)]
     Dao {},
-    /// Returns the dao tunnel contract address
-    #[returns(Addr)]
-    DaoTunnel {},
-    /// Returns the factory contract address
-    #[returns(Addr)]
-    Factory {},
     /// Only with "enumerable" extension
     /// Returns all accounts that have balances. Supports pagination.
     /// Return type: AllAccountsResponse.
