@@ -8,7 +8,7 @@ use cosmwasm_std::{
     MessageInfo, Order, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 
-use vectis_wallet::DaoActors;
+use vectis_wallet::{get_items_from_dao, DaoActors, DAO};
 
 use crate::{
     error::ContractError,
@@ -37,8 +37,6 @@ pub struct Plugin {
 pub struct PluginRegistry<'a> {
     pub(crate) total_plugins: Item<'a, u64>,
     pub(crate) registry_fee: Item<'a, Coin>,
-    pub(crate) dao_addr: Item<'a, CanonicalAddr>,
-    pub(crate) items: Map<'a, String, String>,
     pub(crate) plugins: Map<'a, u64, Plugin>,
     pub install_fee: Item<'a, Coin>,
 }
@@ -81,7 +79,7 @@ impl Installable for PluginRegistry<'_> {
         let msg = CosmosMsg::Bank(BankMsg::Send {
             to_address: deps
                 .api
-                .addr_humanize(&self.dao_addr.load(deps.storage)?)?
+                .addr_humanize(&DAO.load(deps.storage)?)?
                 .to_string(),
             amount: vec![install_fee],
         });
@@ -104,8 +102,6 @@ impl PluginRegistry<'_> {
         Self {
             total_plugins: Item::new("total_plugins"),
             registry_fee: Item::new("registry_fee"),
-            dao_addr: Item::new("dao_addr"),
-            items: Map::new("items"),
             plugins: Map::new("plugins"),
             install_fee: Item::new("install_fee"),
         }
@@ -124,7 +120,7 @@ impl PluginRegistry<'_> {
         self.total_plugins.save(deps.storage, &0u64)?;
         self.registry_fee.save(deps.storage, &registry_fee)?;
         self.install_fee.save(deps.storage, &install_fee)?;
-        self.dao_addr.save(
+        DAO.save(
             deps.storage,
             &deps.api.addr_canonicalize(&info.sender.as_str())?,
         )?;
@@ -132,15 +128,7 @@ impl PluginRegistry<'_> {
     }
 
     fn ensure_is_reviewer(&self, deps: Deps, sender: &str) -> Result<(), ContractError> {
-        let dao_addr = self.dao_addr.load(deps.storage)?;
-        let reviewer = self
-            .items
-            .query(
-                &deps.querier,
-                deps.api.addr_humanize(&dao_addr)?,
-                DaoActors::PluginCommitte.to_string(),
-            )?
-            .ok_or(ContractError::PluginCommitteeNotFound)?;
+        let reviewer = get_items_from_dao(deps, DaoActors::PluginCommitte)?;
         if reviewer != sender {
             return Err(ContractError::Unauthorized);
         } else {
@@ -214,7 +202,7 @@ impl PluginRegistry<'_> {
         let msg = CosmosMsg::Bank(BankMsg::Send {
             to_address: deps
                 .api
-                .addr_humanize(&self.dao_addr.load(deps.storage)?)?
+                .addr_humanize(&DAO.load(deps.storage)?)?
                 .to_string(),
             amount: vec![registry_fee],
         });
@@ -300,7 +288,7 @@ impl PluginRegistry<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _env, info) = ctx;
         ensure_eq!(
-            deps.api.addr_humanize(&self.dao_addr.load(deps.storage)?)?,
+            deps.api.addr_humanize(&DAO.load(deps.storage)?)?,
             info.sender,
             ContractError::Unauthorized
         );
@@ -323,16 +311,15 @@ impl PluginRegistry<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _env, info) = ctx;
         ensure_eq!(
-            deps.api.addr_humanize(&self.dao_addr.load(deps.storage)?)?,
+            deps.api.addr_humanize(&DAO.load(deps.storage)?)?,
             info.sender,
             ContractError::Unauthorized
         );
 
-        self.dao_addr
-            .update(deps.storage, |_| -> StdResult<CanonicalAddr> {
-                deps.api
-                    .addr_canonicalize(deps.api.addr_validate(new_addr.as_str())?.as_str())
-            })?;
+        DAO.update(deps.storage, |_| -> StdResult<CanonicalAddr> {
+            deps.api
+                .addr_canonicalize(deps.api.addr_validate(new_addr.as_str())?.as_str())
+        })?;
 
         Ok(Response::default().add_event(
             Event::new("vectis.plugin_registry.v1.MsgUpdateDaoAddr")
@@ -347,7 +334,7 @@ impl PluginRegistry<'_> {
             registry_fee: self.registry_fee.load(deps.storage)?,
             dao_addr: deps
                 .api
-                .addr_humanize(&self.dao_addr.load(deps.storage)?)?
+                .addr_humanize(&DAO.load(deps.storage)?)?
                 .to_string(),
         })
     }

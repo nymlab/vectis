@@ -12,19 +12,19 @@ pub use cosmwasm_std::{
 
 pub use dao_voting::voting::Vote;
 pub use vectis_wallet::{
-    ChainConfig, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, IbcTransferChannels, PacketMsg,
-    PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, Receiver, RemoteTunnelPacketMsg, StdAck,
-    VectisDaoActionIds, WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_ORDER,
-    IBC_APP_VERSION, PACKET_LIFETIME,
+    ChainConfig, DaoActors, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, IbcTransferChannels,
+    PacketMsg, PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, Receiver,
+    RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, DAO, IBC_APP_ORDER, IBC_APP_VERSION,
+    PACKET_LIFETIME,
 };
 
-pub use crate::contract::{execute, instantiate, query_controllers, query_dao, query_govec, reply};
+pub use crate::contract::{execute, instantiate, query_controllers, query_dao, reply};
 use crate::contract::{execute_ibc_transfer, query_channels};
 pub use crate::ibc::{
     ibc_channel_connect, ibc_channel_open, ibc_packet_ack, ibc_packet_receive, ibc_packet_timeout,
 };
 pub use crate::msg::{ExecuteMsg, InstantiateMsg, RemoteTunnels};
-pub use crate::state::ADMIN;
 pub use crate::ContractError;
 
 pub const TEST_CONNECTION_ID: &str = "TEST_CONNECTION_ID";
@@ -36,8 +36,7 @@ pub const SRC_PORT_ID_RCV: &str = "their-port";
 // For testing `ibc_channel_connect`
 pub const SRC_PORT_ID_CONNECT: &str = "their_port";
 
-pub const ADMIN_ADDR: &str = "admin_addr";
-pub const GOVEC_ADDR: &str = "govec_addr";
+pub const DAO_ADDR: &str = "dao_addr";
 pub const JOB_ID: u64 = 8721;
 pub const WALLET_ADDR: &str = "proxy_wallet_addr";
 pub const FACTORY_ADDR: &str = "factory_addr";
@@ -45,11 +44,10 @@ pub const DENOM: &str = "denom";
 
 pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let mut deps = mock_dependencies();
-    let info = mock_info(ADMIN_ADDR, &[]);
+    let info = mock_info(DAO_ADDR, &[]);
     let env = mock_env();
 
     let instantiate_msg = InstantiateMsg {
-        govec_minter: GOVEC_ADDR.to_string(),
         init_remote_tunnels: None,
         init_ibc_transfer_mods: None,
         denom: DENOM.to_string(),
@@ -57,16 +55,12 @@ pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
 
     instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
 
-    let admin_addr = ADMIN.load(&deps.storage).unwrap();
+    let dao_addr = DAO.load(&deps.storage).unwrap();
 
     assert_eq!(
-        deps.as_mut().api.addr_humanize(&admin_addr).unwrap(),
-        ADMIN_ADDR.to_string()
+        deps.as_mut().api.addr_humanize(&dao_addr).unwrap(),
+        DAO_ADDR.to_string()
     );
-
-    let res = query_govec(deps.as_ref()).unwrap().unwrap();
-
-    assert_eq!(res.to_string(), GOVEC_ADDR.to_string());
 
     deps
 }
@@ -97,7 +91,7 @@ fn admin_can_update_approved_contollers() {
     execute(
         deps.as_mut(),
         mock_env(),
-        mock_info(ADMIN_ADDR, &[]),
+        mock_info(DAO_ADDR, &[]),
         ExecuteMsg::AddApprovedController {
             connection_id: TEST_CONNECTION_ID.to_string(),
             port_id: SRC_PORT_ID_CONNECT.to_string(),
@@ -120,7 +114,7 @@ fn admin_can_update_approved_contollers() {
     let res = execute(
         deps.as_mut(),
         mock_env(),
-        mock_info(ADMIN_ADDR, &[]),
+        mock_info(DAO_ADDR, &[]),
         ExecuteMsg::AddApprovedController {
             connection_id: "ANOTHER".to_string(),
             port_id: "ANOTHER_PORT".to_string(),
@@ -155,7 +149,7 @@ fn admin_can_update_approved_contollers() {
     let res = execute(
         deps.as_mut(),
         mock_env(),
-        mock_info(ADMIN_ADDR, &[]),
+        mock_info(DAO_ADDR, &[]),
         ExecuteMsg::RemoveApprovedController {
             connection_id: "ANOTHER".to_string(),
             port_id: "ANOTHER_PORT".to_string(),
@@ -182,38 +176,6 @@ fn admin_can_update_approved_contollers() {
 }
 
 #[test]
-fn only_admin_can_update_govec() {
-    let mut deps = do_instantiate();
-    // Not admin fails
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        mock_info("RANDOM", &[]),
-        ExecuteMsg::UpdateGovecAddr {
-            new_addr: "new_govec".to_string(),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Update Govec
-    let res = execute(
-        deps.as_mut(),
-        mock_env(),
-        mock_info(ADMIN_ADDR, &[]),
-        ExecuteMsg::UpdateGovecAddr {
-            new_addr: "new_govec".to_string(),
-        },
-    )
-    .unwrap();
-
-    assert_eq!(res.events[0].attributes, vec![("address", "new_govec")]);
-
-    let res = query_govec(deps.as_ref()).unwrap().unwrap();
-    assert_eq!(res.as_str(), "new_govec");
-}
-
-#[test]
 fn only_admin_can_update_selfaddr() {
     let mut deps = do_instantiate();
     // Not admin fails
@@ -232,7 +194,7 @@ fn only_admin_can_update_selfaddr() {
     let res = execute(
         deps.as_mut(),
         mock_env(),
-        mock_info(ADMIN_ADDR, &[]),
+        mock_info(DAO_ADDR, &[]),
         ExecuteMsg::UpdateDaoAddr {
             new_addr: "new_dao".to_string(),
         },
@@ -265,7 +227,7 @@ fn only_admin_can_update_ibc_transfer_modules() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Update with admin
-    let res = execute(deps.as_mut(), mock_env(), mock_info(ADMIN_ADDR, &[]), msg).unwrap();
+    let res = execute(deps.as_mut(), mock_env(), mock_info(DAO_ADDR, &[]), msg).unwrap();
 
     assert_eq!(
         res.events[0].attributes,
@@ -292,7 +254,7 @@ fn only_admin_can_send_actions_to_remote_tunnel_channel() {
     let mut deps = do_instantiate();
     let env = mock_env();
     let invalid_sender = "RANDOM_ADDR";
-    let valid_sender = ADMIN_ADDR;
+    let valid_sender = DAO_ADDR;
     let chain_update_msg = default_update_chain_config_msg();
 
     // Not DAO cannot send this
@@ -351,7 +313,7 @@ fn ibc_transfer_works_with_channel_connected() {
         connection_id: conn.clone(),
         channel_id: Some(chan.clone()),
     };
-    execute(deps.as_mut(), mock_env(), mock_info(ADMIN_ADDR, &[]), msg).unwrap();
+    execute(deps.as_mut(), mock_env(), mock_info(DAO_ADDR, &[]), msg).unwrap();
 
     let res = execute_ibc_transfer(
         deps.as_mut(),

@@ -8,7 +8,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{DAO, GOVEC_CLAIM_LIST, PENDING_CLAIM_LIST, TOTAL_CREATED};
 use cosmwasm_std::{
     to_binary, Addr, Binary, CanonicalAddr, Deps, DepsMut, Env, MessageInfo, Order, Reply,
-    Response, StdError, StdResult,
+    Response, StdResult,
 };
 use cw2::set_contract_version;
 
@@ -66,7 +66,6 @@ pub fn execute(
         ExecuteMsg::UpdateConfigFee { ty, new_fee } => {
             factory_execute::update_config_fee(deps, info, ty, new_fee)
         }
-        ExecuteMsg::UpdateGovecAddr { addr } => update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } => factory_execute::update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} => claim_govec_or_remove_from_list(deps, env, info),
         ExecuteMsg::GovecMinted {
@@ -77,14 +76,6 @@ pub fn execute(
             factory_execute::purge_expired_claims(deps, env, start_after, limit)
         }
     }
-}
-
-fn update_govec_addr(
-    _deps: DepsMut,
-    _info: MessageInfo,
-    _addr: String,
-) -> Result<Response, ContractError> {
-    Err(ContractError::NotSupportedByChain {})
 }
 
 fn claim_govec_or_remove_from_list(
@@ -147,7 +138,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::CodeId { ty } => to_binary(&query_code_id(deps, ty)?),
         QueryMsg::Fees {} => to_binary(&query_fees(deps)?),
-        QueryMsg::GovecAddr {} => to_binary(&query_govec_addr(deps)?),
         QueryMsg::DaoAddr {} => to_binary(&query_dao_addr(deps)?),
         QueryMsg::TotalCreated {} => to_binary(&query_total(deps)?),
     }
@@ -178,12 +168,6 @@ pub fn query_pending_unclaim_wallet_list(
         .collect();
 
     wallets
-}
-
-pub fn query_govec_addr(_deps: Deps) -> StdResult<Addr> {
-    Err(StdError::GenericErr {
-        msg: String::from("Not supported"),
-    })
 }
 
 /// reply hooks handles replies from proxy wallet instantiation

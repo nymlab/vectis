@@ -6,13 +6,13 @@ use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 
 use vectis_wallet::{
-    DaoTunnelPacketMsg, IbcTransferChannels, PacketMsg, Receiver, StdAck, DEFAULT_LIMIT, MAX_LIMIT,
-    PACKET_LIFETIME,
+    DaoTunnelPacketMsg, IbcTransferChannels, PacketMsg, Receiver, StdAck, DAO, DEFAULT_LIMIT,
+    MAX_LIMIT, PACKET_LIFETIME,
 };
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
-use crate::state::{ADMIN, DENOM, GOVEC, IBC_TRANSFER_MODULES, IBC_TUNNELS};
+use crate::state::{DENOM, IBC_TRANSFER_MODULES, IBC_TUNNELS};
 use std::convert::Into;
 
 const CONTRACT_NAME: &str = "crates.io:vectis-dao-tunnel";
@@ -26,13 +26,9 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let admin_addr = deps.api.addr_canonicalize(info.sender.as_ref())?;
-    let govec_addr = deps
-        .api
-        .addr_canonicalize(deps.api.addr_validate(&msg.govec_minter)?.as_str())?;
-    GOVEC.save(deps.storage, &govec_addr)?;
+    let dao_addr = deps.api.addr_canonicalize(info.sender.as_ref())?;
     DENOM.save(deps.storage, &msg.denom)?;
-    ADMIN.save(deps.storage, &admin_addr)?;
+    DAO.save(deps.storage, &dao_addr)?;
     if let Some(init_tunnels) = msg.init_remote_tunnels {
         for tunnel in init_tunnels.tunnels {
             IBC_TUNNELS.save(deps.storage, tunnel, &())?;
@@ -67,7 +63,6 @@ pub fn execute(
             port_id,
         } => execute_add_approved_controller(deps, info, connection_id, port_id, false),
         ExecuteMsg::UpdateDaoAddr { new_addr } => execute_update_dao(deps, info, new_addr),
-        ExecuteMsg::UpdateGovecAddr { new_addr } => execute_update_govec(deps, info, new_addr),
         ExecuteMsg::UpdateIbcTransferRecieverChannel {
             connection_id,
             channel_id,
@@ -88,7 +83,7 @@ fn execute_add_approved_controller(
     port_id: String,
     to_add: bool,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
 
     let mut event = Event::new("")
         .add_attribute("connection_id", &connection_id)
@@ -109,26 +104,11 @@ fn execute_update_dao(
     info: MessageInfo,
     new_addr: String,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
     let addr = deps.api.addr_validate(&new_addr)?;
-    ADMIN.save(deps.storage, &deps.api.addr_canonicalize(addr.as_str())?)?;
+    DAO.save(deps.storage, &deps.api.addr_canonicalize(addr.as_str())?)?;
 
     let event = Event::new("vectis.dao_tunnel.v1.MsgUpdateDaoAddr").add_attribute("address", addr);
-
-    Ok(Response::new().add_event(event))
-}
-
-fn execute_update_govec(
-    deps: DepsMut,
-    info: MessageInfo,
-    new_addr: String,
-) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
-    let addr = deps.api.addr_validate(&new_addr)?;
-    GOVEC.save(deps.storage, &deps.api.addr_canonicalize(addr.as_str())?)?;
-
-    let event =
-        Event::new("vectis.dao_tunnel.v1.MsgUpdateGovecAddr").add_attribute("address", addr);
 
     Ok(Response::new().add_event(event))
 }
@@ -139,7 +119,7 @@ fn execute_update_ibc_transfer_channel(
     connection_id: String,
     channel: Option<String>,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
 
     let mut event = Event::new("vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel")
         .add_attribute("connection_id", &connection_id);
@@ -170,7 +150,7 @@ fn execute_dispatch_to_remote_tunnel(
     msg: DaoTunnelPacketMsg,
     sending_channel_id: String,
 ) -> Result<Response, ContractError> {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())?;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
 
     let packet = PacketMsg {
         sender: env.contract.address.to_string(),
@@ -239,7 +219,6 @@ pub fn execute_ibc_transfer(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Govec {} => to_binary(&query_govec(deps)?),
         QueryMsg::Dao {} => to_binary(&query_dao(deps)?),
         QueryMsg::Controllers { start_after, limit } => {
             to_binary(&query_controllers(deps, start_after, limit)?)
@@ -272,16 +251,8 @@ pub fn query_channels(
     })
 }
 
-pub fn query_govec(deps: Deps) -> StdResult<Option<Addr>> {
-    let addr = match GOVEC.may_load(deps.storage)? {
-        Some(c) => Some(deps.api.addr_humanize(&c)?),
-        _ => None,
-    };
-    Ok(addr)
-}
-
 pub fn query_dao(deps: Deps) -> StdResult<Option<Addr>> {
-    let addr = match ADMIN.may_load(deps.storage)? {
+    let addr = match DAO.may_load(deps.storage)? {
         Some(c) => Some(deps.api.addr_humanize(&c)?),
         _ => None,
     };
@@ -325,9 +296,9 @@ pub fn reply_dao_actions(reply: Reply) -> Result<Response, ContractError> {
     }
 }
 
-/// Ensures provided addr is the state stored ADMIN
-pub fn ensure_is_admin(deps: Deps, sender: &str) -> Result<(), ContractError> {
-    let admin = ADMIN.load(deps.storage)?;
+/// Ensures provided addr is the state stored DAO  
+pub fn ensure_is_dao(deps: Deps, sender: &str) -> Result<(), ContractError> {
+    let admin = DAO.load(deps.storage)?;
     let caller = deps.api.addr_canonicalize(sender)?;
     if caller != admin {
         return Err(ContractError::Unauthorized {});

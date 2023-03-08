@@ -1,6 +1,7 @@
 pub mod error;
 pub mod factory;
 pub mod ibc;
+pub mod state;
 pub mod wallet;
 use cosmwasm_schema::cw_serde;
 
@@ -14,6 +15,7 @@ pub enum DaoActors {
     DaoTunnel,
     PluginRegisty,
     ActivePreProposal,
+    Staking,
 }
 
 impl std::fmt::Display for DaoActors {

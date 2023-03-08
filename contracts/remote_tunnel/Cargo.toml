@@ -24,3 +24,4 @@ cosmwasm-schema = { workspace = true }
 
 [dev-dependencies]
 cosmwasm-schema = { workspace = true }
+vectis-wallet = {path = "../../packages/vectis", features = ["test_utils"]}

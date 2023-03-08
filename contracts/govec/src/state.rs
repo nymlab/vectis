@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cw20::{Logo, MarketingInfoResponse};
 
-use cosmwasm_std::{Addr, CanonicalAddr, Uint128};
+use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 
 #[cw_serde]
@@ -18,10 +18,3 @@ pub const LOGO: Item<Logo> = Item::new("logo");
 pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
 pub const MINT_CAP: Item<Uint128> = Item::new("mint_cap");
 pub const MINT_AMOUNT: Item<Uint128> = Item::new("Mint_amount");
-// updated by `UpdateConfigAddr`
-pub const STAKING_ADDR: Item<CanonicalAddr> = Item::new("staking_addr");
-pub const DAO_ADDR: Item<CanonicalAddr> = Item::new("DAO_addr");
-pub const FACTORY: Item<CanonicalAddr> = Item::new("Factory");
-
-/// To query the pre-proposal and dao tunnel address on the DAO core
-pub const ITEMS: Map<String, String> = Map::new("items");

@@ -4,6 +4,9 @@ authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheio
 version = "0.1.0"
 edition = "2018"
 
+[features]
+test_utils = []
+
 [dependencies]
 cosmwasm-std = { workspace = true }
 cw-storage-plus = { workspace = true }

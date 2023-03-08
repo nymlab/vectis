@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
+    from_binary, to_binary, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
     IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse,
     StdError, StdResult, SubMsg, WasmMsg,
@@ -10,12 +10,12 @@ use cosmwasm_std::{
 use cosmwasm_std::{IbcQuery, QueryRequest};
 
 use vectis_wallet::{
-    check_ibc_order, check_ibc_version, GovecExecuteMsg, GovecQueryMsg, IbcError, PacketMsg,
-    PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, RemoteTunnelPacketMsg, StakeExecuteMsg,
-    StdAck, VectisDaoActionIds, IBC_APP_VERSION,
+    check_ibc_order, check_ibc_version, get_items_from_dao, DaoActors, GovecExecuteMsg, IbcError,
+    PacketMsg, PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, RemoteTunnelPacketMsg,
+    StakeExecuteMsg, StdAck, VectisDaoActionIds, IBC_APP_VERSION,
 };
 
-use crate::state::{GOVEC, IBC_TUNNELS};
+use crate::state::IBC_TUNNELS;
 use crate::ContractError;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -165,15 +165,14 @@ fn receive_mint_govec(
     deps: DepsMut,
     wallet_addr: String,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let contract_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
-
     let msg = to_binary(&GovecExecuteMsg::Mint {
         new_wallet: wallet_addr,
     })?;
+    let govec = get_items_from_dao(deps.as_ref(), DaoActors::Govec)?;
 
     let msg = SubMsg::reply_always(
         WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
+            contract_addr: govec,
             msg,
             funds: vec![],
         },
@@ -190,13 +189,13 @@ pub fn receive_govec_actions(
     sender: String,
     govec_msg: GovecExecuteMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let govec_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
+    let govec_addr = get_items_from_dao(deps.as_ref(), DaoActors::Govec)?;
     let sub_msg = match govec_msg {
         GovecExecuteMsg::Transfer {
             recipient, amount, ..
         } => SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: govec_addr.to_string(),
+                contract_addr: govec_addr,
                 msg: to_binary(&GovecExecuteMsg::Transfer {
                     recipient,
                     amount,
@@ -248,14 +247,11 @@ pub fn receive_stake_actions(
     sender: String,
     msg: StakeExecuteMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let govec_addr = deps.api.addr_humanize(&GOVEC.load(deps.storage)?)?;
-    let staking_addr: Addr = deps
-        .querier
-        .query_wasm_smart(govec_addr, &GovecQueryMsg::Staking {})?;
+    let staking_addr = get_items_from_dao(deps.as_ref(), DaoActors::Staking)?;
     let sub_msg = match msg {
         StakeExecuteMsg::Unstake { amount, .. } => SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: staking_addr.to_string(),
+                contract_addr: staking_addr,
                 msg: to_binary(&StakeExecuteMsg::Unstake {
                     amount,
                     relayed_from: Some(sender),

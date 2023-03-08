@@ -4,17 +4,15 @@ pub use cw20::{
     AllAccountsResponse, BalanceResponse, Cw20Coin, DownloadLogoResponse, MarketingInfoResponse,
     TokenInfoResponse,
 };
-pub use vectis_wallet::{GovecExecuteMsg as ExecuteMsg, GovecQueryMsg as QueryMsg, UpdateAddrReq};
+pub use vectis_wallet::{GovecExecuteMsg as ExecuteMsg, GovecQueryMsg as QueryMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
     pub initial_balances: Vec<Cw20Coin>,
-    pub staking_addr: Option<String>,
     pub mint_cap: Option<Uint128>,
     pub mint_amount: Uint128,
-    pub factory: Option<String>,
     pub marketing: Option<MarketingInfoResponse>,
 }
 

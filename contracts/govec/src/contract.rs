@@ -14,17 +14,14 @@ use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{
-    TokenInfo, BALANCES, DAO_ADDR, FACTORY, ITEMS, MARKETING_INFO, MINT_AMOUNT, MINT_CAP,
-    STAKING_ADDR, TOKEN_INFO,
-};
+use crate::state::{TokenInfo, BALANCES, MARKETING_INFO, MINT_AMOUNT, MINT_CAP, TOKEN_INFO};
 use cw20_stake::{
     contract::{
         execute_update_marketing, execute_upload_logo, query_download_logo, query_marketing_info,
     },
     ContractError::Cw20Error,
 };
-use vectis_wallet::{MintResponse, UpdateAddrReq};
+use vectis_wallet::{get_items_from_dao, DaoActors, MintResponse, DAO, ITEMS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
@@ -74,19 +71,13 @@ pub fn instantiate(
     }
 
     // store DAO contract addr
-    DAO_ADDR.save(
+    DAO.save(
         deps.storage,
         &deps.api.addr_canonicalize(info.sender.as_str())?,
     )?;
 
     MINT_AMOUNT.save(deps.storage, &msg.mint_amount)?;
 
-    if let Some(addr) = msg.staking_addr {
-        STAKING_ADDR.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
-    }
-    if let Some(addr) = msg.factory {
-        FACTORY.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
-    }
     if let Some(amount) = msg.mint_cap {
         MINT_CAP.save(deps.storage, &amount)?;
     }
@@ -136,9 +127,7 @@ pub fn execute(
             relayed_from,
         } => execute_send(deps, env, info, contract, amount, msg, relayed_from),
         ExecuteMsg::Mint { new_wallet } => execute_mint(deps, env, info, new_wallet),
-        ExecuteMsg::UpdateConfigAddr { new_addr } => {
-            execute_update_config_addr(deps, info, new_addr)
-        }
+        ExecuteMsg::UpdateDaoAddr { new_addr } => execute_update_dao_addr(deps, info, new_addr),
         ExecuteMsg::UpdateMintAmount { new_amount } => {
             execute_update_mint_amount(deps, info, new_amount)
         }
@@ -212,7 +201,7 @@ pub fn execute_transfer_from(
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    let dao = DAO_ADDR.load(deps.storage)?;
+    let dao = DAO.load(deps.storage)?;
     let pre_proposal = ITEMS
         .query(
             &deps.querier,
@@ -305,7 +294,7 @@ pub fn execute_exit(
     // Ensure only have voting power of exactly 1
     let remaining_balance = query_balance(deps.as_ref(), from.to_string())?.balance;
 
-    let dao = deps.api.addr_humanize(&DAO_ADDR.load(deps.storage)?)?;
+    let dao = deps.api.addr_humanize(&DAO.load(deps.storage)?)?;
 
     BALANCES.update(
         deps.storage,
@@ -330,7 +319,7 @@ pub enum Role {
 }
 
 fn ensure_is_minter(deps: Deps, sender: Addr) -> Result<Role, ContractError> {
-    let d = DAO_ADDR.load(deps.storage)?;
+    let d = DAO.load(deps.storage)?;
     let t = ITEMS
         .query(
             &deps.querier,
@@ -341,10 +330,10 @@ fn ensure_is_minter(deps: Deps, sender: Addr) -> Result<Role, ContractError> {
             println!("cannot get query");
             ContractError::NotFound {}
         })?;
-    let f = FACTORY.load(deps.storage)?;
+    let f = get_items_from_dao(deps, DaoActors::Factory)?;
     if sender == t {
         Ok(Role::DaoTunnel)
-    } else if sender == deps.api.addr_humanize(&f)? {
+    } else if sender == deps.api.addr_validate(&f)? {
         Ok(Role::Factory)
     } else if sender == deps.api.addr_humanize(&d)? {
         Ok(Role::Dao)
@@ -487,65 +476,37 @@ pub fn execute_update_mint_cap(
     Ok(res)
 }
 
-pub fn execute_update_config_addr(
+pub fn execute_update_dao_addr(
     deps: DepsMut,
     info: MessageInfo,
-    new_addr: UpdateAddrReq,
+    new_addr: String,
 ) -> Result<Response, ContractError> {
     let dao = ensure_is_dao(deps.as_ref(), &info.sender)?;
-    let res = match new_addr {
-        UpdateAddrReq::Dao(addr) => {
-            let new_dao = deps.api.addr_validate(&addr)?;
-            DAO_ADDR.save(deps.storage, &deps.api.addr_canonicalize(new_dao.as_str())?)?;
-            // transfer all balance from existing DAO to the new DAO
-            let existing_dao_balance = BALANCES.may_load(deps.storage, dao)?;
-            let new_dao_balance = BALANCES.may_load(deps.storage, &new_dao)?;
+    let new_dao = deps.api.addr_validate(&new_addr)?;
+    DAO.save(deps.storage, &deps.api.addr_canonicalize(new_dao.as_str())?)?;
+    // transfer all balance from existing DAO to the new DAO
+    let existing_dao_balance = BALANCES.may_load(deps.storage, dao)?;
+    let new_dao_balance = BALANCES.may_load(deps.storage, &new_dao)?;
 
-            if let Some(amount) = existing_dao_balance {
-                if new_dao_balance.is_some() {
-                    BALANCES.update(
-                        deps.storage,
-                        &new_dao,
-                        |balance: Option<Uint128>| -> StdResult<_> {
-                            Ok(balance.unwrap_or_default().checked_add(amount)?)
-                        },
-                    )?;
-                } else {
-                    BALANCES.save(deps.storage, &new_dao, &amount)?;
-                }
-
-                BALANCES.save(deps.storage, dao, &Uint128::zero())?;
-            };
-
-            Response::new()
-                .add_attribute("action", "update_dao")
-                .add_attribute("new_addr", addr)
-        }
-        UpdateAddrReq::Factory(addr) => {
-            FACTORY.save(
+    if let Some(amount) = existing_dao_balance {
+        if new_dao_balance.is_some() {
+            BALANCES.update(
                 deps.storage,
-                &deps
-                    .api
-                    .addr_canonicalize(deps.api.addr_validate(&addr)?.as_str())?,
+                &new_dao,
+                |balance: Option<Uint128>| -> StdResult<_> {
+                    Ok(balance.unwrap_or_default().checked_add(amount)?)
+                },
             )?;
-            Response::new()
-                .add_attribute("action", "update_factory")
-                .add_attribute("new_addr", addr)
+        } else {
+            BALANCES.save(deps.storage, &new_dao, &amount)?;
         }
-        UpdateAddrReq::Staking(addr) => {
-            STAKING_ADDR.save(
-                deps.storage,
-                &deps
-                    .api
-                    .addr_canonicalize(deps.api.addr_validate(&addr)?.as_str())?,
-            )?;
-            Response::new()
-                .add_attribute("action", "update_staking")
-                .add_attribute("new_addr", addr)
-        }
+
+        BALANCES.save(deps.storage, dao, &Uint128::zero())?;
     };
 
-    Ok(res)
+    Ok(Response::new()
+        .add_attribute("action", "update_dao")
+        .add_attribute("new_addr", new_addr))
 }
 
 pub fn govec_execute_update_marketing(
@@ -575,7 +536,7 @@ pub fn govec_execute_upload_logo(
 }
 
 fn ensure_is_dao_tunnel(deps: Deps, sender: Addr) -> Result<Addr, ContractError> {
-    let dao = DAO_ADDR.load(deps.storage)?;
+    let dao = DAO.load(deps.storage)?;
     let dao_tunnel = ITEMS
         .query(
             &deps.querier,
@@ -590,7 +551,7 @@ fn ensure_is_dao_tunnel(deps: Deps, sender: Addr) -> Result<Addr, ContractError>
 }
 
 fn ensure_is_dao<'a>(deps: Deps, sender: &'a Addr) -> Result<&'a Addr, ContractError> {
-    let dao = DAO_ADDR.load(deps.storage)?;
+    let dao = DAO.load(deps.storage)?;
     if dao != deps.api.addr_canonicalize(sender.as_str())? {
         return Err(ContractError::Unauthorized {});
     }
@@ -600,18 +561,16 @@ fn ensure_is_dao<'a>(deps: Deps, sender: &'a Addr) -> Result<&'a Addr, ContractE
 // transfer is ok if the recipient is a wallet (is in the balances ledger)
 // or, it is staking / pre_preposal contracts
 fn ensure_is_wallet_or_authorised(deps: Deps, contract: &Addr) -> Result<(), ContractError> {
-    let dao = DAO_ADDR.load(deps.storage)?;
+    let dao = DAO.load(deps.storage)?;
     let pre_proposal = ITEMS.query(
         &deps.querier,
         deps.api.addr_humanize(&dao)?,
         "pre-proposal".into(),
     )?;
-    let staking = STAKING_ADDR.may_load(deps.storage)?;
+    let staking = get_items_from_dao(deps, DaoActors::Staking)?;
     let wallet = BALANCES.may_load(deps.storage, contract)?;
-    if let Some(staking_addr) = staking {
-        if contract == &deps.api.addr_humanize(&staking_addr)? {
-            return Ok(());
-        }
+    if contract == &deps.api.addr_validate(&staking)? {
+        return Ok(());
     }
     if wallet.is_some() {
         return Ok(());
@@ -632,10 +591,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::MintAmount {} => to_binary(&query_mint_amount(deps)?),
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Minters {} => to_binary(&query_minter(deps)?),
-        QueryMsg::Staking {} => to_binary(&query_staking(deps)?),
         QueryMsg::Dao {} => to_binary(&query_dao(deps)?),
-        QueryMsg::DaoTunnel {} => to_binary(&query_dao_tunnel(deps)?),
-        QueryMsg::Factory {} => to_binary(&query_factory(deps)?),
         QueryMsg::AllAccounts { start_after, limit } => {
             to_binary(&query_all_accounts(deps, start_after, limit)?)
         }
@@ -678,52 +634,26 @@ pub fn query_mint_amount(deps: Deps) -> StdResult<Uint128> {
 }
 
 pub fn query_minter(deps: Deps) -> StdResult<MintResponse> {
-    let dao = DAO_ADDR.load(deps.storage)?;
+    let dao = DAO.load(deps.storage)?;
+    let dao_tunnel =
+        get_items_from_dao(deps, DaoActors::DaoTunnel).map_err(|_| StdError::NotFound {
+            kind: DaoActors::DaoTunnel.to_string(),
+        })?;
+    let factory = get_items_from_dao(deps, DaoActors::Factory).map_err(|_| StdError::NotFound {
+        kind: DaoActors::Factory.to_string(),
+    })?;
     let mut v = Vec::new();
     v.push(deps.api.addr_humanize(&dao)?.to_string());
+    v.push(dao_tunnel);
+    v.push(factory);
 
-    let d = ITEMS.query(
-        &deps.querier,
-        deps.api.addr_humanize(&dao)?,
-        "dao-tunnel".into(),
-    )?;
-    let f = FACTORY.may_load(deps.storage)?;
     let cap = MINT_CAP.may_load(deps.storage)?;
-    if let Some(daot) = d {
-        v.push(daot);
-    }
-    if let Some(factory) = f {
-        v.push(deps.api.addr_humanize(&factory)?.to_string());
-    }
-
     Ok(MintResponse {
         minters: Some(v),
         cap,
     })
 }
 
-pub fn query_staking(deps: Deps) -> StdResult<Addr> {
-    deps.api.addr_humanize(&STAKING_ADDR.load(deps.storage)?)
-}
-
 pub fn query_dao(deps: Deps) -> StdResult<Addr> {
-    deps.api.addr_humanize(&DAO_ADDR.load(deps.storage)?)
-}
-
-pub fn query_dao_tunnel(deps: Deps) -> StdResult<Addr> {
-    let dao = DAO_ADDR.load(deps.storage)?;
-    let d = ITEMS
-        .query(
-            &deps.querier,
-            deps.api.addr_humanize(&dao)?,
-            "dao-tunnel".into(),
-        )?
-        .ok_or(StdError::NotFound {
-            kind: "DAO tunnel not found".to_string(),
-        })?;
-    deps.api.addr_validate(&d)
-}
-
-pub fn query_factory(deps: Deps) -> StdResult<Addr> {
-    deps.api.addr_humanize(&FACTORY.load(deps.storage)?)
+    deps.api.addr_humanize(&DAO.load(deps.storage)?)
 }

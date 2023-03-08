@@ -41,3 +41,4 @@ cw3 = { workspace = true }
 cw3-fixed-multisig = "0.16"
 cw20-stake = { workspace = true }
 vectis-proxy = { path = "../proxy", features = ["migration", "library"]}
+vectis-wallet = {path = "../../packages/vectis", features = ["test_utils"]}
