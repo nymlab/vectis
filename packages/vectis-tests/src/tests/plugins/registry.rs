@@ -22,7 +22,7 @@ fn no_reviewer_cannot_register_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
-        .register_plugin_mocked(&suite.ds.controller.clone(), &[coin(REGISTRY_FEE, "ucosm")])
+        .register_plugin_mocked(&suite.ds.controller.clone(), &[coin(REGISTRY_FEE, DENOM)])
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -64,7 +64,7 @@ fn no_dao_cannot_update_registry_fee() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
-        .update_registry_fee(&suite.ds.controller.clone(), coin(100_000, "ucosm"))
+        .update_registry_fee(&suite.ds.controller.clone(), coin(100_000, DENOM))
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -90,7 +90,7 @@ fn reviewer_should_be_able_to_register_plugins() {
     suite
         .register_plugin_mocked(
             &suite.ds.plugin_committee.clone(),
-            &coins(REGISTRY_FEE, "ucosm"),
+            &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
 
@@ -117,7 +117,7 @@ fn reviewer_should_be_able_to_unregister_plugins() {
     suite
         .register_plugin_mocked(
             &suite.ds.plugin_committee.clone(),
-            &coins(REGISTRY_FEE, "ucosm"),
+            &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
 
@@ -141,7 +141,7 @@ fn reviewer_should_be_able_to_update_plugins() {
     suite
         .register_plugin_mocked(
             &suite.ds.plugin_committee.clone(),
-            &coins(REGISTRY_FEE, "ucosm"),
+            &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
 
@@ -186,7 +186,7 @@ fn reviewer_should_be_able_to_update_plugins() {
 fn dao_should_be_able_to_update_registry_fee() {
     let mut suite = PluginsSuite::init().unwrap();
 
-    let new_registry_fee = coin(100_000, "ucosm");
+    let new_registry_fee = coin(100_000, DENOM);
 
     suite
         .update_registry_fee(&suite.ds.dao.clone(), new_registry_fee.clone())

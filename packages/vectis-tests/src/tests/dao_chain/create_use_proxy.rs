@@ -12,7 +12,7 @@ use vectis_contract_tests::common::dao_common::*;
 
 #[test]
 fn create_new_proxy() {
-    let init_wallet_fund: Coin = coin(100, "ucosm");
+    let init_wallet_fund: Coin = coin(100, DENOM);
 
     let mut suite = DaoChainSuite::init().unwrap();
 
@@ -152,7 +152,7 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
 #[test]
 fn controller_can_execute_messages() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_wallet_fund: Coin = coin(100, "ucosm");
+    let init_wallet_fund: Coin = coin(100, DENOM);
     let wallet_address = suite
         .create_new_proxy(
             suite.controller.clone(),
@@ -166,7 +166,7 @@ fn controller_can_execute_messages() {
     let controller = w.controller_addr;
 
     // Can execute Bank msgs
-    let send_amount: Coin = coin(10, "ucosm");
+    let send_amount: Coin = coin(10, DENOM);
     let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
         to_address: suite.factory.to_string(),
         amount: vec![send_amount.clone()],
@@ -273,8 +273,8 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 #[test]
 fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_multisig_fund: Coin = coin(200, "ucosm");
-    let init_proxy_fund: Coin = coin(100, "ucosm");
+    let init_multisig_fund: Coin = coin(200, DENOM);
+    let init_proxy_fund: Coin = coin(100, DENOM);
     let init_controller_balance = suite.query_balance(&suite.controller.clone());
 
     let proxy_addr = suite

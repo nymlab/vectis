@@ -9,7 +9,7 @@ use vectis_contract_tests::common::dao_common::*;
 #[test]
 fn relay_proxy_controller_tx_succeeds() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(90, "ucosm");
+    let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
             suite.controller.clone(),
@@ -24,7 +24,7 @@ fn relay_proxy_controller_tx_succeeds() {
         CONTROLLER_PRIV,
         CosmosMsg::Bank(BankMsg::Send {
             to_address: "SomeAddr".to_string(),
-            amount: vec![coin(1, "ucosm")],
+            amount: vec![coin(1, DENOM)],
         }),
         w.nonce,
     );
@@ -51,7 +51,7 @@ fn relay_proxy_controller_tx_succeeds() {
 #[test]
 fn relay_proxy_controller_tx_invalid_msg_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(90, "ucosm");
+    let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
             suite.controller.clone(),
@@ -103,7 +103,7 @@ fn relay_proxy_controller_tx_invalid_msg_fails() {
 #[test]
 fn relay_proxy_controller_tx_invalid_relayer_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(90, "ucosm");
+    let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
             suite.controller.clone(),
@@ -118,7 +118,7 @@ fn relay_proxy_controller_tx_invalid_relayer_fails() {
         CONTROLLER_PRIV,
         CosmosMsg::Bank(BankMsg::Send {
             to_address: "SomeAddr".to_string(),
-            amount: vec![coin(1, "ucosm")],
+            amount: vec![coin(1, DENOM)],
         }),
         w.nonce,
     );
@@ -141,7 +141,7 @@ fn relay_proxy_controller_tx_invalid_relayer_fails() {
 #[test]
 fn relay_proxy_controller_tx_is_not_controller_fails() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(90, "ucosm");
+    let init_proxy_fund: Coin = coin(90, DENOM);
 
     // Creates a wallet held by the DAO
     let wallet_address = suite
@@ -159,7 +159,7 @@ fn relay_proxy_controller_tx_is_not_controller_fails() {
         NON_CONTROLLER_PRIV,
         CosmosMsg::Bank(BankMsg::Send {
             to_address: "SomeAddr".to_string(),
-            amount: vec![coin(1, "ucosm")],
+            amount: vec![coin(1, DENOM)],
         }),
         w.nonce,
     );

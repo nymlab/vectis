@@ -134,6 +134,9 @@ pub use vectis_wallet::{
     WalletFactoryQueryMsg as FactoryQueryMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
 
+/// This is used for staking queries
+/// https://github.com/CosmWasm/cosmwasm/blob/32f308a1a56ae5b8278947891306f7a374c3df94/packages/vm/src/environment.rs#L383
+pub const DENOM: &str = "TOKEN";
 pub const MINT_AMOUNT: u128 = 2u128;
 pub const WALLET_FEE: u128 = 10u128;
 pub const REGISTRY_FEE: u128 = 100u128;

@@ -8,7 +8,7 @@ use vectis_contract_tests::common::dao_common::*;
 #[test]
 fn controller_can_migrate_proxy_with_direct_message() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(90, "ucosm");
+    let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
             suite.controller.clone(),
@@ -53,7 +53,7 @@ fn controller_can_migrate_proxy_with_direct_message() {
     assert_ne!(new_code_id, old_code_id);
 
     // controller can execute message after migration
-    let send_amount: Coin = coin(10, "ucosm");
+    let send_amount: Coin = coin(10, DENOM);
     let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
         to_address: suite.factory.to_string(),
         amount: vec![send_amount.clone()],
