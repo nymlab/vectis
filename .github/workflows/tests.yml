@@ -1,17 +1,16 @@
 name: Test, Lint and Build Checker
 
-on: 
+on:
   push:
-    branches: 
+    branches:
       - main
   pull_request:
 
 jobs:
-
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    env: 
+    env:
       RUSTFLAGS: "-Cinstrument-coverage"
       LLVM_PROFILE_FILE: "vectis-%p-%m.profraw"
     steps:
@@ -30,9 +29,14 @@ jobs:
         run: |
           cargo install grcov
           rustup component add llvm-tools-preview
-      
-      - name: Run contract tests for remote chain
-        run: cargo test
+
+      - name: Run multi contract tests
+        run: cargo test -p vectis-contract-tests
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Run contract unit tests
+        run: cargo test --workspace --exclude vectis-contract-tests
         env:
           RUST_BACKTRACE: 1
 
@@ -41,7 +45,7 @@ jobs:
 
       - name: Upload Coverage
         run: bash <(curl -s https://codecov.io/bash) -f lcov.info
-  
+
   build-check:
     runs-on: ubuntu-latest
     steps:
@@ -55,7 +59,7 @@ jobs:
           toolchain: stable
           target: wasm32-unknown-unknown
           override: true
-    
+
       - name: Compile WASM contract factory dao chain
         run: cargo wasm-factory-dao-chain --locked
         env:
@@ -71,22 +75,22 @@ jobs:
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract govec 
+      - name: Compile WASM contract govec
         run: cargo wasm-govec --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract dao tunnel 
+      - name: Compile WASM contract dao tunnel
         run: cargo wasm-dao-tunnel --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract remote tunnel 
+      - name: Compile WASM contract remote tunnel
         run: cargo wasm-remote-tunnel --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract remote factory 
+      - name: Compile WASM contract remote factory
         run: cargo wasm-remote-factory --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"

@@ -21,7 +21,7 @@ use cw20_stake::{
     },
     ContractError::Cw20Error,
 };
-use vectis_wallet::{get_items_from_dao, DaoActors, MintResponse, DAO, ITEMS};
+use vectis_wallet::{get_items_from_dao, DaoActors, MintResponse, DAO};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:govec";
@@ -201,14 +201,7 @@ pub fn execute_transfer_from(
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    let dao = DAO.load(deps.storage)?;
-    let pre_proposal = ITEMS
-        .query(
-            &deps.querier,
-            deps.api.addr_humanize(&dao)?,
-            "pre-proposal".into(),
-        )?
-        .ok_or(ContractError::NotFound {})?;
+    let pre_proposal = get_items_from_dao(deps.as_ref(), DaoActors::PreProposalModule)?;
     if info.sender != pre_proposal {
         return Err(ContractError::Unauthorized {});
     }
@@ -320,16 +313,7 @@ pub enum Role {
 
 fn ensure_is_minter(deps: Deps, sender: Addr) -> Result<Role, ContractError> {
     let d = DAO.load(deps.storage)?;
-    let t = ITEMS
-        .query(
-            &deps.querier,
-            deps.api.addr_humanize(&d)?,
-            "dao-tunnel".into(),
-        )?
-        .ok_or_else(|| {
-            println!("cannot get query");
-            ContractError::NotFound {}
-        })?;
+    let t = get_items_from_dao(deps, DaoActors::DaoTunnel)?;
     let f = get_items_from_dao(deps, DaoActors::Factory)?;
     if sender == t {
         Ok(Role::DaoTunnel)
@@ -536,14 +520,7 @@ pub fn govec_execute_upload_logo(
 }
 
 fn ensure_is_dao_tunnel(deps: Deps, sender: Addr) -> Result<Addr, ContractError> {
-    let dao = DAO.load(deps.storage)?;
-    let dao_tunnel = ITEMS
-        .query(
-            &deps.querier,
-            deps.api.addr_humanize(&dao)?,
-            "dao-tunnel".into(),
-        )?
-        .ok_or(ContractError::NotFound {})?;
+    let dao_tunnel = get_items_from_dao(deps, DaoActors::DaoTunnel)?;
     if dao_tunnel != sender {
         return Err(ContractError::Unauthorized {});
     }
@@ -561,24 +538,16 @@ fn ensure_is_dao<'a>(deps: Deps, sender: &'a Addr) -> Result<&'a Addr, ContractE
 // transfer is ok if the recipient is a wallet (is in the balances ledger)
 // or, it is staking / pre_preposal contracts
 fn ensure_is_wallet_or_authorised(deps: Deps, contract: &Addr) -> Result<(), ContractError> {
-    let dao = DAO.load(deps.storage)?;
-    let pre_proposal = ITEMS.query(
-        &deps.querier,
-        deps.api.addr_humanize(&dao)?,
-        "pre-proposal".into(),
-    )?;
+    let pre_proposal = get_items_from_dao(deps, DaoActors::PreProposalModule)?;
     let staking = get_items_from_dao(deps, DaoActors::Staking)?;
     let wallet = BALANCES.may_load(deps.storage, contract)?;
-    if contract == &deps.api.addr_validate(&staking)? {
+    if contract == &deps.api.addr_validate(&staking)?
+        || contract == &deps.api.addr_validate(&pre_proposal)?
+    {
         return Ok(());
     }
     if wallet.is_some() {
         return Ok(());
-    }
-    if let Some(prep) = pre_proposal {
-        if *contract == prep {
-            return Ok(());
-        }
     }
     Err(ContractError::Unauthorized {})
 }
@@ -642,10 +611,12 @@ pub fn query_minter(deps: Deps) -> StdResult<MintResponse> {
     let factory = get_items_from_dao(deps, DaoActors::Factory).map_err(|_| StdError::NotFound {
         kind: DaoActors::Factory.to_string(),
     })?;
-    let mut v = Vec::new();
-    v.push(deps.api.addr_humanize(&dao)?.to_string());
-    v.push(dao_tunnel);
-    v.push(factory);
+
+    let v = vec![
+        deps.api.addr_humanize(&dao)?.to_string(),
+        dao_tunnel,
+        factory,
+    ];
 
     let cap = MINT_CAP.may_load(deps.storage)?;
     Ok(MintResponse {

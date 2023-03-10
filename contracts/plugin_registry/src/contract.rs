@@ -122,7 +122,7 @@ impl PluginRegistry<'_> {
         self.install_fee.save(deps.storage, &install_fee)?;
         DAO.save(
             deps.storage,
-            &deps.api.addr_canonicalize(&info.sender.as_str())?,
+            &deps.api.addr_canonicalize(info.sender.as_str())?,
         )?;
         Ok(Response::default())
     }
@@ -130,7 +130,7 @@ impl PluginRegistry<'_> {
     fn ensure_is_reviewer(&self, deps: Deps, sender: &str) -> Result<(), ContractError> {
         let reviewer = get_items_from_dao(deps, DaoActors::PluginCommitte)?;
         if reviewer != sender {
-            return Err(ContractError::Unauthorized);
+            Err(ContractError::Unauthorized)
         } else {
             Ok(())
         }
@@ -140,7 +140,7 @@ impl PluginRegistry<'_> {
     /// and return the remaining funds sent to this contract - presumably for the plugin
     fn sub_required_fee<'a>(
         &'a self,
-        provided: &'a mut Vec<Coin>,
+        provided: &'a mut [Coin],
         required: &Coin,
     ) -> Result<(), ContractError> {
         let fund = provided

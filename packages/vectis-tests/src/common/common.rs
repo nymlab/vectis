@@ -126,10 +126,10 @@ pub use vectis_proxy::contract::{
 };
 
 pub use vectis_wallet::{
-    pub_key_to_address, CodeIdType, CreateWalletMsg, GovecExecuteMsg, GovecQueryMsg, Guardians,
-    GuardiansUpdateMsg, GuardiansUpdateRequest, MultiSig, PluginListResponse, PluginParams,
-    ProposalExecuteMsg, ProxyExecuteMsg, ProxyQueryMsg, RelayTransaction, StakeExecuteMsg,
-    ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
+    pub_key_to_address, CodeIdType, CreateWalletMsg, DaoActors, GovecExecuteMsg, GovecQueryMsg,
+    Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest, MultiSig, PluginListResponse,
+    PluginParams, ProposalExecuteMsg, ProxyExecuteMsg, ProxyQueryMsg, RelayTransaction,
+    StakeExecuteMsg, ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
     WalletFactoryExecuteMsg as FactoryExecuteMsg, WalletFactoryInstantiateMsg as InstantiateMsg,
     WalletFactoryQueryMsg as FactoryQueryMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
 };
@@ -137,6 +137,7 @@ pub use vectis_wallet::{
 pub const MINT_AMOUNT: u128 = 2u128;
 pub const WALLET_FEE: u128 = 10u128;
 pub const REGISTRY_FEE: u128 = 100u128;
+pub const INSTALL_FEE: u128 = 50u128;
 pub const CLAIM_FEE: u128 = 10u128;
 pub const MINTER_CAP: u128 = 10000;
 pub const CONTROLLER_PRIV: &[u8; 32] = &[

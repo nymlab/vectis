@@ -12,11 +12,10 @@ pub use cosmwasm_std::{
 
 pub use dao_voting::voting::Vote;
 pub use vectis_wallet::{
-    ChainConfig, DaoActors, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, IbcTransferChannels,
-    PacketMsg, PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, Receiver,
-    RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
-    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, DAO, IBC_APP_ORDER, IBC_APP_VERSION,
-    PACKET_LIFETIME,
+    DaoActors, DaoTunnelPacketMsg, GovecExecuteMsg, IbcError, IbcTransferChannels, PacketMsg,
+    PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, Receiver, RemoteTunnelPacketMsg, StdAck,
+    VectisDaoActionIds, WalletFactoryInstantiateMsg as FactoryInstantiateMsg, DAO, IBC_APP_ORDER,
+    IBC_APP_VERSION, PACKET_LIFETIME,
 };
 
 pub use crate::contract::{execute, instantiate, query_controllers, query_dao, reply};
@@ -39,7 +38,6 @@ pub const SRC_PORT_ID_CONNECT: &str = "their_port";
 pub const DAO_ADDR: &str = "dao_addr";
 pub const JOB_ID: u64 = 8721;
 pub const WALLET_ADDR: &str = "proxy_wallet_addr";
-pub const FACTORY_ADDR: &str = "factory_addr";
 pub const DENOM: &str = "denom";
 
 pub fn do_instantiate() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
@@ -242,10 +240,10 @@ fn only_admin_can_update_ibc_transfer_modules() {
     assert_eq!(res.endpoints, vec![(conn, chan)]);
 }
 
-fn default_update_chain_config_msg() -> DaoTunnelPacketMsg {
-    DaoTunnelPacketMsg::UpdateChainConfig {
-        new_remote_factory: Some(FACTORY_ADDR.to_string()),
-        new_denom: DENOM.to_string(),
+fn default_set_item_msg() -> DaoTunnelPacketMsg {
+    DaoTunnelPacketMsg::SetItem {
+        key: "new_key".to_string(),
+        value: Some("new_value".to_string()),
     }
 }
 
@@ -255,7 +253,7 @@ fn only_admin_can_send_actions_to_remote_tunnel_channel() {
     let env = mock_env();
     let invalid_sender = "RANDOM_ADDR";
     let valid_sender = DAO_ADDR;
-    let chain_update_msg = default_update_chain_config_msg();
+    let chain_update_msg = default_set_item_msg();
 
     // Not DAO cannot send this
     let err = execute(

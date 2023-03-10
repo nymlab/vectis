@@ -36,7 +36,7 @@ serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 sha2 = "0.9"
 secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}
 derivative = "2"
-vectis-wallet = { path = "../../packages/vectis" }
+vectis-wallet = { path = "../../packages/vectis", features = [] }
 
 # daodao contracts
 dao-core = { workspace = true }

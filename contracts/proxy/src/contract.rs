@@ -303,7 +303,7 @@ pub fn execute_relay(
     // Get controller addr from it's pubkey
     let addr = pub_key_to_address(
         &deps.as_ref(),
-        &ADDR_PREFIX.query(&deps.querier, Addr::unchecked(&factory))?,
+        &ADDR_PREFIX.query(&deps.querier, Addr::unchecked(factory))?,
         &transaction.controller_pubkey.0,
     )?;
 
@@ -679,6 +679,8 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
         relayers,
         is_frozen: FROZEN.load(deps.storage)?,
         multisig_address,
+        // TODO
+        multisig_threshold: None,
         label: LABEL.load(deps.storage)?,
     })
 }

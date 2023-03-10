@@ -1,14 +1,13 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
-use vectis_wallet::{ChainConfig, DaoConfig};
+use vectis_wallet::DaoConfig;
 
 pub use vectis_wallet::{IbcTransferChannels, Receiver, RemoteTunnelExecuteMsg as ExecuteMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub dao_config: DaoConfig,
-    pub chain_config: ChainConfig,
     pub init_ibc_transfer_mod: Option<IbcTransferChannels>,
+    pub init_items: Option<Vec<(String, String)>>,
 }
 
 #[cw_serde]
@@ -16,8 +15,8 @@ pub struct InstantiateMsg {
 pub enum QueryMsg {
     #[returns(DaoConfig)]
     DaoConfig {},
-    #[returns(ChainConfigResponse)]
-    ChainConfig {},
+    #[returns(String)]
+    Item { key: String },
     #[returns(IbcTransferChannels)]
     IbcTransferChannels {
         start_after: Option<String>,
@@ -25,10 +24,4 @@ pub enum QueryMsg {
     },
     #[returns(u64)]
     NextJobId {},
-}
-
-#[cw_serde]
-pub struct ChainConfigResponse {
-    pub remote_factory: Option<Addr>,
-    pub denom: String,
 }

@@ -365,8 +365,8 @@ fn dao_can_update_dao_addr_and_transfer_balance() {
     suite
         .govec_execute(
             suite.deployer.clone(),
-            GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Dao(new_dao.clone()),
+            GovecExecuteMsg::UpdateDaoAddr {
+                new_addr: new_dao.clone(),
             },
         )
         .unwrap_err();
@@ -375,8 +375,8 @@ fn dao_can_update_dao_addr_and_transfer_balance() {
     suite
         .govec_execute(
             suite.dao.clone(),
-            GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Dao(new_dao.clone()),
+            GovecExecuteMsg::UpdateDaoAddr {
+                new_addr: new_dao.clone(),
             },
         )
         .unwrap();

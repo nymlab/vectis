@@ -1,4 +1,4 @@
-use vectis_wallet::{ChainConfig, DaoConfig};
+use vectis_wallet::DaoConfig;
 
 use crate::common::common::*;
 
@@ -79,11 +79,8 @@ impl RemoteChainSuite {
                         connection_id: "dao-connection-id".to_string(),
                         dao_tunnel_channel: Some("dao-tunnel-channel".to_string()),
                     },
-                    chain_config: ChainConfig {
-                        remote_factory: None,
-                        denom: "uremote".to_string(),
-                    },
                     init_ibc_transfer_mod: None,
+                    init_items: Some(vec![(DaoActors::Factory.to_string(), factory.to_string())]),
                 },
                 &[],
                 "remote-tunnel",            // label: human readible name for contract

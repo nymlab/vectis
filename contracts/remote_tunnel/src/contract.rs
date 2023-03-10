@@ -1,21 +1,19 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Coin, Deps, DepsMut, Env, Event, IbcMsg, MessageInfo, QueryResponse, Reply,
-    Response, StdResult, Uint128,
+    to_binary, Deps, DepsMut, Env, Event, IbcMsg, MessageInfo, QueryResponse, Reply, Response,
+    StdResult,
 };
 use cw_storage_plus::Bound;
 
-use cw_utils::parse_reply_instantiate_data;
+use cw_utils::{one_coin, parse_reply_instantiate_data};
 use vectis_wallet::{
-    DaoConfig, PacketMsg, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds, DEFAULT_LIMIT,
-    MAX_LIMIT, PACKET_LIFETIME,
+    get_items_from_dao, DaoActors, DaoConfig, PacketMsg, RemoteTunnelPacketMsg, StdAck,
+    VectisDaoActionIds, DEFAULT_LIMIT, ITEMS, MAX_LIMIT, PACKET_LIFETIME,
 };
 
-use crate::msg::{
-    ChainConfigResponse, ExecuteMsg, IbcTransferChannels, InstantiateMsg, QueryMsg, Receiver,
-};
-use crate::state::{CHAIN_CONFIG, DAO_CONFIG, IBC_TRANSFER_MODULES, JOB_ID};
+use crate::msg::{ExecuteMsg, IbcTransferChannels, InstantiateMsg, QueryMsg, Receiver};
+use crate::state::{DAO_CONFIG, IBC_TRANSFER_MODULES, JOB_ID};
 use crate::{ContractError, DISPATCH_CALLBACK_ID, FACTORY_CALLBACK_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -26,11 +24,16 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     DAO_CONFIG.save(deps.storage, &msg.dao_config)?;
-    CHAIN_CONFIG.save(deps.storage, &msg.chain_config)?;
     if let Some(init_ibc_transfer_mods) = msg.init_ibc_transfer_mod {
         for module in init_ibc_transfer_mods.endpoints {
             // Ignore the unestablished channel_id
             IBC_TRANSFER_MODULES.save(deps.storage, module.0, &module.1)?;
+        }
+    }
+
+    if let Some(items) = msg.init_items {
+        for item in items {
+            ITEMS.save(deps.storage, item.0, &item.1)?;
         }
     }
 
@@ -56,12 +59,8 @@ pub fn execute_mint_govec(
     info: MessageInfo,
     wallet_addr: String,
 ) -> Result<Response, ContractError> {
-    let factory_addr = CHAIN_CONFIG
-        .load(deps.storage)?
-        .remote_factory
-        .ok_or(ContractError::FactoryNotAvailable)?;
-
-    if deps.api.addr_humanize(&factory_addr)? != info.sender {
+    let factory_addr = get_items_from_dao(deps.as_ref(), DaoActors::Factory)?;
+    if factory_addr != info.sender {
         return Err(ContractError::Unauthorized);
     }
 
@@ -139,38 +138,24 @@ pub fn execute_ibc_transfer(
     if info.funds.is_empty() {
         return Err(ContractError::EmptyFund);
     }
-    let denom = CHAIN_CONFIG.load(deps.storage)?.denom;
-    let amount = info.funds.iter().fold(Uint128::zero(), |acc, c| {
-        if c.denom == denom {
-            acc + c.amount
-        } else {
-            acc
-        }
-    });
-    if amount.is_zero() {
-        return Err(ContractError::EmptyFund);
-    };
-
     let channel_id = IBC_TRANSFER_MODULES
         .load(deps.storage, rcv.connection_id.clone())
         .map_err(|_| ContractError::ChannelNotFound(rcv.connection_id))?;
+    let coin = one_coin(&info)?;
+
+    let event = Event::new("vectis.ibc-transfer.v1.MsgIbcTransfer")
+        .add_attribute("channel_id", &channel_id)
+        .add_attribute("to", &rcv.addr)
+        .add_attribute("amount", &coin.amount.to_string())
+        .add_attribute("denom", &coin.denom);
 
     // only one type of coin supported in IBC transfer
     let msg = IbcMsg::Transfer {
-        channel_id: channel_id.clone(),
-        to_address: rcv.addr.clone(),
-        amount: Coin {
-            denom: denom.clone(),
-            amount,
-        },
+        channel_id,
+        to_address: rcv.addr,
+        amount: coin,
         timeout: env.block.time.plus_seconds(PACKET_LIFETIME).into(),
     };
-
-    let event = Event::new("vectis.ibc-transfer.v1.MsgIbcTransfer")
-        .add_attribute("channel_id", channel_id)
-        .add_attribute("to", rcv.addr)
-        .add_attribute("amount", amount.to_string())
-        .add_attribute("denom", denom);
 
     Ok(Response::new().add_message(msg).add_event(event))
 }
@@ -179,7 +164,7 @@ pub fn execute_ibc_transfer(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
     match msg {
         QueryMsg::DaoConfig {} => to_binary(&query_dao_config(deps)?),
-        QueryMsg::ChainConfig {} => to_binary(&query_chain_config(deps)?),
+        QueryMsg::Item { key } => to_binary(&query_item(deps, key)?),
         QueryMsg::IbcTransferChannels { start_after, limit } => {
             to_binary(&query_channels(deps, start_after, limit)?)
         }
@@ -191,18 +176,12 @@ pub fn query_dao_config(deps: Deps) -> StdResult<DaoConfig> {
     DAO_CONFIG.load(deps.storage)
 }
 
-pub fn query_chain_config(deps: Deps) -> StdResult<ChainConfigResponse> {
-    let config = CHAIN_CONFIG.load(deps.storage)?;
-    Ok(ChainConfigResponse {
-        denom: config.denom,
-        remote_factory: config
-            .remote_factory
-            .and_then(|addr| deps.api.addr_humanize(&addr).ok()),
-    })
-}
-
 pub fn query_job_id(deps: Deps) -> StdResult<u64> {
     Ok(JOB_ID.load(deps.storage).unwrap_or(0))
+}
+
+pub fn query_item(deps: Deps, key: String) -> StdResult<String> {
+    ITEMS.load(deps.storage, key)
 }
 
 pub fn query_channels(
@@ -239,11 +218,8 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
 pub fn reply_inst_callback(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
     match parse_reply_instantiate_data(reply) {
         Ok(reply) => {
-            let addr = deps.api.addr_canonicalize(&reply.contract_address)?;
-            CHAIN_CONFIG.update(deps.storage, |mut c| -> StdResult<_> {
-                c.remote_factory = Some(addr);
-                Ok(c)
-            })?;
+            let addr = reply.contract_address;
+            ITEMS.save(deps.storage, DaoActors::Factory.to_string(), &addr)?;
             Ok(Response::new().set_data(StdAck::success(
                 VectisDaoActionIds::FactoryInstantiated as u64,
             )))
