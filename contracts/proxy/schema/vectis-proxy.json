@@ -22,7 +22,7 @@
         "$ref": "#/definitions/CreateWalletMsg"
       },
       "multisig_code_id": {
-        "description": "Fixed Multisig Code Id for guardians",
+        "description": "multisig_code_id, use if CrateWalletMsg uses MS guardians",
         "type": "integer",
         "format": "uint64",
         "minimum": 0.0
@@ -338,17 +338,12 @@
           "instantiate_plugin": {
             "type": "object",
             "required": [
-              "code_id",
               "instantiate_msg",
               "label",
-              "plugin_params"
+              "plugin_params",
+              "src"
             ],
             "properties": {
-              "code_id": {
-                "type": "integer",
-                "format": "uint64",
-                "minimum": 0.0
-              },
               "instantiate_msg": {
                 "$ref": "#/definitions/Binary"
               },
@@ -357,6 +352,9 @@
               },
               "plugin_params": {
                 "$ref": "#/definitions/PluginParams"
+              },
+              "src": {
+                "$ref": "#/definitions/PluginSource"
               }
             },
             "additionalProperties": false
@@ -742,7 +740,7 @@
         "additionalProperties": false
       },
       "GuardiansUpdateMsg": {
-        "description": "If the `Guardians.guardian_multisig` is given, we will instantiate a new multisig contract. This contract can be an instance of 3 code ids. - 1: exisiting stored `MULTISIG_CODE_ID` if `new_multisig_code_id == None` - 2: the `new_multisig_code_id` if given - 3: if 1 nor 2 are available, the supported multisig from the FACTORY will be used.",
+        "description": "If the `Guardians.guardian_multisig` is given, we will instantiate a new multisig contract. This contract can be an instance of 2 code ids. - 1: the `new_multisig_code_id` if given, OR - 2: the supported multisig from the facotry will be used.",
         "type": "object",
         "required": [
           "guardians"
@@ -948,6 +946,39 @@
           }
         },
         "additionalProperties": false
+      },
+      "PluginSource": {
+        "description": "The source of the plugin code.",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "vectis_registry"
+            ],
+            "properties": {
+              "vectis_registry": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "code_id"
+            ],
+            "properties": {
+              "code_id": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
       },
       "RelayTransaction": {
         "type": "object",
@@ -1551,11 +1582,10 @@
       "required": [
         "code_id",
         "controller_addr",
-        "factory",
+        "dao",
         "guardians",
         "is_frozen",
         "label",
-        "multisig_code_id",
         "nonce",
         "relayers",
         "version"
@@ -1569,7 +1599,7 @@
         "controller_addr": {
           "$ref": "#/definitions/Addr"
         },
-        "factory": {
+        "dao": {
           "$ref": "#/definitions/Addr"
         },
         "guardians": {
@@ -1594,8 +1624,11 @@
             }
           ]
         },
-        "multisig_code_id": {
-          "type": "integer",
+        "multisig_threshold": {
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint64",
           "minimum": 0.0
         },
