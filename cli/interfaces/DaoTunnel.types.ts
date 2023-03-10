@@ -6,7 +6,6 @@
 
 export interface InstantiateMsg {
     denom: string;
-    govec_minter: string;
     init_ibc_transfer_mods?: IbcTransferChannels | null;
     init_remote_tunnels?: RemoteTunnels | null;
 }
@@ -35,11 +34,6 @@ export type ExecuteMsg =
           };
       }
     | {
-          update_govec_addr: {
-              new_addr: string;
-          };
-      }
-    | {
           update_ibc_transfer_reciever_channel: {
               channel_id?: string | null;
               connection_id: string;
@@ -64,9 +58,9 @@ export type DaoTunnelPacketMsg =
           };
       }
     | {
-          update_chain_config: {
-              new_denom: string;
-              new_remote_factory?: string | null;
+          set_item: {
+              key: string;
+              value?: string | null;
           };
       }
     | {
@@ -283,9 +277,6 @@ export type QueryMsg =
               limit?: number | null;
               start_after?: [string, string] | null;
           };
-      }
-    | {
-          govec: {};
       }
     | {
           dao: {};

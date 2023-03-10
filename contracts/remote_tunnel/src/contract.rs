@@ -146,7 +146,7 @@ pub fn execute_ibc_transfer(
     let event = Event::new("vectis.ibc-transfer.v1.MsgIbcTransfer")
         .add_attribute("channel_id", &channel_id)
         .add_attribute("to", &rcv.addr)
-        .add_attribute("amount", &coin.amount.to_string())
+        .add_attribute("amount", coin.amount.to_string())
         .add_attribute("denom", &coin.denom);
 
     // only one type of coin supported in IBC transfer

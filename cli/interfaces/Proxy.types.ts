@@ -74,10 +74,10 @@ export type ExecuteMsg =
       }
     | {
           instantiate_plugin: {
-              code_id: number;
               instantiate_msg: Binary;
               label: string;
               plugin_params: PluginParams;
+              src: PluginSource;
           };
       }
     | {
@@ -246,6 +246,13 @@ export type GovMsg = {
 };
 export type VoteOption = "yes" | "no" | "abstain" | "no_with_veto";
 export type Addr = string;
+export type PluginSource =
+    | {
+          vectis_registry: number;
+      }
+    | {
+          code_id: number;
+      };
 export interface Empty {
     [k: string]: unknown;
 }
@@ -312,12 +319,12 @@ export interface GuardiansUpdateRequest {
 export interface WalletInfo {
     code_id: number;
     controller_addr: Addr;
-    factory: Addr;
+    dao: Addr;
     guardians: Addr[];
     is_frozen: boolean;
     label: string;
     multisig_address?: Addr | null;
-    multisig_code_id: number;
+    multisig_threshold?: number | null;
     nonce: number;
     relayers: Addr[];
     version: ContractVersion;

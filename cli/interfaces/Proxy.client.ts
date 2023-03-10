@@ -26,6 +26,7 @@ import {
     GovMsg,
     VoteOption,
     Addr,
+    PluginSource,
     Empty,
     IbcTimeout,
     IbcTimeoutBlock,
@@ -164,15 +165,15 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
     ) => Promise<ExecuteResult>;
     instantiatePlugin: (
         {
-            codeId,
             instantiateMsg,
             label,
             pluginParams,
+            src,
         }: {
-            codeId: number;
             instantiateMsg: Binary;
             label: string;
             pluginParams: PluginParams;
+            src: PluginSource;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -420,15 +421,15 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
     };
     instantiatePlugin = async (
         {
-            codeId,
             instantiateMsg,
             label,
             pluginParams,
+            src,
         }: {
-            codeId: number;
             instantiateMsg: Binary;
             label: string;
             pluginParams: PluginParams;
+            src: PluginSource;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -439,10 +440,10 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
             this.contractAddress,
             {
                 instantiate_plugin: {
-                    code_id: codeId,
                     instantiate_msg: instantiateMsg,
                     label,
                     plugin_params: pluginParams,
+                    src,
                 },
             },
             fee,
