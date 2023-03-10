@@ -1,11 +1,11 @@
 use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
-use cosmwasm_std::{coins, Addr, BankMsg, BlockInfo, CosmosMsg, DepsMut, StdError, Timestamp};
+use cosmwasm_std::{coins, Addr, Api, BankMsg, BlockInfo, CosmosMsg, DepsMut, StdError, Timestamp};
 use cw2::ContractVersion;
 
 use crate::contract::{execute, instantiate, query_guardian_update_request, query_info};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::PENDING_GUARDIAN_ROTATION;
+use crate::state::{PENDING_GUARDIAN_ROTATION, PLUGINS};
 
 use vectis_wallet::{
     CreateWalletMsg, Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest, WalletInfo,
@@ -610,4 +610,42 @@ fn rotate_controller_key_same_address_fails() {
 
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(err, ContractError::AddressesAreEqual {});
+}
+
+#[test]
+fn only_plugins_can_call_plugin_exec() {
+    let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    do_instantiate(deps.as_mut());
+
+    let plugin = deps.api.addr_canonicalize("plugin").unwrap();
+    PLUGINS.save(deps.as_mut().storage, &plugin, &()).unwrap();
+
+    let info = mock_info("plugin", &[]);
+    let env = mock_env();
+
+    let msg = ExecuteMsg::PluginExecute {
+        msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+            to_address: "addr".to_string(),
+            amount: coins(1, "token"),
+        })],
+    };
+
+    execute(deps.as_mut(), env, info, msg).unwrap();
+
+    // Not plugin is Unauthorized
+    let info = mock_info("not_plugin", &[]);
+    let env = mock_env();
+
+    let msg = ExecuteMsg::PluginExecute {
+        msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+            to_address: "addr".to_string(),
+            amount: coins(1, "token"),
+        })],
+    };
+
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    match err {
+        ContractError::Std(_) => (),
+        _ => panic!(),
+    }
 }
