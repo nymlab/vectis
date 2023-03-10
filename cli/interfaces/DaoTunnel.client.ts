@@ -38,7 +38,6 @@ import {
 export interface DaoTunnelReadOnlyInterface {
     contractAddress: string;
     controllers: ({ limit, startAfter }: { limit?: number; startAfter?: string[][] }) => Promise<RemoteTunnels>;
-    govec: () => Promise<NullableAddr>;
     dao: () => Promise<NullableAddr>;
     ibcTransferChannels: ({
         limit,
@@ -56,7 +55,6 @@ export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.controllers = this.controllers.bind(this);
-        this.govec = this.govec.bind(this);
         this.dao = this.dao.bind(this);
         this.ibcTransferChannels = this.ibcTransferChannels.bind(this);
     }
@@ -73,11 +71,6 @@ export class DaoTunnelQueryClient implements DaoTunnelReadOnlyInterface {
                 limit,
                 start_after: startAfter,
             },
-        });
-    };
-    govec = async (): Promise<NullableAddr> => {
-        return this.client.queryContractSmart(this.contractAddress, {
-            govec: {},
         });
     };
     dao = async (): Promise<NullableAddr> => {
@@ -137,16 +130,6 @@ export interface DaoTunnelInterface extends DaoTunnelReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
-    updateGovecAddr: (
-        {
-            newAddr,
-        }: {
-            newAddr: string;
-        },
-        fee?: number | StdFee | "auto",
-        memo?: string,
-        funds?: Coin[]
-    ) => Promise<ExecuteResult>;
     updateIbcTransferRecieverChannel: (
         {
             channelId,
@@ -197,7 +180,6 @@ export class DaoTunnelClient extends DaoTunnelQueryClient implements DaoTunnelIn
         this.addApprovedController = this.addApprovedController.bind(this);
         this.removeApprovedController = this.removeApprovedController.bind(this);
         this.updateDaoAddr = this.updateDaoAddr.bind(this);
-        this.updateGovecAddr = this.updateGovecAddr.bind(this);
         this.updateIbcTransferRecieverChannel = this.updateIbcTransferRecieverChannel.bind(this);
         this.ibcTransfer = this.ibcTransfer.bind(this);
         this.dispatchActionOnRemoteTunnel = this.dispatchActionOnRemoteTunnel.bind(this);
@@ -270,29 +252,6 @@ export class DaoTunnelClient extends DaoTunnelQueryClient implements DaoTunnelIn
             this.contractAddress,
             {
                 update_dao_addr: {
-                    new_addr: newAddr,
-                },
-            },
-            fee,
-            memo,
-            funds
-        );
-    };
-    updateGovecAddr = async (
-        {
-            newAddr,
-        }: {
-            newAddr: string;
-        },
-        fee: number | StdFee | "auto" = "auto",
-        memo?: string,
-        funds?: Coin[]
-    ): Promise<ExecuteResult> => {
-        return await this.client.execute(
-            this.sender,
-            this.contractAddress,
-            {
-                update_govec_addr: {
                     new_addr: newAddr,
                 },
             },

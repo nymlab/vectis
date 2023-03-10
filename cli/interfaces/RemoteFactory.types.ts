@@ -43,11 +43,6 @@ export type ExecuteMsg =
           };
       }
     | {
-          update_govec_addr: {
-              addr: string;
-          };
-      }
-    | {
           update_dao: {
               addr: string;
           };
@@ -135,9 +130,6 @@ export type QueryMsg =
       }
     | {
           fees: {};
-      }
-    | {
-          govec_addr: {};
       }
     | {
           dao_addr: {};

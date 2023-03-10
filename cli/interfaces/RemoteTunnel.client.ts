@@ -7,17 +7,14 @@
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
 import {
-    CanonicalAddr,
-    Binary,
     InstantiateMsg,
-    ChainConfig,
     DaoConfig,
     IbcTransferChannels,
     ExecuteMsg,
     RemoteTunnelPacketMsg,
     GovecExecuteMsg,
     Uint128,
-    UpdateAddrReq,
+    Binary,
     Logo,
     EmbeddedLogo,
     Cw20StakeExecuteMsg,
@@ -58,13 +55,12 @@ import {
     ModuleInstantiateInfo,
     Receiver,
     QueryMsg,
-    Addr,
-    ChainConfigResponse,
+    String,
 } from "./RemoteTunnel.types";
 export interface RemoteTunnelReadOnlyInterface {
     contractAddress: string;
     daoConfig: () => Promise<DaoConfig>;
-    chainConfig: () => Promise<ChainConfigResponse>;
+    item: ({ key }: { key: string }) => Promise<String>;
     ibcTransferChannels: ({
         limit,
         startAfter,
@@ -82,7 +78,7 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.daoConfig = this.daoConfig.bind(this);
-        this.chainConfig = this.chainConfig.bind(this);
+        this.item = this.item.bind(this);
         this.ibcTransferChannels = this.ibcTransferChannels.bind(this);
         this.nextJobId = this.nextJobId.bind(this);
     }
@@ -92,9 +88,11 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
             dao_config: {},
         });
     };
-    chainConfig = async (): Promise<ChainConfigResponse> => {
+    item = async ({ key }: { key: string }): Promise<String> => {
         return this.client.queryContractSmart(this.contractAddress, {
-            chain_config: {},
+            item: {
+                key,
+            },
         });
     };
     ibcTransferChannels = async ({

@@ -15,7 +15,6 @@ import {
     MarketingInfoResponse,
     ExecuteMsg,
     Binary,
-    UpdateAddrReq,
     Logo,
     EmbeddedLogo,
     QueryMsg,
@@ -34,10 +33,7 @@ export interface GovecReadOnlyInterface {
     tokenInfo: () => Promise<TokenInfoResponse>;
     mintAmount: () => Promise<Uint128>;
     minters: () => Promise<MintResponse>;
-    staking: () => Promise<Addr>;
     dao: () => Promise<Addr>;
-    daoTunnel: () => Promise<Addr>;
-    factory: () => Promise<Addr>;
     allAccounts: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<AllAccountsResponse>;
     marketingInfo: () => Promise<MarketingInfoResponse>;
     downloadLogo: () => Promise<DownloadLogoResponse>;
@@ -55,10 +51,7 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
         this.tokenInfo = this.tokenInfo.bind(this);
         this.mintAmount = this.mintAmount.bind(this);
         this.minters = this.minters.bind(this);
-        this.staking = this.staking.bind(this);
         this.dao = this.dao.bind(this);
-        this.daoTunnel = this.daoTunnel.bind(this);
-        this.factory = this.factory.bind(this);
         this.allAccounts = this.allAccounts.bind(this);
         this.marketingInfo = this.marketingInfo.bind(this);
         this.downloadLogo = this.downloadLogo.bind(this);
@@ -94,24 +87,9 @@ export class GovecQueryClient implements GovecReadOnlyInterface {
             minters: {},
         });
     };
-    staking = async (): Promise<Addr> => {
-        return this.client.queryContractSmart(this.contractAddress, {
-            staking: {},
-        });
-    };
     dao = async (): Promise<Addr> => {
         return this.client.queryContractSmart(this.contractAddress, {
             dao: {},
-        });
-    };
-    daoTunnel = async (): Promise<Addr> => {
-        return this.client.queryContractSmart(this.contractAddress, {
-            dao_tunnel: {},
-        });
-    };
-    factory = async (): Promise<Addr> => {
-        return this.client.queryContractSmart(this.contractAddress, {
-            factory: {},
         });
     };
     allAccounts = async ({
@@ -241,11 +219,11 @@ export interface GovecInterface extends GovecReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
-    updateConfigAddr: (
+    updateDaoAddr: (
         {
             newAddr,
         }: {
-            newAddr: UpdateAddrReq;
+            newAddr: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -285,7 +263,7 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
         this.mint = this.mint.bind(this);
         this.updateMintCap = this.updateMintCap.bind(this);
         this.updateMintAmount = this.updateMintAmount.bind(this);
-        this.updateConfigAddr = this.updateConfigAddr.bind(this);
+        this.updateDaoAddr = this.updateDaoAddr.bind(this);
         this.updateMarketing = this.updateMarketing.bind(this);
         this.uploadLogo = this.uploadLogo.bind(this);
     }
@@ -495,11 +473,11 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
             funds
         );
     };
-    updateConfigAddr = async (
+    updateDaoAddr = async (
         {
             newAddr,
         }: {
-            newAddr: UpdateAddrReq;
+            newAddr: string;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -509,7 +487,7 @@ export class GovecClient extends GovecQueryClient implements GovecInterface {
             this.sender,
             this.contractAddress,
             {
-                update_config_addr: {
+                update_dao_addr: {
                     new_addr: newAddr,
                 },
             },

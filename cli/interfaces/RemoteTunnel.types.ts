@@ -4,16 +4,10 @@
  * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
  */
 
-export type CanonicalAddr = Binary;
-export type Binary = string;
 export interface InstantiateMsg {
-    chain_config: ChainConfig;
     dao_config: DaoConfig;
     init_ibc_transfer_mod?: IbcTransferChannels | null;
-}
-export interface ChainConfig {
-    denom: string;
-    remote_factory?: CanonicalAddr | null;
+    init_items?: [string, string][] | null;
 }
 export interface DaoConfig {
     addr: string;
@@ -108,8 +102,8 @@ export type GovecExecuteMsg =
           };
       }
     | {
-          update_config_addr: {
-              new_addr: UpdateAddrReq;
+          update_dao_addr: {
+              new_addr: string;
           };
       }
     | {
@@ -123,16 +117,7 @@ export type GovecExecuteMsg =
           upload_logo: Logo;
       };
 export type Uint128 = string;
-export type UpdateAddrReq =
-    | {
-          dao: string;
-      }
-    | {
-          factory: string;
-      }
-    | {
-          staking: string;
-      };
+export type Binary = string;
 export type Logo =
     | {
           url: string;
@@ -598,7 +583,9 @@ export type QueryMsg =
           dao_config: {};
       }
     | {
-          chain_config: {};
+          item: {
+              key: string;
+          };
       }
     | {
           ibc_transfer_channels: {
@@ -609,8 +596,4 @@ export type QueryMsg =
     | {
           next_job_id: {};
       };
-export type Addr = string;
-export interface ChainConfigResponse {
-    denom: string;
-    remote_factory?: Addr | null;
-}
+export type String = string;

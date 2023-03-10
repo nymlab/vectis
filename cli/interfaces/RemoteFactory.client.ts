@@ -44,7 +44,6 @@ export interface RemoteFactoryReadOnlyInterface {
     totalCreated: () => Promise<Uint64>;
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<Uint64>;
     fees: () => Promise<FeesResponse>;
-    govecAddr: () => Promise<Addr>;
     daoAddr: () => Promise<Addr>;
 }
 export class RemoteFactoryQueryClient implements RemoteFactoryReadOnlyInterface {
@@ -60,7 +59,6 @@ export class RemoteFactoryQueryClient implements RemoteFactoryReadOnlyInterface 
         this.totalCreated = this.totalCreated.bind(this);
         this.codeId = this.codeId.bind(this);
         this.fees = this.fees.bind(this);
-        this.govecAddr = this.govecAddr.bind(this);
         this.daoAddr = this.daoAddr.bind(this);
     }
 
@@ -114,11 +112,6 @@ export class RemoteFactoryQueryClient implements RemoteFactoryReadOnlyInterface 
     fees = async (): Promise<FeesResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             fees: {},
-        });
-    };
-    govecAddr = async (): Promise<Addr> => {
-        return this.client.queryContractSmart(this.contractAddress, {
-            govec_addr: {},
         });
     };
     daoAddr = async (): Promise<Addr> => {
@@ -176,16 +169,6 @@ export interface RemoteFactoryInterface extends RemoteFactoryReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
-    updateGovecAddr: (
-        {
-            addr,
-        }: {
-            addr: string;
-        },
-        fee?: number | StdFee | "auto",
-        memo?: string,
-        funds?: Coin[]
-    ) => Promise<ExecuteResult>;
     updateDao: (
         {
             addr,
@@ -236,7 +219,6 @@ export class RemoteFactoryClient extends RemoteFactoryQueryClient implements Rem
         this.migrateWallet = this.migrateWallet.bind(this);
         this.updateCodeId = this.updateCodeId.bind(this);
         this.updateConfigFee = this.updateConfigFee.bind(this);
-        this.updateGovecAddr = this.updateGovecAddr.bind(this);
         this.updateDao = this.updateDao.bind(this);
         this.claimGovec = this.claimGovec.bind(this);
         this.govecMinted = this.govecMinted.bind(this);
@@ -337,29 +319,6 @@ export class RemoteFactoryClient extends RemoteFactoryQueryClient implements Rem
                 update_config_fee: {
                     new_fee: newFee,
                     type,
-                },
-            },
-            fee,
-            memo,
-            funds
-        );
-    };
-    updateGovecAddr = async (
-        {
-            addr,
-        }: {
-            addr: string;
-        },
-        fee: number | StdFee | "auto" = "auto",
-        memo?: string,
-        funds?: Coin[]
-    ): Promise<ExecuteResult> => {
-        return await this.client.execute(
-            this.sender,
-            this.contractAddress,
-            {
-                update_govec_addr: {
-                    addr,
                 },
             },
             fee,

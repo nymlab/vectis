@@ -12,13 +12,11 @@ export type LogoInfo =
     | "embedded";
 export type Addr = string;
 export interface InstantiateMsg {
-    factory?: string | null;
     initial_balances: Cw20Coin[];
     marketing?: MarketingInfoResponse | null;
     mint_amount: Uint128;
     mint_cap?: Uint128 | null;
     name: string;
-    staking_addr?: string | null;
     symbol: string;
 }
 export interface Cw20Coin {
@@ -81,8 +79,8 @@ export type ExecuteMsg =
           };
       }
     | {
-          update_config_addr: {
-              new_addr: UpdateAddrReq;
+          update_dao_addr: {
+              new_addr: string;
           };
       }
     | {
@@ -96,16 +94,6 @@ export type ExecuteMsg =
           upload_logo: Logo;
       };
 export type Binary = string;
-export type UpdateAddrReq =
-    | {
-          dao: string;
-      }
-    | {
-          factory: string;
-      }
-    | {
-          staking: string;
-      };
 export type Logo =
     | {
           url: string;
@@ -141,16 +129,7 @@ export type QueryMsg =
           minters: {};
       }
     | {
-          staking: {};
-      }
-    | {
           dao: {};
-      }
-    | {
-          dao_tunnel: {};
-      }
-    | {
-          factory: {};
       }
     | {
           all_accounts: {
