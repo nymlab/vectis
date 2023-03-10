@@ -15,7 +15,7 @@ fn proxy_mint_govec_works() {
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
-        funds: vec![coin(CLAIM_FEE, "ucosm")],
+        funds: vec![coin(CLAIM_FEE, DENOM)],
     });
 
     // Initially there is something to claim
@@ -33,7 +33,7 @@ fn proxy_mint_govec_works() {
             &ProxyExecuteMsg::Execute {
                 msgs: vec![mint_govec_msg],
             },
-            &[coin(CLAIM_FEE, "ucosm")],
+            &[coin(CLAIM_FEE, DENOM)],
         )
         .unwrap();
 
@@ -101,7 +101,7 @@ fn non_proxy_cannot_mint_on_govec() {
     let mint_govec_msg = CosmosMsg::<()>::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&WalletFactoryExecuteMsg::ClaimGovec {}).unwrap(),
-        funds: vec![coin(CLAIM_FEE, "ucosm")],
+        funds: vec![coin(CLAIM_FEE, DENOM)],
     });
 
     suite
@@ -110,7 +110,7 @@ fn non_proxy_cannot_mint_on_govec() {
             suite.deployer.clone(),
             suite.govec.clone(),
             &mint_govec_msg,
-            &[coin(CLAIM_FEE, "ucosm")],
+            &[coin(CLAIM_FEE, DENOM)],
         )
         .unwrap_err();
 
@@ -133,7 +133,7 @@ fn non_proxy_cannot_mint_via_factory() {
             suite.deployer.clone(),
             suite.factory.clone(),
             &WalletFactoryExecuteMsg::ClaimGovec {},
-            &[coin(CLAIM_FEE, "ucosm")],
+            &[coin(CLAIM_FEE, DENOM)],
         )
         .unwrap_err();
 

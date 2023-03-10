@@ -16,7 +16,7 @@ fn transfer_works() {
     let mint_govec_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&FactoryExecuteMsg::ClaimGovec {}).unwrap(),
-        funds: vec![coin(CLAIM_FEE, "ucosm")],
+        funds: vec![coin(CLAIM_FEE, DENOM)],
     });
 
     // Controller execute proxy to claim govec
@@ -24,7 +24,7 @@ fn transfer_works() {
         .proxy_execute(
             &wallet_addr,
             vec![mint_govec_msg],
-            vec![coin(CLAIM_FEE, "ucosm")],
+            vec![coin(CLAIM_FEE, DENOM)],
         )
         .unwrap();
 
@@ -117,7 +117,7 @@ fn transfer_from_works() {
     let mint_govec_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: suite.factory.to_string(),
         msg: to_binary(&FactoryExecuteMsg::ClaimGovec {}).unwrap(),
-        funds: vec![coin(CLAIM_FEE, "ucosm")],
+        funds: vec![coin(CLAIM_FEE, DENOM)],
     });
 
     // Controller execute proxy to claim govec
@@ -125,7 +125,7 @@ fn transfer_from_works() {
         .proxy_execute(
             &wallet_addr,
             vec![mint_govec_msg],
-            vec![coin(CLAIM_FEE, "ucosm")],
+            vec![coin(CLAIM_FEE, DENOM)],
         )
         .unwrap();
 

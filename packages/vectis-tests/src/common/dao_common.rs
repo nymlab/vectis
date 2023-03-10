@@ -52,7 +52,7 @@ impl DaoChainSuite {
     /// - default WALLET_FEE
     ///
     pub fn init() -> Result<DaoChainSuite> {
-        let genesis_funds = vec![coin(10_000_000_000_000, "ucosm")];
+        let genesis_funds = vec![coin(10_000_000_000_000, DENOM)];
         let deployer = Addr::unchecked("deployer");
         let plugin_committee = Addr::unchecked("plugin_committee");
         let controller = Addr::unchecked(CONTROLLER_ADDR);
@@ -63,16 +63,12 @@ impl DaoChainSuite {
                 .init_balance(storage, &deployer, genesis_funds)
                 .unwrap();
         });
-        app.send_tokens(
-            deployer.clone(),
-            controller,
-            &[coin(1_000_000_000, "ucosm")],
-        )?;
+        app.send_tokens(deployer.clone(), controller, &[coin(1_000_000_000, DENOM)])?;
 
         app.send_tokens(
             deployer.clone(),
             plugin_committee.clone(),
-            &[coin(1_000_000_000, "ucosm")],
+            &[coin(1_000_000_000, DENOM)],
         )?;
 
         let dao_id = app.store_code(contract_dao());
@@ -222,11 +218,11 @@ impl DaoChainSuite {
                     proxy_multisig_code_id: proxy_multisig_id,
                     addr_prefix: "wasm".to_string(),
                     wallet_fee: Coin {
-                        denom: "ucosm".to_string(),
+                        denom: DENOM.to_string(),
                         amount: Uint128::new(WALLET_FEE),
                     },
                     claim_fee: Coin {
-                        denom: "ucosm".to_string(),
+                        denom: DENOM.to_string(),
                         amount: Uint128::new(CLAIM_FEE),
                     },
                     govec_minter: Some(govec.to_string()),
@@ -244,7 +240,7 @@ impl DaoChainSuite {
                 &DTunnelInstanstiateMsg {
                     init_remote_tunnels: None,
                     init_ibc_transfer_mods: None,
-                    denom: "ucosm".to_string(),
+                    denom: DENOM.to_string(),
                 },
                 &[],
                 "dao-tunnel",          // label: human readible name for contract
@@ -257,8 +253,8 @@ impl DaoChainSuite {
                 plugin_registry_id,
                 dao.clone(),
                 &PRegistryInstantiateMsg {
-                    registry_fee: coin(REGISTRY_FEE, "ucosm"),
-                    install_fee: coin(INSTALL_FEE, "ucosm"),
+                    registry_fee: coin(REGISTRY_FEE, DENOM),
+                    install_fee: coin(INSTALL_FEE, DENOM),
                 },
                 &[],
                 "plugin_registry",     // label: human readible name for contract
@@ -389,7 +385,7 @@ impl DaoChainSuite {
                 controller,
                 factory,
                 &execute,
-                &[coin(native_tokens_amount, "ucosm")],
+                &[coin(native_tokens_amount, DENOM)],
             )
             .map_err(|err| anyhow!(err))?;
 
@@ -632,7 +628,7 @@ impl DaoChainSuite {
     }
 
     pub fn query_balance(&self, addr: &Addr) -> Result<Coin> {
-        Ok(self.app.wrap().query_balance(addr.as_str(), "ucosm")?)
+        Ok(self.app.wrap().query_balance(addr.as_str(), DENOM)?)
     }
 
     pub fn query_govec_mint_amount(&self) -> Result<BalanceResponse, StdError> {
@@ -732,4 +728,8 @@ pub fn add_item_msg(dao: Addr, key: DaoActors, value: Addr) -> DaoExecMsg {
             funds: vec![],
         })],
     }
+}
+
+pub fn init_funds() -> Vec<Coin> {
+    vec![coin(10_000_000_000_000, DENOM)]
 }

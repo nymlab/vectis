@@ -10,8 +10,8 @@ use vectis_contract_tests::common::dao_common::*;
 #[test]
 fn controller_can_update_proxy_multisig_with_direct_message() {
     let mut suite = DaoChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(300, "ucosm");
-    let init_multisig_fund: Coin = coin(50, "ucosm");
+    let init_proxy_fund: Coin = coin(300, DENOM);
+    let init_multisig_fund: Coin = coin(50, DENOM);
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
