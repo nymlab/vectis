@@ -1,9 +1,10 @@
 use cosmwasm_std::testing::mock_ibc_packet_timeout;
+use vectis_wallet::DaoActors;
 
 use crate::{
     contract::{query_channels, query_dao_config},
     ibc::ibc_packet_timeout,
-    msg::{ChainConfigResponse, ExecuteMsg, Receiver},
+    msg::{ExecuteMsg, Receiver},
     tests::*,
 };
 
@@ -316,10 +317,19 @@ fn handle_inst_factory_packet() {
 
     reply(deps.as_mut(), mock_env(), response).unwrap();
 
-    let res: ChainConfigResponse =
-        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::ChainConfig {}).unwrap()).unwrap();
+    let res: String = from_binary(
+        &query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::Item {
+                key: DaoActors::Factory.to_string(),
+            },
+        )
+        .unwrap(),
+    )
+    .unwrap();
 
-    assert_eq!(contract_address.to_string(), res.remote_factory.unwrap())
+    assert_eq!(contract_address.to_string(), res)
 }
 
 #[test]
@@ -356,7 +366,7 @@ fn handle_update_dao_config() {
 }
 
 #[test]
-fn handle_update_chain_config() {
+fn handle_set_item() {
     let mut deps = do_instantiate();
     let job_id = 123;
     connect(deps.as_mut(), DAO_CHANNEL_ID);
@@ -364,9 +374,9 @@ fn handle_update_chain_config() {
     let ibc_msg = PacketMsg {
         sender: DAO_ADDR.to_string(),
         job_id,
-        msg: to_binary(&DaoTunnelPacketMsg::UpdateChainConfig {
-            new_remote_factory: None,
-            new_denom: "new_denom".to_string(),
+        msg: to_binary(&DaoTunnelPacketMsg::SetItem {
+            key: "key".into(),
+            value: Some("value".into()),
         })
         .unwrap(),
     };
@@ -375,14 +385,13 @@ fn handle_update_chain_config() {
     let res = ibc_packet_receive(deps.as_mut(), mock_env(), msg).unwrap();
     let ack: StdAck = from_binary(&res.acknowledgement).unwrap();
 
-    let actual_config = query(deps.as_ref(), mock_env(), QueryMsg::ChainConfig {}).unwrap();
-    assert_eq!(
-        ChainConfig {
-            remote_factory: None,
-            denom: "new_denom".to_string(),
-        },
-        from_binary(&actual_config).unwrap()
-    );
+    let item = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Item { key: "key".into() },
+    )
+    .unwrap();
+    assert_eq!("value".to_string(), from_binary::<String>(&item).unwrap());
 
     assert_eq!(0, res.messages.len());
     assert_eq!(res.attributes, vec![("action", "chain config updated")]);

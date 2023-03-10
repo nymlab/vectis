@@ -24,6 +24,7 @@ pub struct WalletInfo {
     pub is_frozen: bool,
     pub nonce: Nonce,
     pub multisig_address: Option<Addr>,
+    pub multisig_threshold: Option<u64>,
     pub label: String,
 }
 

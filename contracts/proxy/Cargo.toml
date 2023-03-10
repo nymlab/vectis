@@ -31,3 +31,6 @@ thiserror = { version = "1.0.26" }
 sha2 = "0.9"
 vectis-wallet = { path = "../../packages/vectis" }
 vectis-plugin-registry = {path = "../plugin_registry"}
+
+[dev-dependencies]
+vectis-wallet = {path = "../../packages/vectis", features = ["test_utils"]}

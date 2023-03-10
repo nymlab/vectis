@@ -6,7 +6,7 @@ pub use dao_pre_propose_approval_single::msg::{ExecuteMsg as PrePropExecuteMsg, 
 pub use dao_proposal_single::msg::ProposalSingleExecuteMsg as ProposalExecuteMsg;
 
 pub use crate::{
-    ChainConfig, DaoConfig, GovecExecuteMsg, IbcError, Receiver, StdAck, WalletFactoryExecuteMsg,
+    DaoConfig, GovecExecuteMsg, IbcError, Receiver, StdAck, WalletFactoryExecuteMsg,
     WalletFactoryInstantiateMsg,
 };
 
@@ -24,9 +24,9 @@ pub enum DaoTunnelPacketMsg {
     UpdateDaoConfig {
         new_config: DaoConfig,
     },
-    UpdateChainConfig {
-        new_denom: String,
-        new_remote_factory: Option<String>,
+    SetItem {
+        key: String,
+        value: Option<String>,
     },
     InstantiateFactory {
         code_id: u64,

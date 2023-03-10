@@ -8,12 +8,12 @@ use cosmwasm_std::{
 };
 
 use vectis_wallet::{
-    check_ibc_order, check_ibc_version, ChainConfig, DaoConfig, DaoTunnelPacketMsg, IbcError,
-    PacketMsg, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds, WalletFactoryExecuteMsg,
-    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_VERSION,
+    check_ibc_order, check_ibc_version, DaoConfig, DaoTunnelPacketMsg, IbcError, PacketMsg,
+    RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds, WalletFactoryExecuteMsg,
+    WalletFactoryInstantiateMsg as FactoryInstantiateMsg, IBC_APP_VERSION, ITEMS,
 };
 
-use crate::state::{CHAIN_CONFIG, DAO_CONFIG, IBC_TRANSFER_MODULES};
+use crate::state::{DAO_CONFIG, IBC_TRANSFER_MODULES};
 use crate::{ContractError, DISPATCH_CALLBACK_ID, FACTORY_CALLBACK_ID};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -129,15 +129,9 @@ pub fn ibc_packet_receive(
                 DaoTunnelPacketMsg::UpdateDaoConfig { new_config } => {
                     receive_update_dao_config(deps, new_config, packet_msg.job_id)
                 }
-                DaoTunnelPacketMsg::UpdateChainConfig {
-                    new_denom,
-                    new_remote_factory,
-                } => receive_update_chain_config(
-                    deps,
-                    new_denom,
-                    new_remote_factory,
-                    packet_msg.job_id,
-                ),
+                DaoTunnelPacketMsg::SetItem { key, value } => {
+                    receive_set_item(deps, key, value, packet_msg.job_id)
+                }
                 DaoTunnelPacketMsg::InstantiateFactory { code_id, msg } => {
                     receive_instantiate(deps, code_id, msg, packet_msg.job_id)
                 }
@@ -254,23 +248,17 @@ pub fn receive_update_dao_config(
         .add_attribute("action", "dao config updated"))
 }
 
-pub fn receive_update_chain_config(
+pub fn receive_set_item(
     deps: DepsMut,
-    denom: String,
-    new_remote_factory: Option<String>,
+    key: String,
+    value: Option<String>,
     job_id: u64,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let remote_factory = new_remote_factory
-        .as_ref()
-        .map(|s| deps.api.addr_canonicalize(s))
-        .transpose()?;
-    CHAIN_CONFIG.save(
-        deps.storage,
-        &ChainConfig {
-            remote_factory,
-            denom,
-        },
-    )?;
+    if let Some(v) = value {
+        ITEMS.save(deps.storage, key, &v)?;
+    } else {
+        ITEMS.remove(deps.storage, key);
+    }
     Ok(IbcReceiveResponse::new()
         .set_ack(StdAck::success(job_id))
         .add_attribute("action", "chain config updated"))

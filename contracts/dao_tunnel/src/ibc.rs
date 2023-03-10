@@ -212,7 +212,7 @@ pub fn receive_govec_actions(
             ..
         } => SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: govec_addr.to_string(),
+                contract_addr: govec_addr,
                 msg: to_binary(&GovecExecuteMsg::Send {
                     contract,
                     amount,
@@ -225,7 +225,7 @@ pub fn receive_govec_actions(
         ),
         GovecExecuteMsg::Exit { .. } => SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: govec_addr.to_string(),
+                contract_addr: govec_addr,
                 msg: to_binary(&GovecExecuteMsg::Exit {
                     relayed_from: Some(sender),
                 })?,
@@ -262,7 +262,7 @@ pub fn receive_stake_actions(
         ),
         StakeExecuteMsg::Claim { .. } => SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: staking_addr.to_string(),
+                contract_addr: staking_addr,
                 msg: to_binary(&StakeExecuteMsg::Claim {
                     relayed_from: Some(sender),
                 })?,

@@ -66,6 +66,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
         relayers: vec![Addr::unchecked(RELAYER2), Addr::unchecked(RELAYER1)],
         is_frozen: false,
         multisig_address: None,
+        multisig_threshold: None,
         label: "initial label".to_string(),
     };
 

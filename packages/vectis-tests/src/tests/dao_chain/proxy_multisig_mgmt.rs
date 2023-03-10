@@ -161,12 +161,9 @@ fn relayer_can_update_proxy_multisig_with_controller_signature() {
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
-    let old_multisig_code_id = w.multisig_code_id;
-
     let relayer = w.relayers.pop().unwrap();
 
     let new_multisig_code_id = suite.app.store_code(contract_multisig());
-    assert_ne!(old_multisig_code_id, new_multisig_code_id);
     let r = suite.update_proxy_multisig_code_id(new_multisig_code_id, suite.factory.clone());
     assert!(r.is_ok());
 

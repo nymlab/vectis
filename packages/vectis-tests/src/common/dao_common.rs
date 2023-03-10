@@ -2,7 +2,6 @@ pub use crate::common::common::*;
 
 use dao_pre_propose_approval_single::state::PendingProposal;
 use dao_voting::{pre_propose::ProposalCreationPolicy, threshold::Threshold};
-use vectis_wallet::PluginListResponse;
 
 /// DaoChainSuite
 ///
@@ -41,6 +40,10 @@ pub struct DaoChainSuite {
     pub cw20_stake: Addr,
     // Voting addr
     pub voting: Addr,
+    // PluginCommitte addr
+    pub plugin_committee: Addr,
+    // PluginRegistry addr
+    pub plugin_registry: Addr,
 }
 
 impl DaoChainSuite {
@@ -51,6 +54,7 @@ impl DaoChainSuite {
     pub fn init() -> Result<DaoChainSuite> {
         let genesis_funds = vec![coin(10_000_000_000_000, "ucosm")];
         let deployer = Addr::unchecked("deployer");
+        let plugin_committee = Addr::unchecked("plugin_committee");
         let controller = Addr::unchecked(CONTROLLER_ADDR);
         let prop_approver = Addr::unchecked(PROP_APPROVER);
         let mut app = App::new(|router, _, storage| {
@@ -65,6 +69,12 @@ impl DaoChainSuite {
             &[coin(1_000_000_000, "ucosm")],
         )?;
 
+        app.send_tokens(
+            deployer.clone(),
+            plugin_committee.clone(),
+            &[coin(1_000_000_000, "ucosm")],
+        )?;
+
         let dao_id = app.store_code(contract_dao());
         let vote_id = app.store_code(contract_vote());
         let proposal_id = app.store_code(contract_proposal());
@@ -75,6 +85,7 @@ impl DaoChainSuite {
         let proxy_multisig_id = app.store_code(contract_multisig());
         let govec_id = app.store_code(contract_govec());
         let dao_tunnel_id = app.store_code(contract_dao_tunnel());
+        let plugin_registry_id = app.store_code(contract_plugin_registry());
 
         let govec = app
             .instantiate_contract(
@@ -84,11 +95,9 @@ impl DaoChainSuite {
                     name: String::from("govec"),
                     symbol: String::from("gov"),
                     initial_balances: vec![],
-                    staking_addr: None,
                     marketing: None,
                     mint_cap: None,
                     mint_amount: Uint128::new(MINT_AMOUNT),
-                    factory: None,
                 },
                 &[],
                 "govec",
@@ -233,7 +242,6 @@ impl DaoChainSuite {
                 dao_tunnel_id,
                 dao.clone(),
                 &DTunnelInstanstiateMsg {
-                    govec_minter: govec.to_string(),
                     init_remote_tunnels: None,
                     init_ibc_transfer_mods: None,
                     denom: "ucosm".to_string(),
@@ -244,75 +252,52 @@ impl DaoChainSuite {
             )
             .unwrap();
 
-        app.execute_contract(
-            deployer.clone(),
-            govec.clone(),
-            &GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Dao(dao.to_string()),
-            },
-            &[],
-        )
-        .map_err(|err| anyhow!(err))
-        .unwrap();
+        let plugin_registry = app
+            .instantiate_contract(
+                plugin_registry_id,
+                dao.clone(),
+                &PRegistryInstantiateMsg {
+                    registry_fee: coin(REGISTRY_FEE, "ucosm"),
+                    install_fee: coin(INSTALL_FEE, "ucosm"),
+                },
+                &[],
+                "plugin_registry",     // label: human readible name for contract
+                Some(dao.to_string()), // admin: Option<String>, will need this for upgrading
+            )
+            .unwrap();
 
         app.execute_contract(
             deployer.clone(),
-            dao.clone(),
-            &DaoExecMsg::ExecuteAdminMsgs {
-                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: dao.to_string(),
-                    msg: to_binary(&DaoExecMsg::SetItem {
-                        key: "dao-tunnel".to_string(),
-                        value: dao_tunnel.to_string(),
-                    })?,
-                    funds: vec![],
-                })],
-            },
-            &[],
-        )
-        .map_err(|err| anyhow!(err))
-        .unwrap();
-
-        app.execute_contract(
-            deployer.clone(),
-            dao.clone(),
-            &DaoExecMsg::ExecuteAdminMsgs {
-                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: dao.to_string(),
-                    msg: to_binary(&DaoExecMsg::SetItem {
-                        key: "pre-proposal".to_string(),
-                        value: pre_prop.clone().unwrap().to_string(),
-                    })?,
-                    funds: vec![],
-                })],
-            },
-            &[],
-        )
-        .map_err(|err| anyhow!(err))
-        .unwrap();
-
-        // Give Govec the correct contract addresses
-        app.execute_contract(
-            dao.clone(),
             govec.clone(),
-            &GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Factory(factory.to_string()),
+            &GovecExecuteMsg::UpdateDaoAddr {
+                new_addr: dao.to_string(),
             },
             &[],
         )
         .map_err(|err| anyhow!(err))
         .unwrap();
 
-        app.execute_contract(
-            dao.clone(),
-            govec.clone(),
-            &GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Staking(cw20_stake.to_string()),
-            },
-            &[],
-        )
-        .map_err(|err| anyhow!(err))
-        .unwrap();
+        // Update Dao with DaoActor Addrs
+        // TODO: add registry and remaining
+        let actors = &[
+            (DaoActors::Govec, govec.clone()),
+            (DaoActors::Factory, factory.clone()),
+            (DaoActors::PreProposalModule, pre_prop.clone().unwrap()),
+            (DaoActors::DaoTunnel, dao_tunnel.clone()),
+            (DaoActors::Staking, cw20_stake.clone()),
+            (DaoActors::PluginRegisty, plugin_registry.clone()),
+            (DaoActors::PluginCommitte, plugin_committee.clone()),
+        ];
+
+        for actor in actors.iter() {
+            app.execute_contract(
+                deployer.clone(),
+                dao.clone(),
+                &add_item_msg(dao.clone(), actor.0.clone(), actor.1.clone()),
+                &[],
+            )
+            .unwrap();
+        }
 
         Ok(DaoChainSuite {
             controller: Addr::unchecked(CONTROLLER_ADDR),
@@ -327,6 +312,8 @@ impl DaoChainSuite {
             proposal: prop_list[0].address.clone(),
             cw20_stake,
             voting,
+            plugin_registry,
+            plugin_committee,
         })
     }
 
@@ -730,5 +717,19 @@ impl DaoChainSuite {
 
     pub fn claim_expiration(&self) -> u64 {
         GOVEC_CLAIM_DURATION_DAY_MUL * 24 * 60 * 60
+    }
+}
+
+pub fn add_item_msg(dao: Addr, key: DaoActors, value: Addr) -> DaoExecMsg {
+    DaoExecMsg::ExecuteAdminMsgs {
+        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: dao.to_string(),
+            msg: to_binary(&DaoExecMsg::SetItem {
+                key: key.to_string(),
+                value: value.to_string(),
+            })
+            .unwrap(),
+            funds: vec![],
+        })],
     }
 }

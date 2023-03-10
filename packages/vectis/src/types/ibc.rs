@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, serde};
-use cosmwasm_std::{from_slice, to_binary, Binary, CanonicalAddr, IbcOrder};
+use cosmwasm_std::{from_slice, to_binary, Binary, IbcOrder};
 use std::convert::TryFrom;
 
 use crate::IbcError;
@@ -60,14 +60,6 @@ pub struct DaoConfig {
     /// The channel_id to be used to call to the dao-tunnel contract on dao-chain
     /// This can be updated by the dao-tunnel forwarding message from the DAO
     pub dao_tunnel_channel: Option<String>,
-}
-
-#[cw_serde]
-pub struct ChainConfig {
-    /// The Factory that has the remote features on the local chain
-    pub remote_factory: Option<CanonicalAddr>,
-    /// Denom of the current chain
-    pub denom: String,
 }
 
 /// This is a generic ICS acknowledgement format.

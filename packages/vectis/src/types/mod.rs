@@ -16,10 +16,11 @@ pub enum DaoActors {
     PluginRegisty,
     ActivePreProposal,
     Staking,
+    PreProposalModule,
 }
 
 impl std::fmt::Display for DaoActors {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
