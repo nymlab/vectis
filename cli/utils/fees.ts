@@ -18,3 +18,5 @@ export const getDefaultClearAdminFee = (chain: Chain) => calculateFee(800_000, g
 
 export const walletInitialFunds = (chain: Chain) => coin(1500000, chain.feeToken) as Coin;
 export const govecClaimFee = (chain: Chain) => coin(1000000, chain.feeToken) as Coin;
+export const pluginRegInstallFee = (chain: Chain) => coin(1500000, chain.feeToken) as Coin;
+export const pluginRegRegistryFee = (chain: Chain) => coin(1500000, chain.feeToken) as Coin;

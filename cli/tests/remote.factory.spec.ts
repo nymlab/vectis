@@ -37,7 +37,7 @@ describe("Remote Factory Suite:", () => {
         expect(totalWalletBeforeCreation + 1).toBe(totalWalletAfterCreation);
     });
 
-    it("should be able to mint govec tokens", async () => {
+    it("proxy should be able to mint govec tokens", async () => {
         let res = await factoryClient.unclaimedGovecWallets({});
         const initTunnelBalance = (await userClient.getBalance(addrs.remoteTunnelAddr, remoteChain.feeToken)) as Coin;
         let targetWallet = res.wallets.find(([w]: [string, Expiration]) => w === proxyClient.contractAddress);

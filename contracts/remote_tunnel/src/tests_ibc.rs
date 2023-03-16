@@ -272,7 +272,6 @@ fn handle_inst_factory_packet() {
     let factory_msg = FactoryInstantiateMsg {
         proxy_multisig_code_id: 19,
         addr_prefix: "prefix".to_string(),
-        govec_minter: None,
         proxy_code_id: 13,
         wallet_fee: Coin {
             amount: Uint128::one(),
@@ -321,7 +320,7 @@ fn handle_inst_factory_packet() {
         &query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::Item {
+            QueryMsg::GetItem {
                 key: DaoActors::Factory.to_string(),
             },
         )
@@ -388,7 +387,7 @@ fn handle_set_item() {
     let item = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Item { key: "key".into() },
+        QueryMsg::GetItem { key: "key".into() },
     )
     .unwrap();
     assert_eq!("value".to_string(), from_binary::<String>(&item).unwrap());

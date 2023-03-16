@@ -482,6 +482,8 @@ describe("Proxy Suite: ", () => {
 
         const { claim_fee } = await factoryClient.fees();
 
+        console.log("Proxy client addr: ", proxyHostClient.contractAddress);
+
         const cosmosWasmMsg: CosmosMsg = {
             wasm: {
                 execute: {
@@ -491,6 +493,8 @@ describe("Proxy Suite: ", () => {
                 },
             },
         };
+
+        //await proxyHostClient.execute({ msgs: [cosmosWasmMsg] }, "auto");
 
         const relayTransaction = await CWClient.createRelayTransaction(
             hostAccounts.user.mnemonic,

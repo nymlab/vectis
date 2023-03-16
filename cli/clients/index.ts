@@ -3,6 +3,7 @@ export { default as DaoClient } from "./dao";
 export { default as CWClient } from "./cosmwasm";
 export { default as GovecClient } from "./govec";
 export { default as FactoryClient } from "./factory";
+export { default as PluginRegClient } from "./plugin-reg";
 export { default as RelayerClient } from "./relayer";
 export { default as ProxyClient } from "./proxy";
 export { default as Cw3FlexClient } from "./cw3flex";

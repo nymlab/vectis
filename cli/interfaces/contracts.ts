@@ -7,6 +7,7 @@ export interface ContractsResult {
         daoTunnelRes: UploadResult;
         multisigRes: UploadResult;
         govecRes: UploadResult;
+        pluginRegRes: UploadResult;
     };
     remote: {
         remoteTunnel: UploadResult;
@@ -28,6 +29,9 @@ export interface VectisDaoContractsAddrs {
     preproposalAddr: string;
     preProposalMultiSigAddr: string;
     preproposalGroupAddr: string;
+    pluginRegistryAddr: string;
+    techCommitteeMultiSigAddr: string;
+    techCommitteeGroupAddr: string;
     voteAddr: string;
 }
 

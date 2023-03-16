@@ -28,7 +28,6 @@ fn do_instantiate(
         addr_prefix: addr_prefix.to_string(),
         wallet_fee,
         claim_fee,
-        govec_minter: govec_minter.map(|s| s.to_string()),
     };
     let info = mock_info("admin", &[]);
     let env = mock_env();

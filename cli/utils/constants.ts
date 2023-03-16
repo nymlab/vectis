@@ -13,6 +13,19 @@ export const remoteChain = chains[remoteChainName as keyof typeof chains];
 export const hostAccounts = accounts[hostChainName as keyof typeof accounts];
 export const remoteAccounts = accounts[remoteChainName as keyof typeof accounts];
 
+// This is manual translate onchain DaoActors to string
+export enum DaoActors {
+    Govec = "Govec",
+    DaoTunnel = "DaoTunnel",
+    ProposalCommittee = "ProposalCommittee",
+    PreProposalModule = "PreProposalModule",
+    PluginCommittee = "PluginCommittee",
+    PluginRegistry = "PluginRegistry",
+    Factory = "Factory",
+    TreasuryCommittee = "TreasuryCommittee",
+    Staking = "Staking",
+}
+
 // Contracts Filenames
 export const contractsFileNames = {
     vectis_dao_tunnel: "vectis_dao_tunnel.wasm",
@@ -21,6 +34,7 @@ export const contractsFileNames = {
     vectis_govec: `vectis_govec.wasm`,
     vectis_remote_tunnel: "vectis_remote_tunnel.wasm",
     vectis_remote_proxy: "vectis_proxy.wasm",
+    vectis_plugin_registry: "vectis_plugin_registry.wasm",
     vectis_remote_factory: "vectis_remote_factory.wasm",
     cw3_mutltisig: "cw3_fixed_multisig.wasm",
     cw3_flex_mutltisig: "cw3_flex_multisig.wasm",
@@ -73,6 +87,7 @@ const vectisContractsPath = path.join(__dirname, "../../artifacts");
 export const daoTunnelCodetPath = path.join(vectisContractsPath, contractsFileNames.vectis_dao_tunnel);
 export const proxyCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_proxy);
 export const govecCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_govec);
+export const pluginRegCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_plugin_registry);
 export const factoryCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_factory);
 
 // Remote Contracts

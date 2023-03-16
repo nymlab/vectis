@@ -16,7 +16,7 @@ pub enum QueryMsg {
     #[returns(DaoConfig)]
     DaoConfig {},
     #[returns(String)]
-    Item { key: String },
+    GetItem { key: String },
     #[returns(IbcTransferChannels)]
     IbcTransferChannels {
         start_after: Option<String>,

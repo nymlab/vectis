@@ -583,7 +583,7 @@ export type QueryMsg =
           dao_config: {};
       }
     | {
-          item: {
+          get_item: {
               key: string;
           };
       }

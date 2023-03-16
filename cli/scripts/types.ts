@@ -58,6 +58,10 @@ const typesFiles = {
                 dir: contractsPath("remote_factory/schema"),
             },
             {
+                name: "pluginRegistry",
+                dir: contractsPath("plugin_registry/schema"),
+            },
+            {
                 name: "cw3Flex",
                 dir: downloadSchemaPath(typesFiles.cw3Flex),
             },

@@ -43,19 +43,20 @@ export const allowRevote: boolean = false;
 
 // Duration for unstake
 export const unstakingDuration: Duration = { time: 6 * 60 * 24 };
-
 export const activeThreshold: ActiveThreshold | null = null;
+
+export const proposalDepositAmount = "2";
 /// For Pre Proposal which handles the deposit now
 export const depositInfo: UncheckedDepositInfo = {
-    amount: "2",
+    amount: proposalDepositAmount,
     denom: { voting_module_token: {} },
     refund_policy: "always" as DepositRefundPolicy,
 };
-
-// Bool if anyway cal submit pre-proposals
+// True if anyone can submit pre-proposals
+// preproposals are vetted by the proposal committee
 const openPropSub: boolean = true;
-//
-// Details -
+
+// Dao proposal Threshold. Details -
 // https://docs.rs/cw-utils/0.13.2/cw_utils/enum.ThresholdResponse.html
 export const threshold: Threshold = {
     threshold_quorum: {
@@ -68,18 +69,24 @@ export const threshold: Threshold = {
     },
 };
 
-// PreProposal Multisig config
+// PreProposal Config
 // Length of  max Voting Period, Time in seconds
 export const preProMaxVotingPeriod: Duration = {
     time: 60 * 60 * 24 * 14,
 };
-
 export const prePropThreshold: Cw3Threshold = {
     absolute_percentage: { percentage: "0.5" },
 };
+export const preProposalCommitte1Weight: number = 50;
+export const preProposalCommitte2Weight: number = 50;
 
-export const committe1Weight: number = 50;
-export const committe2Weight: number = 50;
+// Technical Committee Config
+// Responsible for approving plugins into the Plugin registry
+export const technicalCommittee: Cw3Threshold = {
+    absolute_percentage: { percentage: "0.5" },
+};
+export const technicalCommittee1Weight: number = 50;
+export const technicalCommittee2Weight: number = 50;
 
 class DaoClient {
     daoAddr: string;
@@ -98,6 +105,12 @@ class DaoClient {
         this.stakingAddr = stakingAddr;
     }
 
+    async item(key: string) {
+        return await this.client.queryContractSmart(this.daoAddr, {
+            get_item: { key },
+        });
+    }
+
     async queryProposals() {
         return await this.client.queryContractSmart(this.proposalAddr, {
             list_proposals: {},
@@ -110,7 +123,7 @@ class DaoClient {
         });
     }
 
-    async querySetItems(k: string) {
+    async querySetItems() {
         return await this.client.queryContractSmart(this.daoAddr, {
             list_items: {},
         });
@@ -236,8 +249,6 @@ class DaoClient {
 
         const voteModInstInfo: ModuleInstantiateInfo = DaoClient.createVoteModInstInfo(voteRes.codeId, voteInstMsg);
         const daoInstMsg = DaoClient.createDaoInstMsg(propModInstInfo, voteModInstInfo, daoAdmin);
-
-        console.log("dao code id: ", daoRes.codeId);
 
         const { contractAddress: daoAddr } = await client.instantiate(
             client.sender,

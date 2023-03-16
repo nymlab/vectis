@@ -1,5 +1,5 @@
 import { FactoryClient, GovecClient, CWClient, DaoClient, ProxyClient, RelayClient } from "../clients";
-import { hostChain, remoteChain, uploadReportPath } from "../utils/constants";
+import { DaoActors, hostChain, remoteChain, uploadReportPath } from "../utils/constants";
 import { coin } from "@cosmjs/stargate";
 import { DaoTunnelClient } from "../interfaces";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -141,22 +141,27 @@ describe("DAO Suite for Config Tests:", () => {
         expect(doesIncludeDefaultChannelAfter).toBeTruthy();
     });
 
-    it("DAO should be able to dispatch an update of chain config on remote_tunnel", async () => {
-        const newDenom = Math.random().toString(36).slice(2, 9);
-        const previousConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
-        expect(previousConfig.denom).toBe(remoteChain.feeToken);
+    it("DAO should be able to dispatch an update item on remote_tunnel", async () => {
+        const previousAddr = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, {
+            get_item: { key: DaoActors.Factory },
+        });
+        const new_factory = "new-factory";
 
-        await changeRemoteTunnelDenom(newDenom, previousConfig.remote_factory);
+        await changeRemoteTunnelItem(DaoActors.Factory, new_factory);
 
-        const currentConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
-        expect(currentConfig.denom).toBe(newDenom);
+        const currentAddr = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, {
+            get_item: { key: DaoActors.Factory },
+        });
+        expect(currentAddr).not.toBe(previousAddr);
 
         // Revert changes
 
-        await changeRemoteTunnelDenom(previousConfig.denom, previousConfig.remote_factory);
+        await changeRemoteTunnelItem(DaoActors.Factory, previousAddr);
 
-        const revertedConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, { chain_config: {} });
-        expect(revertedConfig).toStrictEqual(previousConfig);
+        const revertedConfig = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, {
+            get_item: { key: DaoActors.Factory },
+        });
+        expect(revertedConfig).toStrictEqual(previousAddr);
     });
 
     it("DAO should be able to change configuration on the remote factory", async () => {
@@ -262,30 +267,31 @@ describe("DAO Suite for Config Tests:", () => {
         const account = await CWClient.generateRandomAccount(hostChain.addressPrefix);
         const [{ address }] = await account.getAccounts();
         const govecAddr = address;
-        const oldGovec = await factoryClient.govecAddr();
+        const oldGovec = await daoClient.item(DaoActors.Govec);
 
-        expect(oldGovec).not.toBe(govecAddr);
+        expect(oldGovec.item).not.toBe(govecAddr);
 
-        const msg = daoClient.executeMsg(addrs.factoryAddr, {
-            update_govec_addr: {
-                addr: govecAddr,
+        let msg = daoClient.executeMsg(addrs.daoAddr, {
+            set_item: {
+                key: DaoActors.Govec,
+                value: govecAddr,
             },
         });
-
         await daoClient.executeAdminMsg(msg);
-        const newGovec = await factoryClient.govecAddr();
-        expect(newGovec).toBe(govecAddr);
+        const newGovec = await daoClient.item(DaoActors.Govec);
+        expect(newGovec.item).toBe(govecAddr);
 
         // revert changes
-        const rmsg = daoClient.executeMsg(addrs.factoryAddr, {
-            update_govec_addr: {
-                addr: oldGovec,
+        msg = daoClient.executeMsg(addrs.daoAddr, {
+            set_item: {
+                key: DaoActors.Govec,
+                value: oldGovec.item,
             },
         });
+        await daoClient.executeAdminMsg(msg);
 
-        await daoClient.executeAdminMsg(rmsg);
-        const currentGovec = await factoryClient.govecAddr();
-        expect(currentGovec).toBe(oldGovec);
+        const currentGovec = await daoClient.item(DaoActors.Govec);
+        expect(currentGovec.item).toBe(oldGovec.item);
     });
 
     const changeRemoteFactoryConfig = async (msgs: CosmosMsgForEmpty[]) => {
@@ -368,15 +374,15 @@ describe("DAO Suite for Config Tests:", () => {
         }));
     };
 
-    const changeRemoteTunnelDenom = async (newDenom: string, newRemoteFactory: string | null) => {
+    const changeRemoteTunnelItem = async (key: string, value: string | null) => {
         const msg: DaoTunnelExecuteMsg = {
             dispatch_action_on_remote_tunnel: {
                 channel_id: relayerClient.channels.wasm?.src.channelId as string,
                 job_id: 5,
                 msg: {
-                    update_chain_config: {
-                        new_denom: newDenom,
-                        new_remote_factory: newRemoteFactory,
+                    set_item: {
+                        key,
+                        value,
                     },
                 },
             },

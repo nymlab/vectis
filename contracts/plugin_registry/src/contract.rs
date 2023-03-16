@@ -128,7 +128,7 @@ impl PluginRegistry<'_> {
     }
 
     fn ensure_is_reviewer(&self, deps: Deps, sender: &str) -> Result<(), ContractError> {
-        let reviewer = get_items_from_dao(deps, DaoActors::PluginCommitte)?;
+        let reviewer = get_items_from_dao(deps, DaoActors::PluginCommittee)?;
         if reviewer != sender {
             Err(ContractError::Unauthorized)
         } else {

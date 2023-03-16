@@ -248,7 +248,6 @@ export interface DaoConfig {
 export interface WalletFactoryInstantiateMsg {
     addr_prefix: string;
     claim_fee: Coin;
-    govec_minter?: string | null;
     proxy_code_id: number;
     proxy_multisig_code_id: number;
     wallet_fee: Coin;

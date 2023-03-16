@@ -10,6 +10,7 @@ import {
     fixMultiSigCodePath,
     govecCodePath,
     proxyCodePath,
+    pluginRegCodePath,
     remoteFactoryCodePath,
     remoteProxyCodePath,
     remoteTunnelCodePath,
@@ -37,13 +38,14 @@ import type { ContractsResult } from "../interfaces/contracts";
 })();
 
 async function verifyUpload({ host, remote }: ContractsResult) {
-    const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes } = host;
+    const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes, pluginRegRes } = host;
     const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
 
     const factoryCode = getContract(factoryCodePath);
     const proxyCode = getContract(proxyCodePath);
     const multisigCode = getContract(fixMultiSigCodePath);
     const govecCode = getContract(govecCodePath);
+    const pluginRegCode = getContract(pluginRegCodePath);
     const daoTunnelCode = getContract(daoTunnelCodetPath);
     const remoteTunnelCode = getContract(remoteTunnelCodePath);
     const remoteFactoryCode = getContract(remoteFactoryCodePath);
@@ -69,6 +71,11 @@ async function verifyUpload({ host, remote }: ContractsResult) {
     assert.strictEqual(govecRes.originalChecksum, toHex(sha256(govecCode)));
     assert.strictEqual(govecRes.compressedSize < govecCode.length * 0.5, true);
     assert.strictEqual(govecRes.codeId >= 1, true);
+
+    // Plugin Registry
+    assert.strictEqual(pluginRegRes.originalChecksum, toHex(sha256(pluginRegCode)));
+    assert.strictEqual(pluginRegRes.compressedSize < govecCode.length * 0.5, true);
+    assert.strictEqual(pluginRegRes.codeId >= 1, true);
 
     // Dao Tunnel
     assert.strictEqual(daoTunnelRes.originalChecksum, toHex(sha256(daoTunnelCode)));
