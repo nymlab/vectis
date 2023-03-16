@@ -9,8 +9,7 @@ pub fn get_items_from_dao(deps: Deps, item: DaoActors) -> Result<String, DaoItem
         &DAO.load(deps.storage)
             .map_err(|_| DaoItemsQueryError::DaoAddrNotFound)?,
     )?;
-    let r = ITEMS
+    ITEMS
         .query(&deps.querier, dao, item.to_string())?
-        .ok_or(DaoItemsQueryError::ItemNotSet(item.to_string()));
-    r
+        .ok_or(DaoItemsQueryError::ItemNotSet(item.to_string()))
 }
