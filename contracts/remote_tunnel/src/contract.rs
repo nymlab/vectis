@@ -8,8 +8,8 @@ use cw_storage_plus::Bound;
 
 use cw_utils::{one_coin, parse_reply_instantiate_data};
 use vectis_wallet::{
-    get_items_from_dao, DaoActors, DaoConfig, PacketMsg, RemoteTunnelPacketMsg, StdAck,
-    VectisDaoActionIds, DEFAULT_LIMIT, ITEMS, MAX_LIMIT, PACKET_LIFETIME,
+    DaoActors, DaoConfig, PacketMsg, RemoteTunnelPacketMsg, StdAck, VectisDaoActionIds,
+    DEFAULT_LIMIT, ITEMS, MAX_LIMIT, PACKET_LIFETIME,
 };
 
 use crate::msg::{ExecuteMsg, IbcTransferChannels, InstantiateMsg, QueryMsg, Receiver};
@@ -59,7 +59,7 @@ pub fn execute_mint_govec(
     info: MessageInfo,
     wallet_addr: String,
 ) -> Result<Response, ContractError> {
-    let factory_addr = get_items_from_dao(deps.as_ref(), DaoActors::Factory)?;
+    let factory_addr = ITEMS.load(deps.storage, DaoActors::Factory.to_string())?;
     if factory_addr != info.sender {
         return Err(ContractError::Unauthorized);
     }
@@ -164,7 +164,7 @@ pub fn execute_ibc_transfer(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
     match msg {
         QueryMsg::DaoConfig {} => to_binary(&query_dao_config(deps)?),
-        QueryMsg::Item { key } => to_binary(&query_item(deps, key)?),
+        QueryMsg::GetItem { key } => to_binary(&query_item(deps, key)?),
         QueryMsg::IbcTransferChannels { start_after, limit } => {
             to_binary(&query_channels(deps, start_after, limit)?)
         }

@@ -22,7 +22,6 @@ fn do_instantiate(
     addr_prefix: &str,
     wallet_fee: Coin,
     claim_fee: Coin,
-    govec_minter: Option<&str>,
 ) {
     // we do not do integrated tests here so code ids are arbitrary
     let instantiate_msg = InstantiateMsg {
@@ -31,7 +30,6 @@ fn do_instantiate(
         addr_prefix: addr_prefix.to_string(),
         wallet_fee,
         claim_fee,
-        govec_minter: govec_minter.map(|s| s.to_string()),
     };
     let info = mock_info("admin", &[]);
     let env = mock_env();
@@ -53,7 +51,6 @@ fn non_admin_cannot_call_minted() {
         "wasm",
         coin(1, "ucosm"),
         coin(1, "ucosm"),
-        None,
     );
 
     //IBC returns  success
@@ -82,7 +79,6 @@ fn handles_minted_submsg() {
         "wasm",
         coin(1, "ucosm"),
         coin(1, "ucosm"),
-        None,
     );
 
     // We pretent that a wallet has been created
@@ -170,7 +166,6 @@ fn admin_updates_addresses_work() {
         "wasm",
         fee,
         coin(1, "ucosm"),
-        None,
     );
 
     let info = mock_info("admin", &[]);

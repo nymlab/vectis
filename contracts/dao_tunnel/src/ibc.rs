@@ -9,10 +9,16 @@ use cosmwasm_std::{
 #[cfg(not(test))]
 use cosmwasm_std::{IbcQuery, QueryRequest};
 
+#[cfg(not(test))]
+use vectis_wallet::get_items_from_dao;
+
+#[cfg(test)]
+use crate::tests_ibc::get_items_from_dao;
+
 use vectis_wallet::{
-    check_ibc_order, check_ibc_version, get_items_from_dao, DaoActors, GovecExecuteMsg, IbcError,
-    PacketMsg, PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, RemoteTunnelPacketMsg,
-    StakeExecuteMsg, StdAck, VectisDaoActionIds, IBC_APP_VERSION,
+    check_ibc_order, check_ibc_version, DaoActors, GovecExecuteMsg, IbcError, PacketMsg,
+    PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, RemoteTunnelPacketMsg, StakeExecuteMsg,
+    StdAck, VectisDaoActionIds, IBC_APP_VERSION,
 };
 
 use crate::state::IBC_TUNNELS;

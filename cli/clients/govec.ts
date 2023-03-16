@@ -1,16 +1,14 @@
 import CWClient from "./cosmwasm";
 import { GovecClient as GovecC, GovecT } from "../interfaces";
 
-export const marketingProject = "https://vectis.nymlab.it";
+export const marketingProject = "https://vectis.space";
 export const marketingDescription = `Govec is the governance token for Vectis DAO. One token is assigned to a Vectis wallet upon creation.`;
 
 interface InstantiateGovec {
     initial_balances: GovecT.Cw20Coin[];
-    factory?: string | null;
     minterCap?: string;
     mintAmount: string;
     marketing?: GovecT.MarketingInfoResponse;
-    staking_addr?: string | null;
 }
 
 class GovecClient extends GovecC {
@@ -22,12 +20,10 @@ class GovecClient extends GovecC {
         const instantiate: GovecT.InstantiateMsg = {
             name: "Govec",
             symbol: "GOVEC",
-            factory: msg.factory,
             initial_balances: msg.initial_balances,
             mint_cap: msg.minterCap,
             mint_amount: msg.mintAmount,
             marketing: msg.marketing,
-            staking_addr: msg.staking_addr,
         };
 
         const { contractAddress } = await client.instantiate(

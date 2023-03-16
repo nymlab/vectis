@@ -9,12 +9,11 @@ use cosmwasm_schema::cw_serde;
 pub enum DaoActors {
     Govec = 0,
     Factory,
-    ProposolCommittee,
-    PluginCommitte,
+    ProposalCommittee,
+    PluginCommittee,
     TreasuryCommittee,
     DaoTunnel,
     PluginRegisty,
-    ActivePreProposal,
     Staking,
     PreProposalModule,
 }

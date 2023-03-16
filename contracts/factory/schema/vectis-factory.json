@@ -26,13 +26,6 @@
           }
         ]
       },
-      "govec_minter": {
-        "description": "Governance Token, Govec, address",
-        "type": [
-          "string",
-          "null"
-        ]
-      },
       "proxy_code_id": {
         "description": "Smart contract wallet contract code id",
         "type": "integer",

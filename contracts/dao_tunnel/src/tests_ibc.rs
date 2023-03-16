@@ -1,10 +1,14 @@
 use cosmwasm_std::{
-    testing::mock_ibc_channel_close_init, wasm_execute, IbcChannelCloseMsg, IbcReceiveResponse,
-    Response,
+    testing::mock_ibc_channel_close_init, wasm_execute, Deps, IbcChannelCloseMsg,
+    IbcReceiveResponse, Response,
 };
-use vectis_wallet::DaoActors;
+use vectis_wallet::{DaoActors, DaoItemsQueryError};
 
 use crate::{ibc::ibc_channel_close, tests::*};
+
+pub fn get_items_from_dao(_deps: Deps, item: DaoActors) -> Result<String, DaoItemsQueryError> {
+    Ok(item.to_string())
+}
 
 // Utils
 pub fn add_mock_controller(mut deps: DepsMut, src_port_id: &str) {
@@ -333,8 +337,6 @@ fn test_reply(
 
     reply(deps, mock_env(), reply_msg)
 }
-
-// fn test_rcv_ibc_with_reply(deps: DepsMut, ibc_msg: &RemoteTunnelPacketMsg, job_id: u64, sender: &str, sub_msg)
 
 #[test]
 fn recieve_controller_mint_govec_fails() {

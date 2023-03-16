@@ -7,6 +7,7 @@ import {
     CWClient,
     Cw3FlexClient,
     Cw4GroupClient,
+    PluginRegClient,
 } from "../clients";
 import { marketingDescription, marketingProject } from "../clients/govec";
 import RemoteTunnelClient from "../clients/remote-tunnel";
@@ -25,15 +26,21 @@ import {
     hostAccounts,
 } from "../utils/constants";
 
-import type { DaoTunnelT, GovecT, ProxyT } from "../interfaces";
+import type { DaoTunnelT, GovecT, ProxyT, PluginRegT } from "../interfaces";
 import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
-import { committe1Weight, committe2Weight } from "../clients/dao";
+import {
+    technicalCommittee1Weight,
+    technicalCommittee2Weight,
+    preProposalCommitte1Weight,
+    preProposalCommitte2Weight,
+} from "../clients/dao";
+import { DaoActors, deployReportPath } from "../utils/constants";
 
 // See README.md for deployment info
 //
 (async function deploy() {
     const { host, remote } = await import(uploadReportPath);
-    const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes, Cw4GroupRes, Cw3FlexRes } = host;
+    const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes, pluginRegRes, Cw4GroupRes, Cw3FlexRes } = host;
     const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
 
     const relayerClient = new RelayerClient();
@@ -59,57 +66,94 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
     const govecAddr = govecClient.contractAddress;
     console.log("2. Instantiated Govec at: ", govecAddr);
 
-    // Admin will be removed at the end of the tests
+    // Admin will be removed at the end of the deploy
     const daoAdmin = hostAccounts["admin"] as Account;
+
+    // ===================================================================================
+    //
+    // Governance committees = PreProposal + Tech
+    //
+    // ===================================================================================
+
+    // These are committee members for both the preproposal and technical committee
     const committee1 = hostAccounts["committee1"] as Account;
     const committee2 = hostAccounts["committee2"] as Account;
 
     // Instantiate Cw4Group - which will be used for Technical, Trader assignment and Proposal Approval
-    const committeeGroup = await Cw4GroupClient.instantiate(
+    const preProposalCommitteeMemberRes = await Cw4GroupClient.instantiate(
         adminHostClient,
         Cw4GroupRes.codeId,
         daoAdmin.address,
         [
             {
                 addr: committee1.address,
-                weight: committe1Weight,
+                weight: preProposalCommitte1Weight,
             },
             {
                 addr: committee2.address,
-                weight: committe2Weight,
+                weight: preProposalCommitte2Weight,
             },
         ],
-        "committee"
+        "Vectis PrePropsoal Committee"
     );
-    const committeeGroupAddr = committeeGroup.contractAddress;
-    console.log("3. Instantiated group for committees at: ", committeeGroupAddr);
+    const proposalCommitteeMembers = preProposalCommitteeMemberRes.contractAddress;
+    console.log("3. Instantiated group for preproposal committees at: ", proposalCommitteeMembers);
 
-    // Instantiate PreProposal Multisig
-    const preProposalMultiSig = await Cw3FlexClient.instantiate(
+    const techCommitteeMemberRes = await Cw4GroupClient.instantiate(
+        adminHostClient,
+        Cw4GroupRes.codeId,
+        daoAdmin.address,
+        [
+            {
+                addr: committee1.address,
+                weight: technicalCommittee1Weight,
+            },
+            {
+                addr: committee2.address,
+                weight: technicalCommittee2Weight,
+            },
+        ],
+        "Vectis Tech Committee"
+    );
+    const techCommitteeMembers = techCommitteeMemberRes.contractAddress;
+    console.log("3. Instantiated group for tech committees at: ", techCommitteeMembers);
+
+    // Instantiate PreProposal MultiSig
+    const proposalCommitteeRes = await Cw3FlexClient.instantiate(
         adminHostClient,
         Cw3FlexRes.codeId,
-        committeeGroupAddr,
+        proposalCommitteeMembers,
         "Pre Proposal MultiSig"
     );
-    const preProposalMultiSigAddr = preProposalMultiSig.contractAddress;
-    console.log("4. Instantiated Pre Proposal Approval Cw3 at: ", preProposalMultiSigAddr);
+    const proposalCommittee = proposalCommitteeRes.contractAddress;
+
+    // Instantiate TechCommittee MultiSig
+    const techCommitteeRes = await Cw3FlexClient.instantiate(
+        adminHostClient,
+        Cw3FlexRes.codeId,
+        techCommitteeMembers,
+        "Tech Committee MultiSig"
+    );
+    const techCommittee = techCommitteeRes.contractAddress;
+    console.log(
+        "4. Instantiated Tech committee Cw3 at: ",
+        techCommittee,
+        "Pre Proposal Approval Cw3 at: ",
+        proposalCommittee
+    );
+
+    // ===================================================================================
+    //
+    // Instantiate DAO and DaoChain contracts
+    //
+    // ===================================================================================
 
     // Instantiate DAO with Admin to help with deploy and dao-action tests
-    const daoClient = await DaoClient.instantiate(
-        adminHostClient,
-        govecAddr,
-        daoAdmin.address,
-        preProposalMultiSigAddr
-    );
+    const daoClient = await DaoClient.instantiate(adminHostClient, govecAddr, daoAdmin.address, proposalCommittee);
     console.log("5. DAO at: ", daoClient.daoAddr);
 
     // Admin execute dao deploy factory
-    const factoryInstMsg = FactoryClient.createFactoryInstMsg(
-        hostChainName,
-        proxyRes.codeId,
-        multisigRes.codeId,
-        govecAddr
-    );
+    const factoryInstMsg = FactoryClient.createFactoryInstMsg(hostChainName, proxyRes.codeId, multisigRes.codeId);
 
     const deployFactoryMsg = {
         wasm: {
@@ -125,12 +169,10 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
 
     let factoryInstRes = await daoClient.executeAdminMsg(deployFactoryMsg);
     const factoryAddr = CWClient.getContractAddrFromResult(factoryInstRes, "_contract_address");
-    console.log("\n6. Instantiated dao-chain factory at: ", factoryAddr);
 
-    // Admin propose and execute dao deploy dao tunnel
+    // Admin deploy dao tunnel
     const daoTunnelInstMsg: DaoTunnelT.InstantiateMsg = {
         denom: hostChain.feeToken,
-        govec_minter: govecAddr,
         init_ibc_transfer_mods: { endpoints: [[connection.hostConnection, channelTransfer?.src.channelId as string]] },
     };
 
@@ -146,10 +188,40 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         },
     };
 
-    // Propose instantiate dao tunnel
     let daoTunnelInstRes = await daoClient.executeAdminMsg(deployDaoTunnelMsg);
     const daoTunnelAddr = CWClient.getContractAddrFromResult(daoTunnelInstRes, "_contract_address");
-    console.log("\n7. Instantiated dao_tunnel at: ", daoTunnelAddr);
+
+    // Admin deploy plugin registry
+    let pluginRegInstMsg = PluginRegClient.createInstMsg(hostChainName);
+    const deployPluginRegistry = {
+        wasm: {
+            instantiate: {
+                admin: daoClient.daoAddr,
+                code_id: pluginRegRes.codeId,
+                funds: [],
+                label: "Vectis Plugin Registry",
+                msg: toCosmosMsg(pluginRegInstMsg),
+            },
+        },
+    };
+
+    let regInstRes = await daoClient.executeAdminMsg(deployPluginRegistry);
+    const pluginRegAddr = CWClient.getContractAddrFromResult(regInstRes, "_contract_address");
+
+    console.log(
+        "\n6. Instantiated dao_tunnel at: ",
+        daoTunnelAddr,
+        "\n Instantiated factory at: ",
+        factoryAddr,
+        "\n Instantiated Plugin Reg at: ",
+        pluginRegAddr
+    );
+
+    // =================================================================================
+    //
+    // Instantiate Remote chain contracts
+    //
+    // =================================================================================
 
     // Instantiate Remote Tunnel
     const remoteTunnelClient = await RemoteTunnelClient.instantiate(adminRemoteClient, remoteTunnel.codeId, {
@@ -158,16 +230,13 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
             dao_tunnel_port_id: `wasm.${daoTunnelAddr}`,
             connection_id: relayerClient.connections.remoteConnection,
         },
-        chain_config: {
-            denom: remoteChain.feeToken,
-        },
         init_ibc_transfer_mod: {
             endpoints: [[connection.remoteConnection, channelTransfer?.dest.channelId as string]],
         },
     });
 
     const remoteTunnelAddr = remoteTunnelClient.contractAddress;
-    console.log("\n8. Instantiated remote tunnel at: ", remoteTunnelAddr);
+    console.log("\n7. Instantiated remote tunnel at: ", remoteTunnelAddr);
 
     // Admin execute add connection to dao tunnel
     const daoTunnelApproveControllerMsg = daoClient.addApprovedControllerMsg(
@@ -176,7 +245,7 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         `wasm.${remoteTunnelAddr}`
     );
     await daoClient.executeAdminMsg(daoTunnelApproveControllerMsg);
-    console.log("\n9. Add Approved Connection (remote tunnel addr) to dao_tunnel");
+    console.log("\n8. Add Approved Connection (remote tunnel addr) to dao_tunnel");
 
     // Instantiate Factory in remote chain
 
@@ -187,9 +256,9 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
         "vectis-v1"
     );
 
-    console.log("10. Relayer create channel between remote and dao tunnel: ", channelWasm);
+    console.log("\n9. Relayer create channel between remote and dao tunnel: ", channelWasm);
 
-    // Admin propose and execute dao deploy factory remote
+    // Admin execute dao deploy remote factory
     const createRemoteFactoryMsg: DaoTunnelT.ExecuteMsg = {
         dispatch_action_on_remote_tunnel: {
             job_id: 1,
@@ -210,46 +279,25 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
     await relayerClient.relayAll();
     await delay(10000);
 
-    const { remote_factory: remoteFactoryAddr } = await remoteTunnelClient.chainConfig();
-    console.log("\n11. Instantiate remote chain Factory at ", remoteFactoryAddr);
+    const remoteFactoryAddr = await remoteTunnelClient.getItem({ key: "Factory" });
+    console.log("\n10. Instantiate remote chain Factory at ", remoteFactoryAddr);
 
-    // Set dao-tunnel address in DAO
-    // Update DAO with dao_tunnel addr
-    const daoSetItemMsg: ProxyT.CosmosMsgForEmpty = {
-        wasm: {
-            execute: {
-                contract_addr: daoClient.daoAddr,
-                funds: [],
-                msg: toCosmosMsg({ set_item: { key: "dao-tunnel", value: daoTunnelAddr } }),
-            },
-        },
-    };
-
-    // Update DAO with committee addr
-    const committeeSetItemMsg: ProxyT.CosmosMsgForEmpty = {
-        wasm: {
-            execute: {
-                contract_addr: daoClient.daoAddr,
-                funds: [],
-                msg: toCosmosMsg({ set_item: { key: "committee", value: committeeGroupAddr } }),
-            },
-        },
-    };
-
-    // Update DAO with pre-proposal addr
-    const prePropSetItemMsg: ProxyT.CosmosMsgForEmpty = {
-        wasm: {
-            execute: {
-                contract_addr: daoClient.daoAddr,
-                funds: [],
-                msg: toCosmosMsg({ set_item: { key: "pre-proposal", value: daoClient.preProposalAddr } }),
-            },
-        },
-    };
-
-    await daoClient.executeAdminMsg(daoSetItemMsg);
-    await daoClient.executeAdminMsg(committeeSetItemMsg);
-    await daoClient.executeAdminMsg(prePropSetItemMsg);
+    // ===================================================================================
+    //
+    // Set addresses on DaoChain DAO and other contracts not instantiated by DAO
+    //
+    // ===================================================================================
+    await daoClient.executeAdminMsg(dao_set_item(daoClient.daoAddr, DaoActors.Govec, govecAddr));
+    await daoClient.executeAdminMsg(dao_set_item(daoClient.daoAddr, DaoActors.DaoTunnel, daoTunnelAddr));
+    await daoClient.executeAdminMsg(dao_set_item(daoClient.daoAddr, DaoActors.ProposalCommittee, proposalCommittee));
+    await daoClient.executeAdminMsg(
+        dao_set_item(daoClient.daoAddr, DaoActors.PreProposalModule, daoClient.preProposalAddr)
+    );
+    await daoClient.executeAdminMsg(dao_set_item(daoClient.daoAddr, DaoActors.PluginCommittee, techCommittee));
+    await daoClient.executeAdminMsg(dao_set_item(daoClient.daoAddr, DaoActors.PluginRegistry, pluginRegAddr));
+    await daoClient.executeAdminMsg(dao_set_item(daoClient.daoAddr, DaoActors.Factory, factoryAddr));
+    await daoClient.executeAdminMsg(dao_set_item(daoClient.daoAddr, DaoActors.Staking, daoClient.stakingAddr));
+    // TODO treasury
     console.log("\n12. Set dao_tunnel and committee address in DAO items");
 
     // Update marketing address on Govec
@@ -258,54 +306,71 @@ import { committe1Weight, committe2Weight } from "../clients/dao";
     });
     console.log("\n13. Updated Marketing Address on Govec\n", JSON.stringify(res));
 
-    // Add factory address to Govec
-    res = await govecClient.updateConfigAddr({
-        newAddr: { factory: factoryAddr },
-    });
-    console.log("\n15. Updated Factory Address on Govec\n", JSON.stringify(res));
-
-    // Add staking address to Govec
-    res = await govecClient.updateConfigAddr({
-        newAddr: { staking: daoClient.stakingAddr },
-    });
-    console.log("\n16. Updated Staking Address on Govec\n", JSON.stringify(res));
-
     // Update DAO address on Govec
-    res = await govecClient.updateConfigAddr({
-        newAddr: { dao: daoClient.daoAddr },
+    res = await govecClient.updateDaoAddr({
+        newAddr: daoClient.daoAddr,
     });
-    console.log("\n18. Updated Dao Address on Govec\n", JSON.stringify(res));
+    console.log("\n14. Updated Dao Address on Govec\n", JSON.stringify(res));
 
     res = await adminHostClient.updateAdmin(adminHostClient.sender, govecAddr, daoClient.daoAddr, "auto");
-    console.log("\n19. Updated Govec Contract Admin to DAO\n", JSON.stringify(res));
+    console.log("\n15. Updated Govec Contract Admin to DAO\n", JSON.stringify(res));
 
-    res = await committeeGroup.updateAdmin({ admin: daoClient.daoAddr }, "auto");
-    console.log("\n20. Updated committee Group (cw4) Admin Role to DAO\n", JSON.stringify(res));
-
-    res = await adminHostClient.updateAdmin(adminHostClient.sender, committeeGroupAddr, daoClient.daoAddr, "auto");
-    console.log("\n21. Updated committee Group (cw4) Contract Admin to DAO\n", JSON.stringify(res));
+    let respp = await preProposalCommitteeMemberRes.updateAdmin({ admin: daoClient.daoAddr }, "auto");
+    let rest = await techCommitteeMemberRes.updateAdmin({ admin: daoClient.daoAddr }, "auto");
+    console.log(
+        "\n16. Updated preProposal and tech committee Group (cw4) Admin Role to DAO\n",
+        JSON.stringify(respp),
+        "\n",
+        JSON.stringify(rest)
+    );
+    res = await adminHostClient.updateAdmin(
+        adminHostClient.sender,
+        proposalCommitteeMembers,
+        daoClient.daoAddr,
+        "auto"
+    );
+    res = await adminHostClient.updateAdmin(adminHostClient.sender, techCommitteeMembers, daoClient.daoAddr, "auto");
+    res = await adminHostClient.updateAdmin(adminHostClient.sender, proposalCommittee, daoClient.daoAddr, "auto");
+    res = await adminHostClient.updateAdmin(adminHostClient.sender, techCommittee, daoClient.daoAddr, "auto");
+    console.log("\n17. Updated proposal + tech committee (cw4 groups + cw3 flex) Contract Admin to DAO");
 
     const contracts = {
         remoteFactoryAddr: remoteFactoryAddr as string,
         remoteTunnelAddr,
         daoTunnelAddr,
+        daoAddr: daoClient.daoAddr,
         govecAddr,
         factoryAddr,
-        daoAddr: daoClient.daoAddr,
         stakingAddr: daoClient.stakingAddr,
         proposalAddr: daoClient.proposalAddr,
         preproposalAddr: daoClient.preProposalAddr,
-        preProposalMultiSigAddr,
-        preproposalGroupAddr: committeeGroupAddr,
+        preProposalMultiSigAddr: proposalCommittee,
+        preproposalGroupAddr: proposalCommitteeMembers,
+        pluginRegistryAddr: pluginRegAddr,
+        techCommitteeMultiSigAddr: techCommittee,
+        techCommitteeGroupAddr: techCommitteeMembers,
         voteAddr: daoClient.voteAddr,
     };
     console.log("\n Contracts: ", contracts);
+    writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
+    //let contracts: VectisDaoContractsAddrs;
+    //contracts = await import(deployReportPath);
 
     await verifyDeploy(contracts);
     console.log("\nEND. Verified deployment");
-
-    writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
 })();
+
+function dao_set_item(contract_addr: string, key: DaoActors, value: string): ProxyT.CosmosMsgForEmpty {
+    return {
+        wasm: {
+            execute: {
+                contract_addr,
+                funds: [],
+                msg: toCosmosMsg({ set_item: { key, value } }),
+            },
+        },
+    };
+}
 
 async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
     const adminHostClient = await CWClient.connectHostWithAccount("admin");
@@ -332,7 +397,7 @@ async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
     const tokenInfo = await govecClient.tokenInfo();
     assert.strictEqual(tokenInfo.total_supply, "0");
 
-    // Govec, dao_tunnel, host_factory, cw20_stake, cw20_stake_balance_voting, Proposal Contracts should have DAO as admin
+    // Ensure DAO is admin so that it can update.
     contract = await adminHostClient.getContract(addrs.factoryAddr);
     assert.strictEqual(contract.admin, addrs.daoAddr);
     contract = await adminHostClient.getContract(addrs.govecAddr);
@@ -345,21 +410,14 @@ async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
     assert.strictEqual(contract.admin, addrs.daoAddr);
     contract = await adminHostClient.getContract(addrs.daoTunnelAddr);
     assert.strictEqual(contract.admin, addrs.daoAddr);
+    //contract = await adminHostClient.getContract(addrs.pluginRegistryAddr);
+    //assert.strictEqual(contract.admin, addrs.daoAddr);
 
-    // Govec should be set on the factory
-    const govecAddr = await factoryClient.govecAddr();
-    assert.strictEqual(govecAddr, addrs.govecAddr);
-
-    // Govec should have stakingAddr as the stakingAddr
-    const stakingAddr = await govecClient.staking();
-    assert.strictEqual(stakingAddr, addrs.stakingAddr);
-
-    // Govec should have daoAddr as the dao
-    const daoAddr = await govecClient.dao();
-    assert.strictEqual(daoAddr, addrs.daoAddr);
+    // TODO: DAO should have all DaoActors addresses
 
     // Govec should have factory addr and dao_tunnel addr
     const { minters } = await govecClient.minters();
+    console.log("minters: ", minters);
     assert.ok(minters?.includes(addrs.daoAddr));
     assert.ok(minters?.includes(addrs.daoTunnelAddr));
     assert.ok(minters?.includes(addrs.factoryAddr));

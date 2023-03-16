@@ -225,7 +225,6 @@ impl DaoChainSuite {
                         denom: DENOM.to_string(),
                         amount: Uint128::new(CLAIM_FEE),
                     },
-                    govec_minter: Some(govec.to_string()),
                 },
                 &[],
                 "wallet-factory",      // label: human readible name for contract
@@ -282,7 +281,7 @@ impl DaoChainSuite {
             (DaoActors::DaoTunnel, dao_tunnel.clone()),
             (DaoActors::Staking, cw20_stake.clone()),
             (DaoActors::PluginRegisty, plugin_registry.clone()),
-            (DaoActors::PluginCommitte, plugin_committee.clone()),
+            (DaoActors::PluginCommittee, plugin_committee.clone()),
         ];
 
         for actor in actors.iter() {

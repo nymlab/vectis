@@ -17,8 +17,7 @@ class FactoryClient extends FactoryC {
     static createFactoryInstMsg(
         chainName: Chains,
         proxyCodeId: number,
-        multisigCodeId: number,
-        govecMinter?: string | null
+        multisigCodeId: number
     ): FactoryT.InstantiateMsg {
         const { addressPrefix, feeToken } = CHAINS[chainName];
         const wallet_fee = walletInitialFunds(CHAINS[chainName]);
@@ -29,7 +28,6 @@ class FactoryClient extends FactoryC {
             addr_prefix: addressPrefix,
             wallet_fee: wallet_fee as FactoryT.Coin,
             claim_fee: claim_fee as FactoryT.Coin,
-            govec_minter: govecMinter,
         };
     }
 

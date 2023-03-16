@@ -181,7 +181,7 @@ pub fn execute_inst_plugin(
     if plugin_params.has_full_access() {
         let sub_msg = match src {
             PluginSource::VectisRegistry(id) => {
-                let registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginCommitte)?;
+                let registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginCommittee)?;
                 SubMsg::reply_always(
                     WasmMsg::Execute {
                         contract_addr: registry,

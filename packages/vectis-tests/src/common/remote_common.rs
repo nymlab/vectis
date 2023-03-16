@@ -54,7 +54,6 @@ impl RemoteChainSuite {
                 amount: Uint128::one(),
                 denom: "denom".to_string(),
             },
-            govec_minter: None,
         };
 
         let factory = app

@@ -78,8 +78,6 @@ pub struct WalletFactoryInstantiateMsg {
     pub wallet_fee: Coin,
     /// Fee for claim govec in native token to be sent to Admin (DAO)
     pub claim_fee: Coin,
-    /// Governance Token, Govec, address
-    pub govec_minter: Option<String>,
 }
 
 #[cw_serde]

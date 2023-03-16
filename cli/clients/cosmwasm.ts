@@ -29,6 +29,7 @@ import {
     cw3FlexCodePath,
     cw4GroupCodePath,
     govecCodePath,
+    pluginRegCodePath,
     stakingCodePath,
     daoCodePath,
     voteCodePath,
@@ -174,6 +175,7 @@ class CWClient extends SigningCosmWasmClient {
         Cw3FlexRes: UploadResult;
         Cw4GroupRes: UploadResult;
         govecRes: UploadResult;
+        pluginRegRes: UploadResult;
         stakingRes: UploadResult | Code;
         daoRes: UploadResult | Code;
         voteRes: UploadResult | Code;
@@ -193,6 +195,7 @@ class CWClient extends SigningCosmWasmClient {
         const Cw3FlexRes = await this.uploadContract(cw3FlexCodePath);
         const Cw4GroupRes = await this.uploadContract(cw4GroupCodePath);
         const govecRes = await this.uploadContract(govecCodePath);
+        const pluginRegRes = await this.uploadContract(pluginRegCodePath);
 
         return {
             daoTunnelRes,
@@ -202,6 +205,7 @@ class CWClient extends SigningCosmWasmClient {
             Cw3FlexRes,
             Cw4GroupRes,
             govecRes,
+            pluginRegRes,
             stakingRes: staking,
             daoRes: dao,
             voteRes: vote,

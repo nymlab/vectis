@@ -60,7 +60,7 @@ import {
 export interface RemoteTunnelReadOnlyInterface {
     contractAddress: string;
     daoConfig: () => Promise<DaoConfig>;
-    item: ({ key }: { key: string }) => Promise<String>;
+    getItem: ({ key }: { key: string }) => Promise<String>;
     ibcTransferChannels: ({
         limit,
         startAfter,
@@ -78,7 +78,7 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.daoConfig = this.daoConfig.bind(this);
-        this.item = this.item.bind(this);
+        this.getItem = this.getItem.bind(this);
         this.ibcTransferChannels = this.ibcTransferChannels.bind(this);
         this.nextJobId = this.nextJobId.bind(this);
     }
@@ -88,9 +88,9 @@ export class RemoteTunnelQueryClient implements RemoteTunnelReadOnlyInterface {
             dao_config: {},
         });
     };
-    item = async ({ key }: { key: string }): Promise<String> => {
+    getItem = async ({ key }: { key: string }): Promise<String> => {
         return this.client.queryContractSmart(this.contractAddress, {
-            item: {
+            get_item: {
                 key,
             },
         });

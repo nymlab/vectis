@@ -28,4 +28,3 @@ vectis-wallet = {path = "../../packages/vectis"}
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0" }
-vectis-wallet = {path = "../../packages/vectis", features = ["test_utils"]}

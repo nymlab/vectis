@@ -91,7 +91,7 @@ describe("Proxy Remote Suite: ", () => {
         await proxyClient.unstakeGovec(addrs.remoteTunnelAddr, "1");
         await delay(8000);
         await relayerClient.relayAll();
-        await delay(8000);
+        await delay(10000);
 
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
@@ -120,7 +120,7 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
         proxyClient = new RemoteProxyClient(userClient, userClient.sender, walletAddr!);
     });
 
-    it("should be able to mint govec", async () => {
+    it("should be able to mint govec only once", async () => {
         const { claim_fee } = await factoryClient.fees();
         await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
         await relayerClient.relayAll();
@@ -129,7 +129,11 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
         expect(accounts.includes(proxyClient.contractAddress)).toBeTruthy();
         expect(balance).toBe("2");
 
-        let unclaimed = await factoryClient.unclaimedGovecWallets({});
+        try {
+            await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
+            // force fail if we can mint again
+            expect(false).toBeTruthy;
+        } catch (e) {}
     });
 
     it("should be able to do pre proposal", async () => {
@@ -141,6 +145,7 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
         );
 
         // order is desending
+        //('{"query_extension": { "msg": {"pending_proposals":{}}}}');
         let queryMsg: prePropQueryMsg = { query_extension: { msg: { pending_proposals: {} } } };
         const previousPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
         const msg: CosmosMsgForEmpty = {
@@ -161,8 +166,10 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
             [msg]
         );
 
+        console.log("CreatePreProposal: ", res);
+
         await relayerClient.relayAll();
-        await delay(8000);
+        await delay(10000);
 
         let currentPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
 

@@ -29,8 +29,7 @@ cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
 thiserror = { workspace = true }
-vectis-wallet = {path = "../../packages/vectis", default-features = false}
+vectis-wallet = {path = "../../packages/vectis"}
 
 [dev-dependencies]
 dao-voting = { workspace = true }
-vectis-wallet = {path = "../../packages/vectis", features = ["test_utils"]}
