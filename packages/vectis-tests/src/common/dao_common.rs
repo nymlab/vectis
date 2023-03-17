@@ -273,7 +273,7 @@ impl DaoChainSuite {
         .unwrap();
 
         // Update Dao with DaoActor Addrs
-        // TODO: add registry and remaining
+        // TODO: add treasury
         let actors = &[
             (DaoActors::Govec, govec.clone()),
             (DaoActors::Factory, factory.clone()),

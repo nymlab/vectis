@@ -362,7 +362,6 @@ pub fn execute_mint(
         },
     )?;
 
-    //TODO! this cannot be parsed?
     let res = Response::new()
         .set_data(to_binary(&new_wallet)?)
         .add_attribute("action", "mint")
