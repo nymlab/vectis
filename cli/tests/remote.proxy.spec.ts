@@ -129,11 +129,8 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
         expect(accounts.includes(proxyClient.contractAddress)).toBeTruthy();
         expect(balance).toBe("2");
 
-        try {
-            await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
-            // force fail if we can mint again
-            expect(false).toBeTruthy;
-        } catch (e) {}
+        // must fail if we can mint again
+        await expect(proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee)).rejects.toBeInstanceOf(Error);
     });
 
     it("should be able to do pre proposal", async () => {
@@ -145,7 +142,6 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
         );
 
         // order is desending
-        //('{"query_extension": { "msg": {"pending_proposals":{}}}}');
         let queryMsg: prePropQueryMsg = { query_extension: { msg: { pending_proposals: {} } } };
         const previousPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
         const msg: CosmosMsgForEmpty = {
