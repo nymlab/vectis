@@ -6,7 +6,6 @@ import { Coin } from "../interfaces/Factory.types";
 import { RemoteFactoryClient } from "../interfaces/RemoteFactory.client";
 import { QueryMsg as prePropQueryMsg, CosmosMsgForEmpty } from "../interfaces/DaoPreProposeApprovalSingel.types";
 import { deployReportPath, hostChain, remoteChain } from "../utils/constants";
-import { delay } from "../utils/promises";
 import { generateRandomAddress } from "./mocks/addresses";
 import { createSingleProxyWallet } from "./mocks/proxyWallet";
 
@@ -41,7 +40,7 @@ describe("Proxy Remote Suite: ", () => {
             coin(amount, remoteChain.feeToken) as Coin,
         ]);
 
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithoutAck("remote", null);
 
         const currentBalance = await hostUserClient.getBalance(address, relayerClient.denoms.dest);
 
@@ -52,7 +51,7 @@ describe("Proxy Remote Suite: ", () => {
         const { claim_fee } = await factoryClient.fees();
         let unclaimedBefore = await factoryClient.unclaimedGovecWallets({});
         await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithAck("remote", null);
         const { accounts } = await govecClient.allAccounts({ limit: 50 });
         const { balance } = await govecClient.balance({ address: proxyClient.contractAddress });
         expect(accounts.includes(proxyClient.contractAddress)).toBeTruthy();
@@ -66,8 +65,7 @@ describe("Proxy Remote Suite: ", () => {
         });
 
         await proxyClient.transferGovec(addrs.remoteTunnelAddr, addrs.daoAddr, "1");
-        await relayerClient.relayAll();
-        await delay(8000);
+        await relayerClient.runRelayerWithoutAck("remote", null);
 
         const { balance: currentBalance } = await govecClient.balance({ address: addrs.daoAddr });
         const { balance: contractCurrentBalance } = await govecClient.balance({
@@ -79,8 +77,7 @@ describe("Proxy Remote Suite: ", () => {
 
     it("should be able to stake", async () => {
         let stakeRes = await proxyClient.stakeGovec(addrs.remoteTunnelAddr, addrs.stakingAddr, "1");
-        await relayerClient.relayAll();
-        await delay(8000);
+        await relayerClient.runRelayerWithoutAck("remote", null);
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
         });
@@ -89,9 +86,7 @@ describe("Proxy Remote Suite: ", () => {
 
     it("should be able to unstake", async () => {
         await proxyClient.unstakeGovec(addrs.remoteTunnelAddr, "1");
-        await delay(8000);
-        await relayerClient.relayAll();
-        await delay(10000);
+        await relayerClient.runRelayerWithoutAck("remote", null);
 
         const { value } = await hostUserClient.queryContractSmart(addrs.stakingAddr, {
             staked_value: { address: proxyClient.contractAddress },
@@ -123,7 +118,8 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
     it("should be able to mint govec only once", async () => {
         const { claim_fee } = await factoryClient.fees();
         await proxyClient.mintGovec(addrs.remoteFactoryAddr, claim_fee);
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithAck("remote", null);
+
         const { accounts } = await govecClient.allAccounts({ limit: 50 });
         const { balance } = await govecClient.balance({ address: proxyClient.contractAddress });
         expect(accounts.includes(proxyClient.contractAddress)).toBeTruthy();
@@ -162,10 +158,7 @@ describe("Proxy Remote (Proposal flow) suite: ", () => {
             [msg]
         );
 
-        console.log("CreatePreProposal: ", res);
-
-        await relayerClient.relayAll();
-        await delay(10000);
+        await relayerClient.runRelayerWithoutAck("remote", null);
 
         let currentPreProposals = await hostUserClient.queryContractSmart(addrs.preproposalAddr, queryMsg);
 

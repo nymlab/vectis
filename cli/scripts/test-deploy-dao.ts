@@ -14,17 +14,9 @@ import RemoteTunnelClient from "../clients/remote-tunnel";
 import { govecGenesisBalances } from "../config/govec_init_balances";
 
 import { Account } from "../config/accounts";
-import { delay } from "../utils/promises";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeInCacheFolder } from "../utils/fs";
-import {
-    hostChain,
-    hostChainName,
-    remoteChain,
-    remoteChainName,
-    uploadReportPath,
-    hostAccounts,
-} from "../utils/constants";
+import { hostChain, hostChainName, remoteChainName, uploadReportPath, hostAccounts } from "../utils/constants";
 
 import type { DaoTunnelT, GovecT, ProxyT, PluginRegT } from "../interfaces";
 import type { VectisDaoContractsAddrs } from "../interfaces/contracts";
@@ -39,6 +31,7 @@ import { DaoActors, deployReportPath } from "../utils/constants";
 // See README.md for deployment info
 //
 (async function deploy() {
+    console.log("Starting to deploy");
     const { host, remote } = await import(uploadReportPath);
     const { factoryRes, proxyRes, daoTunnelRes, multisigRes, govecRes, pluginRegRes, Cw4GroupRes, Cw3FlexRes } = host;
     const { remoteTunnel, remoteMultisig, remoteProxy, remoteFactory } = remote;
@@ -259,6 +252,7 @@ import { DaoActors, deployReportPath } from "../utils/constants";
     console.log("\n9. Relayer create channel between remote and dao tunnel: ", channelWasm);
 
     // Admin execute dao deploy remote factory
+    let hostBlock = await govecClient.client.getBlock();
     const createRemoteFactoryMsg: DaoTunnelT.ExecuteMsg = {
         dispatch_action_on_remote_tunnel: {
             job_id: 1,
@@ -276,8 +270,7 @@ import { DaoActors, deployReportPath } from "../utils/constants";
     await daoClient.executeAdminMsg(msg);
 
     // Relay packets and acknowledge
-    await relayerClient.relayAll();
-    await delay(10000);
+    await relayerClient.runRelayerWithAck("host", hostBlock.header.height);
 
     const remoteFactoryAddr = await remoteTunnelClient.getItem({ key: "Factory" });
     console.log("\n10. Instantiate remote chain Factory at ", remoteFactoryAddr);
@@ -353,8 +346,6 @@ import { DaoActors, deployReportPath } from "../utils/constants";
     };
     console.log("\n Contracts: ", contracts);
     writeInCacheFolder("deployInfo.json", JSON.stringify(contracts, null, 2));
-    //let contracts: VectisDaoContractsAddrs;
-    //contracts = await import(deployReportPath);
 
     await verifyDeploy(contracts);
     console.log("\nEND. Verified deployment");
@@ -410,8 +401,6 @@ async function verifyDeploy(addrs: VectisDaoContractsAddrs) {
     assert.strictEqual(contract.admin, addrs.daoAddr);
     contract = await adminHostClient.getContract(addrs.daoTunnelAddr);
     assert.strictEqual(contract.admin, addrs.daoAddr);
-    //contract = await adminHostClient.getContract(addrs.pluginRegistryAddr);
-    //assert.strictEqual(contract.admin, addrs.daoAddr);
 
     // TODO: DAO should have all DaoActors addresses
 

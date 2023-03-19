@@ -1,10 +1,9 @@
-import { FactoryClient, GovecClient, CWClient, DaoClient, ProxyClient, RelayClient } from "../clients";
+import { FactoryClient, CWClient, DaoClient, RelayClient } from "../clients";
 import { DaoActors, hostChain, remoteChain, uploadReportPath } from "../utils/constants";
 import { coin } from "@cosmjs/stargate";
 import { DaoTunnelClient } from "../interfaces";
 import { VectisDaoContractsAddrs } from "../interfaces/contracts";
 import { deployReportPath } from "../utils/constants";
-import { delay } from "../utils/promises";
 import { ExecuteMsg as DaoTunnelExecuteMsg } from "../interfaces/DaoTunnel.types";
 import { CosmosMsgForEmpty } from "../interfaces/Proxy.types";
 import { toCosmosMsg } from "../utils/enconding";
@@ -19,8 +18,6 @@ describe("DAO Suite for Config Tests:", () => {
     let adminClient: CWClient;
     let userClient: CWClient;
     let userRemoteClient: CWClient;
-    let proxyClient: ProxyClient;
-    let govecClient: GovecClient;
     let daoClient: DaoClient;
     let daoTunnelClient: DaoTunnelClient;
     let factoryClient: FactoryClient;
@@ -28,7 +25,7 @@ describe("DAO Suite for Config Tests:", () => {
     const relayerClient = new RelayClient();
     beforeAll(async () => {
         addrs = await import(deployReportPath);
-        const { host } = await import(uploadReportPath);
+        const { host, remote } = await import(uploadReportPath);
 
         await relayerClient.connect();
         await relayerClient.loadChannels();
@@ -36,7 +33,6 @@ describe("DAO Suite for Config Tests:", () => {
         adminClient = await CWClient.connectHostWithAccount("admin");
         userClient = await CWClient.connectHostWithAccount("user");
         userRemoteClient = await CWClient.connectRemoteWithAccount("user");
-        govecClient = new GovecClient(adminClient, adminClient.sender, addrs.govecAddr);
         factoryClient = new FactoryClient(userClient, userClient.sender, addrs.factoryAddr);
         daoTunnelClient = new DaoTunnelClient(adminClient, adminClient.sender, addrs.daoTunnelAddr);
         daoClient = new DaoClient(adminClient, {
@@ -55,9 +51,9 @@ describe("DAO Suite for Config Tests:", () => {
             },
         };
 
-        await adminClient
-            .execute(adminClient.sender, addrs.daoTunnelAddr, msgAuthorize, "auto")
-            .catch((err: Error) => expect(err).toBeInstanceOf(Error));
+        await expect(
+            adminClient.execute(adminClient.sender, addrs.daoTunnelAddr, msgAuthorize, "auto")
+        ).rejects.toBeInstanceOf(Error);
     });
 
     it("DAO should be able to add approved controllers in dao_tunnel", async () => {
@@ -77,12 +73,14 @@ describe("DAO Suite for Config Tests:", () => {
     });
 
     it("DAO should be able to update dao config in remote_tunnel", async () => {
-        const newAddr = "addr";
+        const newAddr = "something new";
         const { addr: addressPrevious } = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, {
             dao_config: {},
         });
+        let hostBlock = await userClient.getBlock();
 
         await changeRemoteTunnelDaoAddr(newAddr);
+        await relayerClient.runRelayerWithoutAck("host", hostBlock.header.height);
 
         const { addr: addressAfter } = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, {
             dao_config: {},
@@ -93,6 +91,7 @@ describe("DAO Suite for Config Tests:", () => {
         // Revert changes
 
         await changeRemoteTunnelDaoAddr(addressPrevious);
+        await relayerClient.runRelayerWithoutAck("host", null);
 
         const { addr } = await userRemoteClient.queryContractSmart(addrs.remoteTunnelAddr, {
             dao_config: {},
@@ -198,8 +197,7 @@ describe("DAO Suite for Config Tests:", () => {
         const msg = daoClient.removeApprovedControllerMsg(addrs.daoTunnelAddr, randomConnection, `wasm.addr`);
 
         await daoClient.executeAdminMsg(msg);
-        await delay(8000);
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithoutAck("host", null);
 
         let res = await daoTunnelClient.controllers({});
         expect(tunnels.length - 1).toBe(res.tunnels.length);
@@ -309,8 +307,7 @@ describe("DAO Suite for Config Tests:", () => {
 
         const updateDaoConfigMsg = daoClient.executeMsg(addrs.daoTunnelAddr, msg);
         await daoClient.executeAdminMsg(updateDaoConfigMsg);
-        await delay(10000);
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithoutAck("host", null);
     };
 
     const changeIbcTransferChannel = async (channel: string) => {
@@ -328,8 +325,7 @@ describe("DAO Suite for Config Tests:", () => {
         };
         const changeIbcTransferMsg = daoClient.executeMsg(addrs.daoTunnelAddr, msg);
         await daoClient.executeAdminMsg(changeIbcTransferMsg);
-        await relayerClient.relayAll();
-        await delay(8000);
+        await relayerClient.runRelayerWithoutAck("host", null);
     };
 
     const queryRemoteFactoryConfig = async () => {
@@ -390,8 +386,7 @@ describe("DAO Suite for Config Tests:", () => {
 
         const updateDaoConfigMsg = daoClient.executeMsg(addrs.daoTunnelAddr, msg);
         await daoClient.executeAdminMsg(updateDaoConfigMsg);
-        await delay(8000);
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithoutAck("host", null);
     };
 
     const changeRemoteTunnelDaoAddr = async (newAddr: string) => {
@@ -414,8 +409,6 @@ describe("DAO Suite for Config Tests:", () => {
 
         const updateDaoConfigMsg = daoClient.executeMsg(addrs.daoTunnelAddr, msg);
         await daoClient.executeAdminMsg(updateDaoConfigMsg);
-        await delay(8000);
-        await relayerClient.relayAll();
     };
 
     afterAll(async () => {
