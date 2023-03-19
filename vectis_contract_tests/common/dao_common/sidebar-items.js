@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["DaoChainSuite","DaoChainSuite"]]};
+window.SIDEBAR_ITEMS = {"fn":[["add_item_msg",""],["init_funds",""]],"struct":[["DaoChainSuite","DaoChainSuite"]]};

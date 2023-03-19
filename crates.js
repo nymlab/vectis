@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["schema","vectis_contract_tests","vectis_dao_tunnel","vectis_factory","vectis_govec","vectis_plugin_registry","vectis_proxy","vectis_remote_factory","vectis_remote_tunnel","vectis_wallet"];
+window.ALL_CRATES = ["vectis_contract_tests","vectis_dao_tunnel","vectis_factory","vectis_govec","vectis_plugin_registry","vectis_proxy","vectis_remote_factory","vectis_remote_tunnel","vectis_wallet"];

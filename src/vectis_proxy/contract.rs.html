@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/proxy/src/contract.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-6827029ac823cab7.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-ebce58d0a40c3431.css"><link rel="stylesheet" disabled href="../../static.files/dark-f23faae4a2daf9a6.css"><link rel="stylesheet" disabled href="../../static.files/ayu-8af5e100b21cd173.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-5cf2e01a42cc9858.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-c55e1eb52e1886b4.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../vectis_proxy/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/proxy/src/contract.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-93196c7a1c3542a8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../vectis_proxy/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -715,6 +715,24 @@
 <a href="#715" id="715">715</a>
 <a href="#716" id="716">716</a>
 <a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::schemars;
 <span class="attr">#[cfg(not(feature = <span class="string">&quot;library&quot;</span>))]
 </span><span class="kw">use </span>cosmwasm_std::entry_point;
@@ -727,9 +745,9 @@
 <span class="kw">use </span>cw_storage_plus::Bound;
 <span class="kw">use </span>std::fmt;
 <span class="kw">use </span>vectis_wallet::{
-    pub_key_to_address, query_verify_cosmos, CodeIdType, GuardiansUpdateMsg,
-    GuardiansUpdateRequest, PluginListResponse, PluginParams, RelayTransaction, RelayTxError,
-    WalletFactoryQueryMsg, WalletInfo, DEFAULT_LIMIT, MAX_LIMIT,
+    get_items_from_dao, pub_key_to_address, query_verify_cosmos, DaoActors, GuardiansUpdateMsg,
+    GuardiansUpdateRequest, PluginListResponse, PluginParams, PluginSource, RelayTransaction,
+    RelayTxError, WalletInfo, DAO, DEFAULT_LIMIT, MAX_LIMIT,
 };
 
 <span class="kw">use </span><span class="kw">crate</span>::error::ContractError;
@@ -741,11 +759,14 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 <span class="kw">use </span><span class="kw">crate</span>::state::{
-    Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, FACTORY, FROZEN, GUARDIANS, LABEL,
-    MULTISIG_ADDRESS, MULTISIG_CODE_ID, PENDING_GUARDIAN_ROTATION, PLUGINS, RELAYERS,
+    Controller, ADDR_PREFIX, CODE_ID, CONTROLLER, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
+    PENDING_GUARDIAN_ROTATION, PLUGINS, PROXY_MULTISIG_CODE_ID, RELAYERS,
 };
 <span class="kw">use </span>cw3_fixed_multisig::msg::InstantiateMsg <span class="kw">as </span>FixedMultisigInstantiateMsg;
-<span class="kw">use </span>cw_utils::{parse_reply_instantiate_data, Duration, Threshold};
+<span class="kw">use </span>cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Duration, Threshold};
+<span class="kw">use </span>vectis_plugin_registry::{
+    contract::ContractExecMsg <span class="kw">as </span>PluginRegExecMsg, installable::InstallableExecMsg,
+};
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;migration&quot;</span>)]
 </span><span class="kw">use </span>vectis_wallet::ProxyMigrateMsg;
@@ -760,7 +781,8 @@
 <span class="comment">// set resasonobly high value to not interfere with multisigs
 </span><span class="doccomment">/// Used to spot an multisig instantiate reply
 </span><span class="kw">const </span>MULTISIG_INSTANTIATE_ID: u64 = u64::MAX;
-<span class="kw">const </span>PLUGIN_INSTANTIATE_ID: u64 = u64::MAX - <span class="number">1u64</span>;
+<span class="kw">const </span>PLUGIN_INST_ID: u64 = u64::MAX - <span class="number">1u64</span>;
+<span class="kw">const </span>REG_PLUGIN_INST_ID: u64 = u64::MAX - <span class="number">2u64</span>;
 
 <span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;library&quot;</span>), entry_point)]
 </span><span class="kw">pub fn </span>instantiate(
@@ -783,12 +805,17 @@
     CONTROLLER.save(deps.storage, <span class="kw-2">&amp;</span>Controller { addr, nonce: <span class="number">0 </span>})<span class="question-mark">?</span>;
 
     FROZEN.save(deps.storage, <span class="kw-2">&amp;</span><span class="bool-val">false</span>)<span class="question-mark">?</span>;
-    FACTORY.save(
-        deps.storage,
-        <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(info.sender.as_ref())<span class="question-mark">?</span>,
-    )<span class="question-mark">?</span>;
+
+    <span class="attr">#[cfg(not(test))]
+    </span>DAO.save(deps.storage, <span class="kw-2">&amp;</span>DAO.query(<span class="kw-2">&amp;</span>deps.querier, info.sender)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+
+    <span class="attr">#[cfg(test)]
+    </span>{
+        <span class="kw">let </span>canon_addr = deps.api.addr_canonicalize(<span class="string">&quot;test-dao&quot;</span>)<span class="question-mark">?</span>;
+        DAO.save(deps.storage, <span class="kw-2">&amp;</span>canon_addr)<span class="question-mark">?</span>;
+    }
+
     CODE_ID.save(deps.storage, <span class="kw-2">&amp;</span>msg.code_id)<span class="question-mark">?</span>;
-    MULTISIG_CODE_ID.save(deps.storage, <span class="kw-2">&amp;</span>msg.multisig_code_id)<span class="question-mark">?</span>;
     LABEL.save(deps.storage, <span class="kw-2">&amp;</span>msg.create_wallet_msg.label)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>guardian_addresses = <span class="kw-2">&amp;</span>msg.create_wallet_msg.guardians.addresses;
@@ -806,7 +833,6 @@
     <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgInstantiate&quot;</span>).add_attributes(<span class="macro">vec!</span>[
         (<span class="string">&quot;controller_address&quot;</span>, addr_human.to_string()),
         (<span class="string">&quot;code_id&quot;</span>, msg.code_id.to_string()),
-        (<span class="string">&quot;multisig_code_id&quot;</span>, msg.multisig_code_id.to_string()),
         (<span class="string">&quot;label&quot;</span>, msg.create_wallet_msg.label),
         (<span class="string">&quot;relayers&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, msg.create_wallet_msg.relayers)),
         (<span class="string">&quot;guardians&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{guardian_addresses:?}&quot;</span>)),
@@ -863,19 +889,11 @@
         ExecuteMsg::UpdateGuardians {} =&gt; execute_update_guardians(deps, env, info),
         ExecuteMsg::UpdateLabel { new_label } =&gt; execute_update_label(deps, info, env, new_label),
         ExecuteMsg::InstantiatePlugin {
-            code_id,
+            src,
             instantiate_msg,
             plugin_params,
             label,
-        } =&gt; execute_inst_plugin(
-            deps,
-            env,
-            info,
-            code_id,
-            instantiate_msg,
-            plugin_params,
-            label,
-        ),
+        } =&gt; execute_inst_plugin(deps, env, info, src, instantiate_msg, plugin_params, label),
         ExecuteMsg::UpdatePlugins {
             plugin_addr,
             migrate_msg,
@@ -889,22 +907,42 @@
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    code_id: u64,
+    src: PluginSource,
     msg: Binary,
     plugin_params: PluginParams,
     label: String,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
     ensure_is_controller(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
     <span class="kw">if </span>plugin_params.has_full_access() {
-        <span class="kw">let </span>instantiate_msg = WasmMsg::Instantiate {
-            admin: <span class="prelude-val">Some</span>(env.contract.address.to_string()),
-            code_id,
-            msg,
-            funds: info.funds,
-            label,
+        <span class="kw">let </span>sub_msg = <span class="kw">match </span>src {
+            PluginSource::VectisRegistry(id) =&gt; {
+                <span class="kw">let </span>registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginCommittee)<span class="question-mark">?</span>;
+                SubMsg::reply_always(
+                    WasmMsg::Execute {
+                        contract_addr: registry,
+                        msg: to_binary(<span class="kw-2">&amp;</span>PluginRegExecMsg::Installable(
+                            InstallableExecMsg::ProxyInstallPlugin {
+                                id,
+                                instantiate_msg: msg,
+                            },
+                        ))<span class="question-mark">?</span>,
+                        funds: info.funds,
+                    },
+                    REG_PLUGIN_INST_ID,
+                )
+            }
+            PluginSource::CodeId(code_id) =&gt; SubMsg::reply_always(
+                WasmMsg::Instantiate {
+                    admin: <span class="prelude-val">Some</span>(env.contract.address.to_string()),
+                    code_id,
+                    msg,
+                    funds: info.funds,
+                    label,
+                },
+                PLUGIN_INST_ID,
+            ),
         };
-        <span class="kw">let </span>msg = SubMsg::reply_always(instantiate_msg, PLUGIN_INSTANTIATE_ID);
-        <span class="prelude-val">Ok</span>(Response::new().add_submessage(msg))
+        <span class="prelude-val">Ok</span>(Response::new().add_submessage(sub_msg))
     } <span class="kw">else </span>{
         <span class="comment">// Instantiate through grantor contract to get partial access
         </span><span class="prelude-val">Err</span>(ContractError::FeatureNotSupported)
@@ -996,13 +1034,11 @@
         <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Frozen {});
     }
 
+    <span class="kw">let </span>factory = get_items_from_dao(deps.as_ref(), DaoActors::Factory)<span class="question-mark">?</span>;
     <span class="comment">// Get controller addr from it&#39;s pubkey
     </span><span class="kw">let </span>addr = pub_key_to_address(
         <span class="kw-2">&amp;</span>deps.as_ref(),
-        <span class="kw-2">&amp;</span>ADDR_PREFIX.query(
-            <span class="kw-2">&amp;</span>deps.querier,
-            deps.api.addr_humanize(<span class="kw-2">&amp;</span>FACTORY.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>,
-        )<span class="question-mark">?</span>,
+        <span class="kw-2">&amp;</span>ADDR_PREFIX.query(<span class="kw-2">&amp;</span>deps.querier, Addr::unchecked(factory))<span class="question-mark">?</span>,
         <span class="kw-2">&amp;</span>transaction.controller_pubkey.<span class="number">0</span>,
     )<span class="question-mark">?</span>;
 
@@ -1184,19 +1220,9 @@
         <span class="kw">let </span>instantiation_code_id = <span class="kw">if let </span><span class="prelude-val">Some</span>(id) = new_multisig_code_id {
             id
         } <span class="kw">else </span>{
-            <span class="kw">match </span>MULTISIG_CODE_ID.may_load(deps.storage)<span class="question-mark">? </span>{
-                <span class="prelude-val">Some</span>(id) =&gt; id,
-                <span class="prelude-val">None </span>=&gt; deps.querier.query_wasm_smart(
-                    deps.api.addr_humanize(<span class="kw-2">&amp;</span>FACTORY.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>,
-                    <span class="kw-2">&amp;</span>{
-                        WalletFactoryQueryMsg::CodeId {
-                            ty: CodeIdType::Multisig,
-                        }
-                    },
-                )<span class="question-mark">?</span>,
-            }
-        };
-        MULTISIG_CODE_ID.save(deps.storage, <span class="kw-2">&amp;</span>instantiation_code_id)<span class="question-mark">?</span>;
+            <span class="kw">let </span>factory = get_items_from_dao(deps.as_ref(), DaoActors::Factory)<span class="question-mark">?</span>;
+            PROXY_MULTISIG_CODE_ID.query(<span class="kw-2">&amp;</span>deps.querier, Addr::unchecked(factory))<span class="question-mark">?
+        </span>};
         <span class="kw">let </span>multisig_instantiate_msg = FixedMultisigInstantiateMsg {
             voters: addresses_to_voters(<span class="kw-2">&amp;</span>guardians.addresses),
             threshold: Threshold::AbsoluteCount {
@@ -1312,17 +1338,13 @@
             )<span class="question-mark">?</span>;
 
             <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgReplyMultisigInstantiate&quot;</span>)
-                .add_attribute(<span class="string">&quot;multisig_address&quot;</span>, res.contract_address)
-                .add_attribute(
-                    <span class="string">&quot;multisig_code_id&quot;</span>,
-                    MULTISIG_CODE_ID.load(deps.storage)<span class="question-mark">?</span>.to_string(),
-                );
+                .add_attribute(<span class="string">&quot;multisig_address&quot;</span>, res.contract_address);
 
             <span class="prelude-val">Ok</span>(Response::new().add_event(event))
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(ContractError::MultisigInstantiationError {})
         }
-    } <span class="kw">else if </span>reply.id == PLUGIN_INSTANTIATE_ID {
+    } <span class="kw">else if </span>reply.id == PLUGIN_INST_ID {
         <span class="kw">if let </span><span class="prelude-val">Ok</span>(res) = parse_reply_instantiate_data(reply) {
             PLUGINS.save(
                 deps.storage,
@@ -1335,6 +1357,20 @@
             <span class="prelude-val">Ok</span>(Response::new()
                 .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Plugin Stored&quot;</span>)
                 .add_attribute(<span class="string">&quot;plugin_address&quot;</span>, res.contract_address))
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Err</span>(ContractError::PluginInstantiationError {})
+        }
+    } <span class="kw">else if </span>reply.id == REG_PLUGIN_INST_ID {
+        <span class="kw">if let </span><span class="prelude-val">Ok</span>(res) = parse_reply_execute_data(reply) {
+            <span class="kw">let </span>addr = res.data.ok_or(ContractError::PluginInstantiationError {})<span class="question-mark">?</span>;
+            PLUGINS.save(deps.storage, <span class="kw-2">&amp;</span>addr, <span class="kw-2">&amp;</span>())<span class="question-mark">?</span>;
+
+            <span class="prelude-val">Ok</span>(Response::new()
+                .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Plugin Stored&quot;</span>)
+                .add_attribute(
+                    <span class="string">&quot;plugin_address&quot;</span>,
+                    deps.api.addr_humanize(<span class="kw-2">&amp;</span>addr.into())<span class="question-mark">?</span>.into_string(),
+                ))
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(ContractError::PluginInstantiationError {})
         }
@@ -1367,19 +1403,19 @@
     };
 
     <span class="kw">let </span>controller = CONTROLLER.load(deps.storage)<span class="question-mark">?</span>;
-    <span class="kw">let </span>factory = FACTORY.load(deps.storage)<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(WalletInfo {
         controller_addr: deps.api.addr_humanize(<span class="kw-2">&amp;</span>controller.addr)<span class="question-mark">?</span>,
-        factory: deps.api.addr_humanize(<span class="kw-2">&amp;</span>factory)<span class="question-mark">?</span>,
+        dao: deps.api.addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>,
         nonce: controller.nonce,
         version: cw2::get_contract_version(deps.storage)<span class="question-mark">?</span>,
         code_id: CODE_ID.load(deps.storage)<span class="question-mark">?</span>,
-        multisig_code_id: MULTISIG_CODE_ID.load(deps.storage)<span class="question-mark">?</span>,
         guardians,
         relayers,
         is_frozen: FROZEN.load(deps.storage)<span class="question-mark">?</span>,
         multisig_address,
+        <span class="comment">// TODO
+        </span>multisig_threshold: <span class="prelude-val">None</span>,
         label: LABEL.load(deps.storage)<span class="question-mark">?</span>,
     })
 }
@@ -1433,4 +1469,4 @@
     <span class="prelude-val">Ok</span>(Response::default())
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_proxy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_proxy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>

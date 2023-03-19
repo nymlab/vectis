@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/dao_tunnel/src/ibc.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>ibc.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-6827029ac823cab7.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-ebce58d0a40c3431.css"><link rel="stylesheet" disabled href="../../static.files/dark-f23faae4a2daf9a6.css"><link rel="stylesheet" disabled href="../../static.files/ayu-8af5e100b21cd173.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-5cf2e01a42cc9858.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-c55e1eb52e1886b4.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../vectis_dao_tunnel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/dao_tunnel/src/ibc.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>ibc.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-93196c7a1c3542a8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../vectis_dao_tunnel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -447,10 +447,12 @@
 <a href="#447" id="447">447</a>
 <a href="#448" id="448">448</a>
 <a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
 </pre><pre class="rust"><code><span class="attr">#[cfg(not(feature = <span class="string">&quot;library&quot;</span>))]
 </span><span class="kw">use </span>cosmwasm_std::entry_point;
 <span class="kw">use </span>cosmwasm_std::{
-    from_binary, to_binary, Addr, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
+    from_binary, to_binary, Deps, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
     IbcEndpoint, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse,
     StdError, StdResult, SubMsg, WasmMsg,
@@ -458,13 +460,19 @@
 <span class="attr">#[cfg(not(test))]
 </span><span class="kw">use </span>cosmwasm_std::{IbcQuery, QueryRequest};
 
+<span class="attr">#[cfg(not(test))]
+</span><span class="kw">use </span>vectis_wallet::get_items_from_dao;
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">use </span><span class="kw">crate</span>::tests_ibc::get_items_from_dao;
+
 <span class="kw">use </span>vectis_wallet::{
-    check_ibc_order, check_ibc_version, GovecExecuteMsg, GovecQueryMsg, IbcError, PacketMsg,
+    check_ibc_order, check_ibc_version, DaoActors, GovecExecuteMsg, IbcError, PacketMsg,
     PrePropExecuteMsg, ProposalExecuteMsg, ProposeMessage, RemoteTunnelPacketMsg, StakeExecuteMsg,
     StdAck, VectisDaoActionIds, IBC_APP_VERSION,
 };
 
-<span class="kw">use </span><span class="kw">crate</span>::state::{GOVEC, IBC_TUNNELS};
+<span class="kw">use </span><span class="kw">crate</span>::state::IBC_TUNNELS;
 <span class="kw">use </span><span class="kw">crate</span>::ContractError;
 
 <span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;library&quot;</span>), entry_point)]
@@ -614,15 +622,14 @@
     deps: DepsMut,
     wallet_addr: String,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;IbcReceiveResponse, ContractError&gt; {
-    <span class="kw">let </span>contract_addr = deps.api.addr_humanize(<span class="kw-2">&amp;</span>GOVEC.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-
     <span class="kw">let </span>msg = to_binary(<span class="kw-2">&amp;</span>GovecExecuteMsg::Mint {
         new_wallet: wallet_addr,
     })<span class="question-mark">?</span>;
+    <span class="kw">let </span>govec = get_items_from_dao(deps.as_ref(), DaoActors::Govec)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>msg = SubMsg::reply_always(
         WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
+            contract_addr: govec,
             msg,
             funds: <span class="macro">vec!</span>[],
         },
@@ -639,13 +646,13 @@
     sender: String,
     govec_msg: GovecExecuteMsg,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;IbcReceiveResponse, ContractError&gt; {
-    <span class="kw">let </span>govec_addr = deps.api.addr_humanize(<span class="kw-2">&amp;</span>GOVEC.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>govec_addr = get_items_from_dao(deps.as_ref(), DaoActors::Govec)<span class="question-mark">?</span>;
     <span class="kw">let </span>sub_msg = <span class="kw">match </span>govec_msg {
         GovecExecuteMsg::Transfer {
             recipient, amount, ..
         } =&gt; SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: govec_addr.to_string(),
+                contract_addr: govec_addr,
                 msg: to_binary(<span class="kw-2">&amp;</span>GovecExecuteMsg::Transfer {
                     recipient,
                     amount,
@@ -662,7 +669,7 @@
             ..
         } =&gt; SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: govec_addr.to_string(),
+                contract_addr: govec_addr,
                 msg: to_binary(<span class="kw-2">&amp;</span>GovecExecuteMsg::Send {
                     contract,
                     amount,
@@ -675,7 +682,7 @@
         ),
         GovecExecuteMsg::Exit { .. } =&gt; SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: govec_addr.to_string(),
+                contract_addr: govec_addr,
                 msg: to_binary(<span class="kw-2">&amp;</span>GovecExecuteMsg::Exit {
                     relayed_from: <span class="prelude-val">Some</span>(sender),
                 })<span class="question-mark">?</span>,
@@ -697,14 +704,11 @@
     sender: String,
     msg: StakeExecuteMsg,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;IbcReceiveResponse, ContractError&gt; {
-    <span class="kw">let </span>govec_addr = deps.api.addr_humanize(<span class="kw-2">&amp;</span>GOVEC.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span>staking_addr: Addr = deps
-        .querier
-        .query_wasm_smart(govec_addr, <span class="kw-2">&amp;</span>GovecQueryMsg::Staking {})<span class="question-mark">?</span>;
+    <span class="kw">let </span>staking_addr = get_items_from_dao(deps.as_ref(), DaoActors::Staking)<span class="question-mark">?</span>;
     <span class="kw">let </span>sub_msg = <span class="kw">match </span>msg {
         StakeExecuteMsg::Unstake { amount, .. } =&gt; SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: staking_addr.to_string(),
+                contract_addr: staking_addr,
                 msg: to_binary(<span class="kw-2">&amp;</span>StakeExecuteMsg::Unstake {
                     amount,
                     relayed_from: <span class="prelude-val">Some</span>(sender),
@@ -715,7 +719,7 @@
         ),
         StakeExecuteMsg::Claim { .. } =&gt; SubMsg::reply_always(
             WasmMsg::Execute {
-                contract_addr: staking_addr.to_string(),
+                contract_addr: staking_addr,
                 msg: to_binary(<span class="kw-2">&amp;</span>StakeExecuteMsg::Claim {
                     relayed_from: <span class="prelude-val">Some</span>(sender),
                 })<span class="question-mark">?</span>,
@@ -897,4 +901,4 @@
     <span class="prelude-val">Ok</span>(())
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_dao_tunnel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_dao_tunnel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>

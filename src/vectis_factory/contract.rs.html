@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/factory/src/contract.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-6827029ac823cab7.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-ebce58d0a40c3431.css"><link rel="stylesheet" disabled href="../../static.files/dark-f23faae4a2daf9a6.css"><link rel="stylesheet" disabled href="../../static.files/ayu-8af5e100b21cd173.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-5cf2e01a42cc9858.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-c55e1eb52e1886b4.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../vectis_factory/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/factory/src/contract.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-93196c7a1c3542a8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../vectis_factory/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -168,34 +168,10 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-<a href="#184" id="184">184</a>
-<a href="#185" id="185">185</a>
-<a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
-<a href="#189" id="189">189</a>
-<a href="#190" id="190">190</a>
-<a href="#191" id="191">191</a>
-<a href="#192" id="192">192</a>
-<a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
 </pre><pre class="rust"><code><span class="attr">#[cfg(not(feature = <span class="string">&quot;library&quot;</span>))]
 </span><span class="kw">use </span>cosmwasm_std::entry_point;
 <span class="kw">use </span>cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
+    from_binary, to_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
     StdError, StdResult,
 };
 <span class="kw">use </span>cw_utils::parse_reply_execute_data;
@@ -203,9 +179,9 @@
 <span class="kw">use </span>cw2::set_contract_version;
 
 <span class="kw">use </span><span class="kw">crate</span>::error::ContractError;
-<span class="kw">use </span><span class="kw">crate</span>::helpers::{create_mint_msg, ensure_has_govec, handle_govec_minted};
+<span class="kw">use </span><span class="kw">crate</span>::helpers::{create_mint_msg, handle_govec_minted};
 <span class="kw">use </span><span class="kw">crate</span>::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UnclaimedWalletList};
-<span class="kw">use </span><span class="kw">crate</span>::state::{GOVEC_CLAIM_LIST, GOVEC_MINTER, TOTAL_CREATED};
+<span class="kw">use </span><span class="kw">crate</span>::state::{GOVEC_CLAIM_LIST, TOTAL_CREATED};
 
 <span class="kw">use </span>vectis_wallet::CreateWalletMsg;
 
@@ -218,7 +194,7 @@
     query_wallet_claim_expiration,
 };
 <span class="kw">use </span>vectis_wallet::{
-    ensure_is_dao, ensure_is_enough_claim_fee, factory_execute, factory_instantiate,
+    ensure_is_enough_claim_fee, factory_execute, factory_instantiate,
     handle_proxy_instantion_reply, GOVEC_REPLY_ID,
 };
 
@@ -230,9 +206,6 @@
     msg: InstantiateMsg,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)<span class="question-mark">?</span>;
-    <span class="kw">if let </span><span class="prelude-val">Some</span>(mint) = msg.govec_minter.clone() {
-        GOVEC_MINTER.save(deps.storage, <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>mint)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-    };
     factory_instantiate(deps, env, info, msg)
 }
 
@@ -257,7 +230,6 @@
         ExecuteMsg::UpdateConfigFee { ty, new_fee } =&gt; {
             factory_execute::update_config_fee(deps, info, ty, new_fee)
         }
-        ExecuteMsg::UpdateGovecAddr { addr } =&gt; update_govec_addr(deps, info, addr),
         ExecuteMsg::UpdateDao { addr } =&gt; factory_execute::update_dao_addr(deps, info, addr),
         ExecuteMsg::ClaimGovec {} =&gt; claim_govec_or_remove_from_list(deps, env, info),
         ExecuteMsg::GovecMinted {
@@ -277,21 +249,7 @@
     env: Env,
     create_wallet_msg: CreateWalletMsg,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    ensure_has_govec(deps.as_ref())<span class="question-mark">?</span>;
     factory_execute::create_wallet(deps, info, env, create_wallet_msg)
-}
-
-<span class="kw">fn </span>update_govec_addr(
-    deps: DepsMut,
-    info: MessageInfo,
-    addr: String,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    ensure_is_dao(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
-    GOVEC_MINTER.save(deps.storage, <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>addr)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-
-    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgUpdateGovecAddr&quot;</span>).add_attribute(<span class="string">&quot;address&quot;</span>, addr);
-
-    <span class="prelude-val">Ok</span>(Response::new().add_event(event))
 }
 
 <span class="kw">fn </span>claim_govec_or_remove_from_list(
@@ -366,7 +324,6 @@
         }
         QueryMsg::CodeId { ty } =&gt; to_binary(<span class="kw-2">&amp;</span>query_code_id(deps, ty)<span class="question-mark">?</span>),
         QueryMsg::Fees {} =&gt; to_binary(<span class="kw-2">&amp;</span>query_fees(deps)<span class="question-mark">?</span>),
-        QueryMsg::GovecAddr {} =&gt; to_binary(<span class="kw-2">&amp;</span>query_govec_addr(deps)<span class="question-mark">?</span>),
         QueryMsg::DaoAddr {} =&gt; to_binary(<span class="kw-2">&amp;</span>query_dao_addr(deps)<span class="question-mark">?</span>),
         QueryMsg::TotalCreated {} =&gt; to_binary(<span class="kw-2">&amp;</span>query_total(deps)<span class="question-mark">?</span>),
     }
@@ -381,10 +338,5 @@
         msg: String::from(<span class="string">&quot;Not supported&quot;</span>),
     })
 }
-
-<span class="doccomment">/// Returns govec token address
-</span><span class="kw">pub fn </span>query_govec_addr(deps: Deps) -&gt; StdResult&lt;Addr&gt; {
-    deps.api.addr_humanize(<span class="kw-2">&amp;</span>GOVEC_MINTER.load(deps.storage)<span class="question-mark">?</span>)
-}
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_factory" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_factory" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>

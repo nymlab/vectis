@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis-tests/src/common/dao_common.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>dao_common.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-6827029ac823cab7.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-ebce58d0a40c3431.css"><link rel="stylesheet" disabled href="../../../static.files/dark-f23faae4a2daf9a6.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-8af5e100b21cd173.css"><script id="default-settings" ></script><script src="../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../static.files/source-script-5cf2e01a42cc9858.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-c55e1eb52e1886b4.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../../vectis_contract_tests/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis-tests/src/common/dao_common.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>dao_common.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-93196c7a1c3542a8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../vectis_contract_tests/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -736,7 +736,6 @@
 
 <span class="kw">use </span>dao_pre_propose_approval_single::state::PendingProposal;
 <span class="kw">use </span>dao_voting::{pre_propose::ProposalCreationPolicy, threshold::Threshold};
-<span class="kw">use </span>vectis_wallet::PluginListResponse;
 
 <span class="doccomment">/// DaoChainSuite
 ///
@@ -775,6 +774,10 @@
     </span><span class="kw">pub </span>cw20_stake: Addr,
     <span class="comment">// Voting addr
     </span><span class="kw">pub </span>voting: Addr,
+    <span class="comment">// PluginCommitte addr
+    </span><span class="kw">pub </span>plugin_committee: Addr,
+    <span class="comment">// PluginRegistry addr
+    </span><span class="kw">pub </span>plugin_registry: Addr,
 }
 
 <span class="kw">impl </span>DaoChainSuite {
@@ -783,8 +786,9 @@
     /// - default WALLET_FEE
     ///
     </span><span class="kw">pub fn </span>init() -&gt; <span class="prelude-ty">Result</span>&lt;DaoChainSuite&gt; {
-        <span class="kw">let </span>genesis_funds = <span class="macro">vec!</span>[coin(<span class="number">10_000_000_000_000</span>, <span class="string">&quot;ucosm&quot;</span>)];
+        <span class="kw">let </span>genesis_funds = <span class="macro">vec!</span>[coin(<span class="number">10_000_000_000_000</span>, DENOM)];
         <span class="kw">let </span>deployer = Addr::unchecked(<span class="string">&quot;deployer&quot;</span>);
+        <span class="kw">let </span>plugin_committee = Addr::unchecked(<span class="string">&quot;plugin_committee&quot;</span>);
         <span class="kw">let </span>controller = Addr::unchecked(CONTROLLER_ADDR);
         <span class="kw">let </span>prop_approver = Addr::unchecked(PROP_APPROVER);
         <span class="kw">let </span><span class="kw-2">mut </span>app = App::new(|router, <span class="kw">_</span>, storage| {
@@ -793,10 +797,12 @@
                 .init_balance(storage, <span class="kw-2">&amp;</span>deployer, genesis_funds)
                 .unwrap();
         });
+        app.send_tokens(deployer.clone(), controller, <span class="kw-2">&amp;</span>[coin(<span class="number">1_000_000_000</span>, DENOM)])<span class="question-mark">?</span>;
+
         app.send_tokens(
             deployer.clone(),
-            controller,
-            <span class="kw-2">&amp;</span>[coin(<span class="number">1_000_000_000</span>, <span class="string">&quot;ucosm&quot;</span>)],
+            plugin_committee.clone(),
+            <span class="kw-2">&amp;</span>[coin(<span class="number">1_000_000_000</span>, DENOM)],
         )<span class="question-mark">?</span>;
 
         <span class="kw">let </span>dao_id = app.store_code(contract_dao());
@@ -809,6 +815,7 @@
         <span class="kw">let </span>proxy_multisig_id = app.store_code(contract_multisig());
         <span class="kw">let </span>govec_id = app.store_code(contract_govec());
         <span class="kw">let </span>dao_tunnel_id = app.store_code(contract_dao_tunnel());
+        <span class="kw">let </span>plugin_registry_id = app.store_code(contract_plugin_registry());
 
         <span class="kw">let </span>govec = app
             .instantiate_contract(
@@ -818,11 +825,9 @@
                     name: String::from(<span class="string">&quot;govec&quot;</span>),
                     symbol: String::from(<span class="string">&quot;gov&quot;</span>),
                     initial_balances: <span class="macro">vec!</span>[],
-                    staking_addr: <span class="prelude-val">None</span>,
                     marketing: <span class="prelude-val">None</span>,
                     mint_cap: <span class="prelude-val">None</span>,
                     mint_amount: Uint128::new(MINT_AMOUNT),
-                    factory: <span class="prelude-val">None</span>,
                 },
                 <span class="kw-2">&amp;</span>[],
                 <span class="string">&quot;govec&quot;</span>,
@@ -947,14 +952,13 @@
                     proxy_multisig_code_id: proxy_multisig_id,
                     addr_prefix: <span class="string">&quot;wasm&quot;</span>.to_string(),
                     wallet_fee: Coin {
-                        denom: <span class="string">&quot;ucosm&quot;</span>.to_string(),
+                        denom: DENOM.to_string(),
                         amount: Uint128::new(WALLET_FEE),
                     },
                     claim_fee: Coin {
-                        denom: <span class="string">&quot;ucosm&quot;</span>.to_string(),
+                        denom: DENOM.to_string(),
                         amount: Uint128::new(CLAIM_FEE),
                     },
-                    govec_minter: <span class="prelude-val">Some</span>(govec.to_string()),
                 },
                 <span class="kw-2">&amp;</span>[],
                 <span class="string">&quot;wallet-factory&quot;</span>,      <span class="comment">// label: human readible name for contract
@@ -967,10 +971,9 @@
                 dao_tunnel_id,
                 dao.clone(),
                 <span class="kw-2">&amp;</span>DTunnelInstanstiateMsg {
-                    govec_minter: govec.to_string(),
                     init_remote_tunnels: <span class="prelude-val">None</span>,
                     init_ibc_transfer_mods: <span class="prelude-val">None</span>,
-                    denom: <span class="string">&quot;ucosm&quot;</span>.to_string(),
+                    denom: DENOM.to_string(),
                 },
                 <span class="kw-2">&amp;</span>[],
                 <span class="string">&quot;dao-tunnel&quot;</span>,          <span class="comment">// label: human readible name for contract
@@ -978,75 +981,52 @@
             </span>)
             .unwrap();
 
-        app.execute_contract(
-            deployer.clone(),
-            govec.clone(),
-            <span class="kw-2">&amp;</span>GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Dao(dao.to_string()),
-            },
-            <span class="kw-2">&amp;</span>[],
-        )
-        .map_err(|err| <span class="macro">anyhow!</span>(err))
-        .unwrap();
+        <span class="kw">let </span>plugin_registry = app
+            .instantiate_contract(
+                plugin_registry_id,
+                dao.clone(),
+                <span class="kw-2">&amp;</span>PRegistryInstantiateMsg {
+                    registry_fee: coin(REGISTRY_FEE, DENOM),
+                    install_fee: coin(INSTALL_FEE, DENOM),
+                },
+                <span class="kw-2">&amp;</span>[],
+                <span class="string">&quot;plugin_registry&quot;</span>,     <span class="comment">// label: human readible name for contract
+                </span><span class="prelude-val">Some</span>(dao.to_string()), <span class="comment">// admin: Option&lt;String&gt;, will need this for upgrading
+            </span>)
+            .unwrap();
 
         app.execute_contract(
             deployer.clone(),
-            dao.clone(),
-            <span class="kw-2">&amp;</span>DaoExecMsg::ExecuteAdminMsgs {
-                msgs: <span class="macro">vec!</span>[CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: dao.to_string(),
-                    msg: to_binary(<span class="kw-2">&amp;</span>DaoExecMsg::SetItem {
-                        key: <span class="string">&quot;dao-tunnel&quot;</span>.to_string(),
-                        value: dao_tunnel.to_string(),
-                    })<span class="question-mark">?</span>,
-                    funds: <span class="macro">vec!</span>[],
-                })],
-            },
-            <span class="kw-2">&amp;</span>[],
-        )
-        .map_err(|err| <span class="macro">anyhow!</span>(err))
-        .unwrap();
-
-        app.execute_contract(
-            deployer.clone(),
-            dao.clone(),
-            <span class="kw-2">&amp;</span>DaoExecMsg::ExecuteAdminMsgs {
-                msgs: <span class="macro">vec!</span>[CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: dao.to_string(),
-                    msg: to_binary(<span class="kw-2">&amp;</span>DaoExecMsg::SetItem {
-                        key: <span class="string">&quot;pre-proposal&quot;</span>.to_string(),
-                        value: pre_prop.clone().unwrap().to_string(),
-                    })<span class="question-mark">?</span>,
-                    funds: <span class="macro">vec!</span>[],
-                })],
-            },
-            <span class="kw-2">&amp;</span>[],
-        )
-        .map_err(|err| <span class="macro">anyhow!</span>(err))
-        .unwrap();
-
-        <span class="comment">// Give Govec the correct contract addresses
-        </span>app.execute_contract(
-            dao.clone(),
             govec.clone(),
-            <span class="kw-2">&amp;</span>GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Factory(factory.to_string()),
+            <span class="kw-2">&amp;</span>GovecExecuteMsg::UpdateDaoAddr {
+                new_addr: dao.to_string(),
             },
             <span class="kw-2">&amp;</span>[],
         )
         .map_err(|err| <span class="macro">anyhow!</span>(err))
         .unwrap();
 
-        app.execute_contract(
-            dao.clone(),
-            govec.clone(),
-            <span class="kw-2">&amp;</span>GovecExecuteMsg::UpdateConfigAddr {
-                new_addr: vectis_wallet::UpdateAddrReq::Staking(cw20_stake.to_string()),
-            },
-            <span class="kw-2">&amp;</span>[],
-        )
-        .map_err(|err| <span class="macro">anyhow!</span>(err))
-        .unwrap();
+        <span class="comment">// Update Dao with DaoActor Addrs
+        // TODO: add treasury
+        </span><span class="kw">let </span>actors = <span class="kw-2">&amp;</span>[
+            (DaoActors::Govec, govec.clone()),
+            (DaoActors::Factory, factory.clone()),
+            (DaoActors::PreProposalModule, pre_prop.clone().unwrap()),
+            (DaoActors::DaoTunnel, dao_tunnel.clone()),
+            (DaoActors::Staking, cw20_stake.clone()),
+            (DaoActors::PluginRegisty, plugin_registry.clone()),
+            (DaoActors::PluginCommittee, plugin_committee.clone()),
+        ];
+
+        <span class="kw">for </span>actor <span class="kw">in </span>actors.iter() {
+            app.execute_contract(
+                deployer.clone(),
+                dao.clone(),
+                <span class="kw-2">&amp;</span>add_item_msg(dao.clone(), actor.<span class="number">0</span>.clone(), actor.<span class="number">1</span>.clone()),
+                <span class="kw-2">&amp;</span>[],
+            )
+            .unwrap();
+        }
 
         <span class="prelude-val">Ok</span>(DaoChainSuite {
             controller: Addr::unchecked(CONTROLLER_ADDR),
@@ -1061,6 +1041,8 @@
             proposal: prop_list[<span class="number">0</span>].address.clone(),
             cw20_stake,
             voting,
+            plugin_registry,
+            plugin_committee,
         })
     }
 
@@ -1136,7 +1118,7 @@
                 controller,
                 factory,
                 <span class="kw-2">&amp;</span>execute,
-                <span class="kw-2">&amp;</span>[coin(native_tokens_amount, <span class="string">&quot;ucosm&quot;</span>)],
+                <span class="kw-2">&amp;</span>[coin(native_tokens_amount, DENOM)],
             )
             .map_err(|err| <span class="macro">anyhow!</span>(err))<span class="question-mark">?</span>;
 
@@ -1379,7 +1361,7 @@
     }
 
     <span class="kw">pub fn </span>query_balance(<span class="kw-2">&amp;</span><span class="self">self</span>, addr: <span class="kw-2">&amp;</span>Addr) -&gt; <span class="prelude-ty">Result</span>&lt;Coin&gt; {
-        <span class="prelude-val">Ok</span>(<span class="self">self</span>.app.wrap().query_balance(addr.as_str(), <span class="string">&quot;ucosm&quot;</span>)<span class="question-mark">?</span>)
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.app.wrap().query_balance(addr.as_str(), DENOM)<span class="question-mark">?</span>)
     }
 
     <span class="kw">pub fn </span>query_govec_mint_amount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;BalanceResponse, StdError&gt; {
@@ -1466,5 +1448,23 @@
         GOVEC_CLAIM_DURATION_DAY_MUL * <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60
     </span>}
 }
+
+<span class="kw">pub fn </span>add_item_msg(dao: Addr, key: DaoActors, value: Addr) -&gt; DaoExecMsg {
+    DaoExecMsg::ExecuteAdminMsgs {
+        msgs: <span class="macro">vec!</span>[CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: dao.to_string(),
+            msg: to_binary(<span class="kw-2">&amp;</span>DaoExecMsg::SetItem {
+                key: key.to_string(),
+                value: value.to_string(),
+            })
+            .unwrap(),
+            funds: <span class="macro">vec!</span>[],
+        })],
+    }
+}
+
+<span class="kw">pub fn </span>init_funds() -&gt; Vec&lt;Coin&gt; {
+    <span class="macro">vec!</span>[coin(<span class="number">10_000_000_000_000</span>, DENOM)]
+}
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_contract_tests" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_contract_tests" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>

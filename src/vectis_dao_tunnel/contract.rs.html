@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/dao_tunnel/src/contract.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-6827029ac823cab7.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-ebce58d0a40c3431.css"><link rel="stylesheet" disabled href="../../static.files/dark-f23faae4a2daf9a6.css"><link rel="stylesheet" disabled href="../../static.files/ayu-8af5e100b21cd173.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-5cf2e01a42cc9858.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-c55e1eb52e1886b4.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../vectis_dao_tunnel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/dao_tunnel/src/contract.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-93196c7a1c3542a8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../vectis_dao_tunnel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -305,35 +305,6 @@
 <a href="#305" id="305">305</a>
 <a href="#306" id="306">306</a>
 <a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
-<a href="#324" id="324">324</a>
-<a href="#325" id="325">325</a>
-<a href="#326" id="326">326</a>
-<a href="#327" id="327">327</a>
-<a href="#328" id="328">328</a>
-<a href="#329" id="329">329</a>
-<a href="#330" id="330">330</a>
-<a href="#331" id="331">331</a>
-<a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
-<a href="#335" id="335">335</a>
-<a href="#336" id="336">336</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, Event, IbcMsg, MessageInfo,
     Order, Reply, Response, StdResult, SubMsgResult, Uint128,
@@ -342,13 +313,13 @@
 <span class="kw">use </span>cw_storage_plus::Bound;
 
 <span class="kw">use </span>vectis_wallet::{
-    DaoTunnelPacketMsg, IbcTransferChannels, PacketMsg, Receiver, StdAck, DEFAULT_LIMIT, MAX_LIMIT,
-    PACKET_LIFETIME,
+    DaoTunnelPacketMsg, IbcTransferChannels, PacketMsg, Receiver, StdAck, DAO, DEFAULT_LIMIT,
+    MAX_LIMIT, PACKET_LIFETIME,
 };
 
 <span class="kw">use </span><span class="kw">crate</span>::error::ContractError;
 <span class="kw">use </span><span class="kw">crate</span>::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, RemoteTunnels};
-<span class="kw">use </span><span class="kw">crate</span>::state::{ADMIN, DENOM, GOVEC, IBC_TRANSFER_MODULES, IBC_TUNNELS};
+<span class="kw">use </span><span class="kw">crate</span>::state::{DENOM, IBC_TRANSFER_MODULES, IBC_TUNNELS};
 <span class="kw">use </span>std::convert::Into;
 
 <span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;crates.io:vectis-dao-tunnel&quot;</span>;
@@ -362,13 +333,9 @@
     msg: InstantiateMsg,
 ) -&gt; StdResult&lt;Response&gt; {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)<span class="question-mark">?</span>;
-    <span class="kw">let </span>admin_addr = deps.api.addr_canonicalize(info.sender.as_ref())<span class="question-mark">?</span>;
-    <span class="kw">let </span>govec_addr = deps
-        .api
-        .addr_canonicalize(deps.api.addr_validate(<span class="kw-2">&amp;</span>msg.govec_minter)<span class="question-mark">?</span>.as_str())<span class="question-mark">?</span>;
-    GOVEC.save(deps.storage, <span class="kw-2">&amp;</span>govec_addr)<span class="question-mark">?</span>;
+    <span class="kw">let </span>dao_addr = deps.api.addr_canonicalize(info.sender.as_ref())<span class="question-mark">?</span>;
     DENOM.save(deps.storage, <span class="kw-2">&amp;</span>msg.denom)<span class="question-mark">?</span>;
-    ADMIN.save(deps.storage, <span class="kw-2">&amp;</span>admin_addr)<span class="question-mark">?</span>;
+    DAO.save(deps.storage, <span class="kw-2">&amp;</span>dao_addr)<span class="question-mark">?</span>;
     <span class="kw">if let </span><span class="prelude-val">Some</span>(init_tunnels) = msg.init_remote_tunnels {
         <span class="kw">for </span>tunnel <span class="kw">in </span>init_tunnels.tunnels {
             IBC_TUNNELS.save(deps.storage, tunnel, <span class="kw-2">&amp;</span>())<span class="question-mark">?</span>;
@@ -403,7 +370,6 @@
             port_id,
         } =&gt; execute_add_approved_controller(deps, info, connection_id, port_id, <span class="bool-val">false</span>),
         ExecuteMsg::UpdateDaoAddr { new_addr } =&gt; execute_update_dao(deps, info, new_addr),
-        ExecuteMsg::UpdateGovecAddr { new_addr } =&gt; execute_update_govec(deps, info, new_addr),
         ExecuteMsg::UpdateIbcTransferRecieverChannel {
             connection_id,
             channel_id,
@@ -424,7 +390,7 @@
     port_id: String,
     to_add: bool,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>event = Event::new(<span class="string">&quot;&quot;</span>)
         .add_attribute(<span class="string">&quot;connection_id&quot;</span>, <span class="kw-2">&amp;</span>connection_id)
@@ -445,26 +411,11 @@
     info: MessageInfo,
     new_addr: String,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
     <span class="kw">let </span>addr = deps.api.addr_validate(<span class="kw-2">&amp;</span>new_addr)<span class="question-mark">?</span>;
-    ADMIN.save(deps.storage, <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(addr.as_str())<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+    DAO.save(deps.storage, <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(addr.as_str())<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.dao_tunnel.v1.MsgUpdateDaoAddr&quot;</span>).add_attribute(<span class="string">&quot;address&quot;</span>, addr);
-
-    <span class="prelude-val">Ok</span>(Response::new().add_event(event))
-}
-
-<span class="kw">fn </span>execute_update_govec(
-    deps: DepsMut,
-    info: MessageInfo,
-    new_addr: String,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
-    <span class="kw">let </span>addr = deps.api.addr_validate(<span class="kw-2">&amp;</span>new_addr)<span class="question-mark">?</span>;
-    GOVEC.save(deps.storage, <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(addr.as_str())<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-
-    <span class="kw">let </span>event =
-        Event::new(<span class="string">&quot;vectis.dao_tunnel.v1.MsgUpdateGovecAddr&quot;</span>).add_attribute(<span class="string">&quot;address&quot;</span>, addr);
 
     <span class="prelude-val">Ok</span>(Response::new().add_event(event))
 }
@@ -475,7 +426,7 @@
     connection_id: String,
     channel: <span class="prelude-ty">Option</span>&lt;String&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>event = Event::new(<span class="string">&quot;vectis.dao_tunnel.v1.MsgUpdateIbcTransferRecieverChannel&quot;</span>)
         .add_attribute(<span class="string">&quot;connection_id&quot;</span>, <span class="kw-2">&amp;</span>connection_id);
@@ -506,7 +457,7 @@
     msg: DaoTunnelPacketMsg,
     sending_channel_id: String,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    ensure_is_admin(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
+    ensure_is_dao(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
 
     <span class="kw">let </span>packet = PacketMsg {
         sender: env.contract.address.to_string(),
@@ -575,7 +526,6 @@
 <span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;library&quot;</span>), entry_point)]
 </span><span class="kw">pub fn </span>query(deps: Deps, _env: Env, msg: QueryMsg) -&gt; StdResult&lt;Binary&gt; {
     <span class="kw">match </span>msg {
-        QueryMsg::Govec {} =&gt; to_binary(<span class="kw-2">&amp;</span>query_govec(deps)<span class="question-mark">?</span>),
         QueryMsg::Dao {} =&gt; to_binary(<span class="kw-2">&amp;</span>query_dao(deps)<span class="question-mark">?</span>),
         QueryMsg::Controllers { start_after, limit } =&gt; {
             to_binary(<span class="kw-2">&amp;</span>query_controllers(deps, start_after, limit)<span class="question-mark">?</span>)
@@ -608,16 +558,8 @@
     })
 }
 
-<span class="kw">pub fn </span>query_govec(deps: Deps) -&gt; StdResult&lt;<span class="prelude-ty">Option</span>&lt;Addr&gt;&gt; {
-    <span class="kw">let </span>addr = <span class="kw">match </span>GOVEC.may_load(deps.storage)<span class="question-mark">? </span>{
-        <span class="prelude-val">Some</span>(c) =&gt; <span class="prelude-val">Some</span>(deps.api.addr_humanize(<span class="kw-2">&amp;</span>c)<span class="question-mark">?</span>),
-        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-    };
-    <span class="prelude-val">Ok</span>(addr)
-}
-
 <span class="kw">pub fn </span>query_dao(deps: Deps) -&gt; StdResult&lt;<span class="prelude-ty">Option</span>&lt;Addr&gt;&gt; {
-    <span class="kw">let </span>addr = <span class="kw">match </span>ADMIN.may_load(deps.storage)<span class="question-mark">? </span>{
+    <span class="kw">let </span>addr = <span class="kw">match </span>DAO.may_load(deps.storage)<span class="question-mark">? </span>{
         <span class="prelude-val">Some</span>(c) =&gt; <span class="prelude-val">Some</span>(deps.api.addr_humanize(<span class="kw-2">&amp;</span>c)<span class="question-mark">?</span>),
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     };
@@ -661,9 +603,9 @@
     }
 }
 
-<span class="doccomment">/// Ensures provided addr is the state stored ADMIN
-</span><span class="kw">pub fn </span>ensure_is_admin(deps: Deps, sender: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
-    <span class="kw">let </span>admin = ADMIN.load(deps.storage)<span class="question-mark">?</span>;
+<span class="doccomment">/// Ensures provided addr is the state stored DAO  
+</span><span class="kw">pub fn </span>ensure_is_dao(deps: Deps, sender: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
+    <span class="kw">let </span>admin = DAO.load(deps.storage)<span class="question-mark">?</span>;
     <span class="kw">let </span>caller = deps.api.addr_canonicalize(sender)<span class="question-mark">?</span>;
     <span class="kw">if </span>caller != admin {
         <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Unauthorized {});
@@ -671,4 +613,4 @@
     <span class="prelude-val">Ok</span>(())
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_dao_tunnel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_dao_tunnel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["ExecuteMsg",""],["QueryMsg",""]],"struct":[["ChainConfigResponse",""],["IbcTransferChannels","Returned when IBC_TRANSFER_MODULES are queried"],["InstantiateMsg",""],["Receiver",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["ExecuteMsg",""],["QueryMsg",""]],"struct":[["IbcTransferChannels","Returned when IBC_TRANSFER_MODULES are queried"],["InstantiateMsg",""],["Receiver",""]]};
