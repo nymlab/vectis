@@ -8,7 +8,6 @@ import {
     ExecuteMsg as CwPropSingleExecuteMsg,
     QueryMsg as ProposalQueryMsg,
 } from "@dao-dao/types/contracts/DaoProposalSingle.v2";
-import { Vote } from "@dao-dao/types/contracts/DaoProposalSingle.common";
 import { deployReportPath, hostAccounts, hostChain, remoteChain } from "../utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { CWClient } from "../clients";
@@ -124,7 +123,7 @@ describe("Proxy Suite: ", () => {
             funds
         );
 
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithoutAck("host", null);
 
         const { amount: balanceAfter } = await remoteUserClient.getBalance(targetAddress, relayerClient.denoms.src);
         expect(+balanceAfter).toEqual(+balanceBefore + +amountToSend);

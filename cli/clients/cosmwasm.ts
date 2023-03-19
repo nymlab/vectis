@@ -10,7 +10,7 @@ import { DirectSecp256k1HdWallet, GeneratedType, OfflineSigner, Registry } from 
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { AminoTypes, GasPrice } from "@cosmjs/stargate";
+import { AminoTypes, GasPrice, Block } from "@cosmjs/stargate";
 import {
     cosmosAminoConverters,
     cosmosProtoRegistry,
@@ -153,18 +153,7 @@ class CWClient extends SigningCosmWasmClient {
 
     /**
      * Uploads contracts needed for e2e tests on local nodes
-     *  - factory
-     *  - proxy
-     *  - cw3 fixed mulitisig
-     *  - govec token contract
-     *  - dao-contracts: core
-     *  - dao-contracts: cw20_stake
-     *  - dao-contracts: cw20_staked_balance_voting
-     *  - dao-contracts: proposal-single
-     *
-     *  Note: dao-contracts do not need to be uploaded on juno-testnet / juno-mainnet
-     *
-     *  Current version of DAO contracts: 60b710df2f3abb8ca275ad16a86ce3b0c265a339 (on testnet)
+     * Note: dao-contracts do not need to be uploaded on juno-testnet / juno-mainnet
      *
      */
     async uploadHostContracts(): Promise<{

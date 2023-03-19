@@ -1,4 +1,4 @@
-import { FactoryClient, GovecClient, CWClient, DaoClient, ProxyClient, RelayClient } from "../clients";
+import { CWClient, DaoClient, RelayClient } from "../clients";
 import { hostChain, remoteChain } from "../utils/constants";
 import { toCosmosMsg } from "../utils/enconding";
 import {
@@ -24,21 +24,18 @@ describe("DAO Suite for DAO Funds:", () => {
     let adminClient: CWClient;
     let userClient: CWClient;
     let userRemoteClient: CWClient;
-    let proxyClient: ProxyClient;
-    let govecClient: GovecClient;
     let daoClient: DaoClient;
-    let factoryClient: FactoryClient;
     let relayerClient: RelayClient;
     let queryClient: QueryClient & StakingExtension & BankExtension;
     let remoteQueryClient: QueryClient & StakingExtension & BankExtension;
     SigningStargateClient;
     beforeAll(async () => {
-        queryClient = await QueryClient.withExtensions(
+        queryClient = QueryClient.withExtensions(
             await Tendermint34Client.connect(hostChain.rpcUrl),
             setupStakingExtension,
             setupBankExtension
         );
-        remoteQueryClient = await QueryClient.withExtensions(
+        remoteQueryClient = QueryClient.withExtensions(
             await Tendermint34Client.connect(remoteChain.rpcUrl),
             setupStakingExtension,
             setupBankExtension
@@ -47,8 +44,6 @@ describe("DAO Suite for DAO Funds:", () => {
         adminClient = await CWClient.connectHostWithAccount("admin");
         userClient = await CWClient.connectHostWithAccount("user");
         userRemoteClient = await CWClient.connectRemoteWithAccount("user");
-        govecClient = new GovecClient(adminClient, adminClient.sender, addrs.govecAddr);
-        factoryClient = new FactoryClient(userClient, userClient.sender, addrs.factoryAddr);
         daoClient = new DaoClient(adminClient, {
             daoAddr: addrs.daoAddr,
             proposalAddr: addrs.proposalAddr,
@@ -96,10 +91,8 @@ describe("DAO Suite for DAO Funds:", () => {
         });
 
         await daoClient.executeAdminMsg(msg);
-        await delay(10000);
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithoutAck("host", null);
 
-        await delay(10000);
         const resp = await remoteQueryClient.staking.delegation(addrs.remoteTunnelAddr, validator.operatorAddress);
         const balanceAfterStaking = resp.delegationResponse?.balance?.amount || NaN;
 
@@ -121,8 +114,7 @@ describe("DAO Suite for DAO Funds:", () => {
             undefined,
             [coin(1e4, remoteChain.feeToken)]
         );
-        await relayerClient.relayAll();
-        await delay(10000);
+        await relayerClient.runRelayerWithoutAck("remote", null);
 
         const { amount: daoCurrentBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
 
@@ -132,12 +124,7 @@ describe("DAO Suite for DAO Funds:", () => {
     it("DAO can send funds from remote-tunnel to itself via contract and ibc-transfer module", async () => {
         const tosend = 1e5;
         const funds = { amount: (2 * tosend).toString(), denom: remoteChain.feeToken };
-        const result = await userRemoteClient.sendTokens(
-            userRemoteClient.sender,
-            addrs.remoteTunnelAddr,
-            [funds],
-            "auto"
-        );
+        await userRemoteClient.sendTokens(userRemoteClient.sender, addrs.remoteTunnelAddr, [funds], "auto");
 
         const { amount: daoPreviousBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
 
@@ -183,10 +170,11 @@ describe("DAO Suite for DAO Funds:", () => {
         });
 
         await daoClient.executeAdminMsg(msg);
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithoutAck("host", null);
 
-        await delay(10000);
-        await relayerClient.relayAll();
+        // Ensures that the remote has time to create IBC message
+        await delay(5000);
+        await relayerClient.runRelayerWithoutAck("remote", null);
 
         const { amount: daoCurrentBalance } = await userClient.getBalance(addrs.daoAddr, relayerClient.denoms.dest);
 
@@ -195,12 +183,6 @@ describe("DAO Suite for DAO Funds:", () => {
 
     afterAll(async () => {
         await daoClient.executeRemoveAdmin();
-
-        try {
-            await daoClient.queryAdmin();
-            // force fail
-            expect(false).toBeTruthy();
-        } catch (err) {}
         adminClient?.disconnect();
     });
 });

@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import { ChannelPair } from "@confio/relayer/build/lib/link";
+import { ChannelPair, RelayedHeights, Side } from "@confio/relayer/build/lib/link";
 import { IbcClient, Link } from "@confio/relayer";
-import { GasPrice } from "@cosmjs/stargate";
+import { GasPrice, Block } from "@cosmjs/stargate";
 
 import CWClient from "./cosmwasm";
 import {
@@ -21,6 +21,8 @@ class RelayerClient {
     link: Link | null;
     wasmChannel: ChannelPair | null;
     transferChannel: ChannelPair | null;
+    running: boolean = false;
+    nextRelay: RelayedHeights = {};
     constructor() {
         this.link = null;
         this.wasmChannel = null;
@@ -73,6 +75,30 @@ class RelayerClient {
     async relayAll() {
         if (!this.link) throw new Error("Link not initialized");
         return await this.link.relayAll();
+    }
+
+    sleep(ms: number | undefined) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async runRelayerWithoutAck(fromSide: string, fromSideBlockHeight: number | null) {
+        if (!this.link) throw new Error("Link not initialized");
+
+        let side: Side = fromSide == "host" ? "A" : "B";
+        let packetsFromA = await this.link.getPendingPackets(side, {
+            minHeight: fromSideBlockHeight!,
+        });
+        await this.link.relayPackets(side, packetsFromA);
+    }
+
+    async runRelayerWithAck(fromSide: string, fromSideBlockHeight: number | null) {
+        if (!this.link) throw new Error("Link not initialized");
+        let side: Side = fromSide == "host" ? "A" : "B";
+        let otherside: Side = fromSide == "host" ? "B" : "A";
+
+        let packetsFromA = await this.link.getPendingPackets(side, { minHeight: fromSideBlockHeight! });
+        let ackA = await this.link.relayPackets(side, packetsFromA);
+        await this.link.relayAcks(otherside, ackA);
     }
 
     async connect() {

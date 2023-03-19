@@ -15,7 +15,6 @@ describe("Remote Factory Suite:", () => {
     let proxyClient: ProxyClient;
     let govecClient: GovecClient;
     let addrs: VectisDaoContractsAddrs;
-    let wallet: string | null;
     const relayerClient = new RelayerClient();
     beforeAll(async () => {
         const { remoteFactoryAddr, govecAddr } = await import(deployReportPath);
@@ -59,7 +58,7 @@ describe("Remote Factory Suite:", () => {
             ],
         });
 
-        await relayerClient.relayAll();
+        await relayerClient.runRelayerWithAck("remote", null);
 
         res = await factoryClient.unclaimedGovecWallets({});
 
