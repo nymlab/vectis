@@ -9,6 +9,8 @@ import {
     Cw4GroupClient,
     PluginRegClient,
 } from "../clients";
+
+import { mintableGovecPerWallet } from "../clients/dao";
 import { marketingDescription, marketingProject } from "../clients/govec";
 import RemoteTunnelClient from "../clients/remote-tunnel";
 import { govecGenesisBalances } from "../config/govec_init_balances";
@@ -28,8 +30,6 @@ import {
 } from "../clients/dao";
 import { DaoActors, deployReportPath } from "../utils/constants";
 
-// See README.md for deployment info
-//
 (async function deploy() {
     console.log("Starting to deploy");
     const { host, remote } = await import(uploadReportPath);
@@ -54,7 +54,7 @@ import { DaoActors, deployReportPath } from "../utils/constants";
     const govecClient = await GovecClient.instantiate(adminHostClient, govecRes.codeId, {
         initial_balances: govecGenesisBalances,
         marketing: GovecClient.createVectisMarketingInfo(adminHostClient.sender),
-        mintAmount: "2",
+        mintAmount: mintableGovecPerWallet,
     });
     const govecAddr = govecClient.contractAddress;
     console.log("2. Instantiated Govec at: ", govecAddr);

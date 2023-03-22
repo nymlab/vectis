@@ -1,8 +1,8 @@
-// The genesis balance of Govec, should be in the form of
-// const initial_balances: GovecT.Cw20Coin[] = [
-//        {
-//            address: adminHostClient.sender,
-//            amount: "2",
-//        },
-//    ];
-export const govecGenesisBalances = [];
+import { hostAccounts } from "../utils/constants";
+
+export const govecGenesisBalances = [
+    {
+        address: hostAccounts.token_holder.address,
+        amount: "100",
+    },
+];

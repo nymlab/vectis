@@ -74,40 +74,61 @@ export const cw20StakeSchemaLink = `https://github.com/nymlab/dao-contracts/rele
 
 // Paths
 export const cachePath = path.join(__dirname, "../.cache");
+export const deployPath = path.join(__dirname, "../deploy");
 export const configPath = path.join(__dirname, "../config");
 export const contractPath = path.join(__dirname, "../contracts");
 export const downloadContractPath = path.join(cachePath, "/contracts");
 export const downloadSchemaPath = path.join(cachePath, "/schemas");
-export const uploadReportPath = path.join(cachePath, "uploadInfo.json");
-export const deployReportPath = path.join(cachePath, "deployInfo.json");
-export const ibcReportPath = path.join(cachePath, "ibcInfo.json");
+
+// Deploy output paths
+export const daoUploadReportPath = path.join(
+    process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
+    `${process.env.HOST_CHAIN}-uploadInfo.json`
+);
+export const remoteUploadReportPath = path.join(
+    process.env.REMOTE_CHAIN == "wasm_localnet" ? cachePath : deployPath,
+    `${process.env.REMOTE_CHAIN}-uploadInfo.json`
+);
+export const daoDeployReportPath = path.join(
+    process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
+    `${process.env.HOST_CHAIN}-deployInfo.json`
+);
+export const remoteDeployReportPath = path.join(
+    process.env.REMOTE_CHAIN == "wasm_localnet" ? cachePath : deployPath,
+    `${process.env.REMOTE_CHAIN}-deployInfo.json`
+);
+export const ibcReportPath = path.join(
+    process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
+    "ibcInfo.json"
+);
 
 // Host Contracts
 const vectisContractsPath = path.join(__dirname, "../../artifacts");
-export const daoTunnelCodetPath = path.join(vectisContractsPath, contractsFileNames.vectis_dao_tunnel);
-export const proxyCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_proxy);
-export const govecCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_govec);
-export const pluginRegCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_plugin_registry);
-export const factoryCodePath = path.join(vectisContractsPath, contractsFileNames.vectis_factory);
-
-// Remote Contracts
 const remoteContractsPath = path.join(__dirname, "../../artifacts");
-export const remoteTunnelCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_tunnel);
-export const remoteProxyCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_proxy);
-export const remoteFactoryCodePath = path.join(remoteContractsPath, contractsFileNames.vectis_remote_factory);
 
-// CWPlus Contracts
-export const fixMultiSigCodePath = path.join(downloadContractPath, contractsFileNames.cw3_mutltisig);
-export const cw20CodePath = path.join(downloadContractPath, contractsFileNames.cw20_base);
-export const cw3FlexCodePath = path.join(downloadContractPath, contractsFileNames.cw3_flex_mutltisig);
-export const cw4GroupCodePath = path.join(downloadContractPath, contractsFileNames.cw4_group);
+// Wasm file paths
+export const codePaths: { [index: string]: string } = {
+    daoTunnelCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_dao_tunnel),
+    proxyCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_proxy),
+    govecCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_govec),
+    pluginRegCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_plugin_registry),
+    factoryCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_factory),
 
-// DAODAO Contracts
-export const daoCodePath = path.join(downloadContractPath, contractsFileNames.cw_dao);
-export const stakingCodePath = path.join(downloadContractPath, contractsFileNames.cw20_staking);
-export const voteCodePath = path.join(downloadContractPath, contractsFileNames.cw20_voting);
-export const proposalSingleCodePath = path.join(downloadContractPath, contractsFileNames.cw_proposal_single);
-export const preProposalSingleCodePath = path.join(
-    downloadContractPath,
-    contractsFileNames.cw_pre_proposal_approval_single
-);
+    // Remote Contracts
+    remoteTunnelCodePath: path.join(remoteContractsPath, contractsFileNames.vectis_remote_tunnel),
+    remoteProxyCodePath: path.join(remoteContractsPath, contractsFileNames.vectis_remote_proxy),
+    remoteFactoryCodePath: path.join(remoteContractsPath, contractsFileNames.vectis_remote_factory),
+
+    // CWPlus Contracts
+    cw3FixedCodePath: path.join(downloadContractPath, contractsFileNames.cw3_mutltisig),
+    cw20CodePath: path.join(downloadContractPath, contractsFileNames.cw20_base),
+    cw3FlexCodePath: path.join(downloadContractPath, contractsFileNames.cw3_flex_mutltisig),
+    cw4GroupCodePath: path.join(downloadContractPath, contractsFileNames.cw4_group),
+
+    // DAODAO Contracts
+    daoCodePath: path.join(downloadContractPath, contractsFileNames.cw_dao),
+    stakingCodePath: path.join(downloadContractPath, contractsFileNames.cw20_staking),
+    voteCodePath: path.join(downloadContractPath, contractsFileNames.cw20_voting),
+    proposalSingleCodePath: path.join(downloadContractPath, contractsFileNames.cw_proposal_single),
+    preProposalSingleCodePath: path.join(downloadContractPath, contractsFileNames.cw_pre_proposal_approval_single),
+};

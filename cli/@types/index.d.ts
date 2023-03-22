@@ -1,7 +1,14 @@
-import { VectisDaoContractsAddrs } from "../interfaces/contracts";
+import {
+    VectisDaoContractsAddrs,
+    VectisDaoChainContractsAddrs,
+    VectisRemoteChainContractsAddrs,
+} from "../interfaces/contracts";
 import * as chains from "../config/chains";
 declare global {
     var contracts: VectisDaoContractsAddrs;
+    var daoContracts: VectisDaoChainContractsAddrs;
+    var remoteContracts: VectisRemoteChainContractsAddrs;
+
     namespace NodeJS {
         interface ProcessEnv {
             HOST_CHAIN: keyof typeof chains;

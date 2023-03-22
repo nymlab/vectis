@@ -2,7 +2,7 @@ export const juno_testnet = {
     chainId: "uni-6",
     chainName: "Juno Testnet",
     addressPrefix: "juno",
-    rpcUrl: "https://uni-rpc.reece.sh/",
+    rpcUrl: "https://juno-testnet-rpc.polkachu.com:443",
     httpUrl: "https://uni-api.reece.sh/",
     feeToken: "ujunox",
     stakingToken: "ujunox",
@@ -19,7 +19,7 @@ export const juno_localnet = {
     httpUrl: "http://localhost:1317",
     feeToken: "ujunox",
     stakingToken: "ujunox",
-    estimatedBlockTime: 7000,
+    estimatedBlockTime: 100,
     estimatedIndexerTime: 250,
     gasPrice: 0.025,
 };

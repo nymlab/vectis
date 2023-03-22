@@ -39,6 +39,10 @@ const common = {
             "divorce park goat subject cake arrive liar reward favorite shed market spot harsh garden wet general enlist limb chair message current grant curtain that",
         address: "wasm1ndxfpxzxg267ujpc6wwhw9fs2rvgfh0675s7yr",
     },
+    token_holder: {
+        mnemonic: "deputy undo immense because brave capital analyst use affair grit shrug unlock",
+        address: "wasm1wy2n9yv5r67hfdzzjcc9fw38pk88xtwrk5lv53",
+    },
 };
 export const wasm_mainnet = {
     ...common,

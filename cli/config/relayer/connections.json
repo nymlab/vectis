@@ -1,1 +1,21 @@
-{}
+{
+    "juno_testnet": {
+        "wasm_testnet": {
+            "src": "connection-0",
+            "dest": "connection-44",
+            "channels": {
+                "wasm": null,
+                "transfer": {
+                    "src": {
+                        "portId": "transfer",
+                        "channelId": "channel-0"
+                    },
+                    "dest": {
+                        "portId": "transfer",
+                        "channelId": "channel-18"
+                    }
+                }
+            }
+        }
+    }
+}

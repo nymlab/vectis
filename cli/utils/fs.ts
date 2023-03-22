@@ -1,4 +1,5 @@
 import fs from "fs";
+import mkdirp from "mkdirp";
 import path from "path";
 import axios from "axios";
 import { cachePath, downloadSchemaPath, downloadContractPath, contractsFileNames, configPath } from "./constants";
@@ -10,6 +11,12 @@ export function getContract(path: string): Uint8Array {
 export function writeInCacheFolder(fileName: string, content: string, encoding: BufferEncoding = "utf8"): void {
     if (!fs.existsSync(cachePath)) fs.mkdirSync(cachePath);
     fs.writeFileSync(path.join(cachePath, fileName), content, { encoding });
+}
+
+export function writeToFile(fullPath: string, content: string, encoding: BufferEncoding = "utf8"): void {
+    const dir = path.dirname(fullPath);
+    mkdirp.sync(dir);
+    fs.writeFileSync(fullPath, content, { encoding });
 }
 
 export function writeRelayerConfig(data: unknown, fileName: string): void {

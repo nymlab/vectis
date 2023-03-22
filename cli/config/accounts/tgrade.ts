@@ -39,6 +39,10 @@ const common = {
             "divorce park goat subject cake arrive liar reward favorite shed market spot harsh garden wet general enlist limb chair message current grant curtain that",
         address: "tgrade1ndxfpxzxg267ujpc6wwhw9fs2rvgfh06lgf4rc",
     },
+    token_holder: {
+        mnemonic: "deputy undo immense because brave capital analyst use affair grit shrug unlock",
+        address: "tgrade1wy2n9yv5r67hfdzzjcc9fw38pk88xtwrhgx8n2",
+    },
 };
 
 export const tgrade_mainnet = {
