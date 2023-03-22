@@ -1,8 +1,6 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { RemoteTunnelClient as RemoteTunnelC } from "../interfaces";
-
 import CWClient from "./cosmwasm";
-
 import type { RemoteTunnelT } from "../interfaces";
 
 class RemoteTunnelClient extends RemoteTunnelC {

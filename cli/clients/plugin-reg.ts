@@ -1,6 +1,5 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { PluginRegT, PluginRegistryClient as PluginRegC } from "../interfaces";
-import { coin } from "@cosmjs/stargate";
 
 import CWClient from "./cosmwasm";
 import * as CHAINS from "../config/chains";
@@ -14,7 +13,6 @@ class PluginRegClient extends PluginRegC {
     }
 
     static createInstMsg(chainName: Chains): PluginRegT.InstantiateMsg {
-        const { addressPrefix, feeToken } = CHAINS[chainName];
         return {
             install_fee: pluginRegInstallFee(CHAINS[chainName]),
             registry_fee: pluginRegRegistryFee(CHAINS[chainName]),

@@ -1,13 +1,10 @@
 import { daoUploadReportPath } from "../utils/constants";
 import { toCosmosMsg } from "../utils/enconding";
-
 import CWClient from "./cosmwasm";
 
 import type {
     InstantiateMsg as CwPrePropSingleInstantiateMsg,
-    ExecuteMsg as CwPrePropSingleExecuteMsg,
     UncheckedDepositInfo,
-    DepositToken,
 } from "../interfaces/DaoPreProposeApprovalSingel.types";
 
 import type { Threshold as Cw3Threshold } from "../interfaces/Cw3Flex.types";
