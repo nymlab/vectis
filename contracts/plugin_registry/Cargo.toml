@@ -9,19 +9,19 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-tests = ["library", "cw-multi-test", "anyhow"]
+tests = [ "cw-multi-test", "anyhow"]
 
 [dependencies]
 cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }
 serde = { version = "1", default-features = false, features = ["derive"] }
 cw-storage-plus = { workspace = true }
-sylvia = "0.2.2"
-sylvia-derive = "0.2.2"
-cw2 = "1.0.1"
-cw-utils = "1.0.1"
+sylvia = "0.2.1"
+sylvia-derive = "0.2.1"
+cw2 = {workspace = true} 
+cw-utils = {workspace = true}
 thiserror = { workspace = true }
-anyhow = { version = "1.0.68", optional = true}
+anyhow = { workspace = true, optional = true}
 cw-multi-test = {  workspace = true, optional = true  }
 vectis-wallet = { path = "../../packages/vectis"}
 

@@ -12,7 +12,6 @@ use vectis_wallet::{get_items_from_dao, DaoActors, DAO};
 
 use crate::{
     error::ContractError,
-    interface::*,
     responses::{ConfigResponse, PluginsResponse},
     INSTALL_REPLY,
 };
@@ -41,10 +40,19 @@ pub struct PluginRegistry<'a> {
     pub install_fee: Item<'a, Coin>,
 }
 
-impl Installable for PluginRegistry<'_> {
-    type Error = ContractError;
+#[contract]
+impl PluginRegistry<'_> {
+    pub const fn new() -> Self {
+        Self {
+            total_plugins: Item::new("total_plugins"),
+            registry_fee: Item::new("registry_fee"),
+            plugins: Map::new("plugins"),
+            install_fee: Item::new("install_fee"),
+        }
+    }
 
-    fn proxy_install_plugin(
+    #[msg(exec)]
+    pub fn proxy_install_plugin(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         id: u64,
@@ -56,8 +64,16 @@ impl Installable for PluginRegistry<'_> {
         let install_fee = self.install_fee.load(deps.storage)?;
         self.sub_required_fee(&mut info.funds, &install_fee)?;
 
-        // install the plugin for the proxy
-        //
+        // if fund amount is 0, instantiate call fails
+        let mut validated_funds = info.funds.to_vec();
+        if let Some(index) = validated_funds
+            .to_owned()
+            .iter()
+            .position(|x| x.amount == Uint128::zero())
+        {
+            validated_funds.remove(index);
+        }
+
         // TODO: extra check can be done on cosmwasm_std v1.2
         // let code_info = deps.querier.query_wasm_code_info(plugin.code_id)?;
         // if code_info.checksum != plugin.checksum {
@@ -69,7 +85,7 @@ impl Installable for PluginRegistry<'_> {
                 admin: Some(info.sender.to_string()),
                 code_id: plugin.code_id,
                 msg: instantiate_msg,
-                funds: info.funds.to_owned(),
+                funds: validated_funds,
                 label: format!("{}-{}", plugin.name, plugin.version),
             },
             INSTALL_REPLY,
@@ -92,19 +108,6 @@ impl Installable for PluginRegistry<'_> {
             .add_submessage(sub_msg)
             .add_message(msg)
             .add_event(event))
-    }
-}
-
-#[contract]
-#[messages(installable as Installable)]
-impl PluginRegistry<'_> {
-    pub const fn new() -> Self {
-        Self {
-            total_plugins: Item::new("total_plugins"),
-            registry_fee: Item::new("registry_fee"),
-            plugins: Map::new("plugins"),
-            install_fee: Item::new("install_fee"),
-        }
     }
 
     #[msg(instantiate)]
@@ -150,6 +153,7 @@ impl PluginRegistry<'_> {
                 required.amount,
                 Uint128::zero(),
             ))?;
+
         fund.amount = fund
             .amount
             .checked_sub(required.amount)

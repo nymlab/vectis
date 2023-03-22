@@ -19,7 +19,6 @@ fn do_instantiate(
     addr_prefix: &str,
     wallet_fee: Coin,
     claim_fee: Coin,
-    govec_minter: Option<&str>,
 ) {
     // we do not do integrated tests here so code ids are arbitrary
     let instantiate_msg = InstantiateMsg {

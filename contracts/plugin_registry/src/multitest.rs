@@ -2,7 +2,10 @@ use anyhow::{bail, Result as AnyResult};
 use cosmwasm_std::{from_slice, Empty};
 use cw_multi_test::Contract;
 
-use crate::contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg, PluginRegistry};
+use crate::{
+    contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg, PluginRegistry},
+    reply,
+};
 
 impl Contract<Empty> for PluginRegistry<'_> {
     fn execute(
@@ -51,11 +54,11 @@ impl Contract<Empty> for PluginRegistry<'_> {
 
     fn reply(
         &self,
-        _deps: cosmwasm_std::DepsMut<Empty>,
-        _env: cosmwasm_std::Env,
-        _msg: cosmwasm_std::Reply,
+        deps: cosmwasm_std::DepsMut<Empty>,
+        env: cosmwasm_std::Env,
+        msg: cosmwasm_std::Reply,
     ) -> AnyResult<cosmwasm_std::Response<Empty>> {
-        bail!("reply not implemented for contract")
+        reply(deps, env, msg).map_err(Into::into)
     }
 
     fn migrate(
