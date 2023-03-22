@@ -20,7 +20,11 @@
         "types:generate": "ts-node scripts/types.ts && npm run prettier",
         "types:publish": "npm run --prefix ./types publish:prod",
         "types:version": "npm --prefix ./types version",
-        "prettier": "prettier --write \"**/*.{js,ts}\""
+        "prettier": "prettier --write \"**/*.{js,ts}\"",
+        "deploy:dao": "ts-node scripts/deploy-dao.ts",
+        "deploy:remote": "ts-node scripts/deploy-remote.ts",
+        "plugin:register": "ts-node scripts/add-plugin-to-reg.ts",
+        "plugin:install": "ts-node scripts/create-wallet-w-plugin.ts"
     },
     "devDependencies": {
         "@confio/relayer": "^0.7.0",
@@ -72,6 +76,7 @@
         }
     },
     "dependencies": {
-        "long": "^5.2.1"
+        "long": "^5.2.1",
+        "mkdirp": "^2.1.5"
     }
 }

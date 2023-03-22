@@ -23,18 +23,7 @@ import {
 } from "osmojs";
 
 import {
-    factoryCodePath,
-    proxyCodePath,
-    fixMultiSigCodePath,
-    cw3FlexCodePath,
-    cw4GroupCodePath,
-    govecCodePath,
-    pluginRegCodePath,
-    stakingCodePath,
-    daoCodePath,
-    voteCodePath,
-    proposalSingleCodePath,
-    preProposalSingleCodePath,
+    codePaths,
     cw3FixedMulDownloadLink,
     cw3FlexMulDownloadLink,
     cw4GroupDownloadLink,
@@ -45,10 +34,6 @@ import {
     cw20ProposalSingleDownloadLink,
     cwPreProposalSingleDownloadLink,
     contractsFileNames,
-    daoTunnelCodetPath,
-    remoteTunnelCodePath,
-    remoteProxyCodePath,
-    remoteFactoryCodePath,
     hostChain,
     hostAccounts,
     remoteAccounts,
@@ -60,7 +45,7 @@ import { longToByteArray } from "../utils/enconding";
 import CODES from "../config/onchain-codes.json";
 
 import type { ProxyT, FactoryT } from "../interfaces";
-import type { DaoDaoContracts } from "../interfaces/contracts";
+import type { DaoDaoContracts, DaoContractsUploadResult, RemoteContractsUploadResult } from "../interfaces/contracts";
 import type { Accounts, Account } from "../config/accounts";
 import type { Chains, Chain } from "../config/chains";
 
@@ -109,8 +94,8 @@ class CWClient extends SigningCosmWasmClient {
 
     static getContractAddrFromResult(result: ExecuteResult, instMsg: string): string {
         const events = result.logs[0].events; // Wasm event is always the last
-        const attributes = events[events.length - 1].attributes;
-        const factoryEvent = attributes.find((ele) => ele.key == instMsg);
+        const event = events.find((e) => e.type == "instantiate");
+        const factoryEvent = event!.attributes.find((ele) => ele.key == instMsg);
         return factoryEvent?.value as string;
     }
 
@@ -133,13 +118,8 @@ class CWClient extends SigningCosmWasmClient {
     }
 
     async getDaoDaoOnChainContracts(codeIds: typeof CODES["juno_testnet"]): Promise<DaoDaoContracts> {
-        const staking = await this.getOnchainContracts(codeIds.staking.id);
         const dao = await this.getOnchainContracts(codeIds.dao.id);
-        const vote = await this.getOnchainContracts(codeIds.vote.id);
-        const proposalSingle = await this.getOnchainContracts(codeIds.proposalSingle.id);
-        const preProposalSingle = await this.getOnchainContracts(codeIds.preProposalSingle.id);
-
-        return { staking, dao, vote, proposalSingle, preProposalSingle };
+        return { dao };
     }
 
     async uploadContract(
@@ -156,73 +136,58 @@ class CWClient extends SigningCosmWasmClient {
      * Note: dao-contracts do not need to be uploaded on juno-testnet / juno-mainnet
      *
      */
-    async uploadHostContracts(): Promise<{
-        daoTunnelRes: UploadResult;
-        factoryRes: UploadResult;
-        proxyRes: UploadResult;
-        multisigRes: UploadResult;
-        Cw3FlexRes: UploadResult;
-        Cw4GroupRes: UploadResult;
-        govecRes: UploadResult;
-        pluginRegRes: UploadResult;
-        stakingRes: UploadResult | Code;
-        daoRes: UploadResult | Code;
-        voteRes: UploadResult | Code;
-        proposalSingleRes: UploadResult | Code;
-        preProposalSingleRes: UploadResult | Code;
-    }> {
+    async uploadHostContracts(): Promise<DaoContractsUploadResult> {
         const daodaoCodes = CODES[hostChainName as keyof typeof CODES];
 
-        const { staking, dao, vote, proposalSingle, preProposalSingle } = daodaoCodes
+        const { dao } = daodaoCodes
             ? await this.getDaoDaoOnChainContracts(daodaoCodes)
             : await this.uploadDaoDaoContracts();
 
-        const daoTunnelRes = await this.uploadContract(daoTunnelCodetPath);
-        const factoryRes = await this.uploadContract(factoryCodePath);
-        const proxyRes = await this.uploadContract(proxyCodePath);
-        const multisigRes = await this.uploadContract(fixMultiSigCodePath);
-        const Cw3FlexRes = await this.uploadContract(cw3FlexCodePath);
-        const Cw4GroupRes = await this.uploadContract(cw4GroupCodePath);
-        const govecRes = await this.uploadContract(govecCodePath);
-        const pluginRegRes = await this.uploadContract(pluginRegCodePath);
+        const staking = await this.uploadContract(codePaths.stakingCodePath);
+        const vote = await this.uploadContract(codePaths.voteCodePath);
+        const proposalSingle = await this.uploadContract(codePaths.proposalSingleCodePath);
+        const preProposalSingle = await this.uploadContract(codePaths.preProposalSingleCodePath);
+        const daoTunnel = await this.uploadContract(codePaths.daoTunnelCodePath);
+        const factory = await this.uploadContract(codePaths.factoryCodePath);
+        const proxy = await this.uploadContract(codePaths.proxyCodePath);
+        const cw3Fixed = await this.uploadContract(codePaths.cw3FixedCodePath);
+        const cw3Flex = await this.uploadContract(codePaths.cw3FlexCodePath);
+        const cw4Group = await this.uploadContract(codePaths.cw4GroupCodePath);
+        const govec = await this.uploadContract(codePaths.govecCodePath);
+        const pluginReg = await this.uploadContract(codePaths.pluginRegCodePath);
 
         return {
-            daoTunnelRes,
-            factoryRes,
-            proxyRes,
-            multisigRes,
-            Cw3FlexRes,
-            Cw4GroupRes,
-            govecRes,
-            pluginRegRes,
-            stakingRes: staking,
-            daoRes: dao,
-            voteRes: vote,
-            proposalSingleRes: proposalSingle,
-            preProposalSingleRes: preProposalSingle,
+            daoTunnel,
+            factory,
+            proxy,
+            cw3Fixed,
+            cw3Flex,
+            cw4Group,
+            govec,
+            pluginReg,
+            staking,
+            dao,
+            vote,
+            proposalSingle,
+            preProposalSingle,
         };
     }
 
-    async uploadRemoteContracts(): Promise<{
-        remoteTunnel: UploadResult;
-        remoteProxy: UploadResult;
-        remoteFactory: UploadResult;
-        remoteMultisig: UploadResult;
-    }> {
-        const remoteTunnel = await this.uploadContract(remoteTunnelCodePath);
-        const remoteProxy = await this.uploadContract(remoteProxyCodePath);
-        const remoteFactory = await this.uploadContract(remoteFactoryCodePath);
-        const remoteMultisig = await this.uploadContract(fixMultiSigCodePath);
+    async uploadRemoteContracts(): Promise<RemoteContractsUploadResult> {
+        const remoteTunnel = await this.uploadContract(codePaths.remoteTunnelCodePath);
+        const remoteProxy = await this.uploadContract(codePaths.remoteProxyCodePath);
+        const remoteFactory = await this.uploadContract(codePaths.remoteFactoryCodePath);
+        const cw3Fixed = await this.uploadContract(codePaths.cw3FixedCodePath);
 
-        return { remoteTunnel, remoteProxy, remoteFactory, remoteMultisig };
+        return { remoteTunnel, remoteProxy, remoteFactory, cw3Fixed };
     }
 
     async uploadDaoDaoContracts() {
-        const staking = await this.uploadContract(stakingCodePath);
-        const dao = await this.uploadContract(daoCodePath);
-        const vote = await this.uploadContract(voteCodePath);
-        const proposalSingle = await this.uploadContract(proposalSingleCodePath);
-        const preProposalSingle = await this.uploadContract(preProposalSingleCodePath);
+        const staking = await this.uploadContract(codePaths.stakingCodePath);
+        const dao = await this.uploadContract(codePaths.daoCodePath);
+        const vote = await this.uploadContract(codePaths.voteCodePath);
+        const proposalSingle = await this.uploadContract(codePaths.proposalSingleCodePath);
+        const preProposalSingle = await this.uploadContract(codePaths.preProposalSingleCodePath);
 
         return { staking, dao, vote, proposalSingle, preProposalSingle };
     }

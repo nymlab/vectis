@@ -481,8 +481,6 @@ describe("Proxy Suite: ", () => {
 
         const { claim_fee } = await factoryClient.fees();
 
-        console.log("Proxy client addr: ", proxyHostClient.contractAddress);
-
         const cosmosWasmMsg: CosmosMsg = {
             wasm: {
                 execute: {

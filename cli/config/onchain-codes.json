@@ -1,9 +1,5 @@
 {
     "juno_testnet": {
-        "dao": { "id": 452 },
-        "vote": { "id": 451 },
-        "staking": { "id": 449 },
-        "proposalSingle": { "id": 453 },
-        "preProposalSingle": { "id": 453 }
+        "dao": { "id": 163 }
     }
 }

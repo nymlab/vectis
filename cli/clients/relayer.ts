@@ -110,15 +110,19 @@ class RelayerClient {
             | undefined;
 
         if (ibcInfo) {
+            console.log("relayer connect(): using ibcInfo");
             try {
                 return await this.recoverConnection(ibcInfo.src, ibcInfo.dest);
             } catch (err) {
+                console.log("relayer connect(): using ibcInfo failed, recreating");
                 return this.createConnection();
             }
         } else if (connectionsId) {
+            console.log("relayer connect(): using config");
             return await this.recoverConnection(connectionsId.src, connectionsId.dest);
         }
 
+        console.log("relayer connect(): no existing connections, creating");
         return this.createConnection();
     }
 

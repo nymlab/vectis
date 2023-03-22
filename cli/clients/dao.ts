@@ -1,4 +1,4 @@
-import { uploadReportPath } from "../utils/constants";
+import { daoUploadReportPath } from "../utils/constants";
 import { toCosmosMsg } from "../utils/enconding";
 
 import CWClient from "./cosmwasm";
@@ -45,6 +45,7 @@ export const allowRevote: boolean = false;
 export const unstakingDuration: Duration = { time: 6 * 60 * 24 };
 export const activeThreshold: ActiveThreshold | null = null;
 
+export const mintableGovecPerWallet = "2";
 export const proposalDepositAmount = "2";
 /// For Pre Proposal which handles the deposit now
 export const depositInfo: UncheckedDepositInfo = {
@@ -190,8 +191,7 @@ class DaoClient {
     }
 
     static async instantiate(client: CWClient, govecAddr: string, daoAdmin: string | null, prePropApprover: string) {
-        const { host } = await import(uploadReportPath);
-        const { stakingRes, voteRes, daoRes, proposalSingleRes, preProposalSingleRes } = host;
+        const { staking, vote, dao, proposalSingle, preProposalSingle } = await import(daoUploadReportPath);
 
         const prePropInstMsg: CwPrePropSingleInstantiateMsg = DaoClient.createPrePropInstMsg(
             depositInfo,
@@ -205,7 +205,7 @@ class DaoClient {
                     admin: {
                         core_module: {},
                     },
-                    code_id: preProposalSingleRes.codeId,
+                    code_id: preProposalSingle.codeId,
                     label: "Vectis Pre Prop Module",
                     msg: toCosmosMsg<CwPrePropSingleInstantiateMsg>(prePropInstMsg),
                 },
@@ -227,7 +227,7 @@ class DaoClient {
         // issues
         // https://github.com/DA0-DA0/dao-contracts/pull/347#pullrequestreview-1011556931
         const propModInstInfo: ModuleInstantiateInfo = DaoClient.createGovModInstInfo(
-            proposalSingleRes.codeId,
+            proposalSingle.codeId,
             propInstMsg as any
         );
 
@@ -236,7 +236,7 @@ class DaoClient {
                 address: govecAddr,
                 staking_contract: {
                     new: {
-                        staking_code_id: stakingRes.codeId,
+                        staking_code_id: staking.codeId,
                         unstaking_duration: unstakingDuration,
                     },
                 },
@@ -247,12 +247,14 @@ class DaoClient {
             token_info: tokenInfo,
         };
 
-        const voteModInstInfo: ModuleInstantiateInfo = DaoClient.createVoteModInstInfo(voteRes.codeId, voteInstMsg);
+        const voteModInstInfo: ModuleInstantiateInfo = DaoClient.createVoteModInstInfo(vote.codeId, voteInstMsg);
         const daoInstMsg = DaoClient.createDaoInstMsg(propModInstInfo, voteModInstInfo, daoAdmin);
 
+        const codeId = dao.codeId ? dao.codeId : dao.id;
+        console.log("dao codeId", codeId);
         const { contractAddress: daoAddr } = await client.instantiate(
             client.sender,
-            daoRes.codeId,
+            codeId,
             daoInstMsg,
             "VectisDAO",
             "auto"
