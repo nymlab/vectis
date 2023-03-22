@@ -10,7 +10,7 @@ import { DirectSecp256k1HdWallet, GeneratedType, OfflineSigner, Registry } from 
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { AminoTypes, GasPrice, Block } from "@cosmjs/stargate";
+import { AminoTypes, GasPrice } from "@cosmjs/stargate";
 import {
     cosmosAminoConverters,
     cosmosProtoRegistry,
@@ -47,7 +47,7 @@ import CODES from "../config/onchain-codes.json";
 import type { ProxyT, FactoryT } from "../interfaces";
 import type { DaoDaoContracts, DaoContractsUploadResult, RemoteContractsUploadResult } from "../interfaces/contracts";
 import type { Accounts, Account } from "../config/accounts";
-import type { Chains, Chain } from "../config/chains";
+import type { Chain } from "../config/chains";
 
 class CWClient extends SigningCosmWasmClient {
     constructor(

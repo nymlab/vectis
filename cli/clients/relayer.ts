@@ -1,8 +1,7 @@
 import crypto from "crypto";
 import { ChannelPair, RelayedHeights, Side } from "@confio/relayer/build/lib/link";
 import { IbcClient, Link } from "@confio/relayer";
-import { GasPrice, Block } from "@cosmjs/stargate";
-
+import { GasPrice } from "@cosmjs/stargate";
 import CWClient from "./cosmwasm";
 import {
     hostAccounts,

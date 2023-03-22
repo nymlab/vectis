@@ -1,6 +1,5 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { FactoryClient as FactoryC } from "../interfaces";
-import { coin } from "@cosmjs/stargate";
 
 import CWClient from "./cosmwasm";
 import * as CHAINS from "../config/chains";
@@ -19,7 +18,7 @@ class FactoryClient extends FactoryC {
         proxyCodeId: number,
         multisigCodeId: number
     ): FactoryT.InstantiateMsg {
-        const { addressPrefix, feeToken } = CHAINS[chainName];
+        const { addressPrefix } = CHAINS[chainName];
         const wallet_fee = walletInitialFunds(CHAINS[chainName]);
         const claim_fee = govecClaimFee(CHAINS[chainName]);
         return {
