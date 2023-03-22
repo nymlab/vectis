@@ -1,15 +1,12 @@
 pub mod contract;
 pub mod error;
-pub mod interface;
 pub mod responses;
-pub use interface::*;
 
 pub const INSTALL_REPLY: u64 = u64::MIN;
 
 #[cfg(any(test, feature = "tests"))]
 pub mod multitest;
 
-#[cfg(not(feature = "library"))]
 mod entry_points {
     use crate::contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg, PluginRegistry};
     use crate::error::ContractError;
@@ -48,7 +45,7 @@ mod entry_points {
 
     /// reply hooks handles replies from plugin instantiation
     /// `set_data` tells the proxy what its installed plugin address is
-    #[cfg_attr(not(feature = "library"), entry_point)]
+    #[entry_point]
     pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
         ensure_eq!(reply.id, INSTALL_REPLY, ContractError::NotSupportedReplyId);
         let data = parse_reply_instantiate_data(reply)?;

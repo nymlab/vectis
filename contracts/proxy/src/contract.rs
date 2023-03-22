@@ -29,9 +29,8 @@ use crate::state::{
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Duration, Threshold};
-use vectis_plugin_registry::{
-    contract::ContractExecMsg as PluginRegExecMsg, installable::InstallableExecMsg,
-};
+//contract::ExecMsg as PluginRegExecMsg, installable::InstallableExecMsg,
+use vectis_plugin_registry::contract::ExecMsg as PluginRegExecMsg;
 
 #[cfg(feature = "migration")]
 use vectis_wallet::ProxyMigrateMsg;
@@ -181,16 +180,20 @@ pub fn execute_inst_plugin(
     if plugin_params.has_full_access() {
         let sub_msg = match src {
             PluginSource::VectisRegistry(id) => {
-                let registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginCommittee)?;
+                let registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginRegisty)?;
                 SubMsg::reply_always(
                     WasmMsg::Execute {
                         contract_addr: registry,
-                        msg: to_binary(&PluginRegExecMsg::Installable(
-                            InstallableExecMsg::ProxyInstallPlugin {
-                                id,
-                                instantiate_msg: msg,
-                            },
-                        ))?,
+                        msg: to_binary(&PluginRegExecMsg::ProxyInstallPlugin {
+                            id,
+                            instantiate_msg: msg,
+                        })?,
+                        //msg: to_binary(&PluginRegExecMsg::Installable(
+                        //    InstallableExecMsg::ProxyInstallPlugin {
+                        //        id,
+                        //        instantiate_msg: msg,
+                        //    },
+                        //))?,
                         funds: info.funds,
                     },
                     REG_PLUGIN_INST_ID,
@@ -637,7 +640,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
                     deps.api.addr_humanize(&addr.into())?.into_string(),
                 ))
         } else {
-            Err(ContractError::PluginInstantiationError {})
+            Err(ContractError::PluginInstantiationExecError {})
         }
     } else {
         Err(ContractError::InvalidMessage {

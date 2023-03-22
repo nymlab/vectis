@@ -46,6 +46,8 @@ pub enum ContractError {
     MultisigInstantiationError {},
     #[error("Plugin cannot be instantiated")]
     PluginInstantiationError {},
+    #[error("Plugin instantiation failed: Exec")]
+    PluginInstantiationExecError {},
     #[error("Same Label")]
     SameLabel {},
     #[error("No guardian request found")]
