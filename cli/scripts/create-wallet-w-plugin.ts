@@ -10,18 +10,20 @@ import { createSingleProxyWallet } from "../tests/mocks/proxyWallet";
 
 const croncat_factory_addr = "juno16ze0ve5q5z0wd4n5yp2kayeqn5el0tzklpafj7zjjchfh93x4wfsa8fxur";
 const code_id = 1;
-const plugin_id = 1;
+const plugin_id = 2;
 
 (async function create_wallet_with_plugin() {
     const { Factory } = await import(daoDeployReportPath);
 
     const userClient = await CWClient.connectHostWithAccount("user");
-    const factoryClient = new FactoryClient(userClient, userClient.sender, Factory);
 
     //// Create Vectis Account
-    let walletAddr = await createSingleProxyWallet(factoryClient, "host");
-    let cronkittyInstMsg = { croncat_factory_addr: croncat_factory_addr, vectis_account_addr: walletAddr };
+    //const factoryClient = new FactoryClient(userClient, userClient.sender, Factory);
+    // let walletAddr = await createSingleProxyWallet(factoryClient, "host");
+    let walletAddr = "juno1h9z9rl794syg9qwa4lrz4nhlxyfgpxfjvqz8j0yf8ced0j2m6kqss90yc4";
+    console.log("WalletAddr: ", walletAddr);
 
+    let cronkittyInstMsg = { croncat_factory_addr: croncat_factory_addr, vectis_account_addr: walletAddr };
     // Install Cronkitty on Vectis Account
     let installPlugin: ProxyT.ExecuteMsg = {
         instantiate_plugin: {
@@ -48,7 +50,7 @@ const plugin_id = 1;
 
     if (hostChainName != "juno_localnet") {
         // Create Task on Cronkitty
-        // This sends 1 juno to wallet itself every hour
+        // This sends 1 juno to wallet itself every
         const funds = { amount: (1000000).toString(), denom: hostChain.feeToken };
         const gas = { amount: (100000).toString(), denom: hostChain.feeToken };
         let task: CroncatT.TaskRequest = {
@@ -65,8 +67,8 @@ const plugin_id = 1;
                     },
                 },
             ],
-            boundary: { height: { end: "632926" } },
-            interval: { block: 20 },
+            boundary: { height: { end: "759623" } },
+            interval: { block: 500 },
             stop_on_fail: false,
         };
 
