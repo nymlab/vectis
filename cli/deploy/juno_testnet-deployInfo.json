@@ -1,15 +1,15 @@
 {
-  "Govec": "juno1tfr9cdxmgpm2zkh524yr9y9gsn48pksgf7hgcs5zfljmzdj8xl5s6zgg4c",
-  "DaoTunnel": "juno1vvuvw3sw9gtdj3fm4kkvg3vvasylxn375swj9ur7tt9jw39rmexs3d0l5r",
-  "ProposalCommittee": "juno15y4dyuaf6l0slu9n2a72n36a3z30lk44mzavs3d6md06h27fcukq5gpe7e",
-  "PreProposalModule": "juno14zqwa26mew7j5lmp099c48um9fu6hvax0zsvgjazkmc9j0g5hmwqkasnjk",
-  "PluginCommittee": "juno1etzx64ulwmt7euqap24rcgjmcczpguexl6nlhrmeu0nkm4h7jjcqyvc5f6",
-  "PluginRegistry": "juno18z7h7p2h8hr67reh0ldp8rx7kp32d2awsy323n68dd2yyrp5n92sxjkkrj",
-  "Factory": "juno1a7t0e4hh66zraufyqe6l573zjlq2ysdmjetx0wzfcgfwwq9ftm3ssm8mpg",
-  "Staking": "juno19ksehuxgm8pj58uqzx53ct66wnh69wqjs8rqjtcpumeh3e4pn6fsvyjwhj",
-  "Dao": "juno16jwry3m3vsernal4lev06xg0yvszgmu387qvxp2efxk9rndn3lrqmua797",
-  "ProposalModule": "juno1rt6k6fgxrsn89khzy7wer84muj45pm8g3wu2kflk9q4wxz9zwp9q9tmgmc",
-  "PreproposalGroup": "juno18u68264v04x28ezj7pz8rmlttlexvk6l3tt4pzkfq7vyxxmhwmlqrjeajd",
-  "PluginCommitteeGroup": "juno1symjx7aqyn96u30sszjrz3ajj9t45tnwgkm8cu8w9d0kw2382cdq20mt3u",
-  "Vote": "juno1zgjjn0wflq7y33sjx52a3xkjcwm8mwnvek55mpdap7x90yhde87qv0eqan"
+  "Govec": "juno15d77gl5ftth9vv60l8vs7q5pw0scrkyhcd9ufx5ampevyqx9v78s3aemza",
+  "DaoTunnel": "juno1jxr4nrhqtku5zt69xau9tv68dglp2q0u9d554e5pgpl7ssyh97jsh3pnw2",
+  "ProposalCommittee": "juno1qvvfkpvqqvelrrfhy04trm99w4hhhcht62anu354qq464ynkqlqs8t4jyh",
+  "PreProposalModule": "juno1mstzere97hgqnazz588eyexsad79dttfngpusdk4t8avtzmche6qryakx8",
+  "PluginCommittee": "juno1xdzpdy6k0c2z0rk9ytdwa3y8hn97n0q0emrc0wqn38ed8uau0sqqw40cjr",
+  "PluginRegistry": "juno1cguewy3nt9tqn633dkxcqnnfvgu6c3xcq96qm8szdmjyw2e5tjgqy7e5pf",
+  "Factory": "juno17xt9zhq9rl6fultheg8aw69cgyswp573lq7gslj3pdzmja8a5kcqypt6cy",
+  "Staking": "juno1y00r22f0c2tzeluq3psqel5x7pm08c8jj7davc27rt3dymmpgxkstgd0vp",
+  "Dao": "juno1lfh2jxw62sv9ht02f0uly6p6f5zxrwmhht0qu39qxd0wgvlx60kseje0jk",
+  "ProposalModule": "juno1nv9n0t2j0mg64e7k7v2pcfzwadtrjygpkc5w8m52frj2secgjeesclfrzf",
+  "PreproposalGroup": "juno1mw9k0ls2kv6pdg46ftv2sddjetz4qfcr2umvt9vkztqqatd0my6qpjze8k",
+  "PluginCommitteeGroup": "juno196g5pkkg63ddaznjkjz459ptt3x5saajmr7dypd7uanetw8u73jq4s3j85",
+  "Vote": "juno177rpznrcxd0yg4dsf08hupzesw2amyx4m9u8sere0pfu07rwa7ss4g332a"
 }
