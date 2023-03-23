@@ -7,7 +7,7 @@ import { ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../interfaces/C
 import { ExecuteMsg as PluginRegistryExecMsg } from "../interfaces/PluginRegistry.types";
 
 const checksum = "cb1f0920407d013b2a77dc770d197eaf676fba9c66a5162312215985323b8a0c";
-const code_id = 1;
+const code_id = 1126;
 const creator = "juno1dfd5vtxy2ty5gqqv0cs2z23pfucnpym9kcq8vv";
 const ipfs_hash = "n/a";
 const name = "Cronkitty";
