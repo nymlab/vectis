@@ -57,6 +57,7 @@ At this phase of development, all of the Vectis codebase is open source and can 
 
 [nymlab github account]: https://github.com/nymlab?q=vectis&type=all&language=&sort=
 [wiki]: https://github.com/nymlab/vectis/wiki
+[plugins repository]: https://github.com/nymlab/vectis-plugins/
 
 ---
 

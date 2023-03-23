@@ -3,9 +3,16 @@ import { sha256 } from "@cosmjs/crypto";
 import { toHex } from "@cosmjs/encoding";
 import CosmWasmClient, { downloadContracts } from "../clients/cosmwasm";
 import { areContractsDownloaded, getContract, writeToFile } from "../utils/fs";
-import { daoUploadReportPath, remoteUploadReportPath, codePaths } from "../utils/constants";
+import {
+    daoUploadReportPath,
+    remoteUploadReportPath,
+    codePaths,
+    hostChainName,
+    remoteChainName,
+} from "../utils/constants";
 
 (async function uploadCode() {
+    console.log("Uploading to ", hostChainName, "and ", remoteChainName);
     if (!areContractsDownloaded()) await downloadContracts();
 
     const daoClient = await CosmWasmClient.connectHostWithAccount("admin");
