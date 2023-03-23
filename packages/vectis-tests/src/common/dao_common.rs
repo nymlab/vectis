@@ -280,7 +280,7 @@ impl DaoChainSuite {
             (DaoActors::PreProposalModule, pre_prop.clone().unwrap()),
             (DaoActors::DaoTunnel, dao_tunnel.clone()),
             (DaoActors::Staking, cw20_stake.clone()),
-            (DaoActors::PluginRegisty, plugin_registry.clone()),
+            (DaoActors::PluginRegistry, plugin_registry.clone()),
             (DaoActors::PluginCommittee, plugin_committee.clone()),
         ];
 

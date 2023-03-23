@@ -28,7 +28,7 @@ import {
 import { DaoActors } from "../utils/constants";
 
 (async function deploy() {
-    console.log("Deploy DAO");
+    console.log("Deploy DAO to ", hostChainName);
     const { factory, proxy, daoTunnel, cw3Fixed, govec, pluginReg, cw4Group, cw3Flex } = await import(
         daoUploadReportPath
     );

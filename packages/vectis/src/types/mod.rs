@@ -13,7 +13,7 @@ pub enum DaoActors {
     PluginCommittee,
     TreasuryCommittee,
     DaoTunnel,
-    PluginRegisty,
+    PluginRegistry,
     Staking,
     PreProposalModule,
 }

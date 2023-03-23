@@ -9,7 +9,7 @@ import {
 } from "../utils/constants";
 
 (async function deploy() {
-    console.log("Deploy Remote: ", remoteChainName);
+    console.log("Deploy Remote to: ", remoteChainName);
 
     const { remoteTunnel } = await import(remoteUploadReportPath);
     const { Dao, DaoTunnel } = await import(daoDeployReportPath);
