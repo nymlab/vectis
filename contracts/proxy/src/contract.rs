@@ -188,12 +188,6 @@ pub fn execute_inst_plugin(
                             id,
                             instantiate_msg: msg,
                         })?,
-                        //msg: to_binary(&PluginRegExecMsg::Installable(
-                        //    InstallableExecMsg::ProxyInstallPlugin {
-                        //        id,
-                        //        instantiate_msg: msg,
-                        //    },
-                        //))?,
                         funds: info.funds,
                     },
                     REG_PLUGIN_INST_ID,

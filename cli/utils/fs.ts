@@ -1,5 +1,4 @@
 import fs from "fs";
-import mkdirp from "mkdirp";
 import path from "path";
 import axios from "axios";
 import { cachePath, downloadSchemaPath, downloadContractPath, contractsFileNames, configPath } from "./constants";
@@ -15,7 +14,7 @@ export function writeInCacheFolder(fileName: string, content: string, encoding: 
 
 export function writeToFile(fullPath: string, content: string, encoding: BufferEncoding = "utf8"): void {
     const dir = path.dirname(fullPath);
-    mkdirp.sync(dir);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(fullPath, content, { encoding });
 }
 
