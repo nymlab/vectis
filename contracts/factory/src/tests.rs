@@ -48,7 +48,6 @@ fn initialise_with_no_wallets() {
         "wasm",
         coin(1, "ucosm"),
         coin(1, "ucosm"),
-        None,
     );
 
     // no wallets to start
@@ -69,7 +68,6 @@ fn admin_upgrade_code_id_works() {
         "wasm",
         coin(1, "ucosm"),
         coin(1, "ucosm"),
-        None,
     );
 
     let info = mock_info("admin", &[]);
@@ -119,7 +117,6 @@ fn admin_update_fee_works() {
         "wasm",
         wallet_fee.clone(),
         claim_fee.clone(),
-        None,
     );
 
     let fees = query_fees(deps.as_ref()).unwrap();
@@ -177,7 +174,6 @@ fn admin_updates_addresses_work() {
         "wasm",
         fee,
         coin(1, "ucosm"),
-        None,
     );
 
     let info = mock_info("admin", &[]);
@@ -215,7 +211,6 @@ fn non_admin_update_code_id_fails() {
         "wasm",
         coin(1, "ucosm"),
         coin(1, "ucosm"),
-        None,
     );
 
     let info = mock_info("non_admin", &[]);
@@ -246,7 +241,6 @@ fn non_admin_update_fees_fails() {
         "wasm",
         coin(1, "ucosm"),
         coin(1, "ucosm"),
-        None,
     );
 
     let info = mock_info("non_admin", &[]);
