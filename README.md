@@ -1,4 +1,4 @@
-# Vectis - Smart Contract Wallet
+# Vectis - Smart Contract Wallet Infrastructure
 
 [![Website](https://img.shields.io/badge/WEBSITE-https%3A%2F%2Fvectis.space-green?style=for-the-badge)](https://vectis.space)
 [![Discord](https://img.shields.io/discord/989088257323188264?color=green&logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/xp3vFSAMgS)
@@ -6,57 +6,88 @@
 [![Cosmowasm 0.28.0](https://img.shields.io/badge/CosmWasm-0.28.0-green)](https://github.com/CosmWasm/wasmd/releases)
 [![codecov_img](https://img.shields.io/codecov/c/github/nymlab/vectis)](https://img.shields.io/codecov/c/github/nymlab/vectis)
 
+![Twitter](https://img.shields.io/twitter/follow/VectisDAO?style=social)
+
 ## Overview
 
-Smart Contract Wallet allows user to interact with DAPPs on the blockchain with the same amount of autonomy of a classic non-custodial solution,
-with the additional functionalities designed to provide the user with better experience and security.
+Vectis is a smart contract wallet infrastructure project that allows user to interact with dApps on the blockchain with the same amount of autonomy of a classic non-custodial solution,
+but supercharged with functionalities,
+designed to provide the user with better experience and security.
 
-SCW also provide functions that allow businesses to satisfy regulatory requirements regarding support of users,
-transparency,
-separation of control duties and verifiability.
+### Features
 
-VectisDAO is the organisation that provides governance to the this infrastructure.
-VectisDAO lives on [Juno Network] and leverages the [DAO DAO] stack.
-Every SCW wallet has the right to purchase a set amount of Govec tokens at a set price,
-the Govec will be minted and can be staked to vote.
-Contributors can enter VectisDAO with investment (typically development and other useful efforts).
-The amount of Govec from contributions will be determined by the DAO.
+_Details on Vectis user features can be found in our [introductory article]._
 
-Through [IBC], Vectis wallets can also be deployed on other chains.
-From the perspective of DAO participation,
-there is no difference between a wallet on [Juno Network] or others.
-Staking and voting will be done via IBC calls from the wallet.
+Vectis accounts come with base features:
 
-Please see our [wiki] for details.
+- Guardianship - Social Recovery: in case of lost of private keys / device.
+- Guardianship - Account Freezing: for temporary disabling account (such as travel).
+- Extensible plugin features: supercharge and customise your Vectis Account with automated transactions and pre-transaction workflow / guards. See [plugin section].
+- Gasless transactions: Sign transaction offline and have approved service to transact onchain.
+- Cross chain transactions: Authorise transaction on IBC / other chains with our threshold signing infrastructure (next version).
+- Integration with Self Sovereign Identity (SSI) protocols: Vectis mobile wallet combines blockchain wallet with identity wallet, an important integration to allow onchain transactions to embed ZK-proofs for identity, an important feature for mainstream adoption, especially for onchain financial applications.
 
-[dao dao]: https://daodao.zone
-[juno network]: https://www.junonetwork.io/
-[ibc]: https://github.com/cosmos/ibc
+[introductory article]: https://nymlab.notion.site/Introducing-Vectis-3578c478316b40d098dcc5832e3a267b
+[plugin section]: #plugins
+
+With the above features, Vectis provides functionality for both retail users and businesses to satisfy regulatory requirements:
+
+- consumer protection: guardianship features can help recovery user funds and manage fraud risk
+- Pre-Transaction check plugins: a multisig plugin tailored to business workflow provides separation of control and verifiability
+- Transparency: Users can at all time check any status on their wallet, enhanced with Vectis clients push notifications
+
+### Plugins
+
+Vectis is designed to be extensible with a plugin system.
+Much like the extensions to your browsers,
+Vectis accounts can add plugins to perform authorised (automated) transactions and pre-execution workflow and guards.
+
+Plugins to Vectis Accounts can be built by any developers,
+Vectis provides test suite to allow developers to easily test plugins in the Vectis ecosystem.
+
+Plugins can choose to apply to the Vectis Plugin Registry (VPR) to give users a certain level of assurance.
+Vectis and partnership teams is responsible for the soundness of the plugins in the registry.
+For more information on plugins, please see our [plugins repository].
+
+## Progresive Decentralisation
+
+VectisDAO aims to be the organisation that provides governance to the this infrastructure. This will be introduced in the next phase of Vectis.
+
+At this phase of development, all of the Vectis codebase is open source and can be found in the [Nymlab github account].
+
+[nymlab github account]: https://github.com/nymlab?q=vectis&type=all&language=&sort=
 [wiki]: https://github.com/nymlab/vectis/wiki
 
 ---
 
-## Hack
+## Contribute
 
-### Contract Tests
+We welcome PRs and issues 🤝
+
+### Contract Testing
 
 ```sh
 # For individual contract tests
 cd contracts/contract-you-want-to-test
 cargo test
 
-# For all tests
-cargo test
+# For all contract unit tests
+cargo test-unit
+
+# For all multi-test
+cargo test-multi
 ```
 
-### Integration Tests
+### Integration Tests with Docker
 
-#### Docker Images
+This spins up two docker containers,
+one per chain, to test IBC interactions.
 
 ##### 1. Set Environment
 
 First we set up the two networks (one node each) locally.
-Please ensure you have set up the `.env` file according to the `example.env`. <br>
+Please ensure you have set up the `.env` file according to the `example.env`.
+
 You should check supported chains in `cli/config/chains` directory.
 
 ```sh
@@ -69,70 +100,22 @@ make nodes-setup
 make build
 ```
 
-##### 3. Upload and Instantiate Contracts
+##### 3. Upload and instantiate contracts
 
 ```sh
 make deploy
 ```
 
-The deployment of the DAO on the host chain has the following steps:
+The contracts are deployed as such:
 
-1. _Relayer_: Creates channels between Dao-tunnel and Remote-tunnel
-1. Upload all required contracts (in ./upload.ts) to dao chain + remote chains
-   1. Host: Factory, Govec, Proxy, Dao-tunnel, Dao contracts (core, proposal, vote, cw20-staking, pre-proposal-approval)
-   1. Remote: Remote-Factory, Proxy, Remote-tunnel, Remote ICA
-1. _DAO Chain_: Instantiate Govec contract (with admin having initial balance for proposing for DAO to deploy Factory)
-1. _DAO Chain_: Instantiate dao-core contract (which will instantiate one proposal module and one vote module contracts)
-   - note: vote contracts also instantiates a new staking contract as we use staked-balance for voting,
-     proposal module also instantitates the pre-proposal which is the `dao-pre-proposal-approval-single` contract.
-1. _DAO Chain_: Admin propose and execute on DAO to deploy factory and Dao-tunnel contracts
-1. _Remote Chain_: Remote Admin instantiate Remote-tunnel with Dao-tunnel as port and connection Id from step 1
-1. _DAO Chain_: Admin propose and execute on DAO to allow ibc-connection to the Remote-tunnel
-1. _DAO Chain_: Admin propose and execute on DAO to deploy remote-factory
-1. _Remote Chain_: Execute instantiate remote-factory
-1. _DAO Chain_: Admin updates Govec staking address to the staking contract in step 4.
-1. _DAO Chain_: Admin updates Govec minter address to the factory contract addr and dao-tunnel addr
-1. _DAO Chain_: Admin updates Govec contract DAO_ADDR as DAO
-1. _DAO Chain_: Admin updates Govec contract admin as DAO (for future upgrades)
-1. _DAO Chain_: Admin unstakes and burn its govec (exits system)
+- Remote network: all networks without DAO
+- DAO network: where the VectisDAO will live has:
+  - Vectis Plugin Registry
+  - Vectis Factory
+  - Instances of the Proxy contract
+  - Where natively the VEC tokens are minted
 
-After upload and deploy contracts it will check the contract have the right checksum and the contracts have DAO as admin.
-
-#### Native Local Node
-
-##### Juno Option
-
-###### Build locally by following [instructions](https://docs.junonetwork.io/smart-contracts-and-junod-development/installation)
-
-> **Note:** this requires you to do a setup script to seed the accounts use for cli.
-
-##### Wasmd Option
-
-```sh
-git clone https://github.com/CosmWasm/wasmd.git
-cd wasmd
-# replace the v0.18.0 with the most stable version on https://github.com/CosmWasm/wasmd/releases
-git checkout v0.24.0
-make install
-
-# verify the installation
-wasmd version
-```
-
-> **INFO:** `make install` will copy wasmd to `$HOME/go/bin` or the default directory for binaries from Go,
-> please make sure that is in your `PATH`.
-
-##### 1. Start the node
-
-```sh
-./scripts/wasmd-node-setup.sh
-```
-
-##### 2. Compile smart contracts
-
-```sh
-make build
-```
+After upload and deploy contracts it will check the contract have the right checksum and admin.
 
 ### Interacting with the blockchain
 
