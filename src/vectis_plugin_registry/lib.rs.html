@@ -55,22 +55,16 @@
 <a href="#55" id="55">55</a>
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a>
-<a href="#59" id="59">59</a>
-<a href="#60" id="60">60</a>
 </pre><pre class="rust"><code><span class="kw">pub mod </span>contract;
 <span class="kw">pub mod </span>error;
-<span class="kw">pub mod </span>interface;
 <span class="kw">pub mod </span>responses;
-<span class="kw">pub use </span>interface::<span class="kw-2">*</span>;
 
 <span class="kw">pub const </span>INSTALL_REPLY: u64 = u64::MIN;
 
 <span class="attr">#[cfg(any(test, feature = <span class="string">&quot;tests&quot;</span>))]
 </span><span class="kw">pub mod </span>multitest;
 
-<span class="attr">#[cfg(not(feature = <span class="string">&quot;library&quot;</span>))]
-</span><span class="kw">mod </span>entry_points {
+<span class="kw">mod </span>entry_points {
     <span class="kw">use </span><span class="kw">crate</span>::contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg, PluginRegistry};
     <span class="kw">use </span><span class="kw">crate</span>::error::ContractError;
     <span class="kw">use </span><span class="kw">crate</span>::INSTALL_REPLY;
@@ -108,7 +102,7 @@
 
     <span class="doccomment">/// reply hooks handles replies from plugin instantiation
     /// `set_data` tells the proxy what its installed plugin address is
-    </span><span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;library&quot;</span>), entry_point)]
+    </span><span class="attr">#[entry_point]
     </span><span class="kw">pub fn </span>reply(deps: DepsMut, _env: Env, reply: Reply) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="macro">ensure_eq!</span>(reply.id, INSTALL_REPLY, ContractError::NotSupportedReplyId);
         <span class="kw">let </span>data = parse_reply_instantiate_data(reply)<span class="question-mark">?</span>;

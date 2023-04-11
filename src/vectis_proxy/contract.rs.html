@@ -730,9 +730,6 @@
 <a href="#730" id="730">730</a>
 <a href="#731" id="731">731</a>
 <a href="#732" id="732">732</a>
-<a href="#733" id="733">733</a>
-<a href="#734" id="734">734</a>
-<a href="#735" id="735">735</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::schemars;
 <span class="attr">#[cfg(not(feature = <span class="string">&quot;library&quot;</span>))]
 </span><span class="kw">use </span>cosmwasm_std::entry_point;
@@ -764,9 +761,8 @@
 };
 <span class="kw">use </span>cw3_fixed_multisig::msg::InstantiateMsg <span class="kw">as </span>FixedMultisigInstantiateMsg;
 <span class="kw">use </span>cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Duration, Threshold};
-<span class="kw">use </span>vectis_plugin_registry::{
-    contract::ContractExecMsg <span class="kw">as </span>PluginRegExecMsg, installable::InstallableExecMsg,
-};
+<span class="comment">//contract::ExecMsg as PluginRegExecMsg, installable::InstallableExecMsg,
+</span><span class="kw">use </span>vectis_plugin_registry::contract::ExecMsg <span class="kw">as </span>PluginRegExecMsg;
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;migration&quot;</span>)]
 </span><span class="kw">use </span>vectis_wallet::ProxyMigrateMsg;
@@ -916,16 +912,14 @@
     <span class="kw">if </span>plugin_params.has_full_access() {
         <span class="kw">let </span>sub_msg = <span class="kw">match </span>src {
             PluginSource::VectisRegistry(id) =&gt; {
-                <span class="kw">let </span>registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginCommittee)<span class="question-mark">?</span>;
+                <span class="kw">let </span>registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginRegistry)<span class="question-mark">?</span>;
                 SubMsg::reply_always(
                     WasmMsg::Execute {
                         contract_addr: registry,
-                        msg: to_binary(<span class="kw-2">&amp;</span>PluginRegExecMsg::Installable(
-                            InstallableExecMsg::ProxyInstallPlugin {
-                                id,
-                                instantiate_msg: msg,
-                            },
-                        ))<span class="question-mark">?</span>,
+                        msg: to_binary(<span class="kw-2">&amp;</span>PluginRegExecMsg::ProxyInstallPlugin {
+                            id,
+                            instantiate_msg: msg,
+                        })<span class="question-mark">?</span>,
                         funds: info.funds,
                     },
                     REG_PLUGIN_INST_ID,
@@ -1372,7 +1366,7 @@
                     deps.api.addr_humanize(<span class="kw-2">&amp;</span>addr.into())<span class="question-mark">?</span>.into_string(),
                 ))
         } <span class="kw">else </span>{
-            <span class="prelude-val">Err</span>(ContractError::PluginInstantiationError {})
+            <span class="prelude-val">Err</span>(ContractError::PluginInstantiationExecError {})
         }
     } <span class="kw">else </span>{
         <span class="prelude-val">Err</span>(ContractError::InvalidMessage {

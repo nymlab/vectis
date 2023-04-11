@@ -414,6 +414,10 @@
 <a href="#414" id="414">414</a>
 <a href="#415" id="415">415</a>
 <a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::cw_serde;
 <span class="kw">use </span>cw2::set_contract_version;
 <span class="kw">use </span>cw_storage_plus::{Bound, Item, Map};
@@ -428,7 +432,6 @@
 
 <span class="kw">use crate</span>::{
     error::ContractError,
-    interface::<span class="kw-2">*</span>,
     responses::{ConfigResponse, PluginsResponse},
     INSTALL_REPLY,
 };
@@ -457,10 +460,19 @@
     <span class="kw">pub </span>install_fee: Item&lt;<span class="lifetime">&#39;a</span>, Coin&gt;,
 }
 
-<span class="kw">impl </span>Installable <span class="kw">for </span>PluginRegistry&lt;<span class="lifetime">&#39;_</span>&gt; {
-    <span class="kw">type </span>Error = ContractError;
+<span class="attr">#[contract]
+</span><span class="kw">impl </span>PluginRegistry&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">pub const fn </span>new() -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            total_plugins: Item::new(<span class="string">&quot;total_plugins&quot;</span>),
+            registry_fee: Item::new(<span class="string">&quot;registry_fee&quot;</span>),
+            plugins: Map::new(<span class="string">&quot;plugins&quot;</span>),
+            install_fee: Item::new(<span class="string">&quot;install_fee&quot;</span>),
+        }
+    }
 
-    <span class="kw">fn </span>proxy_install_plugin(
+    <span class="attr">#[msg(exec)]
+    </span><span class="kw">pub fn </span>proxy_install_plugin(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         ctx: (DepsMut, Env, MessageInfo),
         id: u64,
@@ -472,9 +484,17 @@
         </span><span class="kw">let </span>install_fee = <span class="self">self</span>.install_fee.load(deps.storage)<span class="question-mark">?</span>;
         <span class="self">self</span>.sub_required_fee(<span class="kw-2">&amp;mut </span>info.funds, <span class="kw-2">&amp;</span>install_fee)<span class="question-mark">?</span>;
 
-        <span class="comment">// install the plugin for the proxy
-        //
-        // TODO: extra check can be done on cosmwasm_std v1.2
+        <span class="comment">// if fund amount is 0, instantiate call fails
+        </span><span class="kw">let </span><span class="kw-2">mut </span>validated_funds = info.funds.to_vec();
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(index) = validated_funds
+            .to_owned()
+            .iter()
+            .position(|x| x.amount == Uint128::zero())
+        {
+            validated_funds.remove(index);
+        }
+
+        <span class="comment">// TODO: extra check can be done on cosmwasm_std v1.2
         // let code_info = deps.querier.query_wasm_code_info(plugin.code_id)?;
         // if code_info.checksum != plugin.checksum {
         //     return Err(ContractError::ChecksumVerificationFailed);
@@ -485,7 +505,7 @@
                 admin: <span class="prelude-val">Some</span>(info.sender.to_string()),
                 code_id: plugin.code_id,
                 msg: instantiate_msg,
-                funds: info.funds.to_owned(),
+                funds: validated_funds,
                 label: <span class="macro">format!</span>(<span class="string">&quot;{}-{}&quot;</span>, plugin.name, plugin.version),
             },
             INSTALL_REPLY,
@@ -508,19 +528,6 @@
             .add_submessage(sub_msg)
             .add_message(msg)
             .add_event(event))
-    }
-}
-
-<span class="attr">#[contract]
-#[messages(installable <span class="kw">as </span>Installable)]
-</span><span class="kw">impl </span>PluginRegistry&lt;<span class="lifetime">&#39;_</span>&gt; {
-    <span class="kw">pub const fn </span>new() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            total_plugins: Item::new(<span class="string">&quot;total_plugins&quot;</span>),
-            registry_fee: Item::new(<span class="string">&quot;registry_fee&quot;</span>),
-            plugins: Map::new(<span class="string">&quot;plugins&quot;</span>),
-            install_fee: Item::new(<span class="string">&quot;install_fee&quot;</span>),
-        }
     }
 
     <span class="attr">#[msg(instantiate)]
@@ -566,6 +573,7 @@
                 required.amount,
                 Uint128::zero(),
             ))<span class="question-mark">?</span>;
+
         fund.amount = fund
             .amount
             .checked_sub(required.amount)

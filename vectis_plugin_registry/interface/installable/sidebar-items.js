@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["InstallableExecMsg",""],["InstallableQueryMsg",""]],"type":[["ExecMsg",""],["QueryMsg",""]]};
