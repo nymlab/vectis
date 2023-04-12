@@ -55,7 +55,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
 
     let expected_info = WalletInfo {
         controller_addr: Addr::unchecked("controller_addr"),
-        dao: Addr::unchecked("test-dao"),
+        deployer: Addr::unchecked("test-deployer"),
         nonce: 0,
         version: ContractVersion {
             contract: "crates.io:smart-contract-wallet-proxy".to_string(),

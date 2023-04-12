@@ -5,14 +5,13 @@ use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_proxy::ContractError;
 use vectis_wallet::{Guardians, GuardiansUpdateMsg, MultiSig, WalletInfo};
 
-use vectis_contract_tests::common::common::*;
-use vectis_contract_tests::common::remote_common::*;
+use vectis_contract_tests::common::base_common::*;
 
 #[test]
 fn controller_can_update_proxy_multisig_with_direct_message() {
-    let mut suite = RemoteChainSuite::init().unwrap();
-    let init_proxy_fund: Coin = coin(300, "uremote");
-    let init_multisig_fund: Coin = coin(50, "uremote");
+    let mut suite = HubChainSuite::init().unwrap();
+    let init_proxy_fund: Coin = coin(300, DENOM);
+    let init_multisig_fund: Coin = coin(50, DENOM);
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -72,7 +71,7 @@ fn controller_can_update_proxy_multisig_with_direct_message() {
 
 #[test]
 fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();
@@ -106,7 +105,7 @@ fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
 
 #[test]
 fn controller_can_remove_multisig_for_guardians() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
@@ -145,7 +144,7 @@ fn controller_can_remove_multisig_for_guardians() {
 
 #[test]
 fn relayer_can_update_proxy_multisig_with_controller_signature() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
         multisig_initial_funds: vec![],
@@ -163,7 +162,8 @@ fn relayer_can_update_proxy_multisig_with_controller_signature() {
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
 
     let relayer = w.relayers.pop().unwrap();
-    let new_multisig_code_id = suite.app.store_code(contract_multisig());
+
+    let new_multisig_code_id = suite.app.store_code(contract_fixed_multisig());
     let r = suite.update_proxy_multisig_code_id(new_multisig_code_id, suite.factory.clone());
     assert!(r.is_ok());
 
@@ -213,7 +213,7 @@ fn relayer_can_update_proxy_multisig_with_controller_signature() {
 
 #[test]
 fn non_controller_update_proxy_multisig_fails() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(
             Addr::unchecked(CONTROLLER_ADDR),
@@ -244,7 +244,7 @@ fn non_controller_update_proxy_multisig_fails() {
 
 #[test]
 fn relayer_update_proxy_multisig_with_non_controller_fails() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();

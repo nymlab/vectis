@@ -23,7 +23,7 @@ cw-storage-plus = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cw1 = { workspace = true }
 cw2 = { workspace = true }
-cw3-fixed-multisig = { version = "0.16", features = ["library"] }
+cw3-fixed-multisig = { version = "1.0.1", features = ["library"] }
 cw3 = { workspace = true }
 cw20 = { workspace = true }
 cw-utils= { workspace = true }
@@ -31,4 +31,3 @@ thiserror = { version = "1.0.26" }
 sha2 = "0.9"
 vectis-wallet = { path = "../../packages/vectis" }
 vectis-plugin-registry = {path = "../plugin_registry"}
-

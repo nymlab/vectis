@@ -12,5 +12,5 @@ pub struct PluginsResponse {
 #[cw_serde]
 pub struct ConfigResponse {
     pub registry_fee: Coin,
-    pub dao_addr: String,
+    pub deployer_addr: String,
 }

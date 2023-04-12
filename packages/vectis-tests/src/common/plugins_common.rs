@@ -1,5 +1,5 @@
+pub use crate::common::base_common::*;
 pub use crate::common::common::*;
-pub use crate::common::dao_common::*;
 
 /// PluginsSuite
 ///
@@ -12,19 +12,19 @@ pub struct PluginsSuite {
     #[derivative(Debug = "ignore")]
     // proxy address
     pub proxy: Addr,
-    // dao test suite
-    pub ds: DaoChainSuite,
+    // hub test suite
+    pub hub: HubChainSuite,
 }
 
 impl PluginsSuite {
     pub fn init() -> Result<PluginsSuite> {
-        let mut dao_chain_suite = crate::common::dao_common::DaoChainSuite::init().unwrap();
-        let proxy = dao_chain_suite
-            .create_new_proxy(dao_chain_suite.controller.clone(), vec![], None, WALLET_FEE)
+        let mut hub_chain_suite = HubChainSuite::init().unwrap();
+        let proxy = hub_chain_suite
+            .create_new_proxy(hub_chain_suite.controller.clone(), vec![], None, WALLET_FEE)
             .unwrap();
 
         Ok(PluginsSuite {
-            ds: dao_chain_suite,
+            hub: hub_chain_suite,
             proxy,
         })
     }
@@ -41,11 +41,11 @@ impl PluginsSuite {
         version: String,
         funds: &[Coin],
     ) -> Result<(), PRegistryContractError> {
-        self.ds
+        self.hub
             .app
             .execute_contract(
                 sender.clone(),
-                self.ds.plugin_registry.clone(),
+                self.hub.plugin_registry.clone(),
                 &PRegistryExecMsg::RegisterPlugin {
                     code_id,
                     name,
@@ -70,7 +70,7 @@ impl PluginsSuite {
             1,
             "plugin_1".to_string(),
             "ipfs_hash".to_string(),
-            self.ds.deployer.to_string(),
+            self.hub.deployer.to_string(),
             "checksum".to_string(),
             "0.0.1".to_string(),
             funds,
@@ -82,11 +82,11 @@ impl PluginsSuite {
         sender: &Addr,
         id: u64,
     ) -> Result<(), PRegistryContractError> {
-        self.ds
+        self.hub
             .app
             .execute_contract(
                 sender.clone(),
-                self.ds.plugin_registry.clone(),
+                self.hub.plugin_registry.clone(),
                 &PRegistryExecMsg::UnregisterPlugin { id },
                 &[],
             )
@@ -106,11 +106,11 @@ impl PluginsSuite {
         checksum: Option<String>,
         version: Option<String>,
     ) -> Result<(), PRegistryContractError> {
-        self.ds
+        self.hub
             .app
             .execute_contract(
                 sender.clone(),
-                self.ds.plugin_registry.clone(),
+                self.hub.plugin_registry.clone(),
                 &PRegistryExecMsg::UpdatePlugin {
                     id,
                     code_id,
@@ -131,11 +131,11 @@ impl PluginsSuite {
         sender: &Addr,
         new_fee: Coin,
     ) -> Result<(), PRegistryContractError> {
-        self.ds
+        self.hub
             .app
             .execute_contract(
                 sender.clone(),
-                self.ds.plugin_registry.clone(),
+                self.hub.plugin_registry.clone(),
                 &PRegistryExecMsg::UpdateRegistryFee { new_fee },
                 &[],
             )
@@ -143,17 +143,17 @@ impl PluginsSuite {
             .map(|_| ())
     }
 
-    pub fn update_dao_addr(
+    pub fn update_deployer_addr(
         &mut self,
         sender: &Addr,
         new_addr: &str,
     ) -> Result<(), PRegistryContractError> {
-        self.ds
+        self.hub
             .app
             .execute_contract(
                 sender.clone(),
-                self.ds.plugin_registry.clone(),
-                &PRegistryExecMsg::UpdateDaoAddr {
+                self.hub.plugin_registry.clone(),
+                &PRegistryExecMsg::UpdateDeployerAddr {
                     new_addr: new_addr.to_string(),
                 },
                 &[],
@@ -164,18 +164,18 @@ impl PluginsSuite {
 
     pub fn query_plugin(&self, id: u64) -> StdResult<Option<Plugin>> {
         let msg = PRegistryQueryMsg::GetPluginById { id };
-        self.ds
+        self.hub
             .app
             .wrap()
-            .query_wasm_smart(self.ds.plugin_registry.clone(), &msg)
+            .query_wasm_smart(self.hub.plugin_registry.clone(), &msg)
     }
 
     pub fn query_config(&self) -> StdResult<ConfigResponse> {
         let msg = PRegistryQueryMsg::GetConfig {};
-        self.ds
+        self.hub
             .app
             .wrap()
-            .query_wasm_smart(self.ds.plugin_registry.clone(), &msg)
+            .query_wasm_smart(self.hub.plugin_registry.clone(), &msg)
     }
 
     pub fn query_plugins(
@@ -184,10 +184,10 @@ impl PluginsSuite {
         start_after: Option<u32>,
     ) -> StdResult<PluginsResponse> {
         let msg = PRegistryQueryMsg::GetPlugins { limit, start_after };
-        self.ds
+        self.hub
             .app
             .wrap()
-            .query_wasm_smart(self.ds.plugin_registry.clone(), &msg)
+            .query_wasm_smart(self.hub.plugin_registry.clone(), &msg)
     }
 
     pub fn query_installed_plugins(
@@ -196,7 +196,7 @@ impl PluginsSuite {
         start_after: Option<String>,
     ) -> StdResult<PluginListResponse> {
         let msg = ProxyQueryMsg::Plugins { start_after, limit };
-        self.ds
+        self.hub
             .app
             .wrap()
             .query_wasm_smart(self.proxy.clone(), &msg)

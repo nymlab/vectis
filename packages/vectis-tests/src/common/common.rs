@@ -11,82 +11,23 @@ pub use cw3_fixed_multisig::contract::{
     query as fixed_multisig_query,
 };
 pub use cw3_fixed_multisig::msg::QueryMsg as MultiSigQueryMsg;
+pub use cw3_flex_multisig::{
+    contract::{
+        execute as flex_multisig_execute, instantiate as flex_multisig_instantiate,
+        query as flex_multisig_query,
+    },
+    msg::{ExecuteMsg as cw3flexExecMsg, InstantiateMsg as cw3flexInstMsg},
+};
+pub use cw4::Member;
+pub use cw4_group::{
+    contract::{execute as cw4_execute, instantiate as cw4_instantiate, query as cw4_query},
+    msg::{ExecuteMsg as cw4ExecMsg, InstantiateMsg as cw4InstMsg},
+};
 pub use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
 pub use cw_utils::{Duration, Expiration};
 pub use derivative::Derivative;
 pub use secp256k1::{bitcoin_hashes::sha256, Message, PublicKey, Secp256k1, SecretKey};
 pub use serde::{de::DeserializeOwned, Serialize};
-
-pub use dao_voting::{
-    deposit::UncheckedDepositInfo, pre_propose::PreProposeInfo, proposal::SingleChoiceProposeMsg,
-    threshold::Threshold, voting::Vote,
-};
-
-pub use dao_core::{
-    contract::{
-        execute as dao_execute, instantiate as dao_instantiate, query as dao_query,
-        reply as dao_reply,
-    },
-    msg::{ExecuteMsg as DaoExecMsg, InstantiateMsg as DaoInstMsg, QueryMsg as DaoQueryMsg},
-    state::ProposalModule,
-};
-
-pub use dao_interface::{Admin, ModuleInstantiateInfo};
-
-pub use dao_pre_propose_approval_single::{
-    contract::{
-        execute as preprop_execute, instantiate as preprop_instantiate, query as preprop_query,
-    },
-    msg::{
-        ExecuteExt as PrePropExecExt, ExecuteMsg as PrePropExecMsg, InstantiateExt,
-        InstantiateMsg as PrePropInstMsg, ProposeMessage, QueryExt as PrePropQueryExt,
-    },
-};
-
-pub type PrePropQueryMsg = PrePropBaseQueryMsg<PrePropQueryExt>;
-
-pub use dao_pre_propose_base::msg::{
-    InstantiateMsg as PrePropBaseInstMsg, QueryMsg as PrePropBaseQueryMsg,
-};
-
-pub use dao_proposal_single::{
-    contract::{
-        execute as prop_execute, instantiate as prop_instantiate, query as prop_query,
-        reply as prop_reply,
-    },
-    msg::{ProposalSingleInstantiateMsg as PropInstMsg, ProposalSingleQueryMsg as PropQueryMsg},
-    query::{ProposalListResponse, ProposalResponse},
-};
-
-// constract_vote()
-pub use dao_voting_cw20_staked::{
-    contract::{
-        execute as vote_execute, instantiate as vote_instantiate, query as vote_query,
-        reply as vote_reply,
-    },
-    msg::{
-        ActiveThreshold, InstantiateMsg as VoteInstMsg, QueryMsg as VoteQueryMsg, StakingInfo,
-        TokenInfo,
-    },
-};
-
-// constract_stake()
-pub use cw20_stake::{
-    contract::{execute as stake_execute, instantiate as stake_instantiate, query as stake_query},
-    msg::{
-        Cw20StakeInstantiateMsg as StakeInstMsg, Cw20StakeQueryMsg as StakeQueryMsg, ReceiveMsg,
-        StakedBalanceAtHeightResponse,
-    },
-};
-
-pub use vectis_dao_tunnel::{
-    contract::{
-        execute as dtunnel_execute, instantiate as dtunnel_instantiate, query as dtunnel_query,
-        reply as dtunnel_reply,
-    },
-    msg::ExecuteMsg as DTunnelExecuteMsg,
-    msg::InstantiateMsg as DTunnelInstanstiateMsg,
-};
 
 pub use vectis_plugin_registry::{
     contract::{
@@ -96,42 +37,21 @@ pub use vectis_plugin_registry::{
     error::ContractError as PRegistryContractError,
     responses::{ConfigResponse, PluginsResponse},
 };
-pub use vectis_remote_tunnel::{
-    contract::{
-        execute as rtunnel_execute, instantiate as rtunnel_instantiate, query as rtunnel_query,
-        reply as rtunnel_reply,
-    },
-    msg::ExecuteMsg as RTunnelExecuteMsg,
-    msg::InstantiateMsg as RTunnelInstanstiateMsg,
-};
 
 pub use vectis_factory::contract::{
     execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
-    reply as factory_reply,
 };
-
-pub use vectis_remote_factory::contract::{
-    execute as remote_factory_execute, instantiate as remote_factory_instantiate,
-    query as remote_factory_query, reply as remote_factory_reply,
-};
-
-pub use vectis_govec::{
-    contract::{execute as govec_execute, instantiate as govec_instantiate, query as govec_query},
-    msg::InstantiateMsg as GovecInstantiateMsg,
-};
-
 pub use vectis_proxy::contract::{
     execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
     query as proxy_query, reply as proxy_reply,
 };
 
 pub use vectis_wallet::{
-    pub_key_to_address, CodeIdType, CreateWalletMsg, DaoActors, GovecExecuteMsg, GovecQueryMsg,
-    Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest, MultiSig, PluginListResponse,
-    PluginParams, ProposalExecuteMsg, ProxyExecuteMsg, ProxyQueryMsg, RelayTransaction,
-    StakeExecuteMsg, ThresholdAbsoluteCount, UnclaimedWalletList, WalletFactoryExecuteMsg,
+    pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
+    GuardiansUpdateRequest, MultiSig, PluginListResponse, PluginParams, ProxyExecuteMsg,
+    ProxyQueryMsg, RelayTransaction, ThresholdAbsoluteCount, VectisActors, WalletFactoryExecuteMsg,
     WalletFactoryExecuteMsg as FactoryExecuteMsg, WalletFactoryInstantiateMsg as InstantiateMsg,
-    WalletFactoryQueryMsg as FactoryQueryMsg, GOVEC_CLAIM_DURATION_DAY_MUL,
+    WalletFactoryQueryMsg as FactoryQueryMsg,
 };
 
 /// This is used for staking queries
@@ -158,18 +78,7 @@ pub const GUARD1: &str = "guardian1";
 pub const GUARD2: &str = "guardian2";
 pub const GUARD3: &str = "guardian3";
 pub fn contract_factory() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(factory_execute, factory_instantiate, factory_query)
-        .with_reply(factory_reply);
-    Box::new(contract)
-}
-
-pub fn contract_remote_factory() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(
-        remote_factory_execute,
-        remote_factory_instantiate,
-        remote_factory_query,
-    )
-    .with_reply(remote_factory_reply);
+    let contract = ContractWrapper::new(factory_execute, factory_instantiate, factory_query);
     Box::new(contract)
 }
 
@@ -180,40 +89,7 @@ pub fn contract_proxy() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-pub fn contract_govec() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(govec_execute, govec_instantiate, govec_query);
-    Box::new(contract)
-}
-
-pub fn contract_stake() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(stake_execute, stake_instantiate, stake_query);
-    Box::new(contract)
-}
-
-pub fn contract_vote() -> Box<dyn Contract<Empty>> {
-    let contract =
-        ContractWrapper::new(vote_execute, vote_instantiate, vote_query).with_reply(vote_reply);
-    Box::new(contract)
-}
-
-pub fn contract_dao() -> Box<dyn Contract<Empty>> {
-    let contract =
-        ContractWrapper::new(dao_execute, dao_instantiate, dao_query).with_reply(dao_reply);
-    Box::new(contract)
-}
-
-pub fn contract_proposal() -> Box<dyn Contract<Empty>> {
-    let contract =
-        ContractWrapper::new(prop_execute, prop_instantiate, prop_query).with_reply(prop_reply);
-    Box::new(contract)
-}
-
-pub fn contract_pre_proposal() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(preprop_execute, preprop_instantiate, preprop_query);
-    Box::new(contract)
-}
-
-pub fn contract_multisig() -> Box<dyn Contract<Empty>> {
+pub fn contract_fixed_multisig() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(
         fixed_multisig_execute,
         fixed_multisig_instantiate,
@@ -222,18 +98,19 @@ pub fn contract_multisig() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-pub fn contract_dao_tunnel() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(dtunnel_execute, dtunnel_instantiate, dtunnel_query)
-        .with_reply(dtunnel_reply);
+pub fn contract_flex_multisig() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(
+        flex_multisig_execute,
+        flex_multisig_instantiate,
+        flex_multisig_query,
+    );
     Box::new(contract)
 }
 
-pub fn contract_remote_tunnel() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(rtunnel_execute, rtunnel_instantiate, rtunnel_query)
-        .with_reply(rtunnel_reply);
+pub fn contract_cw4() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(cw4_execute, cw4_instantiate, cw4_query);
     Box::new(contract)
 }
-
 pub fn contract_plugin_registry() -> Box<dyn Contract<Empty>> {
     Box::new(PluginRegistry::new())
 }

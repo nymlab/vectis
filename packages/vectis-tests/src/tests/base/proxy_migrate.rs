@@ -3,11 +3,11 @@ use vectis_factory::{msg::ExecuteMsg as FactoryExecuteMsg, ContractError};
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{ProxyMigrateMsg, ProxyMigrationTxMsg, WalletAddr, WalletInfo};
 
-use vectis_contract_tests::common::dao_common::*;
+use vectis_contract_tests::common::base_common::*;
 
 #[test]
 fn controller_can_migrate_proxy_with_direct_message() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
@@ -77,7 +77,7 @@ fn controller_can_migrate_proxy_with_direct_message() {
 
 #[test]
 fn relayer_can_migrate_proxy_with_controller_signature() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
@@ -116,7 +116,7 @@ fn relayer_can_migrate_proxy_with_controller_signature() {
 
 #[test]
 fn controller_cannot_migrate_others_wallet() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
         .unwrap();
@@ -161,7 +161,7 @@ fn controller_cannot_migrate_others_wallet() {
 
 #[test]
 fn controller_cannot_migrate_with_mismatched_code_id() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();
@@ -208,7 +208,7 @@ fn controller_cannot_migrate_with_mismatched_code_id() {
 
 #[test]
 fn controller_cannot_migrate_with_invalid_wasm_msg() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();
@@ -246,7 +246,7 @@ fn controller_cannot_migrate_with_invalid_wasm_msg() {
 
 #[test]
 fn relayer_cannot_migrate_others_wallet() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();
@@ -285,7 +285,7 @@ fn relayer_cannot_migrate_others_wallet() {
 
 #[test]
 fn relayer_cannot_migrate_proxy_with_mismatch_controller_addr() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();
@@ -327,7 +327,7 @@ fn relayer_cannot_migrate_proxy_with_mismatch_controller_addr() {
 
 #[test]
 fn relayer_cannot_migrate_proxy_with_invalid_signature() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
         .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
         .unwrap();

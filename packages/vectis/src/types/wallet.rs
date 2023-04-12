@@ -16,7 +16,7 @@ pub enum WalletAddr {
 #[cw_serde]
 pub struct WalletInfo {
     pub controller_addr: Addr,
-    pub dao: Addr,
+    pub deployer: Addr,
     pub version: cw2::ContractVersion,
     pub code_id: u64,
     pub guardians: Vec<Addr>,

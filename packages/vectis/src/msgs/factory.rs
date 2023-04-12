@@ -1,6 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
-use cw_utils::Expiration;
 
 use crate::{Guardians, MigrationMsgError, RelayTransaction, WalletAddr};
 
@@ -17,12 +16,6 @@ pub struct CreateWalletMsg {
     pub relayers: Vec<String>,
     pub proxy_initial_funds: Vec<Coin>,
     pub label: String,
-}
-
-#[cw_serde]
-#[derive(Default)]
-pub struct UnclaimedWalletList {
-    pub wallets: Vec<(Addr, Expiration)>,
 }
 
 #[cw_serde]
@@ -76,8 +69,6 @@ pub struct WalletFactoryInstantiateMsg {
     pub addr_prefix: String,
     /// Fee for wallet creation in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
-    /// Fee for claim govec in native token to be sent to Admin (DAO)
-    pub claim_fee: Coin,
 }
 
 #[cw_serde]
@@ -99,67 +90,32 @@ pub enum WalletFactoryExecuteMsg {
         ty: FeeType,
         new_fee: Coin,
     },
-    UpdateDao {
+    UpdateDeployer {
         addr: String,
-    },
-    ClaimGovec {},
-    GovecMinted {
-        success: bool,
-        wallet_addr: String,
-    },
-    PurgeExpiredClaims {
-        // Address string to start after
-        start_after: Option<String>,
-        // Max is 30 and default is 10
-        limit: Option<u32>,
     },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum WalletFactoryQueryMsg {
-    /// Shows proxy wallet address of unclaimed wallets which has not been removed due to
-    /// expiration
-    /// Returns UnclaimedWalletList
-    #[returns(UnclaimedWalletList)]
-    UnclaimedGovecWallets {
-        // Address string to start after
-        start_after: Option<String>,
-        // Max is 100 and default is 50
-        limit: Option<u32>,
-    },
-    #[returns(Vec<Addr>)]
-    PendingGovecClaimWallets {
-        // Address string to start after
-        start_after: Option<String>,
-        // Max is 100 and default is 50
-        limit: Option<u32>,
-    },
-    /// Returns the expiration date for claiming Govec if not yet claimed or expired
-    #[returns(Expiration)]
-    ClaimExpiration { wallet: String },
-    /// Total wallets created in this contract
     #[returns(u64)]
     TotalCreated {},
     #[returns(u64)]
     CodeId { ty: CodeIdType },
-    /// Returns the fees required to create a wallet and claim govec
-    /// Fee goes to the DAO
+    /// Returns the fees required to create a wallet
     #[returns(FeesResponse)]
     Fees {},
-    /// Returns the address of the DAO which holds the admin role of this contract
+    /// Returns the address of the Deployer which holds the admin role of this contract
     #[returns(Addr)]
-    DaoAddr {},
+    DeployerAddr {},
 }
 
 #[cw_serde]
 pub enum FeeType {
     Wallet,
-    Claim,
 }
 
 #[cw_serde]
 pub struct FeesResponse {
     pub wallet_fee: Coin,
-    pub claim_fee: Coin,
 }

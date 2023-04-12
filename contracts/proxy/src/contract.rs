@@ -10,9 +10,9 @@ use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use std::fmt;
 use vectis_wallet::{
-    get_items_from_dao, pub_key_to_address, query_verify_cosmos, DaoActors, GuardiansUpdateMsg,
+    get_items_from_deployer, pub_key_to_address, query_verify_cosmos, GuardiansUpdateMsg,
     GuardiansUpdateRequest, PluginListResponse, PluginParams, PluginSource, RelayTransaction,
-    RelayTxError, WalletInfo, DAO, DEFAULT_LIMIT, MAX_LIMIT,
+    RelayTxError, VectisActors, WalletInfo, DEFAULT_LIMIT, DEPLOYER, MAX_LIMIT,
 };
 
 use crate::error::ContractError;
@@ -29,7 +29,6 @@ use crate::state::{
 };
 use cw3_fixed_multisig::msg::InstantiateMsg as FixedMultisigInstantiateMsg;
 use cw_utils::{parse_reply_execute_data, parse_reply_instantiate_data, Duration, Threshold};
-//contract::ExecMsg as PluginRegExecMsg, installable::InstallableExecMsg,
 use vectis_plugin_registry::contract::ExecMsg as PluginRegExecMsg;
 
 #[cfg(feature = "migration")]
@@ -71,12 +70,12 @@ pub fn instantiate(
     FROZEN.save(deps.storage, &false)?;
 
     #[cfg(not(test))]
-    DAO.save(deps.storage, &DAO.query(&deps.querier, info.sender)?)?;
+    DEPLOYER.save(deps.storage, &DEPLOYER.query(&deps.querier, info.sender)?)?;
 
     #[cfg(test)]
     {
-        let canon_addr = deps.api.addr_canonicalize("test-dao")?;
-        DAO.save(deps.storage, &canon_addr)?;
+        let canon_addr = deps.api.addr_canonicalize("test-DEPLOYER")?;
+        DEPLOYER.save(deps.storage, &canon_addr)?;
     }
 
     CODE_ID.save(deps.storage, &msg.code_id)?;
@@ -180,7 +179,8 @@ pub fn execute_inst_plugin(
     if plugin_params.has_full_access() {
         let sub_msg = match src {
             PluginSource::VectisRegistry(id) => {
-                let registry = get_items_from_dao(deps.as_ref(), DaoActors::PluginRegistry)?;
+                let registry =
+                    get_items_from_deployer(deps.as_ref(), VectisActors::PluginRegistry)?;
                 SubMsg::reply_always(
                     WasmMsg::Execute {
                         contract_addr: registry,
@@ -296,7 +296,7 @@ pub fn execute_relay(
         return Err(ContractError::Frozen {});
     }
 
-    let factory = get_items_from_dao(deps.as_ref(), DaoActors::Factory)?;
+    let factory = get_items_from_deployer(deps.as_ref(), VectisActors::Factory)?;
     // Get controller addr from it's pubkey
     let addr = pub_key_to_address(
         &deps.as_ref(),
@@ -482,7 +482,7 @@ pub fn execute_update_guardians(
         let instantiation_code_id = if let Some(id) = new_multisig_code_id {
             id
         } else {
-            let factory = get_items_from_dao(deps.as_ref(), DaoActors::Factory)?;
+            let factory = get_items_from_deployer(deps.as_ref(), VectisActors::Factory)?;
             PROXY_MULTISIG_CODE_ID.query(&deps.querier, Addr::unchecked(factory))?
         };
         let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
@@ -668,7 +668,7 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
 
     Ok(WalletInfo {
         controller_addr: deps.api.addr_humanize(&controller.addr)?,
-        dao: deps.api.addr_humanize(&DAO.load(deps.storage)?)?,
+        deployer: deps.api.addr_humanize(&DEPLOYER.load(deps.storage)?)?,
         nonce: controller.nonce,
         version: cw2::get_contract_version(deps.storage)?,
         code_id: CODE_ID.load(deps.storage)?,

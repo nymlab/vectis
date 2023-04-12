@@ -3,12 +3,11 @@ use cw_multi_test::Executor;
 use vectis_proxy::{msg::ExecuteMsg as ProxyExecuteMsg, ContractError};
 use vectis_wallet::WalletInfo;
 
-use vectis_contract_tests::common::common::*;
-use vectis_contract_tests::common::dao_common::*;
+use vectis_contract_tests::common::base_common::*;
 
 #[test]
 fn relay_proxy_controller_tx_succeeds() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
@@ -50,7 +49,7 @@ fn relay_proxy_controller_tx_succeeds() {
 
 #[test]
 fn relay_proxy_controller_tx_invalid_msg_fails() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
@@ -102,7 +101,7 @@ fn relay_proxy_controller_tx_invalid_msg_fails() {
 
 #[test]
 fn relay_proxy_controller_tx_invalid_relayer_fails() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
         .create_new_proxy(
@@ -140,7 +139,7 @@ fn relay_proxy_controller_tx_invalid_relayer_fails() {
 
 #[test]
 fn relay_proxy_controller_tx_is_not_controller_fails() {
-    let mut suite = DaoChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
 
     // Creates a wallet held by the DAO

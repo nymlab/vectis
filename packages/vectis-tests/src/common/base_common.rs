@@ -1,110 +1,167 @@
-use vectis_wallet::DaoConfig;
+pub use crate::common::common::*;
 
-use crate::common::common::*;
-
+/// This is initialised all the contracts
+/// - factory: creates, upgrade proxy and store govec claim list
+/// - plugin registry
+/// - deployer: a multisig with some additional states
+/// - plugin committee: a multisig
 #[derive(Derivative)]
 #[derivative(Debug)]
-pub struct RemoteChainSuite {
+pub struct HubChainSuite {
     #[derivative(Debug = "ignore")]
     pub app: App,
-    /// Admin Addr (for test we use admin, but it should be self)
+    // Controller
     pub controller: Addr,
     // factory address
     pub factory: Addr,
-    // remote tunnel address
-    pub remote_tunnel: Addr,
+    // deployer address: cw3_flex_multisig
+    pub deployer: Addr,
+    // deployer signer: of the group
+    pub deployer_signer: Addr,
+    // deployer group cw4
+    pub deployer_group: Addr,
+    // PluginCommitte addr: test using single account
+    pub plugin_committee: Addr,
+    // PluginRegistry addr
+    pub plugin_registry: Addr,
 }
 
-impl RemoteChainSuite {
-    /// In reality we instantiate remote_runnel contract
-    /// Use remote_tunnel to instantiate_factory from DAO on dao-chain
+impl HubChainSuite {
+    /// Instantiate factory contract with
+    /// - no initial funds on the factory
+    /// - default WALLET_FEE
     ///
-    /// But we cannot access the ibc hooks so we do the factory first
-    /// so that we can fill in the factory addr
-    pub fn init() -> Result<RemoteChainSuite> {
-        let genesis_funds = vec![coin(100000, "uremote")];
-        let deployer = Addr::unchecked("deployer");
+    pub fn init() -> Result<HubChainSuite> {
+        let genesis_funds = vec![coin(10_000_000_000_000, DENOM)];
+        let deployer_signer = Addr::unchecked("signer");
+        let plugin_committee = Addr::unchecked("plugin_committee");
         let controller = Addr::unchecked(CONTROLLER_ADDR);
         let mut app = App::new(|router, _, storage| {
             router
                 .bank
-                .init_balance(storage, &deployer, genesis_funds)
+                .init_balance(storage, &deployer_signer, genesis_funds)
                 .unwrap();
         });
         app.send_tokens(
-            deployer.clone(),
-            controller.clone(),
-            &[coin(50000, "uremote")],
+            deployer_signer.clone(),
+            controller,
+            &[coin(1_000_000_000, DENOM)],
         )?;
 
-        let factory_id = app.store_code(contract_remote_factory());
-        let proxy_id = app.store_code(contract_proxy());
-        let multisig_id = app.store_code(contract_multisig());
-        let remote_tunnel_id = app.store_code(contract_remote_tunnel());
+        app.send_tokens(
+            deployer_signer.clone(),
+            plugin_committee.clone(),
+            &[coin(1_000_000_000, DENOM)],
+        )?;
 
-        let factory_inst_msg = &InstantiateMsg {
+        let factory_id = app.store_code(contract_factory());
+        let proxy_id = app.store_code(contract_proxy());
+        let proxy_multisig_id = app.store_code(contract_fixed_multisig());
+        let plugin_registry_id = app.store_code(contract_plugin_registry());
+        let cw3_flex_id = app.store_code(contract_flex_multisig());
+        let cw4_id = app.store_code(contract_cw4());
+
+        let deployer_group = app
+            .instantiate_contract(
+                cw4_id,
+                deployer_signer.clone(),
+                &cw4InstMsg {
+                    admin: None,
+                    members: vec![Member {
+                        addr: deployer_signer.to_string(),
+                        weight: 1,
+                    }],
+                },
+                &[],
+                "Vectis Deployer Group",
+                None,
+            )
+            .unwrap();
+
+        let deployer = app
+            .instantiate_contract(
+                cw3_flex_id,
+                deployer_signer.clone(),
+                &cw3flexInstMsg {
+                    group_addr: deployer_group.to_string(),
+                    threshold: cw_utils::Threshold::AbsoluteCount { weight: 1 },
+                    max_voting_period: Duration::Time(100),
+                    executor: None,
+                    proposal_deposit: None,
+                },
+                &[],
+                "Vectis Deployer Multisig",
+                None,
+            )
+            .unwrap();
+
+        let factory_inst_msg = InstantiateMsg {
             proxy_code_id: proxy_id,
-            proxy_multisig_code_id: multisig_id,
+            proxy_multisig_code_id: proxy_multisig_id,
             addr_prefix: "wasm".to_string(),
             wallet_fee: Coin {
-                denom: "uremote".to_string(),
+                denom: DENOM.to_string(),
                 amount: Uint128::new(WALLET_FEE),
             },
-            claim_fee: Coin {
-                amount: Uint128::one(),
-                denom: "denom".to_string(),
-            },
+        };
+
+        let plugin_reg_inst_msg = PRegistryInstantiateMsg {
+            registry_fee: coin(REGISTRY_FEE, DENOM),
+            install_fee: coin(INSTALL_FEE, DENOM),
         };
 
         let factory = app
             .instantiate_contract(
                 factory_id,
                 deployer.clone(),
-                factory_inst_msg,
+                &factory_inst_msg,
                 &[],
-                "remote factory",
+                "Vectis Factory",
                 Some(deployer.to_string()),
             )
             .unwrap();
 
-        let remote_tunnel = app
+        let plugin_registry = app
             .instantiate_contract(
-                remote_tunnel_id,
+                plugin_registry_id,
                 deployer.clone(),
-                &RTunnelInstanstiateMsg {
-                    dao_config: DaoConfig {
-                        addr: String::from("dao"),
-                        dao_tunnel_port_id: String::from("dao-tunnel"),
-                        connection_id: "dao-connection-id".to_string(),
-                        dao_tunnel_channel: Some("dao-tunnel-channel".to_string()),
-                    },
-                    init_ibc_transfer_mod: None,
-                    init_items: Some(vec![(DaoActors::Factory.to_string(), factory.to_string())]),
-                },
+                &plugin_reg_inst_msg,
                 &[],
-                "remote-tunnel",            // label: human readible name for contract
-                Some(deployer.to_string()), // admin: Option<String>, will need this for upgrading
+                "Vectis Plugin Registry",
+                Some(deployer.to_string()),
             )
             .unwrap();
 
-        // update factory so dao is remote-tunnel
-        app.execute_contract(
-            deployer,
-            factory.clone(),
-            &WalletFactoryExecuteMsg::UpdateDao {
-                addr: remote_tunnel.to_string(),
-            },
-            &[],
-        )
-        .unwrap();
+        let actors = &[
+            (VectisActors::Factory, factory.clone()),
+            (VectisActors::PluginRegistry, plugin_registry.clone()),
+            (VectisActors::PluginCommittee, plugin_committee.clone()),
+        ];
 
-        Ok(RemoteChainSuite {
+        for actor in actors.iter() {
+            app.execute_contract(
+                deployer.clone(),
+                deployer.clone(),
+                &add_item_msg(actor.0.clone(), actor.1.clone()),
+                &[],
+            )
+            .unwrap();
+        }
+
+        let hub_chain_suite = HubChainSuite {
+            controller: Addr::unchecked(CONTROLLER_ADDR),
             app,
-            controller,
+            deployer,
             factory,
-            remote_tunnel,
-        })
+            deployer_group,
+            deployer_signer,
+            plugin_registry,
+            plugin_committee,
+        };
+
+        Ok(hub_chain_suite)
     }
+
     // Create wallet
     pub fn create_new_proxy_without_guardians(
         &mut self,
@@ -177,7 +234,7 @@ impl RemoteChainSuite {
                 controller,
                 factory,
                 &execute,
-                &[coin(native_tokens_amount, "uremote")],
+                &[coin(native_tokens_amount, DENOM)],
             )
             .map_err(|err| anyhow!(err))?;
 
@@ -185,15 +242,16 @@ impl RemoteChainSuite {
             .events
             .iter()
             .cloned()
-            .filter(|ev| ev.ty.as_str() == "wasm")
+            .filter(|ev| ev.ty.as_str() == "wasm-vectis.proxy.v1.MsgInstantiate")
             .collect();
 
         // This event
-        let ev = wasm_events
+        let attr = wasm_events[0]
+            .attributes
             .iter()
-            .find(|event| event.attributes.iter().any(|at| at.key == "proxy_address"));
+            .find(|at| at.key == "_contract_addr");
 
-        let proxy = &ev.unwrap().attributes[2].value;
+        let proxy = &attr.unwrap().value;
 
         Ok(Addr::unchecked(proxy))
     }
@@ -230,7 +288,7 @@ impl RemoteChainSuite {
     pub fn update_proxy_code_id(&mut self, new_code_id: u64, factory: Addr) -> Result<AppResponse> {
         self.app
             .execute_contract(
-                self.remote_tunnel.clone(),
+                self.deployer.clone(),
                 factory,
                 &FactoryExecuteMsg::UpdateCodeId {
                     ty: CodeIdType::Proxy,
@@ -248,7 +306,7 @@ impl RemoteChainSuite {
     ) -> Result<AppResponse> {
         self.app
             .execute_contract(
-                self.remote_tunnel.clone(),
+                self.deployer.clone(),
                 factory,
                 &FactoryExecuteMsg::UpdateCodeId {
                     ty: CodeIdType::Multisig,
@@ -302,6 +360,20 @@ impl RemoteChainSuite {
         Ok(r)
     }
 
+    pub fn proxy_execute(
+        &mut self,
+        wallet_addr: &Addr,
+        msgs: Vec<CosmosMsg>,
+        fees: Vec<Coin>,
+    ) -> Result<AppResponse> {
+        self.app.execute_contract(
+            self.controller.clone(),
+            wallet_addr.clone(),
+            &ProxyExecuteMsg::Execute { msgs },
+            &fees,
+        )
+    }
+
     pub fn fast_forward_block_time(&mut self, forward_time_sec: u64) {
         let block = self.app.block_info();
 
@@ -314,41 +386,15 @@ impl RemoteChainSuite {
         self.app.set_block(mock_block);
     }
 
-    pub fn query_unclaimed_govec_wallets(
-        &self,
-        contract_addr: &Addr,
-        start_after: Option<String>,
-        limit: Option<u32>,
-    ) -> Result<UnclaimedWalletList, StdError> {
-        let r = self
-            .app
-            .wrap()
-            .query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&FactoryQueryMsg::UnclaimedGovecWallets { start_after, limit })
-                    .unwrap(),
-            }))
-            .unwrap();
-        Ok(r)
-    }
-
-    pub fn query_proxy_govec_claim_expiration(
-        &self,
-        contract_addr: &Addr,
-        proxy: &Addr,
-    ) -> Result<Option<Expiration>, StdError> {
-        let r = self
-            .app
-            .wrap()
-            .query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&FactoryQueryMsg::ClaimExpiration {
-                    wallet: proxy.to_string(),
-                })
-                .unwrap(),
-            }))
-            .unwrap();
-        Ok(r)
+    pub fn query_plugins(&self, contract_addr: &Addr) -> Result<PluginListResponse, StdError> {
+        self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&ProxyQueryMsg::Plugins {
+                start_after: None,
+                limit: None,
+            })
+            .unwrap(),
+        }))
     }
 
     pub fn query_wallet_info<R>(&self, contract_addr: &Addr) -> Result<R, StdError>
@@ -386,10 +432,17 @@ impl RemoteChainSuite {
     }
 
     pub fn query_balance(&self, addr: &Addr) -> Result<Coin> {
-        Ok(self.app.wrap().query_balance(addr.as_str(), "uremote")?)
+        Ok(self.app.wrap().query_balance(addr.as_str(), DENOM)?)
     }
+}
 
-    pub fn claim_expiration(&self) -> u64 {
-        GOVEC_CLAIM_DURATION_DAY_MUL * 24 * 60 * 60
+pub fn add_item_msg(key: VectisActors, value: Addr) -> cw3flexExecMsg {
+    cw3flexExecMsg::UpdateItem {
+        key: format!("{key}"),
+        value: value.to_string(),
     }
+}
+
+pub fn init_funds() -> Vec<Coin> {
+    vec![coin(10_000_000_000_000, DENOM)]
 }

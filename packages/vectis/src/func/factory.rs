@@ -1,19 +1,15 @@
-use std::ops::{Add, Mul};
-
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
-    MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, Response,
+    StdResult, SubMsg, Uint128, WasmMsg,
 };
-use cw_storage_plus::Bound;
-use cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
 
 use cw1::CanExecuteResponse;
 
-use crate::{factory_state::*, GOVEC_CLAIM_DURATION_DAY_MUL};
+use crate::factory_state::*;
 use crate::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, FactoryError as ContractError, Guardians,
     ProxyMigrationTxMsg, ProxyQueryMsg, RelayTxError,
-    WalletFactoryInstantiateMsg as InstantiateMsg, WalletInfo, DEFAULT_LIMIT, MAX_LIMIT,
+    WalletFactoryInstantiateMsg as InstantiateMsg, WalletInfo,
 };
 
 pub fn factory_instantiate(
@@ -24,13 +20,12 @@ pub fn factory_instantiate(
 ) -> Result<Response, ContractError> {
     let admin_addr = deps.api.addr_canonicalize(info.sender.as_ref())?;
 
-    DAO.save(deps.storage, &admin_addr)?;
+    DEPLOYER.save(deps.storage, &admin_addr)?;
     PROXY_CODE_ID.save(deps.storage, &msg.proxy_code_id)?;
     PROXY_MULTISIG_CODE_ID.save(deps.storage, &msg.proxy_multisig_code_id)?;
     TOTAL_CREATED.save(deps.storage, &0)?;
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     WALLET_FEE.save(deps.storage, &msg.wallet_fee)?;
-    CLAIM_FEE.save(deps.storage, &msg.claim_fee)?;
 
     let event = Event::new("vectis.factory.v1.MsgInstantiate")
         .add_attribute("contract_address", env.contract.address);
@@ -92,7 +87,7 @@ pub mod factory_execute {
                 funds,
                 label: "Wallet-Proxy".into(),
             };
-            let msg = SubMsg::reply_always(instantiate_msg, next_id);
+            let msg = SubMsg::new(instantiate_msg);
 
             let event = Event::new("vectis.factory.v1.MsgCreateWallet")
                 .add_attribute("wallet_id", next_id.to_string());
@@ -101,14 +96,14 @@ pub mod factory_execute {
 
             TOTAL_CREATED.save(deps.storage, &next_id)?;
 
-            // Send native tokens to DAO to join the DAO
+            // Send native tokens to deployer
             if fee.amount != Uint128::zero() {
                 let to_address = deps
                     .api
-                    .addr_humanize(&DAO.load(deps.storage)?)?
+                    .addr_humanize(&DEPLOYER.load(deps.storage)?)?
                     .to_string();
 
-                // Direct transfer to DAO / remote_tunnel
+                // Direct transfer to Deployer
                 let bank_msg = CosmosMsg::Bank(BankMsg::Send {
                     to_address,
                     amount: vec![fee],
@@ -189,7 +184,7 @@ pub mod factory_execute {
         ty: CodeIdType,
         new_code_id: u64,
     ) -> Result<Response, ContractError> {
-        ensure_is_dao(deps.as_ref(), info.sender.as_ref())?;
+        ensure_is_deployer(deps.as_ref(), info.sender.as_ref())?;
         match ty {
             CodeIdType::Proxy => {
                 PROXY_CODE_ID.update(deps.storage, |c| {
@@ -224,12 +219,9 @@ pub mod factory_execute {
         ty: FeeType,
         new_fee: Coin,
     ) -> Result<Response, ContractError> {
-        ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
+        ensure_is_deployer(deps.as_ref(), info.sender.as_str())?;
 
         match ty {
-            FeeType::Claim => {
-                CLAIM_FEE.save(deps.storage, &new_fee)?;
-            }
             FeeType::Wallet => {
                 WALLET_FEE.save(deps.storage, &new_fee)?;
             }
@@ -243,86 +235,24 @@ pub mod factory_execute {
         Ok(Response::new().add_event(event))
     }
 
-    pub fn update_dao_addr(
+    pub fn update_deployer_addr(
         deps: DepsMut,
         info: MessageInfo,
         addr: String,
     ) -> Result<Response, ContractError> {
-        ensure_is_dao(deps.as_ref(), info.sender.as_str())?;
-        DAO.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
+        ensure_is_deployer(deps.as_ref(), info.sender.as_str())?;
+        DEPLOYER.save(deps.storage, &deps.api.addr_canonicalize(&addr)?)?;
 
         let event = Event::new("vectis.factory.v1.MsgUpdateDaoAddr").add_attribute("address", addr);
 
         Ok(Response::new().add_event(event))
-    }
-
-    pub fn purge_expired_claims(
-        deps: DepsMut,
-        env: Env,
-        start_after: Option<String>,
-        limit: Option<u32>,
-    ) -> Result<Response, ContractError> {
-        let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-        let start = match start_after {
-            Some(s) => {
-                let wallet_addr = deps.api.addr_canonicalize(&s)?.to_vec();
-                Some(Bound::exclusive(wallet_addr))
-            }
-            None => None,
-        };
-
-        let wallets: StdResult<Vec<(Vec<u8>, Expiration)>> = GOVEC_CLAIM_LIST
-            .prefix(())
-            .range(deps.storage, start, None, Order::Ascending)
-            .take(limit)
-            .collect();
-
-        for w in wallets? {
-            if w.1.is_expired(&env.block) {
-                GOVEC_CLAIM_LIST.remove(deps.storage, w.0)
-            }
-        }
-
-        Ok(Response::default())
     }
 }
 
 pub mod factory_queries {
     use super::*;
 
-    use crate::{FeesResponse, UnclaimedWalletList};
-
-    /// Returns wallets with Govec to claim with limit
-    pub fn query_unclaim_wallet_list(
-        deps: Deps,
-        start_after: Option<String>,
-        limit: Option<u32>,
-    ) -> StdResult<UnclaimedWalletList> {
-        let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-        let start_bound = start_after
-            .map(|addr_str| deps.api.addr_canonicalize(&addr_str))
-            .transpose()
-            .map(|o| o.map(|b| Bound::exclusive::<Vec<u8>>(b.to_vec())))?;
-        let wallets: StdResult<Vec<(Addr, Expiration)>> = GOVEC_CLAIM_LIST
-            .prefix(())
-            .range(deps.storage, start_bound, None, Order::Ascending)
-            .take(limit)
-            .map(|w| -> StdResult<(Addr, Expiration)> {
-                let ww = w?;
-                Ok((deps.api.addr_humanize(&CanonicalAddr::from(ww.0))?, ww.1))
-            })
-            .collect();
-
-        Ok(UnclaimedWalletList { wallets: wallets? })
-    }
-
-    /// Returns wallets of controller
-    pub fn query_wallet_claim_expiration(
-        deps: Deps,
-        wallet: String,
-    ) -> StdResult<Option<Expiration>> {
-        GOVEC_CLAIM_LIST.may_load(deps.storage, deps.api.addr_canonicalize(&wallet)?.to_vec())
-    }
+    use crate::FeesResponse;
 
     /// Returns the current supported code Id:
     /// - `wallet_proxy`
@@ -339,13 +269,12 @@ pub mod factory_queries {
     pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {
         Ok(FeesResponse {
             wallet_fee: WALLET_FEE.load(deps.storage)?,
-            claim_fee: CLAIM_FEE.load(deps.storage)?,
         })
     }
 
-    /// Returns DAO address
-    pub fn query_dao_addr(deps: Deps) -> StdResult<Addr> {
-        deps.api.addr_humanize(&DAO.load(deps.storage)?)
+    /// Returns Deployer address
+    pub fn query_deployer(deps: Deps) -> StdResult<Addr> {
+        deps.api.addr_humanize(&DEPLOYER.load(deps.storage)?)
     }
 
     /// Return total number of wallets created
@@ -354,11 +283,11 @@ pub mod factory_queries {
     }
 }
 
-/// Ensures provided addr is the state stored DAO
-pub fn ensure_is_dao(deps: Deps, sender: &str) -> Result<(), ContractError> {
-    let dao = DAO.load(deps.storage)?;
+/// Ensures provided addr is the state stored DEPLOYER
+pub fn ensure_is_deployer(deps: Deps, sender: &str) -> Result<(), ContractError> {
+    let deployer = DEPLOYER.load(deps.storage)?;
     let caller = deps.api.addr_canonicalize(sender)?;
-    if caller == dao {
+    if caller == deployer {
         Ok(())
     } else {
         Err(ContractError::Unauthorized {})
@@ -483,45 +412,4 @@ pub fn ensure_is_valid_migration_msg(
         }
     };
     Ok(tx_msg)
-}
-
-/// Ensure controller has sent in enought funds to cover the claim fee
-pub fn ensure_is_enough_claim_fee(deps: Deps, sent_fund: &[Coin]) -> Result<(), ContractError> {
-    let claim_fee = CLAIM_FEE.load(deps.storage)?;
-
-    let fund = sent_fund
-        .iter()
-        .find(|c| c.denom == claim_fee.denom)
-        .ok_or(ContractError::ClaimFeeRequired)?;
-
-    if fund.amount < claim_fee.amount {
-        return Err(ContractError::InvalidNativeFund(
-            claim_fee.amount,
-            fund.amount,
-        ));
-    }
-
-    Ok(())
-}
-
-pub fn handle_proxy_instantion_reply(
-    deps: DepsMut,
-    env: Env,
-    reply: Reply,
-) -> Result<Response, ContractError> {
-    if let Ok(res) = parse_reply_instantiate_data(reply) {
-        let wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(&res.contract_address)?;
-        let expiration = Expiration::AtTime(env.block.time)
-            .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
-            .expect("error defining activate_at");
-
-        GOVEC_CLAIM_LIST.save(deps.storage, wallet_addr.to_vec(), &expiration)?;
-
-        let res = Response::new()
-            .add_attribute("action", "Govec claim list updated")
-            .add_attribute("proxy_address", res.contract_address);
-        Ok(res)
-    } else {
-        Err(ContractError::ProxyInstantiationError {})
-    }
 }

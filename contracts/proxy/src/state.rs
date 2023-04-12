@@ -4,7 +4,7 @@ use crate::error::ContractError;
 use cosmwasm_std::{CanonicalAddr, Coin};
 use cw_storage_plus::{Item, Map};
 pub use vectis_wallet::{
-    factory_state::{ADDR_PREFIX, DAO, PROXY_MULTISIG_CODE_ID},
+    factory_state::{ADDR_PREFIX, DEPLOYER, PROXY_MULTISIG_CODE_ID},
     GuardiansUpdateRequest, Nonce, RelayTxError,
 };
 

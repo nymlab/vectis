@@ -5,13 +5,13 @@ use thiserror::Error;
 
 /// Relay transaction related errors
 #[derive(Error, Debug, PartialEq)]
-pub enum DaoItemsQueryError {
+pub enum DeployerItemsQueryError {
     #[error("{0}")]
     Std(#[from] StdError),
     #[error("Item not set for {0}")]
     ItemNotSet(String),
-    #[error("Dao Addr Not Found")]
-    DaoAddrNotFound,
+    #[error("Deployer Addr Not Found")]
+    DeployerAddrNotFound,
 }
 
 /// Relay transaction related errors
@@ -42,28 +42,6 @@ pub enum MigrationMsgError {
     IsNotAProxyMsg,
     #[error("IsNotAMultisigMsg")]
     IsNotAMultisigMsg,
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum IbcError {
-    #[error("Only supports unordered channels")]
-    InvalidChannelOrder,
-    #[error("Counterparty version must be '{0}'")]
-    InvalidChannelVersion(&'static str),
-    #[error("Connection id must be = '{0}'")]
-    InvalidConnectionId(String),
-    #[error("Port id must be = '{0}'")]
-    InvalidPortId(String),
-    #[error("Invalid source endpoint")]
-    InvalidSrc,
-    #[error("Invalid PacketMsg")]
-    InvalidPacketMsg,
-    #[error("Invalid PacketMsg.msg")]
-    InvalidInnerMsg,
-    #[error("Invalid Job id")]
-    UnsupportedJobId,
-    #[error("Invalid DAO action id")]
-    InvalidDaoActionId,
 }
 
 #[derive(Error, Debug, PartialEq)]

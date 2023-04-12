@@ -1,15 +1,19 @@
-use crate::types::error::DaoItemsQueryError;
-use crate::types::DaoActors;
+use crate::types::error::DeployerItemsQueryError;
+use crate::VectisActors;
 use cosmwasm_std::Deps;
 
-use crate::types::state::{DAO, ITEMS};
+use crate::types::state::{DEPLOYER, ITEMS};
 
-pub fn get_items_from_dao(deps: Deps, item: DaoActors) -> Result<String, DaoItemsQueryError> {
-    let dao = deps.api.addr_humanize(
-        &DAO.load(deps.storage)
-            .map_err(|_| DaoItemsQueryError::DaoAddrNotFound)?,
+pub fn get_items_from_deployer(
+    deps: Deps,
+    item: VectisActors,
+) -> Result<String, DeployerItemsQueryError> {
+    let deployer = deps.api.addr_humanize(
+        &DEPLOYER
+            .load(deps.storage)
+            .map_err(|_| DeployerItemsQueryError::DeployerAddrNotFound)?,
     )?;
     ITEMS
-        .query(&deps.querier, dao, item.to_string())?
-        .ok_or(DaoItemsQueryError::ItemNotSet(item.to_string()))
+        .query(&deps.querier, deployer, item.to_string())?
+        .ok_or(DeployerItemsQueryError::ItemNotSet(item.to_string()))
 }

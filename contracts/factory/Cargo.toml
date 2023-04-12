@@ -29,7 +29,6 @@ thiserror = { workspace = true }
 derivative = "2"
 
 # Vectis libs
-vectis-govec = { path = "../govec", features = ["library"] }
 vectis-wallet = {path = "../../packages/vectis" }
 
 [dev-dependencies]
@@ -39,5 +38,4 @@ cosmwasm-schema = { workspace = true }
 cw-multi-test = { workspace = true }
 cw3 = { workspace = true }
 cw3-fixed-multisig = "0.16"
-cw20-stake = { workspace = true }
 vectis-proxy = { path = "../proxy", features = ["migration", "library"]}

@@ -1582,7 +1582,7 @@
       "required": [
         "code_id",
         "controller_addr",
-        "dao",
+        "deployer",
         "guardians",
         "is_frozen",
         "label",
@@ -1599,7 +1599,7 @@
         "controller_addr": {
           "$ref": "#/definitions/Addr"
         },
-        "dao": {
+        "deployer": {
           "$ref": "#/definitions/Addr"
         },
         "guardians": {

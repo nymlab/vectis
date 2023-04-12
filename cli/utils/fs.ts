@@ -61,5 +61,5 @@ export function areContractsDownloaded(): boolean {
 export function areTypesSchemasDownloaded(): boolean {
     if (!fs.existsSync(downloadSchemaPath)) return false;
     const files = fs.readdirSync(downloadSchemaPath);
-    return files.length === 5;
+    return files.length === 2;
 }

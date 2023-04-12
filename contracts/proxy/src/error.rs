@@ -1,6 +1,6 @@
 use cosmwasm_std::StdError;
 use thiserror::Error;
-use vectis_wallet::{DaoItemsQueryError, RelayTxError};
+use vectis_wallet::{DeployerItemsQueryError, RelayTxError};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
@@ -8,7 +8,7 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("{0}")]
-    DaoItemsQueryError(#[from] DaoItemsQueryError),
+    DeployerItemsQueryError(#[from] DeployerItemsQueryError),
 
     #[error("Frozen")]
     Frozen {},

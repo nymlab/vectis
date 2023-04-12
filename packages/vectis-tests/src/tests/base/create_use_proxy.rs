@@ -1,23 +1,20 @@
 use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, Uint128, WasmMsg};
 use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
-use cw_multi_test::Executor;
-use cw_utils::Expiration;
 use vectis_factory::ContractError;
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{MultiSig, WalletInfo};
 
-use vectis_contract_tests::common::common::*;
-use vectis_contract_tests::common::remote_common::*;
+use vectis_contract_tests::common::base_common::*;
 
 #[test]
 fn create_new_proxy() {
-    let init_wallet_fund: Coin = coin(100, "uremote");
+    let init_wallet_fund: Coin = coin(100, DENOM);
 
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let init_controller_fund = suite.query_balance(&suite.controller).unwrap();
-    let init_dao_fund = suite.query_balance(&suite.remote_tunnel).unwrap();
+    let init_deployer_fund = suite.query_balance(&suite.deployer).unwrap();
 
     let wallet_addr = suite
         .create_new_proxy(
@@ -28,25 +25,12 @@ fn create_new_proxy() {
         )
         .unwrap();
 
-    // Checks unclaimed_wallet_list has added new proxy
-    let unclaimed_wallet_list = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap();
-    assert_eq!(unclaimed_wallet_list.wallets.len(), 1);
-    // Checks expiration is created correctly
-    if let Expiration::AtTime(time) = unclaimed_wallet_list.wallets[0].1 {
-        let expiration = suite.claim_expiration();
-        assert_eq!(time, suite.app.block_info().time.plus_seconds(expiration));
-    } else {
-        assert!(false);
-    }
-
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
 
     let factory_fund = suite.query_balance(&suite.factory).unwrap();
     let wallet_fund = suite.query_balance(&wallet_addr).unwrap();
     let post_controller_fund = suite.query_balance(&suite.controller.clone()).unwrap();
-    let post_dao_fund = suite.query_balance(&suite.remote_tunnel).unwrap();
+    let post_deployer_fund = suite.query_balance(&suite.deployer).unwrap();
 
     // factory fund does not change
     assert_eq!(Uint128::zero(), factory_fund.amount,);
@@ -57,9 +41,9 @@ fn create_new_proxy() {
         init_controller_fund.amount.u128() - post_controller_fund.amount.u128(),
         WALLET_FEE + init_wallet_fund.amount.u128()
     );
-    // dao fund should increase by wallet_fee
+    // deployer fund should increase by wallet_fee
     assert_eq!(
-        post_dao_fund.amount.u128() - init_dao_fund.amount.u128(),
+        post_deployer_fund.amount.u128() - init_deployer_fund.amount.u128(),
         WALLET_FEE
     );
     // initial states should match creation params
@@ -72,7 +56,7 @@ fn create_new_proxy() {
 fn cannot_create_new_proxy_without_payment() {
     let no_wallet_fee = 0u128;
 
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     suite
         .create_new_proxy(suite.controller.clone(), vec![], None, no_wallet_fee)
         .unwrap();
@@ -80,7 +64,7 @@ fn cannot_create_new_proxy_without_payment() {
 
 #[test]
 fn create_new_proxy_without_guardians() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     suite
         .create_new_proxy_without_guardians(
             suite.controller.clone(),
@@ -94,7 +78,7 @@ fn create_new_proxy_without_guardians() {
 
 #[test]
 fn controller_can_rotate_keys() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let wallet_address = suite
         .create_new_proxy_without_guardians(
@@ -125,7 +109,7 @@ fn controller_can_rotate_keys() {
 
 #[test]
 fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let multisig = MultiSig {
         threshold_absolute_count: 0,
         multisig_initial_funds: vec![],
@@ -151,8 +135,8 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
 
 #[test]
 fn controller_can_execute_messages() {
-    let mut suite = RemoteChainSuite::init().unwrap();
-    let init_wallet_fund: Coin = coin(100, "uremote");
+    let mut suite = HubChainSuite::init().unwrap();
+    let init_wallet_fund: Coin = coin(100, DENOM);
     let wallet_address = suite
         .create_new_proxy(
             suite.controller.clone(),
@@ -166,7 +150,7 @@ fn controller_can_execute_messages() {
     let controller = w.controller_addr;
 
     // Can execute Bank msgs
-    let send_amount: Coin = coin(10, "uremote");
+    let send_amount: Coin = coin(10, DENOM);
     let msg = CosmosMsg::<()>::Bank(BankMsg::Send {
         to_address: suite.factory.to_string(),
         amount: vec![send_amount.clone()],
@@ -190,7 +174,7 @@ fn controller_can_execute_messages() {
 
 #[test]
 fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
-    let mut suite = RemoteChainSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let wallet_addr = suite
         .create_new_proxy(
@@ -272,9 +256,9 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 
 #[test]
 fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
-    let mut suite = RemoteChainSuite::init().unwrap();
-    let init_multisig_fund: Coin = coin(200, "uremote");
-    let init_proxy_fund: Coin = coin(100, "uremote");
+    let mut suite = HubChainSuite::init().unwrap();
+    let init_multisig_fund: Coin = coin(200, DENOM);
+    let init_proxy_fund: Coin = coin(100, DENOM);
     let init_controller_balance = suite.query_balance(&suite.controller.clone());
 
     let proxy_addr = suite
@@ -302,33 +286,4 @@ fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
             + init_multisig_fund.amount.u128(),
         init_controller_balance.unwrap().amount.u128()
     );
-}
-
-#[test]
-fn query_all_unclaimed_wallets_works() {
-    let mut suite = RemoteChainSuite::init().unwrap();
-
-    // Create a few wallets
-    suite
-        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
-        .unwrap();
-
-    suite
-        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
-        .unwrap();
-
-    suite
-        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
-        .unwrap();
-
-    let all = suite
-        .query_unclaimed_govec_wallets(&suite.factory, None, None)
-        .unwrap();
-    let pagination_second = suite
-        .query_unclaimed_govec_wallets(&suite.factory, Some(all.wallets[0].0.to_string()), None)
-        .unwrap();
-
-    assert_eq!(all.wallets.len(), 3);
-    assert_eq!(pagination_second.wallets.len(), 2);
-    assert_eq!(all.wallets[1], pagination_second.wallets[0]);
 }

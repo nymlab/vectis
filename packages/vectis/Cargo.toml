@@ -22,7 +22,3 @@ hex = { version = "0.4", default-features = false }
 bech32 = "0.8.1"
 primitive-types = {version = "0.10.1", default-features = false, features = ["byteorder"]}
 
-# daodao contracts
-cw20-stake = { workspace = true }
-dao-proposal-single = { workspace = true }
-dao-pre-propose-approval-single = { workspace = true }

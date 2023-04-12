@@ -8,7 +8,7 @@ fn cannot_register_plugins_without_fee() {
     let funds = &[];
 
     let err = suite
-        .register_plugin_mocked(&suite.ds.controller.clone(), funds)
+        .register_plugin_mocked(&suite.hub.controller.clone(), funds)
         .unwrap_err();
 
     assert_eq!(
@@ -22,7 +22,7 @@ fn no_reviewer_cannot_register_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
-        .register_plugin_mocked(&suite.ds.controller.clone(), &[coin(REGISTRY_FEE, DENOM)])
+        .register_plugin_mocked(&suite.hub.controller.clone(), &[coin(REGISTRY_FEE, DENOM)])
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -33,7 +33,7 @@ fn no_reviewer_cannot_unregister_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
-        .unregister_plugin(&suite.ds.controller.clone(), 1)
+        .unregister_plugin(&suite.hub.controller.clone(), 1)
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -45,7 +45,7 @@ fn no_reviewer_cannot_update_plugins() {
 
     let err = suite
         .update_plugin(
-            &suite.ds.controller.clone(),
+            &suite.hub.controller.clone(),
             1,
             None,
             None,
@@ -60,22 +60,22 @@ fn no_reviewer_cannot_update_plugins() {
 }
 
 #[test]
-fn no_dao_cannot_update_registry_fee() {
+fn no_deployer_cannot_update_registry_fee() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
-        .update_registry_fee(&suite.ds.controller.clone(), coin(100_000, DENOM))
+        .update_registry_fee(&suite.hub.controller.clone(), coin(100_000, DENOM))
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
 }
 
 #[test]
-fn no_dao_cannot_update_dao_addr() {
+fn not_deployter_cannot_update_deployer_addr() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
-        .update_dao_addr(&suite.ds.controller.clone(), "test")
+        .update_deployer_addr(&suite.hub.controller.clone(), "test")
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -85,25 +85,31 @@ fn no_dao_cannot_update_dao_addr() {
 fn reviewer_should_be_able_to_register_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
-    let dao_previous_balance = suite.ds.query_balance(&suite.ds.dao.clone()).unwrap();
+    let deployer_previous_balance = suite
+        .hub
+        .query_balance(&suite.hub.deployer.clone())
+        .unwrap();
 
     suite
         .register_plugin_mocked(
-            &suite.ds.plugin_committee.clone(),
+            &suite.hub.plugin_committee.clone(),
             &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
 
-    let dao_current_balance = suite.ds.query_balance(&suite.ds.dao.clone()).unwrap();
+    let deployer_current_balance = suite
+        .hub
+        .query_balance(&suite.hub.deployer.clone())
+        .unwrap();
     let resp = suite.query_plugins(None, None).unwrap();
 
     // check there is a plugin
     assert_eq!(resp.total, 1);
 
-    // check the dao received the register fee;
+    // check the deployer received the register fee;
     assert_eq!(
-        dao_current_balance.amount,
-        dao_previous_balance
+        deployer_current_balance.amount,
+        deployer_previous_balance
             .amount
             .checked_add(Uint128::from(REGISTRY_FEE))
             .unwrap()
@@ -116,7 +122,7 @@ fn reviewer_should_be_able_to_unregister_plugins() {
 
     suite
         .register_plugin_mocked(
-            &suite.ds.plugin_committee.clone(),
+            &suite.hub.plugin_committee.clone(),
             &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
@@ -126,7 +132,7 @@ fn reviewer_should_be_able_to_unregister_plugins() {
     assert_eq!(resp.total, 1);
 
     suite
-        .unregister_plugin(&suite.ds.plugin_committee.clone(), 1)
+        .unregister_plugin(&suite.hub.plugin_committee.clone(), 1)
         .unwrap();
 
     let resp = suite.query_plugins(None, None).unwrap();
@@ -140,7 +146,7 @@ fn reviewer_should_be_able_to_update_plugins() {
 
     suite
         .register_plugin_mocked(
-            &suite.ds.plugin_committee.clone(),
+            &suite.hub.plugin_committee.clone(),
             &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
@@ -156,7 +162,7 @@ fn reviewer_should_be_able_to_update_plugins() {
 
     suite
         .update_plugin(
-            &suite.ds.plugin_committee.clone(),
+            &suite.hub.plugin_committee.clone(),
             plugin.id,
             Some(new_code_id),
             Some(new_name.to_string()),
@@ -183,13 +189,13 @@ fn reviewer_should_be_able_to_update_plugins() {
 }
 
 #[test]
-fn dao_should_be_able_to_update_registry_fee() {
+fn deployer_should_be_able_to_update_registry_fee() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let new_registry_fee = coin(100_000, DENOM);
 
     suite
-        .update_registry_fee(&suite.ds.dao.clone(), new_registry_fee.clone())
+        .update_registry_fee(&suite.hub.deployer.clone(), new_registry_fee.clone())
         .unwrap();
 
     let config = suite.query_config().unwrap();
@@ -198,16 +204,16 @@ fn dao_should_be_able_to_update_registry_fee() {
 }
 
 #[test]
-fn dao_should_be_able_to_update_dao_addr() {
+fn deployer_should_be_able_to_update_deployer_addr() {
     let mut suite = PluginsSuite::init().unwrap();
 
-    let new_dao_addr = "new_dao_addr";
+    let new_deployer_addr = "new_deployer_addr";
 
     suite
-        .update_dao_addr(&suite.ds.dao.clone(), new_dao_addr)
+        .update_deployer_addr(&suite.hub.deployer.clone(), new_deployer_addr)
         .unwrap();
 
     let config = suite.query_config().unwrap();
 
-    assert_eq!(config.dao_addr, new_dao_addr);
+    assert_eq!(config.deployer_addr, new_deployer_addr);
 }

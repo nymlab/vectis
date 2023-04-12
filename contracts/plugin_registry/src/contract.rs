@@ -8,7 +8,7 @@ use cosmwasm_std::{
     MessageInfo, Order, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 
-use vectis_wallet::{get_items_from_dao, DaoActors, DAO};
+use vectis_wallet::{get_items_from_deployer, VectisActors, DEPLOYER};
 
 use crate::{
     error::ContractError,
@@ -91,11 +91,11 @@ impl PluginRegistry<'_> {
             INSTALL_REPLY,
         );
 
-        // Send funds to the DAO
+        // Send funds to the Deployer
         let msg = CosmosMsg::Bank(BankMsg::Send {
             to_address: deps
                 .api
-                .addr_humanize(&DAO.load(deps.storage)?)?
+                .addr_humanize(&DEPLOYER.load(deps.storage)?)?
                 .to_string(),
             amount: vec![install_fee],
         });
@@ -123,7 +123,7 @@ impl PluginRegistry<'_> {
         self.total_plugins.save(deps.storage, &0u64)?;
         self.registry_fee.save(deps.storage, &registry_fee)?;
         self.install_fee.save(deps.storage, &install_fee)?;
-        DAO.save(
+        DEPLOYER.save(
             deps.storage,
             &deps.api.addr_canonicalize(info.sender.as_str())?,
         )?;
@@ -131,7 +131,7 @@ impl PluginRegistry<'_> {
     }
 
     fn ensure_is_reviewer(&self, deps: Deps, sender: &str) -> Result<(), ContractError> {
-        let reviewer = get_items_from_dao(deps, DaoActors::PluginCommittee)?;
+        let reviewer = get_items_from_deployer(deps, VectisActors::PluginCommittee)?;
         if reviewer != sender {
             Err(ContractError::Unauthorized)
         } else {
@@ -139,7 +139,7 @@ impl PluginRegistry<'_> {
         }
     }
 
-    /// Subtracts the required fees defined in the registry to be sent to DAO treasury
+    /// Subtracts the required fees defined in the registry to be sent to DEPLOYER treasury
     /// and return the remaining funds sent to this contract - presumably for the plugin
     fn sub_required_fee<'a>(
         &'a self,
@@ -202,11 +202,11 @@ impl PluginRegistry<'_> {
 
         self.plugins.save(deps.storage, id, &plugin)?;
 
-        // Send funds to the DAO
+        // Send funds to the Deployer
         let msg = CosmosMsg::Bank(BankMsg::Send {
             to_address: deps
                 .api
-                .addr_humanize(&DAO.load(deps.storage)?)?
+                .addr_humanize(&DEPLOYER.load(deps.storage)?)?
                 .to_string(),
             amount: vec![registry_fee],
         });
@@ -292,7 +292,7 @@ impl PluginRegistry<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _env, info) = ctx;
         ensure_eq!(
-            deps.api.addr_humanize(&DAO.load(deps.storage)?)?,
+            deps.api.addr_humanize(&DEPLOYER.load(deps.storage)?)?,
             info.sender,
             ContractError::Unauthorized
         );
@@ -308,19 +308,19 @@ impl PluginRegistry<'_> {
     }
 
     #[msg(exec)]
-    pub fn update_dao_addr(
+    pub fn update_deployer_addr(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         new_addr: String,
     ) -> Result<Response, ContractError> {
         let (deps, _env, info) = ctx;
         ensure_eq!(
-            deps.api.addr_humanize(&DAO.load(deps.storage)?)?,
+            deps.api.addr_humanize(&DEPLOYER.load(deps.storage)?)?,
             info.sender,
             ContractError::Unauthorized
         );
 
-        DAO.update(deps.storage, |_| -> StdResult<CanonicalAddr> {
+        DEPLOYER.update(deps.storage, |_| -> StdResult<CanonicalAddr> {
             deps.api
                 .addr_canonicalize(deps.api.addr_validate(new_addr.as_str())?.as_str())
         })?;
@@ -336,9 +336,9 @@ impl PluginRegistry<'_> {
         let (deps, ..) = ctx;
         Ok(ConfigResponse {
             registry_fee: self.registry_fee.load(deps.storage)?,
-            dao_addr: deps
+            deployer_addr: deps
                 .api
-                .addr_humanize(&DAO.load(deps.storage)?)?
+                .addr_humanize(&DEPLOYER.load(deps.storage)?)?
                 .to_string(),
         })
     }

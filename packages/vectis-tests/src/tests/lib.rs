@@ -1,3 +1,2 @@
-pub mod dao_chain;
+pub mod base;
 pub mod plugins;
-pub mod remote_chain;
