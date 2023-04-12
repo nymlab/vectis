@@ -25,8 +25,7 @@ cw1 = { workspace = true }
 cw2 = { workspace = true }
 cw20 = { workspace = true }
 cw3-fixed-multisig = { version = "1.0.1", features = ["library"] }
-# cw3-flex-multisig = { version = "1.0.1", features = ["library"] }
-cw3-flex-multisig = { path = "../../../../cw-plus/contracts/cw3-flex-multisig" }
+cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "9d6fae5" }
 cw4-group= { version = "1.0.1", features = ["library"] }
 cw3 = "1.0.1"
 cw4 = "1.0.1"

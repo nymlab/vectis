@@ -1,14 +1,5 @@
 import assert from "assert";
-import {
-    FactoryClient,
-    GovecClient,
-    DaoClient,
-    CWClient,
-    Cw3FlexClient,
-    Cw4GroupClient,
-    PluginRegClient,
-    RelayerClient,
-} from "../clients";
+import { FactoryClient, CWClient, Cw3FlexClient, Cw4GroupClient, PluginRegClient, RelayerClient } from "../clients";
 import { mintableGovecPerWallet } from "../clients/dao";
 import { marketingDescription, marketingProject } from "../clients/govec";
 import { govecGenesisBalances } from "../config/govec_init_balances";
