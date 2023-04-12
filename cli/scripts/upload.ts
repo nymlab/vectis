@@ -4,7 +4,7 @@ import { toHex } from "@cosmjs/encoding";
 import CosmWasmClient, { downloadContracts } from "../clients/cosmwasm";
 import { areContractsDownloaded, getContract, writeToFile } from "../utils/fs";
 import {
-    daoUploadReportPath,
+    hubUploadReportPath,
     remoteUploadReportPath,
     codePaths,
     hostChainName,
