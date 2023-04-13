@@ -1,26 +1,21 @@
 import type { UploadResult, Code } from "@cosmjs/cosmwasm-stargate";
 
-export interface DaoContractsUploadResult {
-    daoTunnel: UploadResult;
+export interface HubContractsUploadResult {
     factory: UploadResult;
     proxy: UploadResult;
     cw3Fixed: UploadResult;
+    pluginReg: UploadResult;
     cw3Flex: UploadResult;
     cw4Group: UploadResult;
-    govec: UploadResult;
-    pluginReg: UploadResult;
-    staking: UploadResult;
-    dao: UploadResult | Code;
-    vote: UploadResult;
-    proposalSingle: UploadResult;
-    preProposalSingle: UploadResult;
 }
 
 export interface RemoteContractsUploadResult {
-    remoteTunnel: UploadResult;
+    factory: UploadResult;
+    proxy: UploadResult;
     cw3Fixed: UploadResult;
-    remoteProxy: UploadResult;
-    remoteFactory: UploadResult;
+    pluginReg: UploadResult;
+    cw3Flex: UploadResult;
+    cw4Group: UploadResult;
 }
 
 // This is used for testing only
@@ -42,29 +37,18 @@ export interface VectisDaoContractsAddrs {
     voteAddr: string;
 }
 
-// These are all the contract on the Dao-chain
-export interface VectisDaoChainContractsAddrs {
-    Govec: string;
-    DaoTunnel: string;
-    ProposalCommittee: string;
-    PreProposalModule: string;
+// These are all the contract on the Hub Chain
+export interface VectisHubChainContractsAddrs {
     PluginCommittee: string;
-    PluginRegistry: string;
-    Factory: string;
-    Staking: string;
-    Dao: string;
-    ProposalModule: string;
-    PreproposalGroup: string;
     PluginCommitteeGroup: string;
-    Vote: string;
+    VectisCommittee: string;
+    VectisCommitteeGroup: string;
+    Factory: string;
+    PluginRegistry: string;
 }
 
 // These are all the contract on the Remote-chain
 export interface VectisRemoteChainContractsAddrs {
     remoteTunnelAddr: string;
     remoteFactoryAddr: string;
-}
-
-export interface DaoDaoContracts {
-    dao: Code;
 }

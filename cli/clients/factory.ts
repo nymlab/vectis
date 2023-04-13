@@ -6,7 +6,7 @@ import * as CHAINS from "../config/chains";
 
 import type { Chains } from "../config/chains";
 import type { FactoryT } from "../interfaces";
-import { walletInitialFunds, govecClaimFee } from "../utils/fees";
+import { walletInitialFunds } from "../utils/fees";
 
 class FactoryClient extends FactoryC {
     constructor(client: SigningCosmWasmClient, sender: string, contractAddress: string) {
@@ -20,13 +20,11 @@ class FactoryClient extends FactoryC {
     ): FactoryT.InstantiateMsg {
         const { addressPrefix } = CHAINS[chainName];
         const wallet_fee = walletInitialFunds(CHAINS[chainName]);
-        const claim_fee = govecClaimFee(CHAINS[chainName]);
         return {
             proxy_code_id: proxyCodeId,
             proxy_multisig_code_id: multisigCodeId,
             addr_prefix: addressPrefix,
             wallet_fee: wallet_fee as FactoryT.Coin,
-            claim_fee: claim_fee as FactoryT.Coin,
         };
     }
 

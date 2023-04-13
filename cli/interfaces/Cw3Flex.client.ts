@@ -10,26 +10,38 @@ import {
     Executor,
     Addr,
     Duration,
+    Uint128,
+    UncheckedDenom,
     Threshold,
     Decimal,
     InstantiateMsg,
+    UncheckedDepositInfo,
     ExecuteMsg,
     Expiration,
     Timestamp,
     Uint64,
     CosmosMsgForEmpty,
     BankMsg,
-    Uint128,
     StakingMsg,
     DistributionMsg,
-    WasmMsg,
     Binary,
+    IbcMsg,
+    WasmMsg,
+    GovMsg,
+    VoteOption,
     Vote,
     Coin,
     Empty,
+    IbcTimeout,
+    IbcTimeoutBlock,
     MemberChangedHookMsg,
     MemberDiff,
     QueryMsg,
+    Cw4Contract,
+    Denom,
+    Config,
+    DepositInfo,
+    String,
     Status,
     ThresholdResponse,
     ProposalListResponseForEmpty,
@@ -59,7 +71,7 @@ export interface Cw3FlexReadOnlyInterface {
         limit?: number;
         startBefore?: number;
     }) => Promise<ProposalListResponseForEmpty>;
-    vote: ({ proposalId, voter }: { proposalId: number; voter: string }) => Promise<VoteResponse>;
+    queryVote: ({ proposalId, voter }: { proposalId: number; voter: string }) => Promise<VoteResponse>;
     listVotes: ({
         limit,
         proposalId,
@@ -71,6 +83,8 @@ export interface Cw3FlexReadOnlyInterface {
     }) => Promise<VoteListResponse>;
     voter: ({ address }: { address: string }) => Promise<VoterResponse>;
     listVoters: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<VoterListResponse>;
+    config: () => Promise<Config>;
+    getItem: ({ key }: { key: string }) => Promise<String>;
 }
 export class Cw3FlexQueryClient implements Cw3FlexReadOnlyInterface {
     client: CosmWasmClient;
@@ -83,10 +97,12 @@ export class Cw3FlexQueryClient implements Cw3FlexReadOnlyInterface {
         this.proposal = this.proposal.bind(this);
         this.listProposals = this.listProposals.bind(this);
         this.reverseProposals = this.reverseProposals.bind(this);
-        this.vote = this.vote.bind(this);
+        this.queryVote = this.queryVote.bind(this);
         this.listVotes = this.listVotes.bind(this);
         this.voter = this.voter.bind(this);
         this.listVoters = this.listVoters.bind(this);
+        this.config = this.config.bind(this);
+        this.getItem = this.getItem.bind(this);
     }
 
     threshold = async (): Promise<ThresholdResponse> => {
@@ -129,7 +145,7 @@ export class Cw3FlexQueryClient implements Cw3FlexReadOnlyInterface {
             },
         });
     };
-    vote = async ({ proposalId, voter }: { proposalId: number; voter: string }): Promise<VoteResponse> => {
+    queryVote = async ({ proposalId, voter }: { proposalId: number; voter: string }): Promise<VoteResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             vote: {
                 proposal_id: proposalId,
@@ -166,6 +182,18 @@ export class Cw3FlexQueryClient implements Cw3FlexReadOnlyInterface {
             list_voters: {
                 limit,
                 start_after: startAfter,
+            },
+        });
+    };
+    config = async (): Promise<Config> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            config: {},
+        });
+    };
+    getItem = async ({ key }: { key: string }): Promise<String> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            get_item: {
+                key,
             },
         });
     };
@@ -231,6 +259,18 @@ export interface Cw3FlexInterface extends Cw3FlexReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    updateItem: (
+        {
+            key,
+            value,
+        }: {
+            key: string;
+            value: string;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
 }
 export class Cw3FlexClient extends Cw3FlexQueryClient implements Cw3FlexInterface {
     override client: SigningCosmWasmClient;
@@ -247,6 +287,7 @@ export class Cw3FlexClient extends Cw3FlexQueryClient implements Cw3FlexInterfac
         this.execute = this.execute.bind(this);
         this.close = this.close.bind(this);
         this.memberChangedHook = this.memberChangedHook.bind(this);
+        this.updateItem = this.updateItem.bind(this);
     }
 
     propose = async (
@@ -369,6 +410,32 @@ export class Cw3FlexClient extends Cw3FlexQueryClient implements Cw3FlexInterfac
             {
                 member_changed_hook: {
                     diffs,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateItem = async (
+        {
+            key,
+            value,
+        }: {
+            key: string;
+            value: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_item: {
+                    key,
+                    value,
                 },
             },
             fee,

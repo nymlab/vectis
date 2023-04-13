@@ -1,15 +1,8 @@
 {
-  "Govec": "juno15d77gl5ftth9vv60l8vs7q5pw0scrkyhcd9ufx5ampevyqx9v78s3aemza",
-  "DaoTunnel": "juno1jxr4nrhqtku5zt69xau9tv68dglp2q0u9d554e5pgpl7ssyh97jsh3pnw2",
-  "ProposalCommittee": "juno1qvvfkpvqqvelrrfhy04trm99w4hhhcht62anu354qq464ynkqlqs8t4jyh",
-  "PreProposalModule": "juno1mstzere97hgqnazz588eyexsad79dttfngpusdk4t8avtzmche6qryakx8",
-  "PluginCommittee": "juno1xdzpdy6k0c2z0rk9ytdwa3y8hn97n0q0emrc0wqn38ed8uau0sqqw40cjr",
-  "PluginRegistry": "juno1cguewy3nt9tqn633dkxcqnnfvgu6c3xcq96qm8szdmjyw2e5tjgqy7e5pf",
-  "Factory": "juno17xt9zhq9rl6fultheg8aw69cgyswp573lq7gslj3pdzmja8a5kcqypt6cy",
-  "Staking": "juno1y00r22f0c2tzeluq3psqel5x7pm08c8jj7davc27rt3dymmpgxkstgd0vp",
-  "Dao": "juno1lfh2jxw62sv9ht02f0uly6p6f5zxrwmhht0qu39qxd0wgvlx60kseje0jk",
-  "ProposalModule": "juno1nv9n0t2j0mg64e7k7v2pcfzwadtrjygpkc5w8m52frj2secgjeesclfrzf",
-  "PreproposalGroup": "juno1mw9k0ls2kv6pdg46ftv2sddjetz4qfcr2umvt9vkztqqatd0my6qpjze8k",
-  "PluginCommitteeGroup": "juno196g5pkkg63ddaznjkjz459ptt3x5saajmr7dypd7uanetw8u73jq4s3j85",
-  "Vote": "juno177rpznrcxd0yg4dsf08hupzesw2amyx4m9u8sere0pfu07rwa7ss4g332a"
+  "PluginCommittee": "juno15m2y8z8eq4qe6vllexzs30u4wskxlava6uascnhdxcm880x7c6kq0jg0d5",
+  "PluginCommitteeGroup": "juno1k245anxsl84ez4hwnq79ytgcc4g980ghnlqzd7daf5ecnsr4gegskezj0d",
+  "VectisCommittee": "juno1jjja02r3l0yuxhyml6wz4r3qyzn3e5vc8gsrp8tcpcja4xscpahsa039ys",
+  "VectisCommitteeGroup": "juno1v87e5zu6dkwmuk7umguecwklx6xjucze8tqfmaqhsxaxl8kjqw8q6kt8un",
+  "PluginRegistry": "juno1gmgfhzc9a97trnk5l7wastq9m5lz5n6zteud8uefndryfrrek74s73t9xn",
+  "Factory": "juno1lptxt8xv0glt7r5zslngu6gu9tu5trkkc7g630e0vlfk00ccnhqq0x5txt"
 }

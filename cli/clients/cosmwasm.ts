@@ -27,12 +27,6 @@ import {
     cw3FixedMulDownloadLink,
     cw3FlexMulDownloadLink,
     cw4GroupDownloadLink,
-    cw20BaseDownloadLink,
-    cwDaoDownloadLink,
-    cw20StakingDownloadLink,
-    cw20VotingDownloadLink,
-    cw20ProposalSingleDownloadLink,
-    cwPreProposalSingleDownloadLink,
     contractsFileNames,
     hostChain,
     hostAccounts,
@@ -45,7 +39,7 @@ import { longToByteArray } from "../utils/enconding";
 import CODES from "../config/onchain-codes.json";
 
 import type { ProxyT, FactoryT } from "../interfaces";
-import type { DaoDaoContracts, DaoContractsUploadResult, RemoteContractsUploadResult } from "../interfaces/contracts";
+import type { HubContractsUploadResult, RemoteContractsUploadResult } from "../interfaces/contracts";
 import type { Accounts, Account } from "../config/accounts";
 import type { Chain } from "../config/chains";
 
@@ -117,11 +111,6 @@ class CWClient extends SigningCosmWasmClient {
         return { id, creator, checksum };
     }
 
-    async getDaoDaoOnChainContracts(codeIds: typeof CODES["juno_testnet"]): Promise<DaoDaoContracts> {
-        const dao = await this.getOnchainContracts(codeIds.dao.id);
-        return { dao };
-    }
-
     async uploadContract(
         codePath: string,
         senderAddress?: FactoryT.Addr,
@@ -132,64 +121,46 @@ class CWClient extends SigningCosmWasmClient {
     }
 
     /**
-     * Uploads contracts needed for e2e tests on local nodes
-     * Note: dao-contracts do not need to be uploaded on juno-testnet / juno-mainnet
-     *
+     * Uploads contracts needed for e2e tests on local nodes on the hub
      */
-    async uploadHostContracts(): Promise<DaoContractsUploadResult> {
-        const daodaoCodes = CODES[hostChainName as keyof typeof CODES];
-
-        const { dao } = daodaoCodes
-            ? await this.getDaoDaoOnChainContracts(daodaoCodes)
-            : await this.uploadDaoDaoContracts();
-
-        const staking = await this.uploadContract(codePaths.stakingCodePath);
-        const vote = await this.uploadContract(codePaths.voteCodePath);
-        const proposalSingle = await this.uploadContract(codePaths.proposalSingleCodePath);
-        const preProposalSingle = await this.uploadContract(codePaths.preProposalSingleCodePath);
-        const daoTunnel = await this.uploadContract(codePaths.daoTunnelCodePath);
+    async uploadHubContracts(): Promise<HubContractsUploadResult> {
         const factory = await this.uploadContract(codePaths.factoryCodePath);
         const proxy = await this.uploadContract(codePaths.proxyCodePath);
         const cw3Fixed = await this.uploadContract(codePaths.cw3FixedCodePath);
         const cw3Flex = await this.uploadContract(codePaths.cw3FlexCodePath);
         const cw4Group = await this.uploadContract(codePaths.cw4GroupCodePath);
-        const govec = await this.uploadContract(codePaths.govecCodePath);
         const pluginReg = await this.uploadContract(codePaths.pluginRegCodePath);
 
         return {
-            daoTunnel,
             factory,
             proxy,
             cw3Fixed,
             cw3Flex,
             cw4Group,
-            govec,
             pluginReg,
-            staking,
-            dao,
-            vote,
-            proposalSingle,
-            preProposalSingle,
         };
     }
 
+    /**
+     * Uploads contracts needed for e2e tests on local nodes on all other chains
+     * This is currently the same as hub but it may be different in the future so we keep it separate
+     */
     async uploadRemoteContracts(): Promise<RemoteContractsUploadResult> {
-        const remoteTunnel = await this.uploadContract(codePaths.remoteTunnelCodePath);
-        const remoteProxy = await this.uploadContract(codePaths.remoteProxyCodePath);
-        const remoteFactory = await this.uploadContract(codePaths.remoteFactoryCodePath);
+        const factory = await this.uploadContract(codePaths.factoryCodePath);
+        const proxy = await this.uploadContract(codePaths.proxyCodePath);
         const cw3Fixed = await this.uploadContract(codePaths.cw3FixedCodePath);
+        const cw3Flex = await this.uploadContract(codePaths.cw3FlexCodePath);
+        const cw4Group = await this.uploadContract(codePaths.cw4GroupCodePath);
+        const pluginReg = await this.uploadContract(codePaths.pluginRegCodePath);
 
-        return { remoteTunnel, remoteProxy, remoteFactory, cw3Fixed };
-    }
-
-    async uploadDaoDaoContracts() {
-        const staking = await this.uploadContract(codePaths.stakingCodePath);
-        const dao = await this.uploadContract(codePaths.daoCodePath);
-        const vote = await this.uploadContract(codePaths.voteCodePath);
-        const proposalSingle = await this.uploadContract(codePaths.proposalSingleCodePath);
-        const preProposalSingle = await this.uploadContract(codePaths.preProposalSingleCodePath);
-
-        return { staking, dao, vote, proposalSingle, preProposalSingle };
+        return {
+            factory,
+            proxy,
+            cw3Fixed,
+            cw3Flex,
+            cw4Group,
+            pluginReg,
+        };
     }
 
     private static async connectWithAccount(chain: Chain, { mnemonic }: Account) {
@@ -261,13 +232,6 @@ export default CWClient;
 export async function downloadContracts() {
     // Download CwPlus Contracts
     await downloadContract(cw3FixedMulDownloadLink, contractsFileNames.cw3_mutltisig);
-    await downloadContract(cw20BaseDownloadLink, contractsFileNames.cw20_base);
     await downloadContract(cw3FlexMulDownloadLink, contractsFileNames.cw3_flex_mutltisig);
     await downloadContract(cw4GroupDownloadLink, contractsFileNames.cw4_group);
-    // Download DAODAO Contracts
-    await downloadContract(cwDaoDownloadLink, contractsFileNames.cw_dao);
-    await downloadContract(cw20StakingDownloadLink, contractsFileNames.cw20_staking);
-    await downloadContract(cw20VotingDownloadLink, contractsFileNames.cw20_voting);
-    await downloadContract(cw20ProposalSingleDownloadLink, contractsFileNames.cw_proposal_single);
-    await downloadContract(cwPreProposalSingleDownloadLink, contractsFileNames.cw_pre_proposal_approval_single);
 }

@@ -2,7 +2,6 @@ import CWClient from "./cosmwasm";
 import { ProxyClient as ProxyC } from "../interfaces";
 import { toCosmosMsg } from "../utils/enconding";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import { Vote } from "@dao-dao/types/contracts/DaoProposalSingle.common";
 import { Coin } from "../interfaces/Factory.types";
 
 class ProxyClient extends ProxyC {

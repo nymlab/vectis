@@ -2,7 +2,7 @@ import { CWClient, FactoryClient, ProxyClient } from "../clients";
 import { pluginRegInstallFee } from "../utils/fees";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeInCacheFolder } from "../utils/fs";
-import { daoDeployReportPath, hostChain, hostChainName } from "../utils/constants";
+import { hubDeployReportPath, hostChain, hostChainName } from "../utils/constants";
 import { Vote, ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../interfaces/Cw3Flex.types";
 import { FactoryT, ProxyT, CroncatT } from "../interfaces";
 import * as accounts from "../config/accounts";
@@ -13,14 +13,13 @@ const code_id = 1;
 const plugin_id = 2;
 
 (async function create_wallet_with_plugin() {
-    const { Factory } = await import(daoDeployReportPath);
+    const { Factory } = await import(hubDeployReportPath);
 
     const userClient = await CWClient.connectHostWithAccount("user");
 
     //// Create Vectis Account
-    //const factoryClient = new FactoryClient(userClient, userClient.sender, Factory);
-    // let walletAddr = await createSingleProxyWallet(factoryClient, "host");
-    let walletAddr = "juno1h9z9rl794syg9qwa4lrz4nhlxyfgpxfjvqz8j0yf8ced0j2m6kqss90yc4";
+    const factoryClient = new FactoryClient(userClient, userClient.sender, Factory);
+    let walletAddr = await createSingleProxyWallet(factoryClient, "host");
     console.log("WalletAddr: ", walletAddr);
 
     let cronkittyInstMsg = { croncat_factory_addr: croncat_factory_addr, vectis_account_addr: walletAddr };

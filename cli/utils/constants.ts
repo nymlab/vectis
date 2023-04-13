@@ -31,16 +31,19 @@ export const contractsFileNames = {
 };
 
 // Contracts Versioning
-const cwPlusReleaseVer = "v1.0.1";
+// This is branched off v1.0.1
+const cwPlusReleaseVer = "vectis-beta-v1";
 
-// Contracts Links CWPlus
-export const cw3FixedMulDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_fixed_multisig.wasm`;
-export const cw3FlexMulDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_flex_multisig.wasm`;
-export const cw4GroupDownloadLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw4_group.wasm`;
+// Contracts Links CWPlus contracts
+// Diff is minor, we just add a state in the cw3-flex and exec msg to change it
+export const cw3FixedMulDownloadLink = `https://github.com/nymlab/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_fixed_multisig.wasm`;
+export const cw3FlexMulDownloadLink = `https://github.com/nymlab/cw-plus/releases/download/${cwPlusReleaseVer}/cw3_flex_multisig.wasm`;
+export const cw4GroupDownloadLink = `https://github.com/nymlab/cw-plus/releases/download/${cwPlusReleaseVer}/cw4_group.wasm`;
 
 // Schema links
-export const cw3flexSchemaLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw3-flex-multisig.json`;
-export const cw4GroupSchemaLink = `https://github.com/CosmWasm/cw-plus/releases/download/${cwPlusReleaseVer}/cw4-group.json`;
+// We only need these because we want to generate clients, we are not generating a cw3-fixed-multisig client
+export const cw3flexSchemaLink = `https://github.com/nymlab/cw-plus/releases/download/${cwPlusReleaseVer}/cw3-flex-multisig.json`;
+export const cw4GroupSchemaLink = `https://github.com/nymlab/cw-plus/releases/download/${cwPlusReleaseVer}/cw4-group.json`;
 
 // Paths
 export const cachePath = path.join(__dirname, "../.cache");

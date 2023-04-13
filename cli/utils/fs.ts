@@ -55,7 +55,7 @@ export async function downloadTypeSchema(url: string, contractName: string, file
 export function areContractsDownloaded(): boolean {
     if (!fs.existsSync(downloadContractPath)) return false;
     const downloadContractPathFiles = fs.readdirSync(downloadContractPath);
-    return downloadContractPathFiles.length === 9;
+    return downloadContractPathFiles.length === 3;
 }
 
 export function areTypesSchemasDownloaded(): boolean {

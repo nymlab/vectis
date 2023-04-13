@@ -17,6 +17,14 @@ export type Duration =
     | {
           time: number;
       };
+export type Uint128 = string;
+export type UncheckedDenom =
+    | {
+          native: string;
+      }
+    | {
+          cw20: string;
+      };
 export type Threshold =
     | {
           absolute_count: {
@@ -39,7 +47,13 @@ export interface InstantiateMsg {
     executor?: Executor | null;
     group_addr: string;
     max_voting_period: Duration;
+    proposal_deposit?: UncheckedDepositInfo | null;
     threshold: Threshold;
+}
+export interface UncheckedDepositInfo {
+    amount: Uint128;
+    denom: UncheckedDenom;
+    refund_failed_proposals: boolean;
 }
 export type ExecuteMsg =
     | {
@@ -68,6 +82,12 @@ export type ExecuteMsg =
       }
     | {
           member_changed_hook: MemberChangedHookMsg;
+      }
+    | {
+          update_item: {
+              key: string;
+              value: string;
+          };
       };
 export type Expiration =
     | {
@@ -95,7 +115,20 @@ export type CosmosMsgForEmpty =
           distribution: DistributionMsg;
       }
     | {
+          stargate: {
+              type_url: string;
+              value: Binary;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          ibc: IbcMsg;
+      }
+    | {
           wasm: WasmMsg;
+      }
+    | {
+          gov: GovMsg;
       };
 export type BankMsg =
     | {
@@ -111,7 +144,6 @@ export type BankMsg =
               [k: string]: unknown;
           };
       };
-export type Uint128 = string;
 export type StakingMsg =
     | {
           delegate: {
@@ -145,6 +177,31 @@ export type DistributionMsg =
     | {
           withdraw_delegator_reward: {
               validator: string;
+              [k: string]: unknown;
+          };
+      };
+export type Binary = string;
+export type IbcMsg =
+    | {
+          transfer: {
+              amount: Coin;
+              channel_id: string;
+              timeout: IbcTimeout;
+              to_address: string;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          send_packet: {
+              channel_id: string;
+              data: Binary;
+              timeout: IbcTimeout;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          close_channel: {
+              channel_id: string;
               [k: string]: unknown;
           };
       };
@@ -188,7 +245,14 @@ export type WasmMsg =
               [k: string]: unknown;
           };
       };
-export type Binary = string;
+export type GovMsg = {
+    vote: {
+        proposal_id: number;
+        vote: VoteOption;
+        [k: string]: unknown;
+    };
+};
+export type VoteOption = "yes" | "no" | "abstain" | "no_with_veto";
 export type Vote = "yes" | "no" | "abstain" | "veto";
 export interface Coin {
     amount: Uint128;
@@ -196,6 +260,16 @@ export interface Coin {
     [k: string]: unknown;
 }
 export interface Empty {
+    [k: string]: unknown;
+}
+export interface IbcTimeout {
+    block?: IbcTimeoutBlock | null;
+    timestamp?: Timestamp | null;
+    [k: string]: unknown;
+}
+export interface IbcTimeoutBlock {
+    height: number;
+    revision: number;
     [k: string]: unknown;
 }
 export interface MemberChangedHookMsg {
@@ -250,7 +324,36 @@ export type QueryMsg =
               limit?: number | null;
               start_after?: string | null;
           };
+      }
+    | {
+          config: {};
+      }
+    | {
+          get_item: {
+              key: string;
+          };
       };
+export type Cw4Contract = Addr;
+export type Denom =
+    | {
+          native: string;
+      }
+    | {
+          cw20: Addr;
+      };
+export interface Config {
+    executor?: Executor | null;
+    group_addr: Cw4Contract;
+    max_voting_period: Duration;
+    proposal_deposit?: DepositInfo | null;
+    threshold: Threshold;
+}
+export interface DepositInfo {
+    amount: Uint128;
+    denom: Denom;
+    refund_failed_proposals: boolean;
+}
+export type String = string;
 export type Status = "pending" | "open" | "rejected" | "passed" | "executed";
 export type ThresholdResponse =
     | {
@@ -276,10 +379,12 @@ export interface ProposalListResponseForEmpty {
     proposals: ProposalResponseForEmpty[];
 }
 export interface ProposalResponseForEmpty {
+    deposit?: DepositInfo | null;
     description: string;
     expires: Expiration;
     id: number;
     msgs: CosmosMsgForEmpty[];
+    proposer: Addr;
     status: Status;
     threshold: ThresholdResponse;
     title: string;

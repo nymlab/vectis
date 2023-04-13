@@ -1,7 +1,8 @@
-import { coin } from "@cosmjs/stargate";
+import { coin, Event } from "@cosmjs/stargate";
 import { FactoryT, FactoryClient } from "../../interfaces";
 import { hostAccounts, hostChain, remoteChain, remoteAccounts } from "../../utils/constants";
 import { getDefaultWalletCreationFee, walletInitialFunds } from "../../utils/fees";
+import { CWClient } from "../../clients";
 
 export async function createTestProxyWallets(factoryClient: FactoryClient): Promise<FactoryT.Addr[]> {
     const initial_funds = walletInitialFunds(hostChain);
@@ -10,9 +11,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
     let walletAddress: string | null;
     let walletMSAddress: string | null;
 
-    let oldWalletRes = await factoryClient.unclaimedGovecWallets({});
-
-    await factoryClient.createWallet(
+    let res = await factoryClient.createWallet(
         {
             createWalletMsg: {
                 controller_addr: hostAccounts.user.address,
@@ -29,19 +28,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
         [coin(totalFee.toString(), hostChain.feeToken) as FactoryT.Coin]
     );
 
-    let walletRes = await factoryClient.unclaimedGovecWallets({});
-    let oldAddr = oldWalletRes.wallets.map((s, e) => s[0]);
-    let newAddr = walletRes.wallets.map((s, e) => s[0]);
-
-    if (oldWalletRes.wallets.length == 0) {
-        walletAddress = walletRes.wallets[0][0];
-    } else {
-        for (let e of newAddr) {
-            if (!oldAddr.includes(e)) {
-                walletAddress = e;
-            }
-        }
-    }
+    walletAddress = CWClient.getContractAddrFromResult(res, "_contract_address");
 
     await factoryClient.createWallet(
         {
@@ -64,14 +51,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
         [coin(totalFee.toString(), hostChain.feeToken) as FactoryT.Coin]
     );
 
-    let MSwalletRes = await factoryClient.unclaimedGovecWallets({});
-    let MSAddrs = MSwalletRes.wallets.map((s, e) => s[0]);
-
-    for (let e of MSAddrs) {
-        if (!newAddr.includes(e)) {
-            walletMSAddress = e;
-        }
-    }
+    walletAddress = CWClient.getContractAddrFromResult(res, "_contract_address");
 
     return [walletAddress!, walletMSAddress!];
 }
@@ -79,15 +59,17 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
 export async function createSingleProxyWallet(factoryClient: FactoryClient, chain: string): Promise<FactoryT.Addr> {
     const accounts = chain == "host" ? hostAccounts : remoteAccounts;
     const chains = chain == "host" ? hostChain : remoteChain;
-    const initialFunds = walletInitialFunds(chains);
+    const initialFunds = walletInitialFunds(chains).amount == "0" ? [] : [walletInitialFunds(chains) as FactoryT.Coin];
     const { wallet_fee } = await factoryClient.fees();
-    const totalFee: Number = Number(wallet_fee.amount) + Number(initialFunds.amount);
+    const totalFee: Number = Number(wallet_fee.amount) + initialFunds.length == 1 ? Number(initialFunds[0].amount) : 0;
+    let totalFeeToSend = totalFee == 0 ? undefined : [coin(totalFee.toString(), chains.feeToken) as FactoryT.Coin];
+
+    console.log("initial funds: ", initialFunds);
+    console.log("total fees: ", totalFeeToSend);
+
     let walletAddress: string | null;
-    let walletMSAddress: string | null;
 
-    let oldWalletRes = await factoryClient.unclaimedGovecWallets({});
-
-    await factoryClient.createWallet(
+    let res = await factoryClient.createWallet(
         {
             createWalletMsg: {
                 controller_addr: accounts.user.address,
@@ -95,28 +77,21 @@ export async function createSingleProxyWallet(factoryClient: FactoryClient, chai
                     addresses: [accounts.guardian_1.address, accounts.guardian_2.address],
                 },
                 relayers: [accounts.relayer_1.address, accounts.relayer_2.address],
-                proxy_initial_funds: [initialFunds as FactoryT.Coin],
+                proxy_initial_funds: initialFunds,
                 label: "wallet",
             },
         },
         getDefaultWalletCreationFee(chains),
         undefined,
-        [coin(totalFee.toString(), chains.feeToken) as FactoryT.Coin]
+        totalFeeToSend
     );
 
-    let walletRes = await factoryClient.unclaimedGovecWallets({});
-    let oldAddr = oldWalletRes.wallets.map((s, e) => s[0]);
-    let newAddr = walletRes.wallets.map((s, e) => s[0]);
-
-    if (oldWalletRes.wallets.length == 0) {
-        walletAddress = walletRes.wallets[0][0];
-    } else {
-        for (let e of newAddr) {
-            if (!oldAddr.includes(e)) {
-                walletAddress = e;
-            }
-        }
-    }
-
+    walletAddress = CWClient.getContractAddrFromResult(res, "_contract_address");
     return walletAddress!;
+}
+
+function get_multisig_from_event(events: Event[]): string {
+    let event = events.find((ev) => ev.type == "wasm.vectis.proxy.v1.MsgInstantiate");
+    let attr = event?.attributes.find((at) => at.key == "vectis.proxy.v1.MsgReplyMultisigInstantiate");
+    return attr!.value;
 }

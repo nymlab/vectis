@@ -14,7 +14,7 @@ const typesFiles = {
 
 (async function downloadSchemas() {
     if (!areTypesSchemasDownloaded()) {
-        console.log("downloading");
+        console.log("downloading schemas");
         await downloadTypeSchema(cw3flexSchemaLink, typesFiles.cw3Flex, "schema.json");
         await downloadTypeSchema(cw4GroupSchemaLink, typesFiles.cw4Group, "schema.json");
     }

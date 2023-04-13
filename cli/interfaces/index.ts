@@ -1,16 +1,10 @@
 export * from "./Factory.client";
 export * from "./Cw3Flex.client";
 export * from "./Cw4Group.client";
-export * from "./Govec.client";
 export * from "./Proxy.client";
 export * from "./PluginRegistry.client";
-export * from "./RemoteTunnel.client";
-export * from "./DaoTunnel.client";
 export * as FactoryT from "./Factory.types";
-export * as GovecT from "./Govec.types";
 export * as ProxyT from "./Proxy.types";
-export * as RemoteTunnelT from "./RemoteTunnel.types";
-export * as DaoTunnelT from "./DaoTunnel.types";
 export * as Cw3FlexT from "./Cw3Flex.types";
 export * as Cw4GroupT from "./Cw4Group.types";
 export * as PluginRegT from "./PluginRegistry.types";

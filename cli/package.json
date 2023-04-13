@@ -21,7 +21,7 @@
         "types:publish": "npm run --prefix ./types publish:prod",
         "types:version": "npm --prefix ./types version",
         "prettier": "prettier --write \"**/*.{js,ts}\"",
-        "deploy:dao": "ts-node scripts/deploy-dao.ts",
+        "deploy:hub": "ts-node scripts/deploy-hub.ts",
         "deploy:remote": "ts-node scripts/deploy-remote.ts",
         "plugin:register": "ts-node scripts/add-plugin-to-reg.ts",
         "plugin:install": "ts-node scripts/create-wallet-w-plugin.ts"

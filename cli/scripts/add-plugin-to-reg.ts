@@ -2,19 +2,19 @@ import { CWClient, Cw3FlexClient, PluginRegClient } from "../clients";
 import { pluginRegRegistryFee } from "../utils/fees";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeInCacheFolder } from "../utils/fs";
-import { daoDeployReportPath, hostChain } from "../utils/constants";
+import { hubDeployReportPath, hostChain } from "../utils/constants";
 import { ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../interfaces/Cw3Flex.types";
 import { ExecuteMsg as PluginRegistryExecMsg } from "../interfaces/PluginRegistry.types";
 
-const checksum = "cb1f0920407d013b2a77dc770d197eaf676fba9c66a5162312215985323b8a0c";
-const code_id = 1126;
+const checksum = "2a205bc31f9e94adc62ab6db42c518d9787d41a8149fdb87e7eceb035d6f3a5b";
+const code_id = 13;
 const creator = "juno1dfd5vtxy2ty5gqqv0cs2z23pfucnpym9kcq8vv";
 const ipfs_hash = "n/a";
 const name = "Cronkitty";
 const version = "0.1";
 
 (async function add_plugin() {
-    const { PluginCommitteeGroup, PluginCommittee, PluginRegistry } = await import(daoDeployReportPath);
+    const { PluginCommitteeGroup, PluginCommittee, PluginRegistry } = await import(hubDeployReportPath);
 
     const tc1Client = await CWClient.connectHostWithAccount("committee1");
     const tc2Client = await CWClient.connectHostWithAccount("committee2");
@@ -44,11 +44,12 @@ const version = "0.1";
         },
     };
 
+    let registerFund = pluginRegRegistryFee(hostChain).amount == "0" ? [] : [pluginRegRegistryFee(hostChain)];
     let execMsgForPluginReg: CosmosMsgForEmpty = {
         wasm: {
             execute: {
                 contract_addr: PluginRegistry,
-                funds: [pluginRegRegistryFee(hostChain)],
+                funds: [],
                 msg: toCosmosMsg(pluginRegExecMsg),
             },
         },
@@ -62,28 +63,21 @@ const version = "0.1";
         },
     };
 
-    let voteMsg: Cw3FlexExecMsg = {
-        vote: {
-            proposal_id: currentId + 1,
-            vote: "yes",
-        },
-    };
-
     let execMsg: Cw3FlexExecMsg = {
         execute: {
             proposal_id: currentId + 1,
         },
     };
 
-    await tc1Client.execute(tc1Client.sender, PluginCommittee, proposalMsg, "auto", undefined, [
-        pluginRegRegistryFee(hostChain),
-    ]);
+    console.log("proposal id: ", currentId + 1);
+
+    let fees = pluginRegRegistryFee(hostChain).amount == "0" ? undefined : [pluginRegRegistryFee(hostChain)];
+    await tc1Client.execute(tc1Client.sender, PluginCommittee, proposalMsg, "auto", undefined, undefined);
 
     const proposalsAfter = await cw3client.reverseProposals({ startBefore: undefined, limit: undefined });
     console.log("proposals After, ", JSON.stringify(proposalsAfter));
 
-    await tc2Client.execute(tc2Client.sender, PluginCommittee, voteMsg, "auto");
-    await tc2Client.execute(tc2Client.sender, PluginCommittee, execMsg, "auto");
+    await tc1Client.execute(tc1Client.sender, PluginCommittee, execMsg, "auto");
 
     let plugins = await prClient.getPlugins({});
     console.log("Plugins: \n", JSON.stringify(plugins));
