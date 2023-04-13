@@ -36,9 +36,8 @@ const plugin_id = 2;
         },
     };
 
-    await userClient.execute(userClient.sender, walletAddr, installPlugin, "auto", undefined, [
-        pluginRegInstallFee(hostChain),
-    ]);
+    let fees = pluginRegInstallFee(hostChain).amount == "0" ? undefined : [pluginRegInstallFee(hostChain)];
+    await userClient.execute(userClient.sender, walletAddr, installPlugin, "auto", undefined);
 
     const proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
     let plugins = await proxyClient.plugins({});
