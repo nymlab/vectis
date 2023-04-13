@@ -58,7 +58,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
         deployer: Addr::unchecked("test-deployer"),
         nonce: 0,
         version: ContractVersion {
-            contract: "crates.io:smart-contract-wallet-proxy".to_string(),
+            contract: "crates.io:vectis-proxy".to_string(),
             version: "0.1.0".to_string(),
         },
         code_id: 0,

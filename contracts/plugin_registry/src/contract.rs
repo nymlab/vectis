@@ -146,18 +146,19 @@ impl PluginRegistry<'_> {
         provided: &'a mut [Coin],
         required: &Coin,
     ) -> Result<(), ContractError> {
-        let fund = provided
-            .iter_mut()
-            .find(|c| c.denom == required.denom)
-            .ok_or(ContractError::InsufficientFee(
-                required.amount,
-                Uint128::zero(),
-            ))?;
-
-        fund.amount = fund
-            .amount
-            .checked_sub(required.amount)
-            .map_err(|_| ContractError::InsufficientFee(required.amount, fund.amount))?;
+        if required.amount != Uint128::zero() {
+            let fund = provided
+                .iter_mut()
+                .find(|c| c.denom == required.denom)
+                .ok_or(ContractError::InsufficientFee(
+                    required.amount,
+                    Uint128::zero(),
+                ))?;
+            fund.amount = fund
+                .amount
+                .checked_sub(required.amount)
+                .map_err(|_| ContractError::InsufficientFee(required.amount, fund.amount))?;
+        }
 
         Ok(())
     }
@@ -202,18 +203,21 @@ impl PluginRegistry<'_> {
 
         self.plugins.save(deps.storage, id, &plugin)?;
 
-        // Send funds to the Deployer
-        let msg = CosmosMsg::Bank(BankMsg::Send {
-            to_address: deps
-                .api
-                .addr_humanize(&DEPLOYER.load(deps.storage)?)?
-                .to_string(),
-            amount: vec![registry_fee],
-        });
-
-        Ok(Response::new()
-            .add_event(Event::new("vectis.plugin_registry.v1.MsgInstantiate"))
-            .add_message(msg))
+        // Send funds to the Deployer if required
+        if registry_fee.amount != Uint128::zero() {
+            let msg = CosmosMsg::Bank(BankMsg::Send {
+                to_address: deps
+                    .api
+                    .addr_humanize(&DEPLOYER.load(deps.storage)?)?
+                    .to_string(),
+                amount: vec![registry_fee],
+            });
+            Ok(Response::new()
+                .add_event(Event::new("vectis.plugin_registry.v1.MsgInstantiate"))
+                .add_message(msg))
+        } else {
+            Ok(Response::new().add_event(Event::new("vectis.plugin_registry.v1.MsgInstantiate")))
+        }
     }
 
     #[msg(exec)]
@@ -388,6 +392,17 @@ mod test {
             .sub_required_fee(&mut provided, &registry_fee)
             .unwrap();
         assert_eq!(provided[0].amount, Uint128::new(10u128));
+    }
+
+    #[test]
+    fn zero_fees_required_fee_works() {
+        let registry_fee = coin(0u128, "ucosm");
+        let mut provided = vec![coin(20u128, "ucosm")];
+        let registry = PluginRegistry::new();
+        registry
+            .sub_required_fee(&mut provided, &registry_fee)
+            .unwrap();
+        assert_eq!(provided[0].amount, Uint128::new(20u128));
     }
 
     #[test]

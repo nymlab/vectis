@@ -35,13 +35,13 @@ use vectis_plugin_registry::contract::ExecMsg as PluginRegExecMsg;
 use vectis_wallet::ProxyMigrateMsg;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:smart-contract-wallet-proxy";
+const CONTRACT_NAME: &str = "crates.io:vectis-proxy";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Max voting is set to > 7 years
 const MAX_MULTISIG_VOTING_PERIOD: Duration = Duration::Time(2 << 27);
 
-// set resasonobly high value to not interfere with multisigs
+// set resasonobly high value and not interfere with multisigs
 /// Used to spot an multisig instantiate reply
 const MULTISIG_INSTANTIATE_ID: u64 = u64::MAX;
 const PLUGIN_INST_ID: u64 = u64::MAX - 1u64;
