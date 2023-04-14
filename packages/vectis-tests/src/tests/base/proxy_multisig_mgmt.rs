@@ -11,11 +11,9 @@ use vectis_contract_tests::common::base_common::*;
 fn controller_can_update_proxy_multisig_with_direct_message() {
     let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(300, DENOM);
-    let init_multisig_fund: Coin = coin(50, DENOM);
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![init_multisig_fund.clone()],
     };
 
     let wallet_address = suite
@@ -23,7 +21,7 @@ fn controller_can_update_proxy_multisig_with_direct_message() {
             Addr::unchecked(CONTROLLER_ADDR),
             vec![init_proxy_fund.clone()],
             Some(multisig.clone()),
-            WALLET_FEE + init_proxy_fund.amount.u128() + init_multisig_fund.amount.u128(),
+            WALLET_FEE + init_proxy_fund.amount.u128(),
         )
         .unwrap();
 
@@ -32,9 +30,20 @@ fn controller_can_update_proxy_multisig_with_direct_message() {
     let old_multisig_addr = w.multisig_address;
 
     let new_guardians = Guardians {
-        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        // Suite creates with GUARD1 and GUARD2
+        addresses: vec![Addr::unchecked(GUARD2), Addr::unchecked(GUARD3)],
         guardians_multisig: Some(multisig),
     };
+
+    // Checks that current guards are stored correctly on factory
+    let guard1_wallets = suite
+        .query_wallets_with_guardian(Addr::unchecked(GUARD1))
+        .unwrap();
+    let guard3_wallets = suite
+        .query_wallets_with_guardian(Addr::unchecked(GUARD3))
+        .unwrap();
+    assert!(guard1_wallets.contains(&wallet_address));
+    assert!(!guard3_wallets.contains(&wallet_address));
 
     // Controller update their proxy related multisig contract to the new guardian set
     // This reinstantiates a new contract and changes the stored multisig contract addr
@@ -51,6 +60,16 @@ fn controller_can_update_proxy_multisig_with_direct_message() {
     assert_ne!(new_w.multisig_address, old_multisig_addr);
     assert!(!new_w.guardians.contains(&Addr::unchecked(GUARD1)));
     assert!(new_w.guardians.contains(&Addr::unchecked(GUARD3)));
+
+    // Checks that new guards are stored correctly on factory
+    let guard1_wallets = suite
+        .query_wallets_with_guardian(Addr::unchecked(GUARD1))
+        .unwrap();
+    let guard3_wallets = suite
+        .query_wallets_with_guardian(Addr::unchecked(GUARD3))
+        .unwrap();
+    assert!(!guard1_wallets.contains(&wallet_address));
+    assert!(guard3_wallets.contains(&wallet_address));
 
     let new_multisig_voters = suite
         .query_multisig_voters(&new_w.multisig_address.unwrap())
@@ -80,10 +99,9 @@ fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
     assert_eq!(w.multisig_address, None);
 
     let guardians = Guardians {
-        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        addresses: vec![Addr::unchecked(GUARD2), Addr::unchecked(GUARD3)],
         guardians_multisig: Some(MultiSig {
             threshold_absolute_count: MULTISIG_THRESHOLD,
-            multisig_initial_funds: vec![],
         }),
     };
 
@@ -109,7 +127,6 @@ fn controller_can_remove_multisig_for_guardians() {
 
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![],
     };
 
     let wallet_address = suite
@@ -125,7 +142,7 @@ fn controller_can_remove_multisig_for_guardians() {
     assert!(w.multisig_address.is_some());
 
     let guardians = Guardians {
-        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        addresses: vec![Addr::unchecked(GUARD2), Addr::unchecked(GUARD3)],
         guardians_multisig: None,
     };
 
@@ -147,7 +164,6 @@ fn relayer_can_update_proxy_multisig_with_controller_signature() {
     let mut suite = HubChainSuite::init().unwrap();
     let multisig = MultiSig {
         threshold_absolute_count: MULTISIG_THRESHOLD,
-        multisig_initial_funds: vec![],
     };
 
     let wallet_address = suite
@@ -168,7 +184,7 @@ fn relayer_can_update_proxy_multisig_with_controller_signature() {
     assert!(r.is_ok());
 
     let new_guardians = Guardians {
-        addresses: vec![GUARD2.to_string(), GUARD3.to_string()],
+        addresses: vec![Addr::unchecked(GUARD2), Addr::unchecked(GUARD3)],
         guardians_multisig: Some(multisig),
     };
 
@@ -220,7 +236,6 @@ fn non_controller_update_proxy_multisig_fails() {
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
-                multisig_initial_funds: vec![],
             }),
             WALLET_FEE,
         )

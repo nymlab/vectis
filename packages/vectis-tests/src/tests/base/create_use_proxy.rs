@@ -26,12 +26,16 @@ fn create_new_proxy() {
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
+    let wallets_by_controller: Vec<Addr> = suite
+        .query_controller_wallet(suite.controller.clone())
+        .unwrap();
 
     let factory_fund = suite.query_balance(&suite.factory).unwrap();
     let wallet_fund = suite.query_balance(&wallet_addr).unwrap();
     let post_controller_fund = suite.query_balance(&suite.controller.clone()).unwrap();
     let post_deployer_fund = suite.query_balance(&suite.deployer).unwrap();
 
+    assert!(wallets_by_controller.contains(&wallet_addr));
     // factory fund does not change
     assert_eq!(Uint128::zero(), factory_fund.amount,);
     // wallet fund should be what is specified
@@ -91,6 +95,15 @@ fn controller_can_rotate_keys() {
         .unwrap();
 
     let new_address = "new_key";
+    let old_controller_wallets = suite
+        .query_controller_wallet(suite.controller.clone())
+        .unwrap();
+    let new_controller_wallets = suite
+        .query_controller_wallet(Addr::unchecked(new_address))
+        .unwrap();
+    assert!(old_controller_wallets.contains(&wallet_address));
+    assert!(!new_controller_wallets.contains(&wallet_address));
+
     suite
         .app
         .execute_contract(
@@ -105,6 +118,15 @@ fn controller_can_rotate_keys() {
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
     assert_eq!(w.controller_addr.as_str(), new_address);
+    let old_controller_wallets = suite
+        .query_controller_wallet(suite.controller.clone())
+        .unwrap();
+    let new_controller_wallets = suite
+        .query_controller_wallet(Addr::unchecked(new_address))
+        .unwrap();
+
+    assert!(!old_controller_wallets.contains(&wallet_address));
+    assert!(new_controller_wallets.contains(&wallet_address))
 }
 
 #[test]
@@ -112,7 +134,6 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     let mut suite = HubChainSuite::init().unwrap();
     let multisig = MultiSig {
         threshold_absolute_count: 0,
-        multisig_initial_funds: vec![],
     };
 
     let rsp: ContractError = suite
@@ -182,7 +203,6 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
-                multisig_initial_funds: vec![],
             }),
             WALLET_FEE,
         )
@@ -252,38 +272,4 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 
     // Ensure freezing msg passed
     assert!(w.is_frozen);
-}
-
-#[test]
-fn create_new_proxy_with_multisig_guardians_has_correct_fund() {
-    let mut suite = HubChainSuite::init().unwrap();
-    let init_multisig_fund: Coin = coin(200, DENOM);
-    let init_proxy_fund: Coin = coin(100, DENOM);
-    let init_controller_balance = suite.query_balance(&suite.controller.clone());
-
-    let proxy_addr = suite
-        .create_new_proxy(
-            suite.controller.clone(),
-            vec![init_proxy_fund.clone()],
-            Some(MultiSig {
-                threshold_absolute_count: MULTISIG_THRESHOLD,
-                multisig_initial_funds: vec![init_multisig_fund.clone()],
-            }),
-            WALLET_FEE + init_multisig_fund.amount.u128() + init_proxy_fund.amount.u128(),
-        )
-        .unwrap();
-
-    let w: WalletInfo = suite.query_wallet_info(&proxy_addr).unwrap();
-    let multisig_balance = suite.query_balance(&w.multisig_address.unwrap());
-    let proxy_balance = suite.query_balance(&proxy_addr);
-    let controller_balance = suite.query_balance(&suite.controller.clone());
-    assert_eq!(multisig_balance.unwrap().amount, init_multisig_fund.amount);
-    assert_eq!(proxy_balance.unwrap().amount, init_proxy_fund.amount);
-    assert_eq!(
-        controller_balance.unwrap().amount.u128()
-            + WALLET_FEE
-            + init_proxy_fund.amount.u128()
-            + init_multisig_fund.amount.u128(),
-        init_controller_balance.unwrap().amount.u128()
-    );
 }

@@ -12,7 +12,7 @@ pub const GUARDIAN_REQUEST_ACTIVATION_TIME: Duration = DAY;
 #[cw_serde]
 pub struct Guardians {
     /// A List of keys can act as guardian for
-    pub addresses: Vec<String>,
+    pub addresses: Vec<Addr>,
     /// Whether multisig option for guardians is enabled
     pub guardians_multisig: Option<MultiSig>,
 }
@@ -20,7 +20,7 @@ pub struct Guardians {
 impl Guardians {
     pub fn verify_guardians(&self, controller: &Addr) -> StdResult<()> {
         for g in &self.addresses {
-            if g == controller.as_str() {
+            if g == controller {
                 return Err(StdError::generic_err("controller cannot be a guardian"));
             }
         }
@@ -30,14 +30,17 @@ impl Guardians {
 
 #[cw_serde]
 pub struct GuardiansUpdateRequest {
-    pub guardians: Guardians,
+    // This helps provide data to call the factory
+    pub old_guardians: Vec<Addr>,
+    pub new_guardians: Guardians,
     pub new_multisig_code_id: Option<u64>,
     pub activate_at: Expiration,
 }
 
 impl GuardiansUpdateRequest {
     pub fn new(
-        guardians: Guardians,
+        old_guardians: Vec<Addr>,
+        new_guardians: Guardians,
         new_multisig_code_id: Option<u64>,
         block: &BlockInfo,
     ) -> GuardiansUpdateRequest {
@@ -46,7 +49,8 @@ impl GuardiansUpdateRequest {
             .expect("error defining activate_at");
 
         GuardiansUpdateRequest {
-            guardians,
+            old_guardians,
+            new_guardians,
             new_multisig_code_id,
             activate_at,
         }

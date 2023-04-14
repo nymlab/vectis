@@ -97,7 +97,6 @@ fn admin_update_fee_works() {
     let env = mock_env();
     let initial_code_id = 1111;
     let wallet_fee = coin(1, "ucosm");
-    let claim_fee = coin(2, "ucosm");
 
     do_instantiate(
         deps.as_mut(),

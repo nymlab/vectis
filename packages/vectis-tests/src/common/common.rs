@@ -40,6 +40,7 @@ pub use vectis_plugin_registry::{
 
 pub use vectis_factory::contract::{
     execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
+    reply as factory_reply,
 };
 pub use vectis_proxy::contract::{
     execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
@@ -78,7 +79,8 @@ pub const GUARD1: &str = "guardian1";
 pub const GUARD2: &str = "guardian2";
 pub const GUARD3: &str = "guardian3";
 pub fn contract_factory() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(factory_execute, factory_instantiate, factory_query);
+    let contract = ContractWrapper::new(factory_execute, factory_instantiate, factory_query)
+        .with_reply(factory_reply);
     Box::new(contract)
 }
 

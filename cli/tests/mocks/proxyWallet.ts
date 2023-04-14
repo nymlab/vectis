@@ -38,7 +38,6 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                     addresses: [hostAccounts.guardian_1.address, hostAccounts.guardian_2.address],
                     guardians_multisig: {
                         threshold_absolute_count: 2,
-                        multisig_initial_funds: [],
                     },
                 },
                 relayers: [hostAccounts.relayer_1.address, hostAccounts.relayer_2.address],

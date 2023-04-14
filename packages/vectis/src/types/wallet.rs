@@ -45,3 +45,11 @@ pub struct RelayTransaction {
 pub struct PluginListResponse {
     pub plugins: Vec<Addr>,
 }
+
+#[cw_serde]
+pub struct WalletCreateReply {
+    pub controller: Addr,
+    pub proxy_addr: Addr,
+    pub multisig_addr: Option<Addr>,
+    pub guardians: Vec<Addr>,
+}

@@ -1,5 +1,5 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
-use cosmwasm_std::{Addr, StdError, Uint128};
+use cosmwasm_std::{Addr, StdError};
 use cw_utils::ParseReplyError;
 use thiserror::Error;
 
@@ -73,23 +73,13 @@ pub enum FactoryError {
     #[error("InvalidReplyId")]
     InvalidReplyId {},
     #[error("InvalidNativeFund: Expected: {0}, Got: {1}")]
-    InvalidNativeFund(Uint128, Uint128),
-    #[error("GovecNotSet")]
-    GovecNotSet {},
+    InvalidNativeFund(String, String),
     #[error("Proxy cannot be instantiated")]
     ProxyInstantiationError {},
-    #[error("ClaimExpired")]
-    ClaimExpired {},
-    #[error("Invalid Govec Minter")]
-    InvalidGovecMinter {},
-    #[error("Invalid Govec Reply")]
-    InvalidReplyFromGovec {},
+    #[error("Invalid Proxy Reply")]
+    InvalidReplyFromProxy,
     #[error("ParseReplyError")]
     ParseReplyError(#[from] ParseReplyError),
-    #[error("Feature Not Supported By Current Chain")]
-    NotSupportedByChain {},
-    #[error("Claim fee required")]
-    ClaimFeeRequired,
 }
 
 impl From<MigrationMsgError> for FactoryError {

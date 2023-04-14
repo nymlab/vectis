@@ -24,8 +24,6 @@ pub struct MultiSig {
     // Declares that a fixed weight of Yes votes is needed to pass.
     /// Only Fixed multisig is supported in this version
     pub threshold_absolute_count: ThresholdAbsoluteCount,
-    // intial funds for multisig contract
-    pub multisig_initial_funds: Vec<Coin>,
 }
 
 #[cw_serde]
@@ -93,6 +91,14 @@ pub enum WalletFactoryExecuteMsg {
     UpdateDeployer {
         addr: String,
     },
+    UpdateController {
+        old_controller: Addr,
+        new_controller: Addr,
+    },
+    UpdateGuardians {
+        old_guardians: Vec<Addr>,
+        new_guardians: Vec<Addr>,
+    },
 }
 
 #[cw_serde]
@@ -108,6 +114,12 @@ pub enum WalletFactoryQueryMsg {
     /// Returns the address of the Deployer which holds the admin role of this contract
     #[returns(Addr)]
     DeployerAddr {},
+    /// Returns the wallet controlled by this controller
+    #[returns(Vec<Addr>)]
+    ControllerWallets { controller: Addr },
+    /// Returns the wallet with this guardian
+    #[returns(Vec<Addr>)]
+    WalletsWithGuardian { guardian: Addr },
 }
 
 #[cw_serde]

@@ -8,7 +8,7 @@ use cosmwasm_std::{
     MessageInfo, Order, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 
-use vectis_wallet::{get_items_from_deployer, VectisActors, DEPLOYER};
+use vectis_wallet::{get_items_from_deployer, VectisActors, DEFAULT_LIMIT, DEPLOYER, MAX_LIMIT};
 
 use crate::{
     error::ContractError,
@@ -18,9 +18,6 @@ use crate::{
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-const MAX_LIMIT: u32 = 30;
-const DEFAULT_LIMIT: u32 = 10;
 
 #[cw_serde]
 pub struct Plugin {

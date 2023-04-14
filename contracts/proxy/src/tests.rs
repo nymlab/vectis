@@ -17,7 +17,7 @@ const GUARD3: &str = "guardian3";
 
 fn get_guardians() -> Guardians {
     Guardians {
-        addresses: vec![GUARD1.to_string(), GUARD2.to_string()],
+        addresses: vec![Addr::unchecked(GUARD1), Addr::unchecked(GUARD2)],
         guardians_multisig: None,
     }
 }
@@ -79,7 +79,7 @@ fn controller_cannot_be_a_guardian() {
     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
     let guardians_with_controller = Guardians {
-        addresses: vec![GUARD1.to_string(), "controller_addr".to_string()],
+        addresses: vec![Addr::unchecked(GUARD1), Addr::unchecked("controller_addr")],
         guardians_multisig: None,
     };
 
@@ -232,7 +232,7 @@ fn frozen_contract_cannot_create_update_guardians_request() {
 
     let request = GuardiansUpdateMsg {
         guardians: Guardians {
-            addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
+            addresses: vec![Addr::unchecked(GUARD1), Addr::unchecked(GUARD3)],
             guardians_multisig: None,
         },
         new_multisig_code_id: None,
@@ -260,7 +260,7 @@ fn controller_cannot_create_update_guardians_request_to_include_self() {
     let env = mock_env();
 
     let new_guardians = Guardians {
-        addresses: vec![controller_addr.to_string(), GUARD3.to_string()],
+        addresses: vec![controller_addr, Addr::unchecked(GUARD3)],
         guardians_multisig: None,
     };
 
@@ -289,7 +289,7 @@ fn controller_cannot_execute_not_active_request() {
     let env = mock_env();
 
     let guardians = Guardians {
-        addresses: vec![controller_addr.to_string(), GUARD3.to_string()],
+        addresses: vec![controller_addr, Addr::unchecked(GUARD3)],
         guardians_multisig: None,
     };
 
@@ -327,7 +327,7 @@ fn controller_can_execute_active_guardian_request() {
     let env = mock_env();
 
     let guardians = Guardians {
-        addresses: vec![controller_addr.to_string(), GUARD3.to_string()],
+        addresses: vec![controller_addr, Addr::unchecked(GUARD3)],
         guardians_multisig: None,
     };
 
@@ -364,7 +364,7 @@ fn controller_can_create_update_guardians_request() {
 
     let request = GuardiansUpdateMsg {
         guardians: Guardians {
-            addresses: vec![GUARD1.to_string(), GUARD3.to_string()],
+            addresses: vec![Addr::unchecked(GUARD1), Addr::unchecked(GUARD3)],
             guardians_multisig: None,
         },
         new_multisig_code_id: None,

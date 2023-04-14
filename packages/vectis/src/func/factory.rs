@@ -1,16 +1,17 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
+    Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
-
 use cw1::CanExecuteResponse;
+const CREATE_WALLET_REPLY_ID: u64 = u64::MAX;
 
-use crate::factory_state::*;
+use crate::{factory_state::*, WalletCreateReply};
 use crate::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, FactoryError as ContractError, Guardians,
     ProxyMigrationTxMsg, ProxyQueryMsg, RelayTxError,
     WalletFactoryInstantiateMsg as InstantiateMsg, WalletInfo,
 };
+use cw_utils::parse_reply_instantiate_data;
 
 pub fn factory_instantiate(
     deps: DepsMut,
@@ -49,26 +50,13 @@ pub mod factory_execute {
         create_wallet_msg: CreateWalletMsg,
     ) -> Result<Response, ContractError> {
         let fee = WALLET_FEE.load(deps.storage)?;
-        let mut proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
-        let mut multisig_initial_funds = create_wallet_msg
-            .guardians
-            .guardians_multisig
-            .clone()
-            .unwrap_or_default()
-            .multisig_initial_funds;
+        let proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
 
         // Ensure fixed multisig threshold is valid, if provided
         ensure_is_valid_threshold(&create_wallet_msg.guardians)?;
-        ensure_enough_native_funds(
-            &fee,
-            &proxy_init_funds,
-            &multisig_initial_funds,
-            &info.funds,
-        )?;
+        ensure_enough_native_funds(&fee, &proxy_init_funds, &info.funds)?;
 
-        // reply_id starts at 1  as 0 occupied by const GOVEC_REPLY_ID
         if let Some(next_id) = TOTAL_CREATED.load(deps.storage)?.checked_add(1) {
-            proxy_init_funds.append(&mut multisig_initial_funds);
             let funds = if proxy_init_funds.is_empty() {
                 vec![]
             } else {
@@ -87,7 +75,7 @@ pub mod factory_execute {
                 funds,
                 label: "Wallet-Proxy".into(),
             };
-            let msg = SubMsg::new(instantiate_msg);
+            let msg = SubMsg::reply_on_success(instantiate_msg, CREATE_WALLET_REPLY_ID);
 
             let event = Event::new("vectis.factory.v1.MsgCreateWallet")
                 .add_attribute("wallet_id", next_id.to_string());
@@ -110,6 +98,7 @@ pub mod factory_execute {
                 });
                 return Ok(res.add_message(bank_msg));
             }
+
             Ok(res)
         } else {
             Err(ContractError::OverFlow {})
@@ -247,6 +236,117 @@ pub mod factory_execute {
 
         Ok(Response::new().add_event(event))
     }
+
+    pub fn update_controller(
+        deps: DepsMut,
+        info: MessageInfo,
+        old_controller: Addr,
+        new_controller: Addr,
+    ) -> Result<Response, ContractError> {
+        let mut old_controlled_wallets_id = CONTROLLERS
+            .may_load(deps.storage, old_controller.clone())?
+            .ok_or(ContractError::NotFound {
+                addr: old_controller.clone(),
+            })?;
+
+        // find the index of the wallet_id associated with the info.sender aka proxy contract
+        let wallet_index = old_controlled_wallets_id
+            .iter()
+            .position(|id| {
+                // using `unwrap` as we never remove from WALLETS and id is only stored on CONTROLLERS
+                // if wallet has been successfully created
+                let wallet = WALLETS.load(deps.storage, *id).unwrap();
+                if wallet == info.sender {
+                    true
+                } else {
+                    false
+                }
+            })
+            .ok_or(ContractError::NotFound {
+                addr: info.sender.clone(),
+            })?;
+
+        let wallet_id = old_controlled_wallets_id[wallet_index];
+
+        // remove it from old controller
+        old_controlled_wallets_id.remove(wallet_index);
+
+        // add wallet_id to new controller
+        let mut new_controlled_wallets_id = CONTROLLERS
+            .may_load(deps.storage, new_controller.clone())?
+            .unwrap_or_default();
+        new_controlled_wallets_id.push(wallet_id);
+
+        CONTROLLERS.save(deps.storage, old_controller, &old_controlled_wallets_id)?;
+        CONTROLLERS.save(
+            deps.storage,
+            new_controller.clone(),
+            &new_controlled_wallets_id,
+        )?;
+
+        let event = Event::new("vectis.factory.v1.MsgUpdateWalletController")
+            .add_attribute("proxy_addr", info.sender)
+            .add_attribute("new_controller", new_controller);
+
+        Ok(Response::new().add_event(event))
+    }
+
+    pub fn update_guardians(
+        deps: DepsMut,
+        info: MessageInfo,
+        old_guardians: Vec<Addr>,
+        new_guardians: Vec<Addr>,
+    ) -> Result<Response, ContractError> {
+        let mut wallet_id = 0;
+
+        for guardian in old_guardians {
+            //  check if old has info.sender
+            let mut guardian_wallet_ids = GUARDIANS
+                .may_load(deps.storage, guardian.clone())?
+                .ok_or(ContractError::NotFound {
+                    addr: guardian.clone(),
+                })?;
+
+            let wallet_index = guardian_wallet_ids
+                .iter()
+                .position(|id| {
+                    // using `unwrap` as we never remove from WALLETS and id is only stored on CONTROLLERS
+                    // if wallet has been successfully created
+                    let wallet = WALLETS.load(deps.storage, *id).unwrap();
+                    if wallet == info.sender.clone() {
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .ok_or(ContractError::NotFound {
+                    addr: info.sender.clone(),
+                })?;
+
+            wallet_id = guardian_wallet_ids[wallet_index];
+            guardian_wallet_ids.remove(wallet_index);
+
+            // Save updated wallet list to replace old one
+            GUARDIANS.save(deps.storage, guardian, &guardian_wallet_ids)?;
+        }
+
+        // Save wallet id to new guardians
+        new_guardians
+            .iter()
+            .map(|g| -> Result<(), _> {
+                let mut wallet_ids = GUARDIANS
+                    .may_load(deps.storage, g.clone())?
+                    .unwrap_or_default();
+                wallet_ids.push(wallet_id);
+                GUARDIANS.save(deps.storage, g.clone(), &wallet_ids)
+            })
+            .collect::<Result<_, _>>()?;
+
+        let event = Event::new("vectis.factory.v1.MsgUpdateGuardians")
+            .add_attribute("proxy_addr", info.sender);
+
+        Ok(Response::new().add_event(event))
+    }
 }
 
 pub mod factory_queries {
@@ -281,6 +381,33 @@ pub mod factory_queries {
     pub fn query_total(deps: Deps) -> StdResult<u64> {
         TOTAL_CREATED.load(deps.storage)
     }
+
+    /// Return all the wallets held by a controller
+    pub fn query_controller_wallets(deps: Deps, controller: Addr) -> StdResult<Vec<Addr>> {
+        let results = if let Some(accounts) = CONTROLLERS.may_load(deps.storage, controller)? {
+            accounts
+                .iter()
+                .map(|item| WALLETS.load(deps.storage, *item))
+                .collect::<StdResult<Vec<Addr>>>()?
+        } else {
+            vec![]
+        };
+
+        Ok(results)
+    }
+
+    /// Return all the wallets has this guardian
+    pub fn query_wallets_with_guardian(deps: Deps, guardian: Addr) -> StdResult<Vec<Addr>> {
+        let results = if let Some(accounts) = GUARDIANS.may_load(deps.storage, guardian)? {
+            accounts
+                .iter()
+                .map(|item| WALLETS.load(deps.storage, *item))
+                .collect::<StdResult<Vec<Addr>>>()?
+        } else {
+            vec![]
+        };
+        Ok(results)
+    }
 }
 
 /// Ensures provided addr is the state stored DEPLOYER
@@ -311,44 +438,30 @@ pub fn ensure_is_valid_threshold(guardians: &Guardians) -> Result<(), ContractEr
 pub fn ensure_enough_native_funds(
     fee: &Coin,
     proxy_initial_fund: &[Coin],
-    multisig_initial_fund: &[Coin],
     sent_fund: &[Coin],
 ) -> Result<(), ContractError> {
-    let init_native_fund = proxy_initial_fund.iter().fold(Uint128::zero(), |acc, c| {
-        if c.denom == fee.denom {
-            acc + c.amount
-        } else {
-            acc
-        }
-    });
-
-    let init_multisig_native_fund = multisig_initial_fund
-        .iter()
-        .fold(Uint128::zero(), |acc, c| {
-            if c.denom == fee.denom {
-                acc + c.amount
-            } else {
-                acc
-            }
-        });
-
-    let total_native_fund_required = fee.amount + init_native_fund + init_multisig_native_fund;
-
-    let total_sent = sent_fund.iter().fold(Uint128::zero(), |acc, c| {
-        if c.denom == fee.denom {
-            acc + c.amount
-        } else {
-            acc
-        }
-    });
-
-    if total_native_fund_required == total_sent {
-        Ok(())
+    let required = if proxy_initial_fund.is_empty() {
+        vec![fee.to_owned()]
     } else {
+        // sent_funds should be == fee + proxy_initial_funds
+        let mut required_funds = proxy_initial_fund.to_vec();
+
+        for coin in required_funds.iter_mut() {
+            if coin.denom == fee.denom {
+                let amount = coin.amount + fee.amount;
+                coin.amount = amount
+            }
+        }
+        required_funds
+    };
+
+    if sent_fund != required {
         Err(ContractError::InvalidNativeFund(
-            total_native_fund_required,
-            total_sent,
+            format!("{:?}", required),
+            format!("{:?}", sent_fund),
         ))
+    } else {
+        Ok(())
     }
 }
 
@@ -412,4 +525,44 @@ pub fn ensure_is_valid_migration_msg(
         }
     };
     Ok(tx_msg)
+}
+
+pub mod factory_reply {
+    use super::*;
+    /// Ensure controller has sent in enough to cover the fee and the initial proxy balance
+    pub fn handle_create_wallet_reply(
+        deps: DepsMut,
+        _env: Env,
+        reply: Reply,
+    ) -> Result<Response, ContractError> {
+        let wallet_id = reply.id;
+        let data = parse_reply_instantiate_data(reply)?
+            .data
+            .ok_or(ContractError::InvalidReplyFromProxy)?;
+
+        let res: WalletCreateReply = from_binary(&data)?;
+
+        // Save wallet mapping to state
+        WALLETS.save(deps.storage, wallet_id, &res.proxy_addr)?;
+
+        // Save controller to wallet mapping to state
+        if let Some(mut wallets) = CONTROLLERS.may_load(deps.storage, res.controller.clone())? {
+            wallets.push(wallet_id);
+            CONTROLLERS.save(deps.storage, res.controller, &wallets)?;
+        } else {
+            CONTROLLERS.save(deps.storage, res.controller, &vec![wallet_id])?;
+        }
+
+        // Save guardian to wallet mapping to state
+        for guardian in res.guardians {
+            if let Some(mut wallets) = GUARDIANS.may_load(deps.storage, guardian.clone())? {
+                wallets.push(wallet_id);
+                GUARDIANS.save(deps.storage, guardian, &wallets)?;
+            } else {
+                GUARDIANS.save(deps.storage, guardian, &vec![wallet_id])?;
+            }
+        }
+
+        Ok(Response::new())
+    }
 }

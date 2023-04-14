@@ -192,8 +192,8 @@ impl HubChainSuite {
         // and the fee for wallet creation
         native_tokens_amount: u128,
     ) -> Result<Addr> {
-        let g1 = GUARD1.to_owned();
-        let g2 = GUARD2.to_owned();
+        let g1 = Addr::unchecked(GUARD1);
+        let g2 = Addr::unchecked(GUARD2);
         self._create_new_proxy(
             controller,
             self.factory.clone(),
@@ -210,7 +210,7 @@ impl HubChainSuite {
         factory: Addr,
         proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
-        guardians: Vec<String>,
+        guardians: Vec<Addr>,
         native_tokens_amount: u128,
     ) -> Result<Addr> {
         let r = "relayer".to_owned();
@@ -404,6 +404,20 @@ impl HubChainSuite {
         self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&ProxyQueryMsg::Info {}).unwrap(),
+        }))
+    }
+
+    pub fn query_controller_wallet(&self, controller: Addr) -> Result<Vec<Addr>, StdError> {
+        self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: self.factory.to_string(),
+            msg: to_binary(&FactoryQueryMsg::ControllerWallets { controller }).unwrap(),
+        }))
+    }
+
+    pub fn query_wallets_with_guardian(&self, guardian: Addr) -> Result<Vec<Addr>, StdError> {
+        self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: self.factory.to_string(),
+            msg: to_binary(&FactoryQueryMsg::WalletsWithGuardian { guardian }).unwrap(),
         }))
     }
 

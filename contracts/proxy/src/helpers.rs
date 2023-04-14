@@ -1,17 +1,18 @@
-use cosmwasm_std::{Addr, CanonicalAddr, Deps, Env, Order, StdResult};
+use cosmwasm_std::{to_binary, Addr, CanonicalAddr, Deps, Env, Order, StdResult, SubMsg, WasmMsg};
 use std::iter::Iterator;
 
 use crate::error::ContractError;
 use crate::state::{Controller, CONTROLLER, FROZEN, GUARDIANS, MULTISIG_ADDRESS, RELAYERS};
 use cw3_fixed_multisig::msg::Voter;
 use cw_storage_plus::Map;
+use vectis_wallet::{get_items_from_deployer, VectisActors, WalletFactoryExecuteMsg};
 
 // Converts addresses to voters with weight of 1
-pub fn addresses_to_voters(addresses: &[String]) -> Vec<Voter> {
+pub fn addresses_to_voters(addresses: &[Addr]) -> Vec<Voter> {
     addresses
         .iter()
         .map(|address| Voter {
-            addr: address.to_owned(),
+            addr: address.to_string(),
             weight: 1,
         })
         .collect()
@@ -137,4 +138,20 @@ pub fn is_relayer(deps: Deps, sender: &CanonicalAddr) -> StdResult<bool> {
 // This is currently just letting guardians execute
 pub fn is_frozen(deps: Deps) -> StdResult<bool> {
     FROZEN.load(deps.storage)
+}
+
+pub fn create_rotate_guardian_factory_msg(
+    deps: Deps,
+    old_guardians: Vec<Addr>,
+    new_guardians: Vec<Addr>,
+) -> Result<SubMsg, ContractError> {
+    let factory = get_items_from_deployer(deps, VectisActors::Factory)?;
+    Ok(SubMsg::new(WasmMsg::Execute {
+        contract_addr: factory,
+        msg: to_binary(&WalletFactoryExecuteMsg::UpdateGuardians {
+            old_guardians,
+            new_guardians,
+        })?,
+        funds: vec![],
+    }))
 }
