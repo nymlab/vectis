@@ -75,6 +75,9 @@
         }
     },
     "dependencies": {
+        "@injectivelabs/networks": "^1.10.8",
+        "@injectivelabs/sdk-ts": "^1.10.54",
+        "@injectivelabs/ts-types": "^1.10.5",
         "long": "^5.2.1"
     }
 }
