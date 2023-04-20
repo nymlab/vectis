@@ -28,7 +28,7 @@ const plugin_id = 1;
         instantiate_plugin: {
             instantiate_msg: toCosmosMsg(cronkittyInstMsg),
             label: "Cronkitty Plugin",
-            plugin_params: { grantor: false },
+            plugin_params: { permissions: ["exec"] },
             src: {
                 vectis_registry: plugin_id,
             },
@@ -40,8 +40,8 @@ const plugin_id = 1;
     console.log("RESULT: ", result);
 
     const proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
-    let plugins = await proxyClient.plugins({});
-    let cronkittyAddr = plugins.plugins.pop();
+    let plugins = await proxyClient.plugins();
+    let cronkittyAddr = plugins.exec_plugins.pop();
 
     console.log("WalletAddr: ", walletAddr);
     console.log("PluginAddr: ", cronkittyAddr);
@@ -65,7 +65,7 @@ const plugin_id = 1;
                     },
                 },
             ],
-            boundary: { height: { end: "1083101" } },
+            boundary: { height: { end: "1093101" } },
             interval: { block: 500 },
             stop_on_fail: false,
         };

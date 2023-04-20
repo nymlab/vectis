@@ -84,6 +84,7 @@ export type ExecuteMsg =
           update_plugins: {
               migrate_msg?: [number, Binary] | null;
               plugin_addr: string;
+              plugin_permissions?: PluginPermissions[] | null;
           };
       }
     | {
@@ -245,6 +246,13 @@ export type GovMsg = {
     };
 };
 export type VoteOption = "yes" | "no" | "abstain" | "no_with_veto";
+export type PluginPermissions =
+    | "exec"
+    | {
+          query: string;
+      }
+    | "pre_tx_check"
+    | "multi_sig_override";
 export type PluginSource =
     | {
           vectis_registry: number;
@@ -276,7 +284,7 @@ export interface GuardiansUpdateMsg {
     new_multisig_code_id?: number | null;
 }
 export interface PluginParams {
-    grantor: boolean;
+    permissions: PluginPermissions[];
 }
 export type QueryMsg =
     | {
@@ -291,10 +299,7 @@ export type QueryMsg =
           guardians_update_request: {};
       }
     | {
-          plugins: {
-              limit?: number | null;
-              start_after?: string | null;
-          };
+          plugins: {};
       };
 export interface CanExecuteResponse {
     can_execute: boolean;
@@ -316,6 +321,24 @@ export interface GuardiansUpdateRequest {
     new_multisig_code_id?: number | null;
     old_guardians: Addr[];
 }
+export type Threshold =
+    | {
+          absolute_count: {
+              weight: number;
+          };
+      }
+    | {
+          absolute_percentage: {
+              percentage: Decimal;
+          };
+      }
+    | {
+          threshold_quorum: {
+              quorum: Decimal;
+              threshold: Decimal;
+          };
+      };
+export type Decimal = string;
 export interface WalletInfo {
     code_id: number;
     controller_addr: Addr;
@@ -324,7 +347,7 @@ export interface WalletInfo {
     is_frozen: boolean;
     label: string;
     multisig_address?: Addr | null;
-    multisig_threshold?: number | null;
+    multisig_threshold?: Threshold | null;
     nonce: number;
     relayers: Addr[];
     version: ContractVersion;
@@ -334,5 +357,8 @@ export interface ContractVersion {
     version: string;
 }
 export interface PluginListResponse {
-    plugins: Addr[];
+    exec_plugins: Addr[];
+    multisig_override?: Addr | null;
+    pre_tx_plugins: Addr[];
+    query_plugins: Addr[];
 }

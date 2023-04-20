@@ -1,10 +1,7 @@
 use cosmwasm_std::{Addr, CanonicalAddr, Deps, Order, StdResult};
 use cw1::CanExecuteResponse;
-use cw_storage_plus::Bound;
-use vectis_wallet::{
-    GuardiansUpdateRequest, PluginListResponse, PluginPermissions, WalletInfo, DEFAULT_LIMIT,
-    DEPLOYER, MAX_LIMIT,
-};
+use cw3_fixed_multisig::state::CONFIG;
+use vectis_wallet::{GuardiansUpdateRequest, PluginListResponse, WalletInfo, DEPLOYER};
 
 use crate::helpers::{is_relayer, load_addresses};
 use crate::state::{
@@ -23,6 +20,11 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
 
     let controller = CONTROLLER.load(deps.storage)?;
 
+    let multisig_threshold = multisig_address
+        .clone()
+        .map(|addr| CONFIG.query(&deps.querier, addr))
+        .transpose()?;
+
     Ok(WalletInfo {
         controller_addr: deps.api.addr_humanize(&controller.addr)?,
         deployer: deps.api.addr_humanize(&DEPLOYER.load(deps.storage)?)?,
@@ -34,7 +36,7 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
         is_frozen: FROZEN.load(deps.storage)?,
         multisig_address,
         // TODO
-        multisig_threshold: None,
+        multisig_threshold: multisig_threshold.map(|c| c.threshold),
         label: LABEL.load(deps.storage)?,
     })
 }

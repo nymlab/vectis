@@ -1,10 +1,10 @@
 {
   "factory": {
-    "originalSize": 349753,
-    "originalChecksum": "b2c504bea09a185f2ae10a01801de1b8f552e5d9426b43d9720e77e980477210",
-    "compressedSize": 121697,
-    "compressedChecksum": "9b70d3d93c605e7e3ac04ae93a5168f12d44f42df3a87909ed67e4f13e4ed4a3",
-    "codeId": 1671,
+    "originalSize": 403200,
+    "originalChecksum": "8fd691017dd1061f95af842ce8f1d149e40e73cd8b413416a1c45cb627c6cbdc",
+    "compressedSize": 140359,
+    "compressedChecksum": "d62125958f24fef03b2275bb7871db420c2a6f0cb4407eeab4376e053e62397f",
+    "codeId": 1679,
     "logs": [
       {
         "msg_index": 0,
@@ -32,19 +32,19 @@
             "attributes": [
               {
                 "key": "code_checksum",
-                "value": "b2c504bea09a185f2ae10a01801de1b8f552e5d9426b43d9720e77e980477210"
+                "value": "8fd691017dd1061f95af842ce8f1d149e40e73cd8b413416a1c45cb627c6cbdc"
               },
               {
                 "key": "code_id",
-                "value": "1671"
+                "value": "1679"
               }
             ]
           }
         ]
       }
     ],
-    "height": 1074968,
-    "transactionHash": "F7195DBF614323E6E27CC68E1E84A7B41BCC697391F62178F4394A4246A1CE4B",
+    "height": 1085961,
+    "transactionHash": "74D74A08E08ED8DF9BC05FD79B40BC6FF6F4B4E0A05EBDC610A5BE70D5AE48F6",
     "events": [
       {
         "type": "coin_spent",
@@ -55,7 +55,7 @@
           },
           {
             "key": "amount",
-            "value": "76155ujunox"
+            "value": "87522ujunox"
           }
         ]
       },
@@ -68,7 +68,7 @@
           },
           {
             "key": "amount",
-            "value": "76155ujunox"
+            "value": "87522ujunox"
           }
         ]
       },
@@ -85,7 +85,7 @@
           },
           {
             "key": "amount",
-            "value": "76155ujunox"
+            "value": "87522ujunox"
           }
         ]
       },
@@ -103,7 +103,7 @@
         "attributes": [
           {
             "key": "fee",
-            "value": "76155ujunox"
+            "value": "87522ujunox"
           },
           {
             "key": "fee_payer",
@@ -116,7 +116,7 @@
         "attributes": [
           {
             "key": "acc_seq",
-            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/308"
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/320"
           }
         ]
       },
@@ -125,7 +125,7 @@
         "attributes": [
           {
             "key": "signature",
-            "value": "g5Iuzpy3vQoOOG2QzcGJYG06XndlTKkxNFB2jYUTeKYm+3sRfO02kin+cvZxe40ZXbI/Bxd44Gh21HHmjhmRJw=="
+            "value": "O4QGQyOCoNEGA6pT7LdVnTHsI3tydalutd03lX5jRPFGPrZuKXZN+RWOqnwi30B1j0pa4VxaQd1FPo8hdk14ag=="
           }
         ]
       },
@@ -156,24 +156,24 @@
         "attributes": [
           {
             "key": "code_checksum",
-            "value": "b2c504bea09a185f2ae10a01801de1b8f552e5d9426b43d9720e77e980477210"
+            "value": "8fd691017dd1061f95af842ce8f1d149e40e73cd8b413416a1c45cb627c6cbdc"
           },
           {
             "key": "code_id",
-            "value": "1671"
+            "value": "1679"
           }
         ]
       }
     ],
-    "gasWanted": 3046182,
-    "gasUsed": 2357673
+    "gasWanted": 3500870,
+    "gasUsed": 2707400
   },
   "proxy": {
-    "originalSize": 423184,
-    "originalChecksum": "3ea20c39ab569249e9c05ded0302d080a999e7034a6df9b5bd6adcfbd7d02708",
-    "compressedSize": 146928,
-    "compressedChecksum": "ee0b514d6f235a34cb7340a2317926e35303cf7548f31ab29d5445909d2664a4",
-    "codeId": 1672,
+    "originalSize": 458808,
+    "originalChecksum": "e56bf9f4250167822d26972fb8397640d4985560841055db56d85a1811eba464",
+    "compressedSize": 157762,
+    "compressedChecksum": "393b0cf736fc6469a38dcae33a0d141ed9f6681d1d4d95b848f6c46b328378a5",
+    "codeId": 1680,
     "logs": [
       {
         "msg_index": 0,
@@ -201,19 +201,19 @@
             "attributes": [
               {
                 "key": "code_checksum",
-                "value": "3ea20c39ab569249e9c05ded0302d080a999e7034a6df9b5bd6adcfbd7d02708"
+                "value": "e56bf9f4250167822d26972fb8397640d4985560841055db56d85a1811eba464"
               },
               {
                 "key": "code_id",
-                "value": "1672"
+                "value": "1680"
               }
             ]
           }
         ]
       }
     ],
-    "height": 1074969,
-    "transactionHash": "3061741F4C27371C204ACB15BD87E79DB533EB53CAF23101CF4E19653DDB45E0",
+    "height": 1085962,
+    "transactionHash": "014CBD628AAB94BB6914B77DAE8B9E9654053FB7C49C65DCB0999E35EF0F90FC",
     "events": [
       {
         "type": "coin_spent",
@@ -224,7 +224,7 @@
           },
           {
             "key": "amount",
-            "value": "91638ujunox"
+            "value": "98685ujunox"
           }
         ]
       },
@@ -237,7 +237,7 @@
           },
           {
             "key": "amount",
-            "value": "91638ujunox"
+            "value": "98685ujunox"
           }
         ]
       },
@@ -254,7 +254,7 @@
           },
           {
             "key": "amount",
-            "value": "91638ujunox"
+            "value": "98685ujunox"
           }
         ]
       },
@@ -272,7 +272,7 @@
         "attributes": [
           {
             "key": "fee",
-            "value": "91638ujunox"
+            "value": "98685ujunox"
           },
           {
             "key": "fee_payer",
@@ -285,7 +285,7 @@
         "attributes": [
           {
             "key": "acc_seq",
-            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/309"
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/321"
           }
         ]
       },
@@ -294,7 +294,7 @@
         "attributes": [
           {
             "key": "signature",
-            "value": "M5aDL6G2trjwQJeyhOmv7dlwOWAdKHlvmdwWnrnt7lg6BRiDHeaqtOe1jkVDzQAca0Z23lXF1z9cs/Y5VY/OsA=="
+            "value": "IZTB1/oLmZNXEtL2lHWs4nr+pIHO+JIh/jkT87AzfEF8UCez3pSvWJj1x1zQrcWqsj8NV27ZBRGddgLj8NbzuA=="
           }
         ]
       },
@@ -325,24 +325,24 @@
         "attributes": [
           {
             "key": "code_checksum",
-            "value": "3ea20c39ab569249e9c05ded0302d080a999e7034a6df9b5bd6adcfbd7d02708"
+            "value": "e56bf9f4250167822d26972fb8397640d4985560841055db56d85a1811eba464"
           },
           {
             "key": "code_id",
-            "value": "1672"
+            "value": "1680"
           }
         ]
       }
     ],
-    "gasWanted": 3665487,
-    "gasUsed": 2834061
+    "gasWanted": 3947375,
+    "gasUsed": 3050865
   },
   "cw3Fixed": {
     "originalSize": 318350,
     "originalChecksum": "851ce10dfd99151660045a5f70441e59416a3968a513198a2f87dc59e6547a97",
     "compressedSize": 108184,
     "compressedChecksum": "3ebb88f2b68569da952985ba5b491076a2c8fb058ba712bc5730a7aa3c701c4e",
-    "codeId": 1673,
+    "codeId": 1681,
     "logs": [
       {
         "msg_index": 0,
@@ -374,15 +374,15 @@
               },
               {
                 "key": "code_id",
-                "value": "1673"
+                "value": "1681"
               }
             ]
           }
         ]
       }
     ],
-    "height": 1074970,
-    "transactionHash": "B062AED75A57284D600219B94AD0706EEED6E51F8C1E5255A33C6702403A81A2",
+    "height": 1085963,
+    "transactionHash": "7FA817FAD10E8815BB48EC6A7CA9AD01D625C05856BEA115BFC74A728C144605",
     "events": [
       {
         "type": "coin_spent",
@@ -454,7 +454,7 @@
         "attributes": [
           {
             "key": "acc_seq",
-            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/310"
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/322"
           }
         ]
       },
@@ -463,7 +463,7 @@
         "attributes": [
           {
             "key": "signature",
-            "value": "rmsMwOC05TDenjHjGBBVXi3TEje8vw/UpaEvoGvDarVgTxjP6y5lI0eOgIYa9hQVtiS01mdB61xFNyk3t2YU6w=="
+            "value": "GjJEBqobN7tDcoojR6nRUJB7iVH/gr/NQoPlaurpaypd7GsSM/uZ4OkV8m3SUjPcfOhf7tb6Y9YFLfNCJ6MnuQ=="
           }
         ]
       },
@@ -498,20 +498,20 @@
           },
           {
             "key": "code_id",
-            "value": "1673"
+            "value": "1681"
           }
         ]
       }
     ],
     "gasWanted": 2745406,
-    "gasUsed": 2126307
+    "gasUsed": 2126274
   },
   "cw3Flex": {
     "originalSize": 398196,
     "originalChecksum": "0a1358f30432c8f05e5c38683630ecfb234c7cbc46558475f4c44a5f952b56dc",
     "compressedSize": 133619,
     "compressedChecksum": "c95a3019da793efe1a3ec648b8416dd2ff415325c0869eb1e2bff00b8176fad8",
-    "codeId": 1674,
+    "codeId": 1682,
     "logs": [
       {
         "msg_index": 0,
@@ -543,15 +543,15 @@
               },
               {
                 "key": "code_id",
-                "value": "1674"
+                "value": "1682"
               }
             ]
           }
         ]
       }
     ],
-    "height": 1074971,
-    "transactionHash": "CE773DC10F5A552499F8FEB072648336F4C17410D45F89C47FD304F485626FD0",
+    "height": 1085964,
+    "transactionHash": "12BF3198DB96D3C261AEA724B7003277A8863F0B00312D2507F9F5C4FCB90763",
     "events": [
       {
         "type": "coin_spent",
@@ -623,7 +623,7 @@
         "attributes": [
           {
             "key": "acc_seq",
-            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/311"
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/323"
           }
         ]
       },
@@ -632,7 +632,7 @@
         "attributes": [
           {
             "key": "signature",
-            "value": "c9TJOnO4IWbsVxzFgD4OWscF79OnCNSaFjEVVZ0u6IU8RTatUagZftp7nYus+kxdRRlBOK3dYwMp+xGeoON3ZA=="
+            "value": "Vr9s9vsrBvfeo6Esw32k749dTPqJAeTuzBPFnSk4qr5EHFpJBVy4lTAsOxJDRoKyyUzp/Pem1uUUgiv/DDlWRw=="
           }
         ]
       },
@@ -667,20 +667,20 @@
           },
           {
             "key": "code_id",
-            "value": "1674"
+            "value": "1682"
           }
         ]
       }
     ],
     "gasWanted": 3392420,
-    "gasUsed": 2624052
+    "gasUsed": 2623977
   },
   "cw4Group": {
     "originalSize": 205313,
     "originalChecksum": "6ddff00adb34c399902f95b048a61249bb1f992419a92abaa822c87ed7bb2d16",
     "compressedSize": 75890,
     "compressedChecksum": "13578cbd9d0f77d8bb72d6fc4de6f0864fb0e13ef8bf43307f15b570f7072e36",
-    "codeId": 1675,
+    "codeId": 1683,
     "logs": [
       {
         "msg_index": 0,
@@ -712,15 +712,15 @@
               },
               {
                 "key": "code_id",
-                "value": "1675"
+                "value": "1683"
               }
             ]
           }
         ]
       }
     ],
-    "height": 1074972,
-    "transactionHash": "7A87B347F6899FDCCD8A525E02E7DBC97D6FB3BF28DCE227F453B3B45CEE2FB4",
+    "height": 1085965,
+    "transactionHash": "E2DF49957741E8BD2726D125BE4DB24AC0B969E8BF23D192CD9D3CFC37B93DF7",
     "events": [
       {
         "type": "coin_spent",
@@ -792,7 +792,7 @@
         "attributes": [
           {
             "key": "acc_seq",
-            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/312"
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/324"
           }
         ]
       },
@@ -801,7 +801,7 @@
         "attributes": [
           {
             "key": "signature",
-            "value": "zMRDGpg+7L1C/n4IYSPkNAcah1cSxSI4Vw2KJs1qPE1zCZmtpWCJ6YGps9qbNKghpoTl6VHsKUNZZtgkgGDVxg=="
+            "value": "FpT/XQFZUXPcdlsWG/kxXVmhR5MTAOW55ir8rC6DLpt06wlYpnOKG0WBjfyy4IoMZlzIZ5iJojU/jBNIRdvFXg=="
           }
         ]
       },
@@ -836,20 +836,20 @@
           },
           {
             "key": "code_id",
-            "value": "1675"
+            "value": "1683"
           }
         ]
       }
     ],
     "gasWanted": 1878443,
-    "gasUsed": 1459402
+    "gasUsed": 1459369
   },
   "pluginReg": {
-    "originalSize": 305968,
-    "originalChecksum": "e475b4bbe61cfa9a01ba86118ee809b537ca22eb4337447e4e4c3a66a78144a4",
-    "compressedSize": 105102,
-    "compressedChecksum": "8e1544824b15ac54a2e291d39a2ab8412befecbda50f8847a1ce4ed8e4fb586b",
-    "codeId": 1676,
+    "originalSize": 311044,
+    "originalChecksum": "92eeb756ff1320e0d684df8da034dc4604601aa3ee348df7b515c089b2cae779",
+    "compressedSize": 105871,
+    "compressedChecksum": "3b4b64a593d83b5bd783b5c3a23a4955bb43804c642a76c7a2ccb855685216c1",
+    "codeId": 1684,
     "logs": [
       {
         "msg_index": 0,
@@ -877,19 +877,19 @@
             "attributes": [
               {
                 "key": "code_checksum",
-                "value": "e475b4bbe61cfa9a01ba86118ee809b537ca22eb4337447e4e4c3a66a78144a4"
+                "value": "92eeb756ff1320e0d684df8da034dc4604601aa3ee348df7b515c089b2cae779"
               },
               {
                 "key": "code_id",
-                "value": "1676"
+                "value": "1684"
               }
             ]
           }
         ]
       }
     ],
-    "height": 1074973,
-    "transactionHash": "5B912FBB29595850D5A1A68B32A3ECE9881B66CA6D89EEFC5CA7E0F302BCCCB3",
+    "height": 1085966,
+    "transactionHash": "31C899575530592110F5ADE5042762B46709D1EA4544E9E83AE63DCDA713D6FF",
     "events": [
       {
         "type": "coin_spent",
@@ -900,7 +900,7 @@
           },
           {
             "key": "amount",
-            "value": "66412ujunox"
+            "value": "67160ujunox"
           }
         ]
       },
@@ -913,7 +913,7 @@
           },
           {
             "key": "amount",
-            "value": "66412ujunox"
+            "value": "67160ujunox"
           }
         ]
       },
@@ -930,7 +930,7 @@
           },
           {
             "key": "amount",
-            "value": "66412ujunox"
+            "value": "67160ujunox"
           }
         ]
       },
@@ -948,7 +948,7 @@
         "attributes": [
           {
             "key": "fee",
-            "value": "66412ujunox"
+            "value": "67160ujunox"
           },
           {
             "key": "fee_payer",
@@ -961,7 +961,7 @@
         "attributes": [
           {
             "key": "acc_seq",
-            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/313"
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/325"
           }
         ]
       },
@@ -970,7 +970,7 @@
         "attributes": [
           {
             "key": "signature",
-            "value": "gJ/BoBdHTH/S6/sSJOljAzRvH9Yf51FbLM/216vXWogTQMZwSs9OkuNsu1PSF+5fvJOX8xBMzytmhMDSZrYtRg=="
+            "value": "019AhlFcubljTXdt+vmucyo3OpN1e2EXVofeSdGY2ExzJX1mYCkmLZTKsH3Pg18HwxXs+k8vRT2no9ZFS8sDVw=="
           }
         ]
       },
@@ -1001,16 +1001,16 @@
         "attributes": [
           {
             "key": "code_checksum",
-            "value": "e475b4bbe61cfa9a01ba86118ee809b537ca22eb4337447e4e4c3a66a78144a4"
+            "value": "92eeb756ff1320e0d684df8da034dc4604601aa3ee348df7b515c089b2cae779"
           },
           {
             "key": "code_id",
-            "value": "1676"
+            "value": "1684"
           }
         ]
       }
     ],
-    "gasWanted": 2656450,
-    "gasUsed": 2057879
+    "gasWanted": 2686393,
+    "gasUsed": 2080879
   }
 }

@@ -152,7 +152,12 @@ pub fn create_rotate_guardian_factory_msg(
     old_guardians: Vec<Addr>,
     new_guardians: Vec<Addr>,
 ) -> Result<SubMsg, ContractError> {
+    #[cfg(not(test))]
     let factory = get_items_from_deployer(deps, VectisActors::Factory)?;
+
+    #[cfg(test)]
+    let factory = String::from("test-factory");
+
     Ok(SubMsg::new(WasmMsg::Execute {
         contract_addr: factory,
         msg: to_binary(&WalletFactoryExecuteMsg::UpdateGuardians {
@@ -171,9 +176,13 @@ pub fn add_plugin_to_state(
     for permission in permissions {
         match permission {
             PluginPermissions::Exec => EXEC_PLUGINS.save(storage, addr, &())?,
-            PluginPermissions::Query(key) => QUERY_PLUGINS.save(storage, &key, &addr)?,
+            PluginPermissions::Query(key) => {
+                QUERY_PLUGINS.save(storage, &key, &CanonicalAddr::from(addr))?
+            }
             PluginPermissions::PreTxCheck => PRE_TX_PLUGINS.save(storage, addr, &())?,
-            PluginPermissions::MultiSigOverride => MULTISIG_PLUGIN.save(storage, &addr)?,
+            PluginPermissions::MultiSigOverride => {
+                MULTISIG_PLUGIN.save(storage, &CanonicalAddr::from(addr))?
+            }
         }
     }
     Ok(())

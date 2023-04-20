@@ -2,11 +2,13 @@ use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info}
 use cosmwasm_std::{coins, Addr, Api, BankMsg, BlockInfo, CosmosMsg, DepsMut, StdError, Timestamp};
 use cw2::ContractVersion;
 
-use crate::contract::{execute, instantiate, query_guardian_update_request, query_info};
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{PENDING_GUARDIAN_ROTATION, PLUGINS};
-
+use crate::{
+    contract::{execute, instantiate},
+    error::ContractError,
+    msg::{ExecuteMsg, InstantiateMsg},
+    query::{query_guardian_update_request, query_info},
+    state::{EXEC_PLUGINS, PENDING_GUARDIAN_ROTATION, QUERY_PLUGINS},
+};
 use vectis_wallet::{
     CreateWalletMsg, Guardians, GuardiansUpdateMsg, GuardiansUpdateRequest, WalletInfo,
 };
@@ -293,7 +295,9 @@ fn controller_cannot_execute_not_active_request() {
         guardians_multisig: None,
     };
 
-    let request = GuardiansUpdateRequest::new(guardians, None, &env.block);
+    let mock_old_guardians = vec![Addr::unchecked(GUARD1)];
+    let request = GuardiansUpdateRequest::new(mock_old_guardians, guardians, None, &env.block);
+
     PENDING_GUARDIAN_ROTATION
         .save(deps.as_mut().storage, &request)
         .unwrap();
@@ -337,7 +341,9 @@ fn controller_can_execute_active_guardian_request() {
         chain_id: "cosmos-testnet-14002".to_string(),
     };
 
-    let request = GuardiansUpdateRequest::new(guardians, None, &mock_block);
+    let mock_old_guardians = vec![Addr::unchecked(GUARD1)];
+    let request = GuardiansUpdateRequest::new(mock_old_guardians, guardians, None, &mock_block);
+
     PENDING_GUARDIAN_ROTATION
         .save(deps.as_mut().storage, &request)
         .unwrap();
@@ -345,13 +351,7 @@ fn controller_can_execute_active_guardian_request() {
     let msg = ExecuteMsg::UpdateGuardians {};
 
     let response = execute(deps.as_mut(), env, info, msg).unwrap();
-    assert_eq!(
-        response.events[0].attributes,
-        [
-            ("guardians", format!("{:?}", request.guardians.addresses)),
-            ("multisig", "false".to_string())
-        ]
-    );
+    assert_eq!(response.events[0].ty, "vectis.proxy.v1.MsgUpdateGuardians");
 }
 
 #[test]
@@ -387,7 +387,7 @@ fn controller_can_create_update_guardians_request() {
         .unwrap()
         .unwrap();
 
-    assert_eq!(query_request.guardians, request.guardians)
+    assert_eq!(query_request.new_guardians, request.guardians)
 }
 
 #[test]
@@ -618,7 +618,9 @@ fn only_plugins_can_call_plugin_exec() {
     do_instantiate(deps.as_mut());
 
     let plugin = deps.api.addr_canonicalize("plugin").unwrap();
-    PLUGINS.save(deps.as_mut().storage, &plugin, &()).unwrap();
+    EXEC_PLUGINS
+        .save(deps.as_mut().storage, &plugin, &())
+        .unwrap();
 
     let info = mock_info("plugin", &[]);
     let env = mock_env();

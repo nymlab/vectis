@@ -26,6 +26,7 @@ import {
     WasmMsg,
     GovMsg,
     VoteOption,
+    PluginPermissions,
     PluginSource,
     Empty,
     IbcTimeout,
@@ -38,6 +39,8 @@ import {
     NullableGuardiansUpdateRequest,
     Expiration,
     GuardiansUpdateRequest,
+    Threshold,
+    Decimal,
     WalletInfo,
     ContractVersion,
     PluginListResponse,
@@ -47,7 +50,7 @@ export interface ProxyReadOnlyInterface {
     info: () => Promise<WalletInfo>;
     canExecuteRelay: ({ sender }: { sender: string }) => Promise<CanExecuteResponse>;
     guardiansUpdateRequest: () => Promise<NullableGuardiansUpdateRequest>;
-    plugins: ({ limit, startAfter }: { limit?: number; startAfter?: string }) => Promise<PluginListResponse>;
+    plugins: () => Promise<PluginListResponse>;
 }
 export class ProxyQueryClient implements ProxyReadOnlyInterface {
     client: CosmWasmClient;
@@ -79,12 +82,9 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
             guardians_update_request: {},
         });
     };
-    plugins = async ({ limit, startAfter }: { limit?: number; startAfter?: string }): Promise<PluginListResponse> => {
+    plugins = async (): Promise<PluginListResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
-            plugins: {
-                limit,
-                start_after: startAfter,
-            },
+            plugins: {},
         });
     };
 }
@@ -183,9 +183,11 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
         {
             migrateMsg,
             pluginAddr,
+            pluginPermissions,
         }: {
             migrateMsg?: number[][];
             pluginAddr: string;
+            pluginPermissions?: PluginPermissions[];
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -455,9 +457,11 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
         {
             migrateMsg,
             pluginAddr,
+            pluginPermissions,
         }: {
             migrateMsg?: number[][];
             pluginAddr: string;
+            pluginPermissions?: PluginPermissions[];
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -470,6 +474,7 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
                 update_plugins: {
                     migrate_msg: migrateMsg,
                     plugin_addr: pluginAddr,
+                    plugin_permissions: pluginPermissions,
                 },
             },
             fee,

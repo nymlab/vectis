@@ -81,7 +81,7 @@ where
     /// Priviledge: User
     UpdatePlugins {
         plugin_addr: String,
-        plugin_permissions: Option<PluginPermissions>,
+        plugin_permissions: Option<Vec<PluginPermissions>>,
         migrate_msg: Option<(u64, Binary)>,
     },
     /// Similar to Execute but called by plugins,
