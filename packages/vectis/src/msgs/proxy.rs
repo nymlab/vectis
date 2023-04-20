@@ -82,6 +82,7 @@ where
     },
     /// Update plugins, if params is `None`, plugin is removed
     /// If code_id is Some, plugin is migrated
+    /// If plugin_permissions is Some, plugin is added
     /// Priviledge: User
     UpdatePlugins {
         plugin_addr: String,

@@ -15,3 +15,4 @@ export interface Account {
 
 export * from "./juno";
 export * from "./wasm";
+export * from "./injective";
