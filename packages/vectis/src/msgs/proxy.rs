@@ -3,7 +3,7 @@ use cosmwasm_std::{Addr, Binary, CosmosMsg, Empty};
 
 use crate::{
     CreateWalletMsg, GuardiansUpdateMsg, GuardiansUpdateRequest, PluginListResponse,
-    RelayTransaction, WalletInfo,
+    PluginPermissions, RelayTransaction, WalletInfo,
 };
 use cw1::CanExecuteResponse;
 use std::fmt;
@@ -33,12 +33,7 @@ pub enum ProxyQueryMsg {
     #[returns(Option<GuardiansUpdateRequest>)]
     GuardiansUpdateRequest {},
     #[returns(PluginListResponse)]
-    Plugins {
-        // Address string to start after
-        start_after: Option<String>,
-        // Max is 30 and default is 10
-        limit: Option<u32>,
-    },
+    Plugins {},
 }
 
 #[cw_serde]
@@ -86,6 +81,7 @@ where
     /// Priviledge: User
     UpdatePlugins {
         plugin_addr: String,
+        plugin_permissions: Option<PluginPermissions>,
         migrate_msg: Option<(u64, Binary)>,
     },
     /// Similar to Execute but called by plugins,
@@ -94,7 +90,6 @@ where
 }
 
 /// The source of the plugin code.
-///
 #[cw_serde]
 pub enum PluginSource {
     VectisRegistry(u64),
@@ -105,11 +100,11 @@ pub enum PluginSource {
 pub struct PluginParams {
     // Do we want to instantitate with permission for the grantor?
     // if so, this instantiate message goes directly to a grantor plugin
-    pub grantor: bool,
+    pub permissions: Vec<PluginPermissions>,
 }
 
 impl PluginParams {
-    pub fn has_full_access(&self) -> bool {
-        !self.grantor
+    pub fn has_exec_access(&self) -> bool {
+        self.permissions.contains(&PluginPermissions::Exec)
     }
 }

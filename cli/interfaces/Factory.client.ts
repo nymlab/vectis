@@ -11,11 +11,11 @@ import {
     InstantiateMsg,
     Coin,
     ExecuteMsg,
+    Addr,
     ProxyMigrationTxMsg,
     Binary,
     WalletAddr,
     CanonicalAddr,
-    Addr,
     CodeIdType,
     FeeType,
     CreateWalletMsg,
@@ -24,6 +24,7 @@ import {
     RelayTransaction,
     QueryMsg,
     Uint64,
+    ArrayOfAddr,
     FeesResponse,
 } from "./Factory.types";
 export interface FactoryReadOnlyInterface {
@@ -32,6 +33,8 @@ export interface FactoryReadOnlyInterface {
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<Uint64>;
     fees: () => Promise<FeesResponse>;
     deployerAddr: () => Promise<Addr>;
+    controllerWallets: ({ controller }: { controller: Addr }) => Promise<ArrayOfAddr>;
+    walletsWithGuardian: ({ guardian }: { guardian: Addr }) => Promise<ArrayOfAddr>;
 }
 export class FactoryQueryClient implements FactoryReadOnlyInterface {
     client: CosmWasmClient;
@@ -44,6 +47,8 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.codeId = this.codeId.bind(this);
         this.fees = this.fees.bind(this);
         this.deployerAddr = this.deployerAddr.bind(this);
+        this.controllerWallets = this.controllerWallets.bind(this);
+        this.walletsWithGuardian = this.walletsWithGuardian.bind(this);
     }
 
     totalCreated = async (): Promise<Uint64> => {
@@ -66,6 +71,20 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
     deployerAddr = async (): Promise<Addr> => {
         return this.client.queryContractSmart(this.contractAddress, {
             deployer_addr: {},
+        });
+    };
+    controllerWallets = async ({ controller }: { controller: Addr }): Promise<ArrayOfAddr> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            controller_wallets: {
+                controller,
+            },
+        });
+    };
+    walletsWithGuardian = async ({ guardian }: { guardian: Addr }): Promise<ArrayOfAddr> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            wallets_with_guardian: {
+                guardian,
+            },
         });
     };
 }
@@ -128,6 +147,30 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    updateController: (
+        {
+            newController,
+            oldController,
+        }: {
+            newController: Addr;
+            oldController: Addr;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    updateGuardians: (
+        {
+            newGuardians,
+            oldGuardians,
+        }: {
+            newGuardians: Addr[];
+            oldGuardians: Addr[];
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
 }
 export class FactoryClient extends FactoryQueryClient implements FactoryInterface {
     override client: SigningCosmWasmClient;
@@ -144,6 +187,8 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
         this.updateCodeId = this.updateCodeId.bind(this);
         this.updateConfigFee = this.updateConfigFee.bind(this);
         this.updateDeployer = this.updateDeployer.bind(this);
+        this.updateController = this.updateController.bind(this);
+        this.updateGuardians = this.updateGuardians.bind(this);
     }
 
     createWallet = async (
@@ -263,6 +308,58 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
             {
                 update_deployer: {
                     addr,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateController = async (
+        {
+            newController,
+            oldController,
+        }: {
+            newController: Addr;
+            oldController: Addr;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_controller: {
+                    new_controller: newController,
+                    old_controller: oldController,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateGuardians = async (
+        {
+            newGuardians,
+            oldGuardians,
+        }: {
+            newGuardians: Addr[];
+            oldGuardians: Addr[];
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_guardians: {
+                    new_guardians: newGuardians,
+                    old_guardians: oldGuardians,
                 },
             },
             fee,

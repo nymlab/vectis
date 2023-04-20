@@ -44,7 +44,20 @@ export type ExecuteMsg =
           update_deployer: {
               addr: string;
           };
+      }
+    | {
+          update_controller: {
+              new_controller: Addr;
+              old_controller: Addr;
+          };
+      }
+    | {
+          update_guardians: {
+              new_guardians: Addr[];
+              old_guardians: Addr[];
+          };
       };
+export type Addr = string;
 export type ProxyMigrationTxMsg =
     | {
           relay_tx: RelayTransaction;
@@ -61,7 +74,6 @@ export type WalletAddr =
           addr: Addr;
       };
 export type CanonicalAddr = Binary;
-export type Addr = string;
 export type CodeIdType = "proxy" | "multisig";
 export type FeeType = "wallet";
 export interface CreateWalletMsg {
@@ -72,11 +84,10 @@ export interface CreateWalletMsg {
     relayers: string[];
 }
 export interface Guardians {
-    addresses: string[];
+    addresses: Addr[];
     guardians_multisig?: MultiSig | null;
 }
 export interface MultiSig {
-    multisig_initial_funds: Coin[];
     threshold_absolute_count: number;
 }
 export interface RelayTransaction {
@@ -99,8 +110,19 @@ export type QueryMsg =
       }
     | {
           deployer_addr: {};
+      }
+    | {
+          controller_wallets: {
+              controller: Addr;
+          };
+      }
+    | {
+          wallets_with_guardian: {
+              guardian: Addr;
+          };
       };
 export type Uint64 = number;
+export type ArrayOfAddr = Addr[];
 export interface FeesResponse {
     wallet_fee: Coin;
 }

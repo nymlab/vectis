@@ -8,9 +8,8 @@ import { FactoryT, ProxyT, CroncatT } from "../interfaces";
 import * as accounts from "../config/accounts";
 import { createSingleProxyWallet } from "../tests/mocks/proxyWallet";
 
-const croncat_factory_addr = "juno16ze0ve5q5z0wd4n5yp2kayeqn5el0tzklpafj7zjjchfh93x4wfsa8fxur";
-const code_id = 1;
-const plugin_id = 2;
+const croncat_factory_addr = "juno124vcmqsukhmuy6psm45a2tdg5354rnemdetqhjt72ynju666gf0qpxmlxz";
+const plugin_id = 1;
 
 (async function create_wallet_with_plugin() {
     const { Factory } = await import(hubDeployReportPath);
@@ -20,6 +19,7 @@ const plugin_id = 2;
     //// Create Vectis Account
     const factoryClient = new FactoryClient(userClient, userClient.sender, Factory);
     let walletAddr = await createSingleProxyWallet(factoryClient, "host");
+    //let walletAddr = "juno1v9x0cy3ma0m3kazgj9w2agj565rqqnwwtq2kc63mmlj6vjvgf2cqlckq05";
     console.log("WalletAddr: ", walletAddr);
 
     let cronkittyInstMsg = { croncat_factory_addr: croncat_factory_addr, vectis_account_addr: walletAddr };
@@ -30,14 +30,14 @@ const plugin_id = 2;
             label: "Cronkitty Plugin",
             plugin_params: { grantor: false },
             src: {
-                // code_id : code_id,
                 vectis_registry: plugin_id,
             },
         },
     };
 
     let fees = pluginRegInstallFee(hostChain).amount == "0" ? undefined : [pluginRegInstallFee(hostChain)];
-    await userClient.execute(userClient.sender, walletAddr, installPlugin, "auto", undefined);
+    let result = await userClient.execute(userClient.sender, walletAddr, installPlugin, "auto", undefined, fees);
+    console.log("RESULT: ", result);
 
     const proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
     let plugins = await proxyClient.plugins({});
@@ -58,14 +58,14 @@ const plugin_id = 2;
                     msg: {
                         bank: {
                             send: {
-                                amount: [funds],
+                                amount: [],
                                 to_address: walletAddr,
                             },
                         },
                     },
                 },
             ],
-            boundary: { height: { end: "759623" } },
+            boundary: { height: { end: "1083101" } },
             interval: { block: 500 },
             stop_on_fail: false,
         };

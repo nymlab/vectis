@@ -1,4 +1,5 @@
 use cosmwasm_schema::cw_serde;
+use vectis_wallet::PluginPermissions;
 
 use crate::error::ContractError;
 use cosmwasm_std::{Addr, CanonicalAddr, Coin};
@@ -59,8 +60,17 @@ pub const RELAYERS: Map<&[u8], ()> = Map::new("relayers");
 pub const LABEL: Item<String> = Item::new("label");
 // An address of fixed multisig contract, used for guardians multisig support.
 pub const MULTISIG_ADDRESS: Item<Option<CanonicalAddr>> = Item::new("fixed_multisig_address");
-// Tmp storage (controller, guardians)
-pub const PENDING_MULTISIG: Item<(Addr, Vec<Addr>)> = Item::new("pending-multisig");
-/// Plugins
-pub const PLUGINS: Map<&[u8], ()> = Map::new("plugins");
 pub const INSTALL_FEE: Item<Coin> = Item::new("install_fee");
+/// Plugins with execution rights
+pub const EXEC_PLUGINS: Map<&[u8], ()> = Map::new("exec-plugins");
+/// Plugins with query rights
+pub const QUERY_PLUGINS: Map<&str, &[u8]> = Map::new("query-plugins");
+/// Plugins that do tx Pre-checks
+pub const PRE_TX_PLUGINS: Map<&[u8], ()> = Map::new("pre-tx-plugins");
+/// Plugins that is multisig  
+pub const MULTISIG_PLUGIN: Item<&[u8]> = Item::new("multisig-plugin");
+
+// Tmp storage
+// (controller, guardians)
+pub const PENDING_MULTISIG: Item<(Addr, Vec<Addr>)> = Item::new("pending-multisig");
+pub const PENDING_PLUGIN: Item<Vec<PluginPermissions>> = Item::new("pending-plugin");
