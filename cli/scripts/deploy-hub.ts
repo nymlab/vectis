@@ -88,6 +88,8 @@ import { VectisActors } from "../utils/constants";
     const techCommitteeMembers = techCommitteeMemberRes.contractAddress;
     console.log("2. Instantiated group for tech committees at: ", techCommitteeMembers);
 
+    console.log("cw4", JSON.stringify(techCommitteeMemberRes));
+
     // Instantiate vectis MultiSig
     const vectisCommitteeRes = await Cw3FlexClient.instantiate(
         adminHostClient,
@@ -106,6 +108,7 @@ import { VectisActors } from "../utils/constants";
         "Tech Committee MultiSig"
     );
     const techCommittee = techCommitteeRes.contractAddress;
+    console.log("cw3", JSON.stringify(techCommitteeRes));
 
     console.log(
         "3. Instantiated Tech committee Multisig at: ",
@@ -140,6 +143,7 @@ import { VectisActors } from "../utils/constants";
     const prop = proposals.proposals.pop();
     const propId = prop!.id;
     let execute = await vectisComClient.execute({ proposalId: propId });
+    console.log("execute: ", JSON.stringify(execute));
     const factoryAddr = CWClient.getContractAddrFromResult(execute, "_contract_address");
 
     // Vectis Committee deploy plugin registry

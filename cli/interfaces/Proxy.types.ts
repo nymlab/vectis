@@ -4,6 +4,7 @@
  * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
  */
 
+export type Addr = string;
 export type Uint128 = string;
 export interface InstantiateMsg {
     code_id: number;
@@ -18,11 +19,10 @@ export interface CreateWalletMsg {
     relayers: string[];
 }
 export interface Guardians {
-    addresses: string[];
+    addresses: Addr[];
     guardians_multisig?: MultiSig | null;
 }
 export interface MultiSig {
-    multisig_initial_funds: Coin[];
     threshold_absolute_count: number;
 }
 export interface Coin {
@@ -245,7 +245,6 @@ export type GovMsg = {
     };
 };
 export type VoteOption = "yes" | "no" | "abstain" | "no_with_veto";
-export type Addr = string;
 export type PluginSource =
     | {
           vectis_registry: number;
@@ -313,8 +312,9 @@ export type Expiration =
       };
 export interface GuardiansUpdateRequest {
     activate_at: Expiration;
-    guardians: Guardians;
+    new_guardians: Guardians;
     new_multisig_code_id?: number | null;
+    old_guardians: Addr[];
 }
 export interface WalletInfo {
     code_id: number;

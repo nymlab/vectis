@@ -20,6 +20,12 @@ const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cw_serde]
+pub struct Fees {
+    install: Coin,
+    registry: Coin,
+}
+
+#[cw_serde]
 pub struct Plugin {
     pub id: u64,
     pub name: String,
@@ -88,23 +94,25 @@ impl PluginRegistry<'_> {
             INSTALL_REPLY,
         );
 
-        // Send funds to the Deployer
-        let msg = CosmosMsg::Bank(BankMsg::Send {
-            to_address: deps
-                .api
-                .addr_humanize(&DEPLOYER.load(deps.storage)?)?
-                .to_string(),
-            amount: vec![install_fee],
-        });
-
         let event = Event::new("vectis.plugin_registry.v1.MsgInstallPluginRequested")
             .add_attribute("plugin_id", id.to_string())
             .add_attribute("wallet", info.sender);
-
-        Ok(Response::new()
-            .add_submessage(sub_msg)
-            .add_message(msg)
-            .add_event(event))
+        // Send funds to the Deployer
+        if !install_fee.amount.is_zero() {
+            let msg = CosmosMsg::Bank(BankMsg::Send {
+                to_address: deps
+                    .api
+                    .addr_humanize(&DEPLOYER.load(deps.storage)?)?
+                    .to_string(),
+                amount: vec![install_fee],
+            });
+            Ok(Response::new()
+                .add_submessage(sub_msg)
+                .add_message(msg)
+                .add_event(event))
+        } else {
+            Ok(Response::new().add_submessage(sub_msg).add_event(event))
+        }
     }
 
     #[msg(instantiate)]
@@ -372,6 +380,14 @@ impl PluginRegistry<'_> {
     pub fn get_plugin_by_id(&self, ctx: (Deps, Env), id: u64) -> StdResult<Option<Plugin>> {
         let (deps, ..) = ctx;
         self.plugins.may_load(deps.storage, id)
+    }
+
+    #[msg(query)]
+    pub fn get_fees(&self, ctx: (Deps, Env)) -> StdResult<Fees> {
+        let (deps, ..) = ctx;
+        let install = self.install_fee.load(deps.storage)?;
+        let registry = self.registry_fee.load(deps.storage)?;
+        Ok(Fees { install, registry })
     }
 }
 

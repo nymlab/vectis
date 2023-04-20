@@ -1,11 +1,18 @@
-use cosmwasm_std::{to_binary, Addr, CanonicalAddr, Deps, Env, Order, StdResult, SubMsg, WasmMsg};
+use cosmwasm_std::{
+    to_binary, Addr, CanonicalAddr, Deps, Env, Order, StdResult, Storage, SubMsg, WasmMsg,
+};
 use std::iter::Iterator;
 
 use crate::error::ContractError;
-use crate::state::{Controller, CONTROLLER, FROZEN, GUARDIANS, MULTISIG_ADDRESS, RELAYERS};
+use crate::state::{
+    Controller, CONTROLLER, EXEC_PLUGINS, FROZEN, GUARDIANS, MULTISIG_ADDRESS, MULTISIG_PLUGIN,
+    PRE_TX_PLUGINS, QUERY_PLUGINS, RELAYERS,
+};
 use cw3_fixed_multisig::msg::Voter;
 use cw_storage_plus::Map;
-use vectis_wallet::{get_items_from_deployer, VectisActors, WalletFactoryExecuteMsg};
+use vectis_wallet::{
+    get_items_from_deployer, PluginPermissions, VectisActors, WalletFactoryExecuteMsg,
+};
 
 // Converts addresses to voters with weight of 1
 pub fn addresses_to_voters(addresses: &[Addr]) -> Vec<Voter> {
@@ -154,4 +161,20 @@ pub fn create_rotate_guardian_factory_msg(
         })?,
         funds: vec![],
     }))
+}
+
+pub fn add_plugin_to_state(
+    storage: &mut dyn Storage,
+    permissions: &[PluginPermissions],
+    addr: &[u8],
+) -> Result<(), ContractError> {
+    for permission in permissions {
+        match permission {
+            PluginPermissions::Exec => EXEC_PLUGINS.save(storage, addr, &())?,
+            PluginPermissions::Query(key) => QUERY_PLUGINS.save(storage, &key, &addr)?,
+            PluginPermissions::PreTxCheck => PRE_TX_PLUGINS.save(storage, addr, &())?,
+            PluginPermissions::MultiSigOverride => MULTISIG_PLUGIN.save(storage, &addr)?,
+        }
+    }
+    Ok(())
 }

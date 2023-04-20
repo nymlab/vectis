@@ -43,7 +43,10 @@ pub struct RelayTransaction {
 
 #[cw_serde]
 pub struct PluginListResponse {
-    pub plugins: Vec<Addr>,
+    pub exec_plugins: Vec<Addr>,
+    pub query_plugins: Vec<Addr>,
+    pub pre_tx_plugins: Vec<Addr>,
+    pub multisig_override: Option<Addr>,
 }
 
 #[cw_serde]
@@ -52,4 +55,17 @@ pub struct WalletCreateReply {
     pub proxy_addr: Addr,
     pub multisig_addr: Option<Addr>,
     pub guardians: Vec<Addr>,
+}
+
+/// Permission of the plugin on the proxy
+#[cw_serde]
+pub enum PluginPermissions {
+    /// Can Exec through Proxy
+    Exec,
+    /// Addr can be queried through proxy
+    Query(String),
+    /// Is used to check tx before execution
+    PreTxCheck,
+    /// Is a multisig contract, ignore controller
+    MultiSigOverride,
 }

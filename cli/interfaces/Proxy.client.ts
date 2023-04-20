@@ -7,6 +7,7 @@
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
 import {
+    Addr,
     Uint128,
     InstantiateMsg,
     CreateWalletMsg,
@@ -25,7 +26,6 @@ import {
     WasmMsg,
     GovMsg,
     VoteOption,
-    Addr,
     PluginSource,
     Empty,
     IbcTimeout,

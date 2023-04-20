@@ -8,7 +8,7 @@ import { ExecuteMsg as PluginRegistryExecMsg } from "../interfaces/PluginRegistr
 
 // Uni-6
 const checksum = "d5fe0daac6794324fef16580e8a595e1a2f70572696e4d5d92b9b7645bbf4286";
-const code_id = 1535;
+const code_id = 1;
 const creator = "juno1dfd5vtxy2ty5gqqv0cs2z23pfucnpym9kcq8vv";
 const ipfs_hash = "n/a";
 const name = "Cronkitty";

@@ -42,7 +42,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                 },
                 relayers: [hostAccounts.relayer_1.address, hostAccounts.relayer_2.address],
                 proxy_initial_funds: [initial_funds as FactoryT.Coin],
-                label: "wallet-multisig",
+                label: "cronkitty test 1",
             },
         },
         getDefaultWalletCreationFee(hostChain),
@@ -60,7 +60,7 @@ export async function createSingleProxyWallet(factoryClient: FactoryClient, chai
     const chains = chain == "host" ? hostChain : remoteChain;
     const initialFunds = walletInitialFunds(chains).amount == "0" ? [] : [walletInitialFunds(chains) as FactoryT.Coin];
     const { wallet_fee } = await factoryClient.fees();
-    const totalFee: Number = Number(wallet_fee.amount) + initialFunds.length == 1 ? Number(initialFunds[0].amount) : 0;
+    const totalFee: Number = initialFunds.length == 1 ? Number(initialFunds[0].amount) + Number(wallet_fee.amount) : 0;
     let totalFeeToSend = totalFee == 0 ? undefined : [coin(totalFee.toString(), chains.feeToken) as FactoryT.Coin];
 
     console.log("initial funds: ", initialFunds);
