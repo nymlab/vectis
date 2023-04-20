@@ -1,6 +1,7 @@
 use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, Uint128, WasmMsg};
 use cw3::Vote;
 use cw3_fixed_multisig::msg::ExecuteMsg as MultisigExecuteMsg;
+use cw_utils::Threshold;
 use vectis_factory::ContractError;
 use vectis_proxy::msg::ExecuteMsg as ProxyExecuteMsg;
 use vectis_wallet::{MultiSig, WalletInfo};
@@ -210,6 +211,12 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_addr).unwrap();
     assert!(!w.is_frozen);
+    assert_eq!(
+        w.multisig_threshold.unwrap(),
+        Threshold::AbsoluteCount {
+            weight: MULTISIG_THRESHOLD
+        }
+    );
 
     // Create proposal and vote for freezing
     let multisig_contract_addr = w.multisig_address.unwrap();

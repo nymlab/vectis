@@ -389,11 +389,7 @@ impl HubChainSuite {
     pub fn query_plugins(&self, contract_addr: &Addr) -> Result<PluginListResponse, StdError> {
         self.app.wrap().query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: contract_addr.to_string(),
-            msg: to_binary(&ProxyQueryMsg::Plugins {
-                start_after: None,
-                limit: None,
-            })
-            .unwrap(),
+            msg: to_binary(&ProxyQueryMsg::Plugins {}).unwrap(),
         }))
     }
 

@@ -211,20 +211,18 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
             )?;
             PENDING_PLUGIN.remove(deps.storage);
 
-            Ok(Response::new()
-                .add_attribute("action", "Plugin Stored")
-                .add_attribute("plugin_address", res.contract_address))
+            Ok(Response::new().add_attribute("Vectis plugin_address", res.contract_address))
         } else {
             Err(ContractError::PluginInstantiationError {})
         }
     } else if reply.id == REG_PLUGIN_INST_ID {
         if let Ok(res) = parse_reply_execute_data(reply) {
-            let permission = PENDING_PLUGIN.load(deps.storage)?;
             // All plugins from registry will return this in set_data
             let addr = res.data.ok_or(ContractError::PluginInstantiationError {})?;
+
+            // Add plugins to states
             let permissions = PENDING_PLUGIN.load(deps.storage)?;
             add_plugin_to_state(deps.storage, &permissions, &addr)?;
-
             PENDING_PLUGIN.remove(deps.storage);
 
             Ok(Response::new()

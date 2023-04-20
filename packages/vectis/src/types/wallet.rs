@@ -1,5 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr};
+use cw_utils::Threshold;
 
 /// Controller nonce
 pub type Nonce = u64;
@@ -24,7 +25,7 @@ pub struct WalletInfo {
     pub is_frozen: bool,
     pub nonce: Nonce,
     pub multisig_address: Option<Addr>,
-    pub multisig_threshold: Option<u64>,
+    pub multisig_threshold: Option<Threshold>,
     pub label: String,
 }
 

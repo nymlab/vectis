@@ -190,12 +190,8 @@ impl PluginsSuite {
             .query_wasm_smart(self.hub.plugin_registry.clone(), &msg)
     }
 
-    pub fn query_installed_plugins(
-        &self,
-        limit: Option<u32>,
-        start_after: Option<String>,
-    ) -> StdResult<PluginListResponse> {
-        let msg = ProxyQueryMsg::Plugins { start_after, limit };
+    pub fn query_installed_plugins(&self) -> StdResult<PluginListResponse> {
+        let msg = ProxyQueryMsg::Plugins {};
         self.hub
             .app
             .wrap()

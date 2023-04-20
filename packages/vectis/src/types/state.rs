@@ -21,3 +21,6 @@ impl std::fmt::Display for VectisActors {
         write!(f, "{self:?}")
     }
 }
+
+/// Vectis Proxy state for other contract to query it
+pub const QUERY_PLUGINS: Map<&str, CanonicalAddr> = Map::new("query-plugins");

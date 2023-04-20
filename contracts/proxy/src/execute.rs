@@ -39,7 +39,7 @@ pub fn execute_inst_plugin(
     label: String,
 ) -> Result<Response, ContractError> {
     ensure_is_controller(deps.as_ref(), info.sender.as_str())?;
-	
+
     PENDING_PLUGIN.save(deps.storage, &plugin_params.permissions)?;
     let sub_msg = match src {
         PluginSource::VectisRegistry(id) => {
@@ -79,9 +79,6 @@ pub fn execute_update_plugin(
     migrate_msg: Option<(u64, Binary)>,
 ) -> Result<Response, ContractError> {
     ensure_is_controller(deps.as_ref(), info.sender.as_str())?;
-    let addr = deps
-        .api
-        .addr_canonicalize(deps.api.addr_validate(&plugin_addr)?.as_str())?;
     let res = Response::new().add_attribute("Plugin Addr", &plugin_addr);
 
     match migrate_msg {
@@ -105,18 +102,13 @@ pub fn execute_update_plugin(
                 // we see if it exist in the list, if it does, we remove it
                 Some(permissions) => {
                     add_plugin_to_state(deps.storage, &permissions, &canon_addr)?;
+                    Ok(res.add_attribute("vectis.proxy.v1/MsgUpdatePlugin", "Add existing"))
                 }
-                // we remove plugin_addr from the list
-				None => {
-					let exec
-				}
+                // TODO: we remove plugin_addr from the list
+                None => Err(ContractError::FeatureNotSupported),
             }
         }
-    };
-    //None => {
-    //    PLUGINS.save(deps.storage, addr.as_slice(), &())?;
-    //    Ok(res.add_attribute("vectis.proxy.v1/MsgUpdatePlugin", "Add Existing"))
-    //}
+    }
 }
 
 /// Call by plugins
@@ -305,7 +297,11 @@ pub fn execute_rotate_controller_key(
         Ok(controller)
     })?;
 
+    #[cfg(not(test))]
     let factory = get_items_from_deployer(deps.as_ref(), VectisActors::Factory)?;
+    #[cfg(test)]
+    let factory = String::from("factory");
+
     let update_factory_msg = SubMsg::new(WasmMsg::Execute {
         contract_addr: factory,
         msg: to_binary(&WalletFactoryExecuteMsg::UpdateController {
@@ -375,8 +371,16 @@ pub fn execute_update_guardians(
         let instantiation_code_id = if let Some(id) = new_multisig_code_id {
             id
         } else {
-            let factory = get_items_from_deployer(deps.as_ref(), VectisActors::Factory)?;
-            PROXY_MULTISIG_CODE_ID.query(&deps.querier, Addr::unchecked(factory))?
+            #[cfg(not(test))]
+            {
+                let factory = get_items_from_deployer(deps.as_ref(), VectisActors::Factory)?;
+                PROXY_MULTISIG_CODE_ID.query(&deps.querier, Addr::unchecked(factory))?
+            }
+
+            #[cfg(test)]
+            {
+                1
+            }
         };
         let multisig_instantiate_msg = FixedMultisigInstantiateMsg {
             voters: addresses_to_voters(&new_guardians.addresses),

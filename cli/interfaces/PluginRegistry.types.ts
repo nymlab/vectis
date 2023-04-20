@@ -85,10 +85,19 @@ export type QueryMsg1 =
               id: number;
               [k: string]: unknown;
           };
+      }
+    | {
+          get_fees: {
+              [k: string]: unknown;
+          };
       };
 export interface ConfigResponse {
     deployer_addr: string;
     registry_fee: Coin;
+}
+export interface Fees {
+    install: Coin;
+    registry: Coin;
 }
 export type NullablePlugin = Plugin | null;
 export type CanonicalAddr = Binary;

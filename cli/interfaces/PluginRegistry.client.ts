@@ -16,6 +16,7 @@ import {
     QueryMsg,
     QueryMsg1,
     ConfigResponse,
+    Fees,
     NullablePlugin,
     CanonicalAddr,
     Plugin,
@@ -26,6 +27,7 @@ export interface PluginRegistryReadOnlyInterface {
     getConfig: () => Promise<ConfigResponse>;
     getPlugins: ({ limit, startAfter }: { limit?: number; startAfter?: number }) => Promise<PluginsResponse>;
     getPluginById: ({ id }: { id: number }) => Promise<NullablePlugin>;
+    getFees: () => Promise<Fees>;
 }
 export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterface {
     client: CosmWasmClient;
@@ -37,6 +39,7 @@ export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterfac
         this.getConfig = this.getConfig.bind(this);
         this.getPlugins = this.getPlugins.bind(this);
         this.getPluginById = this.getPluginById.bind(this);
+        this.getFees = this.getFees.bind(this);
     }
 
     getConfig = async (): Promise<ConfigResponse> => {
@@ -57,6 +60,11 @@ export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterfac
             get_plugin_by_id: {
                 id,
             },
+        });
+    };
+    getFees = async (): Promise<Fees> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            get_fees: {},
         });
     };
 }

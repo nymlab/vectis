@@ -6,7 +6,7 @@ use cosmwasm_std::{Addr, CanonicalAddr, Coin};
 use cw_storage_plus::{Item, Map};
 pub use vectis_wallet::{
     factory_state::{ADDR_PREFIX, DEPLOYER, PROXY_MULTISIG_CODE_ID},
-    GuardiansUpdateRequest, Nonce, RelayTxError,
+    GuardiansUpdateRequest, Nonce, RelayTxError, QUERY_PLUGINS,
 };
 
 #[cw_serde]
@@ -63,12 +63,10 @@ pub const MULTISIG_ADDRESS: Item<Option<CanonicalAddr>> = Item::new("fixed_multi
 pub const INSTALL_FEE: Item<Coin> = Item::new("install_fee");
 /// Plugins with execution rights
 pub const EXEC_PLUGINS: Map<&[u8], ()> = Map::new("exec-plugins");
-/// Plugins with query rights
-pub const QUERY_PLUGINS: Map<&str, &[u8]> = Map::new("query-plugins");
 /// Plugins that do tx Pre-checks
 pub const PRE_TX_PLUGINS: Map<&[u8], ()> = Map::new("pre-tx-plugins");
 /// Plugins that is multisig  
-pub const MULTISIG_PLUGIN: Item<&[u8]> = Item::new("multisig-plugin");
+pub const MULTISIG_PLUGIN: Item<CanonicalAddr> = Item::new("multisig-plugin");
 
 // Tmp storage
 // (controller, guardians)
