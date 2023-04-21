@@ -74,7 +74,7 @@ pub mod factory_execute {
                 funds,
                 label: "Wallet-Proxy".into(),
             };
-            let msg = SubMsg::reply_on_success(instantiate_msg, next_id.clone());
+            let msg = SubMsg::reply_on_success(instantiate_msg, next_id);
 
             let event = Event::new("vectis.factory.v1.MsgCreateWallet")
                 .add_attribute("wallet_id", next_id.to_string());
