@@ -342,6 +342,7 @@ export type Decimal = string;
 export interface WalletInfo {
     code_id: number;
     controller_addr: Addr;
+    created_at: number;
     deployer: Addr;
     guardians: Addr[];
     is_frozen: boolean;

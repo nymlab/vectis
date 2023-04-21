@@ -14,7 +14,7 @@ use crate::{
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
     query::*,
     state::{
-        Controller, CODE_ID, CONTROLLER, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
+        Controller, CODE_ID, CONTROLLER, CREATED_AT, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
         PENDING_GUARDIAN_ROTATION, PENDING_MULTISIG, PENDING_PLUGIN, RELAYERS,
     },
     MAX_MULTISIG_VOTING_PERIOD, MULTISIG_INSTANTIATE_ID, MULTISIG_ROTATION_ID, PLUGIN_INST_ID,
@@ -63,6 +63,7 @@ pub fn instantiate(
 
     CODE_ID.save(deps.storage, &msg.code_id)?;
     LABEL.save(deps.storage, &msg.create_wallet_msg.label)?;
+    CREATED_AT.save(deps.storage, &env.block.time.seconds())?;
 
     let guardian_addresses = &msg.create_wallet_msg.guardians.addresses;
 

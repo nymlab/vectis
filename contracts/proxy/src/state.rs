@@ -51,6 +51,7 @@ impl Controller {
 }
 
 pub const FROZEN: Item<bool> = Item::new("frozen");
+pub const CREATED_AT: Item<u64> = Item::new("created_at");
 pub const CODE_ID: Item<u64> = Item::new("code_id");
 pub const CONTROLLER: Item<Controller> = Item::new("controller");
 pub const GUARDIANS: Map<&[u8], ()> = Map::new("guardians");

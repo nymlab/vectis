@@ -3,7 +3,6 @@ use cosmwasm_std::{
     Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw1::CanExecuteResponse;
-const CREATE_WALLET_REPLY_ID: u64 = u64::MAX;
 
 use crate::{factory_state::*, WalletCreateReply};
 use crate::{
@@ -75,7 +74,7 @@ pub mod factory_execute {
                 funds,
                 label: "Wallet-Proxy".into(),
             };
-            let msg = SubMsg::reply_on_success(instantiate_msg, CREATE_WALLET_REPLY_ID);
+            let msg = SubMsg::reply_on_success(instantiate_msg, next_id.clone());
 
             let event = Event::new("vectis.factory.v1.MsgCreateWallet")
                 .add_attribute("wallet_id", next_id.to_string());

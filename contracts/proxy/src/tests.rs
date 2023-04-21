@@ -52,7 +52,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
     let info = mock_info("creator", &[]);
     let env = mock_env();
 
-    instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
+    instantiate(deps.branch(), env.clone(), info, instantiate_msg).unwrap();
     let info = query_info(deps.as_ref()).unwrap();
 
     let expected_info = WalletInfo {
@@ -67,6 +67,7 @@ fn do_instantiate(mut deps: DepsMut) -> Addr {
         guardians: vec![Addr::unchecked(GUARD1), Addr::unchecked(GUARD2)],
         relayers: vec![Addr::unchecked(RELAYER2), Addr::unchecked(RELAYER1)],
         is_frozen: false,
+        created_at: env.block.time.seconds(),
         multisig_address: None,
         multisig_threshold: None,
         label: "initial label".to_string(),

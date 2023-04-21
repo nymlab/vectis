@@ -23,6 +23,7 @@ pub struct WalletInfo {
     pub guardians: Vec<Addr>,
     pub relayers: Vec<Addr>,
     pub is_frozen: bool,
+    pub created_at: u64,
     pub nonce: Nonce,
     pub multisig_address: Option<Addr>,
     pub multisig_threshold: Option<Threshold>,

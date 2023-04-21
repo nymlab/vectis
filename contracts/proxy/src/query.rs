@@ -5,8 +5,8 @@ use vectis_wallet::{GuardiansUpdateRequest, PluginListResponse, WalletInfo, DEPL
 
 use crate::helpers::{is_relayer, load_addresses};
 use crate::state::{
-    CODE_ID, CONTROLLER, EXEC_PLUGINS, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS, MULTISIG_PLUGIN,
-    PENDING_GUARDIAN_ROTATION, PRE_TX_PLUGINS, QUERY_PLUGINS, RELAYERS,
+    CODE_ID, CONTROLLER, CREATED_AT, EXEC_PLUGINS, FROZEN, GUARDIANS, LABEL, MULTISIG_ADDRESS,
+    MULTISIG_PLUGIN, PENDING_GUARDIAN_ROTATION, PRE_TX_PLUGINS, QUERY_PLUGINS, RELAYERS,
 };
 
 /// Returns wallet info
@@ -34,6 +34,7 @@ pub fn query_info(deps: Deps) -> StdResult<WalletInfo> {
         guardians,
         relayers,
         is_frozen: FROZEN.load(deps.storage)?,
+        created_at: CREATED_AT.load(deps.storage)?,
         multisig_address,
         // TODO
         multisig_threshold: multisig_threshold.map(|c| c.threshold),

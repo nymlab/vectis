@@ -360,7 +360,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Update plugins, if params is `None`, plugin is removed If code_id is Some, plugin is migrated Priviledge: User",
+        "description": "Update plugins, if params is `None`, plugin is removed If code_id is Some, plugin is migrated If plugin_permissions is Some, plugin is added Priviledge: User",
         "type": "object",
         "required": [
           "update_plugins"
@@ -1592,6 +1592,7 @@
       "required": [
         "code_id",
         "controller_addr",
+        "created_at",
         "deployer",
         "guardians",
         "is_frozen",
@@ -1608,6 +1609,11 @@
         },
         "controller_addr": {
           "$ref": "#/definitions/Addr"
+        },
+        "created_at": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
         },
         "deployer": {
           "$ref": "#/definitions/Addr"
