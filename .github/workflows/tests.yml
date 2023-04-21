@@ -70,8 +70,8 @@ jobs:
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
-      - name: Compile WASM contract remote factory
-        run: cargo wasm-remote-factory --locked
+      - name: Compile WASM contract factory
+        run: cargo wasm-factory --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
