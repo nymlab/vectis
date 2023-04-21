@@ -1,10 +1,6 @@
 [alias]
-wasm-factory-dao-chain = "build --release --target wasm32-unknown-unknown --package vectis-factory"
-wasm-factory-remote-chain = "build --release --target wasm32-unknown-unknown --package vectis-factory"
+wasm-factory = "build --release --target wasm32-unknown-unknown --package vectis-factory"
 wasm-proxy = "build --release --target wasm32-unknown-unknown --package vectis-proxy"
-wasm-govec = "build --release --target wasm32-unknown-unknown --package vectis-govec"
-wasm-dao-tunnel = "build --release --target wasm32-unknown-unknown --package vectis-dao-tunnel"
-wasm-remote-tunnel = "build --release --target wasm32-unknown-unknown --package vectis-remote-tunnel"
-wasm-remote-factory = "build --release --target wasm32-unknown-unknown --package vectis-remote-factory"
+wasm-plugin-registry = "build --release --target wasm32-unknown-unknown --package vectis-plugin-registry"
 test-multi= "test -p vectis-contract-tests"
 test-unit= "test --workspace --exclude vectis-contract-tests"

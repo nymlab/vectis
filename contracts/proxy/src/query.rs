@@ -67,7 +67,7 @@ pub fn query_plugins(deps: Deps) -> StdResult<PluginListResponse> {
         .range(deps.storage, None, None, Order::Ascending)
         .map(|w| -> StdResult<Addr> {
             let ww = w?;
-            deps.api.addr_humanize(&CanonicalAddr::from(ww.1))
+            deps.api.addr_humanize(&ww.1)
         })
         .collect::<StdResult<Vec<Addr>>>()?;
     let pre_tx_plugins = PRE_TX_PLUGINS
@@ -81,7 +81,7 @@ pub fn query_plugins(deps: Deps) -> StdResult<PluginListResponse> {
 
     let multisig_override = MULTISIG_PLUGIN
         .may_load(deps.storage)?
-        .map(|a| deps.api.addr_humanize(&CanonicalAddr::from(a)))
+        .map(|a| deps.api.addr_humanize(&a))
         .transpose()?;
 
     Ok(PluginListResponse {

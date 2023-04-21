@@ -256,11 +256,7 @@ pub mod factory_execute {
                 // using `unwrap` as we never remove from WALLETS and id is only stored on CONTROLLERS
                 // if wallet has been successfully created
                 let wallet = WALLETS.load(deps.storage, *id).unwrap();
-                if wallet == info.sender {
-                    true
-                } else {
-                    false
-                }
+                wallet == info.sender
             })
             .ok_or(ContractError::NotFound {
                 addr: info.sender.clone(),
@@ -313,11 +309,7 @@ pub mod factory_execute {
                     // using `unwrap` as we never remove from WALLETS and id is only stored on CONTROLLERS
                     // if wallet has been successfully created
                     let wallet = WALLETS.load(deps.storage, *id).unwrap();
-                    if wallet == info.sender.clone() {
-                        true
-                    } else {
-                        false
-                    }
+                    wallet == info.sender.clone()
                 })
                 .ok_or(ContractError::NotFound {
                     addr: info.sender.clone(),
@@ -331,16 +323,13 @@ pub mod factory_execute {
         }
 
         // Save wallet id to new guardians
-        new_guardians
-            .iter()
-            .map(|g| -> Result<(), _> {
-                let mut wallet_ids = GUARDIANS
-                    .may_load(deps.storage, g.clone())?
-                    .unwrap_or_default();
-                wallet_ids.push(wallet_id);
-                GUARDIANS.save(deps.storage, g.clone(), &wallet_ids)
-            })
-            .collect::<Result<_, _>>()?;
+        new_guardians.iter().try_for_each(|g| -> Result<(), _> {
+            let mut wallet_ids = GUARDIANS
+                .may_load(deps.storage, g.clone())?
+                .unwrap_or_default();
+            wallet_ids.push(wallet_id);
+            GUARDIANS.save(deps.storage, g.clone(), &wallet_ids)
+        })?;
 
         let event = Event::new("vectis.factory.v1.MsgUpdateGuardians")
             .add_attribute("proxy_addr", info.sender);
@@ -457,8 +446,8 @@ pub fn ensure_enough_native_funds(
 
     if sent_fund != required {
         Err(ContractError::InvalidNativeFund(
-            format!("{:?}", required),
-            format!("{:?}", sent_fund),
+            format!("{required:?}"),
+            format!("{sent_fund:?}"),
         ))
     } else {
         Ok(())

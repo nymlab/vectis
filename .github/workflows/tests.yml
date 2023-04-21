@@ -60,33 +60,13 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
 
-      - name: Compile WASM contract factory dao chain
-        run: cargo wasm-factory-dao-chain --locked
-        env:
-          RUSTFLAGS: "-C link-arg=-s"
-
-      - name: Compile WASM contract factory remote chain
-        run: cargo wasm-factory-remote-chain --locked
+      - name: Compile WASM contract plugin registry
+        run: cargo wasm-plugin-registry --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
       - name: Compile WASM contract proxy
         run: cargo wasm-proxy --locked
-        env:
-          RUSTFLAGS: "-C link-arg=-s"
-
-      - name: Compile WASM contract govec
-        run: cargo wasm-govec --locked
-        env:
-          RUSTFLAGS: "-C link-arg=-s"
-
-      - name: Compile WASM contract dao tunnel
-        run: cargo wasm-dao-tunnel --locked
-        env:
-          RUSTFLAGS: "-C link-arg=-s"
-
-      - name: Compile WASM contract remote tunnel
-        run: cargo wasm-remote-tunnel --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
 

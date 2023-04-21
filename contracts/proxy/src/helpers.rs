@@ -177,7 +177,7 @@ pub fn add_plugin_to_state(
         match permission {
             PluginPermissions::Exec => EXEC_PLUGINS.save(storage, addr, &())?,
             PluginPermissions::Query(key) => {
-                QUERY_PLUGINS.save(storage, &key, &CanonicalAddr::from(addr))?
+                QUERY_PLUGINS.save(storage, key, &CanonicalAddr::from(addr))?
             }
             PluginPermissions::PreTxCheck => PRE_TX_PLUGINS.save(storage, addr, &())?,
             PluginPermissions::MultiSigOverride => {
