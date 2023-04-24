@@ -1,0 +1,36 @@
+# Build results
+**/target
+**/artifacts
+
+# Coverage results
+**/coverage
+
+# Cargo+Git helper file (https://github.com/rust-lang/cargo/blob/0.44.1/src/cargo/sources/git/utils.rs#L320-L327)
+.cargo-ok
+
+# Text file backups
+**/*.rs.bk
+
+# macOS
+.DS_Store
+
+# IDEs
+*.iml
+.idea
+
+# local chain data
+.wasmd*/	
+
+# testnet
+**.testnet
+
+# cli builds
+**/node_modules/
+**/build/
+cli/types/**
+
+# cache folders
+**/.cache
+
+# env
+.env

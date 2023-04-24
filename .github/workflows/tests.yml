@@ -1,0 +1,97 @@
+name: Test, Lint and Build Checker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-Cinstrument-coverage"
+      LLVM_PROFILE_FILE: "vectis-%p-%m.profraw"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install Coverage Dependencies
+        run: |
+          cargo install grcov
+          rustup component add llvm-tools-preview
+
+      - name: Run multi contract tests
+        run: cargo test -p vectis-contract-tests
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Run contract unit tests
+        run: cargo test --workspace --exclude vectis-contract-tests
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Generate LCOV Report
+        run: grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing -o ./lcov.info
+
+      - name: Upload Coverage
+        run: bash <(curl -s https://codecov.io/bash) -f lcov.info
+
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Compile WASM contract plugin registry
+        run: cargo wasm-plugin-registry --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
+      - name: Compile WASM contract proxy
+        run: cargo wasm-proxy --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
+      - name: Compile WASM contract factory
+        run: cargo wasm-factory --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
+  lints:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Run cargo clippy
+        run: cargo clippy -- -D warnings
