@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["ContractError",""]],"mod":[["contract",""],["helpers",""],["msg",""],["state",""]]};
+window.SIDEBAR_ITEMS = {"enum":["ContractError"],"mod":["contract","helpers","msg","state"]};

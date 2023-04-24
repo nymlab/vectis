@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["common",""],["dao_common",""],["plugins_common",""],["remote_common",""]]};
+window.SIDEBAR_ITEMS = {"mod":["base_common","common","plugins_common"]};

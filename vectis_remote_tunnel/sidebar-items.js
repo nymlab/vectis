@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":[["DISPATCH_CALLBACK_ID",""],["FACTORY_CALLBACK_ID",""]],"enum":[["ContractError",""]],"mod":[["contract",""],["ibc",""],["msg",""],["state",""]]};

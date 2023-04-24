@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["handle_create_wallet_reply"]};

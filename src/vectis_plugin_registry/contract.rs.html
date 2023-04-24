@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/plugin_registry/src/contract.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-93196c7a1c3542a8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../vectis_plugin_registry/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/plugin_registry/src/contract.rs`."><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c4dbdcde0fbd8430.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-db279b6232be9c13.css"><link rel="stylesheet" disabled href="../../static.files/dark-cf923f49f397b216.css"><link rel="stylesheet" disabled href="../../static.files/ayu-be46fdc453a55015.css"><script src="../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../vectis_plugin_registry/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -418,6 +418,34 @@
 <a href="#418" id="418">418</a>
 <a href="#419" id="419">419</a>
 <a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::cw_serde;
 <span class="kw">use </span>cw2::set_contract_version;
 <span class="kw">use </span>cw_storage_plus::{Bound, Item, Map};
@@ -428,7 +456,7 @@
     MessageInfo, Order, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 
-<span class="kw">use </span>vectis_wallet::{get_items_from_dao, DaoActors, DAO};
+<span class="kw">use </span>vectis_wallet::{get_items_from_deployer, VectisActors, DEFAULT_LIMIT, DEPLOYER, MAX_LIMIT};
 
 <span class="kw">use crate</span>::{
     error::ContractError,
@@ -439,8 +467,11 @@
 <span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>);
 <span class="kw">const </span>CONTRACT_VERSION: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>);
 
-<span class="kw">const </span>MAX_LIMIT: u32 = <span class="number">30</span>;
-<span class="kw">const </span>DEFAULT_LIMIT: u32 = <span class="number">10</span>;
+<span class="attr">#[cw_serde]
+</span><span class="kw">pub struct </span>Fees {
+    install: Coin,
+    registry: Coin,
+}
 
 <span class="attr">#[cw_serde]
 </span><span class="kw">pub struct </span>Plugin {
@@ -511,23 +542,25 @@
             INSTALL_REPLY,
         );
 
-        <span class="comment">// Send funds to the DAO
-        </span><span class="kw">let </span>msg = CosmosMsg::Bank(BankMsg::Send {
-            to_address: deps
-                .api
-                .addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
-                </span>.to_string(),
-            amount: <span class="macro">vec!</span>[install_fee],
-        });
-
         <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgInstallPluginRequested&quot;</span>)
             .add_attribute(<span class="string">&quot;plugin_id&quot;</span>, id.to_string())
             .add_attribute(<span class="string">&quot;wallet&quot;</span>, info.sender);
-
-        <span class="prelude-val">Ok</span>(Response::new()
-            .add_submessage(sub_msg)
-            .add_message(msg)
-            .add_event(event))
+        <span class="comment">// Send funds to the Deployer
+        </span><span class="kw">if </span>!install_fee.amount.is_zero() {
+            <span class="kw">let </span>msg = CosmosMsg::Bank(BankMsg::Send {
+                to_address: deps
+                    .api
+                    .addr_humanize(<span class="kw-2">&amp;</span>DEPLOYER.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
+                    </span>.to_string(),
+                amount: <span class="macro">vec!</span>[install_fee],
+            });
+            <span class="prelude-val">Ok</span>(Response::new()
+                .add_submessage(sub_msg)
+                .add_message(msg)
+                .add_event(event))
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Ok</span>(Response::new().add_submessage(sub_msg).add_event(event))
+        }
     }
 
     <span class="attr">#[msg(instantiate)]
@@ -543,7 +576,7 @@
         <span class="self">self</span>.total_plugins.save(deps.storage, <span class="kw-2">&amp;</span><span class="number">0u64</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.registry_fee.save(deps.storage, <span class="kw-2">&amp;</span>registry_fee)<span class="question-mark">?</span>;
         <span class="self">self</span>.install_fee.save(deps.storage, <span class="kw-2">&amp;</span>install_fee)<span class="question-mark">?</span>;
-        DAO.save(
+        DEPLOYER.save(
             deps.storage,
             <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(info.sender.as_str())<span class="question-mark">?</span>,
         )<span class="question-mark">?</span>;
@@ -551,7 +584,7 @@
     }
 
     <span class="kw">fn </span>ensure_is_reviewer(<span class="kw-2">&amp;</span><span class="self">self</span>, deps: Deps, sender: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
-        <span class="kw">let </span>reviewer = get_items_from_dao(deps, DaoActors::PluginCommittee)<span class="question-mark">?</span>;
+        <span class="kw">let </span>reviewer = get_items_from_deployer(deps, VectisActors::PluginCommittee)<span class="question-mark">?</span>;
         <span class="kw">if </span>reviewer != sender {
             <span class="prelude-val">Err</span>(ContractError::Unauthorized)
         } <span class="kw">else </span>{
@@ -559,25 +592,26 @@
         }
     }
 
-    <span class="doccomment">/// Subtracts the required fees defined in the registry to be sent to DAO treasury
+    <span class="doccomment">/// Subtracts the required fees defined in the registry to be sent to DEPLOYER treasury
     /// and return the remaining funds sent to this contract - presumably for the plugin
     </span><span class="kw">fn </span>sub_required_fee&lt;<span class="lifetime">&#39;a</span>&gt;(
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">self</span>,
         provided: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>[Coin],
         required: <span class="kw-2">&amp;</span>Coin,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
-        <span class="kw">let </span>fund = provided
-            .iter_mut()
-            .find(|c| c.denom == required.denom)
-            .ok_or(ContractError::InsufficientFee(
-                required.amount,
-                Uint128::zero(),
-            ))<span class="question-mark">?</span>;
-
-        fund.amount = fund
-            .amount
-            .checked_sub(required.amount)
-            .map_err(|<span class="kw">_</span>| ContractError::InsufficientFee(required.amount, fund.amount))<span class="question-mark">?</span>;
+        <span class="kw">if </span>required.amount != Uint128::zero() {
+            <span class="kw">let </span>fund = provided
+                .iter_mut()
+                .find(|c| c.denom == required.denom)
+                .ok_or(ContractError::InsufficientFee(
+                    required.amount,
+                    Uint128::zero(),
+                ))<span class="question-mark">?</span>;
+            fund.amount = fund
+                .amount
+                .checked_sub(required.amount)
+                .map_err(|<span class="kw">_</span>| ContractError::InsufficientFee(required.amount, fund.amount))<span class="question-mark">?</span>;
+        }
 
         <span class="prelude-val">Ok</span>(())
     }
@@ -622,18 +656,21 @@
 
         <span class="self">self</span>.plugins.save(deps.storage, id, <span class="kw-2">&amp;</span>plugin)<span class="question-mark">?</span>;
 
-        <span class="comment">// Send funds to the DAO
-        </span><span class="kw">let </span>msg = CosmosMsg::Bank(BankMsg::Send {
-            to_address: deps
-                .api
-                .addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
-                </span>.to_string(),
-            amount: <span class="macro">vec!</span>[registry_fee],
-        });
-
-        <span class="prelude-val">Ok</span>(Response::new()
-            .add_event(Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgInstantiate&quot;</span>))
-            .add_message(msg))
+        <span class="comment">// Send funds to the Deployer if required
+        </span><span class="kw">if </span>registry_fee.amount != Uint128::zero() {
+            <span class="kw">let </span>msg = CosmosMsg::Bank(BankMsg::Send {
+                to_address: deps
+                    .api
+                    .addr_humanize(<span class="kw-2">&amp;</span>DEPLOYER.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
+                    </span>.to_string(),
+                amount: <span class="macro">vec!</span>[registry_fee],
+            });
+            <span class="prelude-val">Ok</span>(Response::new()
+                .add_event(Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgInstantiate&quot;</span>))
+                .add_message(msg))
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Ok</span>(Response::new().add_event(Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgInstantiate&quot;</span>)))
+        }
     }
 
     <span class="attr">#[msg(exec)]
@@ -712,7 +749,7 @@
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>(deps, _env, info) = ctx;
         <span class="macro">ensure_eq!</span>(
-            deps.api.addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>,
+            deps.api.addr_humanize(<span class="kw-2">&amp;</span>DEPLOYER.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>,
             info.sender,
             ContractError::Unauthorized
         );
@@ -728,19 +765,19 @@
     }
 
     <span class="attr">#[msg(exec)]
-    </span><span class="kw">pub fn </span>update_dao_addr(
+    </span><span class="kw">pub fn </span>update_deployer_addr(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         ctx: (DepsMut, Env, MessageInfo),
         new_addr: String,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>(deps, _env, info) = ctx;
         <span class="macro">ensure_eq!</span>(
-            deps.api.addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>,
+            deps.api.addr_humanize(<span class="kw-2">&amp;</span>DEPLOYER.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?</span>,
             info.sender,
             ContractError::Unauthorized
         );
 
-        DAO.update(deps.storage, |<span class="kw">_</span>| -&gt; StdResult&lt;CanonicalAddr&gt; {
+        DEPLOYER.update(deps.storage, |<span class="kw">_</span>| -&gt; StdResult&lt;CanonicalAddr&gt; {
             deps.api
                 .addr_canonicalize(deps.api.addr_validate(new_addr.as_str())<span class="question-mark">?</span>.as_str())
         })<span class="question-mark">?</span>;
@@ -756,9 +793,9 @@
         <span class="kw">let </span>(deps, ..) = ctx;
         <span class="prelude-val">Ok</span>(ConfigResponse {
             registry_fee: <span class="self">self</span>.registry_fee.load(deps.storage)<span class="question-mark">?</span>,
-            dao_addr: deps
+            deployer_addr: deps
                 .api
-                .addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
+                .addr_humanize(<span class="kw-2">&amp;</span>DEPLOYER.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
                 </span>.to_string(),
         })
     }
@@ -792,6 +829,14 @@
         <span class="kw">let </span>(deps, ..) = ctx;
         <span class="self">self</span>.plugins.may_load(deps.storage, id)
     }
+
+    <span class="attr">#[msg(query)]
+    </span><span class="kw">pub fn </span>get_fees(<span class="kw-2">&amp;</span><span class="self">self</span>, ctx: (Deps, Env)) -&gt; StdResult&lt;Fees&gt; {
+        <span class="kw">let </span>(deps, ..) = ctx;
+        <span class="kw">let </span>install = <span class="self">self</span>.install_fee.load(deps.storage)<span class="question-mark">?</span>;
+        <span class="kw">let </span>registry = <span class="self">self</span>.registry_fee.load(deps.storage)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(Fees { install, registry })
+    }
 }
 
 <span class="attr">#[cfg(test)]
@@ -808,6 +853,17 @@
             .sub_required_fee(<span class="kw-2">&amp;mut </span>provided, <span class="kw-2">&amp;</span>registry_fee)
             .unwrap();
         <span class="macro">assert_eq!</span>(provided[<span class="number">0</span>].amount, Uint128::new(<span class="number">10u128</span>));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>zero_fees_required_fee_works() {
+        <span class="kw">let </span>registry_fee = coin(<span class="number">0u128</span>, <span class="string">&quot;ucosm&quot;</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>provided = <span class="macro">vec!</span>[coin(<span class="number">20u128</span>, <span class="string">&quot;ucosm&quot;</span>)];
+        <span class="kw">let </span>registry = PluginRegistry::new();
+        registry
+            .sub_required_fee(<span class="kw-2">&amp;mut </span>provided, <span class="kw-2">&amp;</span>registry_fee)
+            .unwrap();
+        <span class="macro">assert_eq!</span>(provided[<span class="number">0</span>].amount, Uint128::new(<span class="number">20u128</span>));
     }
 
     <span class="attr">#[test]
@@ -839,4 +895,4 @@
     }
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_plugin_registry" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.2 (9eb3afe9e 2023-03-27)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_plugin_registry" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0 (84c898d65 2023-04-16)" data-search-js="search-8a59a8356673ec1f.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>

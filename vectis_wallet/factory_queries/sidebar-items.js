@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["query_code_id","Returns the current supported code Id:"],["query_dao_addr","Returns DAO address"],["query_fees","Returns fees required for wallet creation and claim govec"],["query_total","Return total number of wallets created"],["query_unclaim_wallet_list","Returns wallets with Govec to claim with limit"],["query_wallet_claim_expiration","Returns wallets of controller"]]};
+window.SIDEBAR_ITEMS = {"fn":["query_code_id","query_controller_wallets","query_deployer","query_fees","query_total","query_wallets_with_guardian"]};

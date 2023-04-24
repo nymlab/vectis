@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["INSTALL_REPLY",""]],"fn":[["execute",""],["instantiate",""],["query",""],["reply","reply hooks handles replies from plugin instantiation `set_data` tells the proxy what its installed plugin address is"]],"mod":[["contract",""],["error",""],["multitest",""],["responses",""]]};
+window.SIDEBAR_ITEMS = {"constant":["INSTALL_REPLY"],"fn":["execute","instantiate","query","reply"],"mod":["contract","error","multitest","responses"]};

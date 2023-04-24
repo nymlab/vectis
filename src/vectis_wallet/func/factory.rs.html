@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis/src/func/factory.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>factory.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-93196c7a1c3542a8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../vectis_wallet/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis/src/func/factory.rs`."><title>factory.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c4dbdcde0fbd8430.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-db279b6232be9c13.css"><link rel="stylesheet" disabled href="../../../static.files/dark-cf923f49f397b216.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-be46fdc453a55015.css"><script src="../../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../vectis_wallet/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -525,23 +525,48 @@
 <a href="#525" id="525">525</a>
 <a href="#526" id="526">526</a>
 <a href="#527" id="527">527</a>
-</pre><pre class="rust"><code><span class="kw">use </span>std::ops::{Add, Mul};
-
-<span class="kw">use </span>cosmwasm_std::{
-    to_binary, Addr, BankMsg, CanonicalAddr, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
-    MessageInfo, Order, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
+<a href="#528" id="528">528</a>
+<a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+</pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_std::{
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
+    Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
-<span class="kw">use </span>cw_storage_plus::Bound;
-<span class="kw">use </span>cw_utils::{parse_reply_instantiate_data, Expiration, DAY};
-
 <span class="kw">use </span>cw1::CanExecuteResponse;
 
-<span class="kw">use crate</span>::{factory_state::<span class="kw-2">*</span>, GOVEC_CLAIM_DURATION_DAY_MUL};
+<span class="kw">use crate</span>::{factory_state::<span class="kw-2">*</span>, WalletCreateReply};
 <span class="kw">use crate</span>::{
     pub_key_to_address, query_verify_cosmos, CodeIdType, FactoryError <span class="kw">as </span>ContractError, Guardians,
     ProxyMigrationTxMsg, ProxyQueryMsg, RelayTxError,
-    WalletFactoryInstantiateMsg <span class="kw">as </span>InstantiateMsg, WalletInfo, DEFAULT_LIMIT, MAX_LIMIT,
+    WalletFactoryInstantiateMsg <span class="kw">as </span>InstantiateMsg, WalletInfo,
 };
+<span class="kw">use </span>cw_utils::parse_reply_instantiate_data;
 
 <span class="kw">pub fn </span>factory_instantiate(
     deps: DepsMut,
@@ -551,13 +576,12 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
     <span class="kw">let </span>admin_addr = deps.api.addr_canonicalize(info.sender.as_ref())<span class="question-mark">?</span>;
 
-    DAO.save(deps.storage, <span class="kw-2">&amp;</span>admin_addr)<span class="question-mark">?</span>;
+    DEPLOYER.save(deps.storage, <span class="kw-2">&amp;</span>admin_addr)<span class="question-mark">?</span>;
     PROXY_CODE_ID.save(deps.storage, <span class="kw-2">&amp;</span>msg.proxy_code_id)<span class="question-mark">?</span>;
     PROXY_MULTISIG_CODE_ID.save(deps.storage, <span class="kw-2">&amp;</span>msg.proxy_multisig_code_id)<span class="question-mark">?</span>;
     TOTAL_CREATED.save(deps.storage, <span class="kw-2">&amp;</span><span class="number">0</span>)<span class="question-mark">?</span>;
     ADDR_PREFIX.save(deps.storage, <span class="kw-2">&amp;</span>msg.addr_prefix)<span class="question-mark">?</span>;
     WALLET_FEE.save(deps.storage, <span class="kw-2">&amp;</span>msg.wallet_fee)<span class="question-mark">?</span>;
-    CLAIM_FEE.save(deps.storage, <span class="kw-2">&amp;</span>msg.claim_fee)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgInstantiate&quot;</span>)
         .add_attribute(<span class="string">&quot;contract_address&quot;</span>, env.contract.address);
@@ -581,26 +605,13 @@
         create_wallet_msg: CreateWalletMsg,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>fee = WALLET_FEE.load(deps.storage)<span class="question-mark">?</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
-        <span class="kw">let </span><span class="kw-2">mut </span>multisig_initial_funds = create_wallet_msg
-            .guardians
-            .guardians_multisig
-            .clone()
-            .unwrap_or_default()
-            .multisig_initial_funds;
+        <span class="kw">let </span>proxy_init_funds = create_wallet_msg.proxy_initial_funds.clone();
 
         <span class="comment">// Ensure fixed multisig threshold is valid, if provided
         </span>ensure_is_valid_threshold(<span class="kw-2">&amp;</span>create_wallet_msg.guardians)<span class="question-mark">?</span>;
-        ensure_enough_native_funds(
-            <span class="kw-2">&amp;</span>fee,
-            <span class="kw-2">&amp;</span>proxy_init_funds,
-            <span class="kw-2">&amp;</span>multisig_initial_funds,
-            <span class="kw-2">&amp;</span>info.funds,
-        )<span class="question-mark">?</span>;
+        ensure_enough_native_funds(<span class="kw-2">&amp;</span>fee, <span class="kw-2">&amp;</span>proxy_init_funds, <span class="kw-2">&amp;</span>info.funds)<span class="question-mark">?</span>;
 
-        <span class="comment">// reply_id starts at 1  as 0 occupied by const GOVEC_REPLY_ID
-        </span><span class="kw">if let </span><span class="prelude-val">Some</span>(next_id) = TOTAL_CREATED.load(deps.storage)<span class="question-mark">?</span>.checked_add(<span class="number">1</span>) {
-            proxy_init_funds.append(<span class="kw-2">&amp;mut </span>multisig_initial_funds);
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(next_id) = TOTAL_CREATED.load(deps.storage)<span class="question-mark">?</span>.checked_add(<span class="number">1</span>) {
             <span class="kw">let </span>funds = <span class="kw">if </span>proxy_init_funds.is_empty() {
                 <span class="macro">vec!</span>[]
             } <span class="kw">else </span>{
@@ -619,7 +630,7 @@
                 funds,
                 label: <span class="string">&quot;Wallet-Proxy&quot;</span>.into(),
             };
-            <span class="kw">let </span>msg = SubMsg::reply_always(instantiate_msg, next_id);
+            <span class="kw">let </span>msg = SubMsg::reply_on_success(instantiate_msg, next_id);
 
             <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgCreateWallet&quot;</span>)
                 .add_attribute(<span class="string">&quot;wallet_id&quot;</span>, next_id.to_string());
@@ -628,20 +639,21 @@
 
             TOTAL_CREATED.save(deps.storage, <span class="kw-2">&amp;</span>next_id)<span class="question-mark">?</span>;
 
-            <span class="comment">// Send native tokens to DAO to join the DAO
+            <span class="comment">// Send native tokens to deployer
             </span><span class="kw">if </span>fee.amount != Uint128::zero() {
                 <span class="kw">let </span>to_address = deps
                     .api
-                    .addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
+                    .addr_humanize(<span class="kw-2">&amp;</span>DEPLOYER.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
                     </span>.to_string();
 
-                <span class="comment">// Direct transfer to DAO / remote_tunnel
+                <span class="comment">// Direct transfer to Deployer
                 </span><span class="kw">let </span>bank_msg = CosmosMsg::Bank(BankMsg::Send {
                     to_address,
                     amount: <span class="macro">vec!</span>[fee],
                 });
                 <span class="kw">return </span><span class="prelude-val">Ok</span>(res.add_message(bank_msg));
             }
+
             <span class="prelude-val">Ok</span>(res)
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(ContractError::OverFlow {})
@@ -716,7 +728,7 @@
         ty: CodeIdType,
         new_code_id: u64,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-        ensure_is_dao(deps.as_ref(), info.sender.as_ref())<span class="question-mark">?</span>;
+        ensure_is_deployer(deps.as_ref(), info.sender.as_ref())<span class="question-mark">?</span>;
         <span class="kw">match </span>ty {
             CodeIdType::Proxy =&gt; {
                 PROXY_CODE_ID.update(deps.storage, |c| {
@@ -751,12 +763,9 @@
         ty: FeeType,
         new_fee: Coin,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-        ensure_is_dao(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
+        ensure_is_deployer(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
 
         <span class="kw">match </span>ty {
-            FeeType::Claim =&gt; {
-                CLAIM_FEE.save(deps.storage, <span class="kw-2">&amp;</span>new_fee)<span class="question-mark">?</span>;
-            }
             FeeType::Wallet =&gt; {
                 WALLET_FEE.save(deps.storage, <span class="kw-2">&amp;</span>new_fee)<span class="question-mark">?</span>;
             }
@@ -770,86 +779,124 @@
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
     }
 
-    <span class="kw">pub fn </span>update_dao_addr(
+    <span class="kw">pub fn </span>update_deployer_addr(
         deps: DepsMut,
         info: MessageInfo,
         addr: String,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-        ensure_is_dao(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
-        DAO.save(deps.storage, <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>addr)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+        ensure_is_deployer(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
+        DEPLOYER.save(deps.storage, <span class="kw-2">&amp;</span>deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>addr)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgUpdateDaoAddr&quot;</span>).add_attribute(<span class="string">&quot;address&quot;</span>, addr);
 
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
     }
 
-    <span class="kw">pub fn </span>purge_expired_claims(
+    <span class="kw">pub fn </span>update_controller(
         deps: DepsMut,
-        env: Env,
-        start_after: <span class="prelude-ty">Option</span>&lt;String&gt;,
-        limit: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+        info: MessageInfo,
+        old_controller: Addr,
+        new_controller: Addr,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-        <span class="kw">let </span>limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) <span class="kw">as </span>usize;
-        <span class="kw">let </span>start = <span class="kw">match </span>start_after {
-            <span class="prelude-val">Some</span>(s) =&gt; {
-                <span class="kw">let </span>wallet_addr = deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>s)<span class="question-mark">?</span>.to_vec();
-                <span class="prelude-val">Some</span>(Bound::exclusive(wallet_addr))
-            }
-            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-        };
+        <span class="kw">let </span><span class="kw-2">mut </span>old_controlled_wallets_id = CONTROLLERS
+            .may_load(deps.storage, old_controller.clone())<span class="question-mark">?
+            </span>.ok_or(ContractError::NotFound {
+                addr: old_controller.clone(),
+            })<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>wallets: StdResult&lt;Vec&lt;(Vec&lt;u8&gt;, Expiration)&gt;&gt; = GOVEC_CLAIM_LIST
-            .prefix(())
-            .range(deps.storage, start, <span class="prelude-val">None</span>, Order::Ascending)
-            .take(limit)
-            .collect();
+        <span class="comment">// find the index of the wallet_id associated with the info.sender aka proxy contract
+        </span><span class="kw">let </span>wallet_index = old_controlled_wallets_id
+            .iter()
+            .position(|id| {
+                <span class="comment">// using `unwrap` as we never remove from WALLETS and id is only stored on CONTROLLERS
+                // if wallet has been successfully created
+                </span><span class="kw">let </span>wallet = WALLETS.load(deps.storage, <span class="kw-2">*</span>id).unwrap();
+                wallet == info.sender
+            })
+            .ok_or(ContractError::NotFound {
+                addr: info.sender.clone(),
+            })<span class="question-mark">?</span>;
 
-        <span class="kw">for </span>w <span class="kw">in </span>wallets<span class="question-mark">? </span>{
-            <span class="kw">if </span>w.<span class="number">1</span>.is_expired(<span class="kw-2">&amp;</span>env.block) {
-                GOVEC_CLAIM_LIST.remove(deps.storage, w.<span class="number">0</span>)
-            }
+        <span class="kw">let </span>wallet_id = old_controlled_wallets_id[wallet_index];
+
+        <span class="comment">// remove it from old controller
+        </span>old_controlled_wallets_id.remove(wallet_index);
+
+        <span class="comment">// add wallet_id to new controller
+        </span><span class="kw">let </span><span class="kw-2">mut </span>new_controlled_wallets_id = CONTROLLERS
+            .may_load(deps.storage, new_controller.clone())<span class="question-mark">?
+            </span>.unwrap_or_default();
+        new_controlled_wallets_id.push(wallet_id);
+
+        CONTROLLERS.save(deps.storage, old_controller, <span class="kw-2">&amp;</span>old_controlled_wallets_id)<span class="question-mark">?</span>;
+        CONTROLLERS.save(
+            deps.storage,
+            new_controller.clone(),
+            <span class="kw-2">&amp;</span>new_controlled_wallets_id,
+        )<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgUpdateWalletController&quot;</span>)
+            .add_attribute(<span class="string">&quot;proxy_addr&quot;</span>, info.sender)
+            .add_attribute(<span class="string">&quot;new_controller&quot;</span>, new_controller);
+
+        <span class="prelude-val">Ok</span>(Response::new().add_event(event))
+    }
+
+    <span class="kw">pub fn </span>update_guardians(
+        deps: DepsMut,
+        info: MessageInfo,
+        old_guardians: Vec&lt;Addr&gt;,
+        new_guardians: Vec&lt;Addr&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>wallet_id = <span class="number">0</span>;
+
+        <span class="kw">for </span>guardian <span class="kw">in </span>old_guardians {
+            <span class="comment">//  check if old has info.sender
+            </span><span class="kw">let </span><span class="kw-2">mut </span>guardian_wallet_ids = GUARDIANS
+                .may_load(deps.storage, guardian.clone())<span class="question-mark">?
+                </span>.ok_or(ContractError::NotFound {
+                    addr: guardian.clone(),
+                })<span class="question-mark">?</span>;
+
+            <span class="kw">let </span>wallet_index = guardian_wallet_ids
+                .iter()
+                .position(|id| {
+                    <span class="comment">// using `unwrap` as we never remove from WALLETS and id is only stored on CONTROLLERS
+                    // if wallet has been successfully created
+                    </span><span class="kw">let </span>wallet = WALLETS.load(deps.storage, <span class="kw-2">*</span>id).unwrap();
+                    wallet == info.sender.clone()
+                })
+                .ok_or(ContractError::NotFound {
+                    addr: info.sender.clone(),
+                })<span class="question-mark">?</span>;
+
+            wallet_id = guardian_wallet_ids[wallet_index];
+            guardian_wallet_ids.remove(wallet_index);
+
+            <span class="comment">// Save updated wallet list to replace old one
+            </span>GUARDIANS.save(deps.storage, guardian, <span class="kw-2">&amp;</span>guardian_wallet_ids)<span class="question-mark">?</span>;
         }
 
-        <span class="prelude-val">Ok</span>(Response::default())
+        <span class="comment">// Save wallet id to new guardians
+        </span>new_guardians.iter().try_for_each(|g| -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="kw">_</span>&gt; {
+            <span class="kw">let </span><span class="kw-2">mut </span>wallet_ids = GUARDIANS
+                .may_load(deps.storage, g.clone())<span class="question-mark">?
+                </span>.unwrap_or_default();
+            wallet_ids.push(wallet_id);
+            GUARDIANS.save(deps.storage, g.clone(), <span class="kw-2">&amp;</span>wallet_ids)
+        })<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.factory.v1.MsgUpdateGuardians&quot;</span>)
+            .add_attribute(<span class="string">&quot;proxy_addr&quot;</span>, info.sender);
+
+        <span class="prelude-val">Ok</span>(Response::new().add_event(event))
     }
 }
 
 <span class="kw">pub mod </span>factory_queries {
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">use crate</span>::{FeesResponse, UnclaimedWalletList};
-
-    <span class="doccomment">/// Returns wallets with Govec to claim with limit
-    </span><span class="kw">pub fn </span>query_unclaim_wallet_list(
-        deps: Deps,
-        start_after: <span class="prelude-ty">Option</span>&lt;String&gt;,
-        limit: <span class="prelude-ty">Option</span>&lt;u32&gt;,
-    ) -&gt; StdResult&lt;UnclaimedWalletList&gt; {
-        <span class="kw">let </span>limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) <span class="kw">as </span>usize;
-        <span class="kw">let </span>start_bound = start_after
-            .map(|addr_str| deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>addr_str))
-            .transpose()
-            .map(|o| o.map(|b| Bound::exclusive::&lt;Vec&lt;u8&gt;&gt;(b.to_vec())))<span class="question-mark">?</span>;
-        <span class="kw">let </span>wallets: StdResult&lt;Vec&lt;(Addr, Expiration)&gt;&gt; = GOVEC_CLAIM_LIST
-            .prefix(())
-            .range(deps.storage, start_bound, <span class="prelude-val">None</span>, Order::Ascending)
-            .take(limit)
-            .map(|w| -&gt; StdResult&lt;(Addr, Expiration)&gt; {
-                <span class="kw">let </span>ww = w<span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>((deps.api.addr_humanize(<span class="kw-2">&amp;</span>CanonicalAddr::from(ww.<span class="number">0</span>))<span class="question-mark">?</span>, ww.<span class="number">1</span>))
-            })
-            .collect();
-
-        <span class="prelude-val">Ok</span>(UnclaimedWalletList { wallets: wallets<span class="question-mark">? </span>})
-    }
-
-    <span class="doccomment">/// Returns wallets of controller
-    </span><span class="kw">pub fn </span>query_wallet_claim_expiration(
-        deps: Deps,
-        wallet: String,
-    ) -&gt; StdResult&lt;<span class="prelude-ty">Option</span>&lt;Expiration&gt;&gt; {
-        GOVEC_CLAIM_LIST.may_load(deps.storage, deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>wallet)<span class="question-mark">?</span>.to_vec())
-    }
+    <span class="kw">use </span><span class="kw">crate</span>::FeesResponse;
 
     <span class="doccomment">/// Returns the current supported code Id:
     /// - `wallet_proxy`
@@ -866,26 +913,52 @@
     </span><span class="kw">pub fn </span>query_fees(deps: Deps) -&gt; StdResult&lt;FeesResponse&gt; {
         <span class="prelude-val">Ok</span>(FeesResponse {
             wallet_fee: WALLET_FEE.load(deps.storage)<span class="question-mark">?</span>,
-            claim_fee: CLAIM_FEE.load(deps.storage)<span class="question-mark">?</span>,
         })
     }
 
-    <span class="doccomment">/// Returns DAO address
-    </span><span class="kw">pub fn </span>query_dao_addr(deps: Deps) -&gt; StdResult&lt;Addr&gt; {
-        deps.api.addr_humanize(<span class="kw-2">&amp;</span>DAO.load(deps.storage)<span class="question-mark">?</span>)
+    <span class="doccomment">/// Returns Deployer address
+    </span><span class="kw">pub fn </span>query_deployer(deps: Deps) -&gt; StdResult&lt;Addr&gt; {
+        deps.api.addr_humanize(<span class="kw-2">&amp;</span>DEPLOYER.load(deps.storage)<span class="question-mark">?</span>)
     }
 
     <span class="doccomment">/// Return total number of wallets created
     </span><span class="kw">pub fn </span>query_total(deps: Deps) -&gt; StdResult&lt;u64&gt; {
         TOTAL_CREATED.load(deps.storage)
     }
+
+    <span class="doccomment">/// Return all the wallets held by a controller
+    </span><span class="kw">pub fn </span>query_controller_wallets(deps: Deps, controller: Addr) -&gt; StdResult&lt;Vec&lt;Addr&gt;&gt; {
+        <span class="kw">let </span>results = <span class="kw">if let </span><span class="prelude-val">Some</span>(accounts) = CONTROLLERS.may_load(deps.storage, controller)<span class="question-mark">? </span>{
+            accounts
+                .iter()
+                .map(|item| WALLETS.load(deps.storage, <span class="kw-2">*</span>item))
+                .collect::&lt;StdResult&lt;Vec&lt;Addr&gt;&gt;&gt;()<span class="question-mark">?
+        </span>} <span class="kw">else </span>{
+            <span class="macro">vec!</span>[]
+        };
+
+        <span class="prelude-val">Ok</span>(results)
+    }
+
+    <span class="doccomment">/// Return all the wallets has this guardian
+    </span><span class="kw">pub fn </span>query_wallets_with_guardian(deps: Deps, guardian: Addr) -&gt; StdResult&lt;Vec&lt;Addr&gt;&gt; {
+        <span class="kw">let </span>results = <span class="kw">if let </span><span class="prelude-val">Some</span>(accounts) = GUARDIANS.may_load(deps.storage, guardian)<span class="question-mark">? </span>{
+            accounts
+                .iter()
+                .map(|item| WALLETS.load(deps.storage, <span class="kw-2">*</span>item))
+                .collect::&lt;StdResult&lt;Vec&lt;Addr&gt;&gt;&gt;()<span class="question-mark">?
+        </span>} <span class="kw">else </span>{
+            <span class="macro">vec!</span>[]
+        };
+        <span class="prelude-val">Ok</span>(results)
+    }
 }
 
-<span class="doccomment">/// Ensures provided addr is the state stored DAO
-</span><span class="kw">pub fn </span>ensure_is_dao(deps: Deps, sender: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
-    <span class="kw">let </span>dao = DAO.load(deps.storage)<span class="question-mark">?</span>;
+<span class="doccomment">/// Ensures provided addr is the state stored DEPLOYER
+</span><span class="kw">pub fn </span>ensure_is_deployer(deps: Deps, sender: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
+    <span class="kw">let </span>deployer = DEPLOYER.load(deps.storage)<span class="question-mark">?</span>;
     <span class="kw">let </span>caller = deps.api.addr_canonicalize(sender)<span class="question-mark">?</span>;
-    <span class="kw">if </span>caller == dao {
+    <span class="kw">if </span>caller == deployer {
         <span class="prelude-val">Ok</span>(())
     } <span class="kw">else </span>{
         <span class="prelude-val">Err</span>(ContractError::Unauthorized {})
@@ -909,44 +982,30 @@
 </span><span class="kw">pub fn </span>ensure_enough_native_funds(
     fee: <span class="kw-2">&amp;</span>Coin,
     proxy_initial_fund: <span class="kw-2">&amp;</span>[Coin],
-    multisig_initial_fund: <span class="kw-2">&amp;</span>[Coin],
     sent_fund: <span class="kw-2">&amp;</span>[Coin],
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
-    <span class="kw">let </span>init_native_fund = proxy_initial_fund.iter().fold(Uint128::zero(), |acc, c| {
-        <span class="kw">if </span>c.denom == fee.denom {
-            acc + c.amount
-        } <span class="kw">else </span>{
-            acc
-        }
-    });
-
-    <span class="kw">let </span>init_multisig_native_fund = multisig_initial_fund
-        .iter()
-        .fold(Uint128::zero(), |acc, c| {
-            <span class="kw">if </span>c.denom == fee.denom {
-                acc + c.amount
-            } <span class="kw">else </span>{
-                acc
-            }
-        });
-
-    <span class="kw">let </span>total_native_fund_required = fee.amount + init_native_fund + init_multisig_native_fund;
-
-    <span class="kw">let </span>total_sent = sent_fund.iter().fold(Uint128::zero(), |acc, c| {
-        <span class="kw">if </span>c.denom == fee.denom {
-            acc + c.amount
-        } <span class="kw">else </span>{
-            acc
-        }
-    });
-
-    <span class="kw">if </span>total_native_fund_required == total_sent {
-        <span class="prelude-val">Ok</span>(())
+    <span class="kw">let </span>required = <span class="kw">if </span>proxy_initial_fund.is_empty() {
+        <span class="macro">vec!</span>[fee.to_owned()]
     } <span class="kw">else </span>{
+        <span class="comment">// sent_funds should be == fee + proxy_initial_funds
+        </span><span class="kw">let </span><span class="kw-2">mut </span>required_funds = proxy_initial_fund.to_vec();
+
+        <span class="kw">for </span>coin <span class="kw">in </span>required_funds.iter_mut() {
+            <span class="kw">if </span>coin.denom == fee.denom {
+                <span class="kw">let </span>amount = coin.amount + fee.amount;
+                coin.amount = amount
+            }
+        }
+        required_funds
+    };
+
+    <span class="kw">if </span>sent_fund != required {
         <span class="prelude-val">Err</span>(ContractError::InvalidNativeFund(
-            total_native_fund_required,
-            total_sent,
+            <span class="macro">format!</span>(<span class="string">&quot;{required:?}&quot;</span>),
+            <span class="macro">format!</span>(<span class="string">&quot;{sent_fund:?}&quot;</span>),
         ))
+    } <span class="kw">else </span>{
+        <span class="prelude-val">Ok</span>(())
     }
 }
 
@@ -1012,45 +1071,44 @@
     <span class="prelude-val">Ok</span>(tx_msg)
 }
 
-<span class="doccomment">/// Ensure controller has sent in enought funds to cover the claim fee
-</span><span class="kw">pub fn </span>ensure_is_enough_claim_fee(deps: Deps, sent_fund: <span class="kw-2">&amp;</span>[Coin]) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
-    <span class="kw">let </span>claim_fee = CLAIM_FEE.load(deps.storage)<span class="question-mark">?</span>;
+<span class="kw">pub mod </span>factory_reply {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+    <span class="doccomment">/// Ensure controller has sent in enough to cover the fee and the initial proxy balance
+    </span><span class="kw">pub fn </span>handle_create_wallet_reply(
+        deps: DepsMut,
+        _env: Env,
+        reply: Reply,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
+        <span class="kw">let </span>wallet_id = reply.id;
+        <span class="kw">let </span>data = parse_reply_instantiate_data(reply)<span class="question-mark">?
+            </span>.data
+            .ok_or(ContractError::InvalidReplyFromProxy)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>fund = sent_fund
-        .iter()
-        .find(|c| c.denom == claim_fee.denom)
-        .ok_or(ContractError::ClaimFeeRequired)<span class="question-mark">?</span>;
+        <span class="kw">let </span>res: WalletCreateReply = from_binary(<span class="kw-2">&amp;</span>data)<span class="question-mark">?</span>;
 
-    <span class="kw">if </span>fund.amount &lt; claim_fee.amount {
-        <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::InvalidNativeFund(
-            claim_fee.amount,
-            fund.amount,
-        ));
-    }
+        <span class="comment">// Save wallet mapping to state
+        </span>WALLETS.save(deps.storage, wallet_id, <span class="kw-2">&amp;</span>res.proxy_addr)<span class="question-mark">?</span>;
 
-    <span class="prelude-val">Ok</span>(())
-}
+        <span class="comment">// Save controller to wallet mapping to state
+        </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>wallets) = CONTROLLERS.may_load(deps.storage, res.controller.clone())<span class="question-mark">? </span>{
+            wallets.push(wallet_id);
+            CONTROLLERS.save(deps.storage, res.controller, <span class="kw-2">&amp;</span>wallets)<span class="question-mark">?</span>;
+        } <span class="kw">else </span>{
+            CONTROLLERS.save(deps.storage, res.controller, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[wallet_id])<span class="question-mark">?</span>;
+        }
 
-<span class="kw">pub fn </span>handle_proxy_instantion_reply(
-    deps: DepsMut,
-    env: Env,
-    reply: Reply,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    <span class="kw">if let </span><span class="prelude-val">Ok</span>(res) = parse_reply_instantiate_data(reply) {
-        <span class="kw">let </span>wallet_addr: CanonicalAddr = deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>res.contract_address)<span class="question-mark">?</span>;
-        <span class="kw">let </span>expiration = Expiration::AtTime(env.block.time)
-            .add(DAY.mul(GOVEC_CLAIM_DURATION_DAY_MUL))
-            .expect(<span class="string">&quot;error defining activate_at&quot;</span>);
+        <span class="comment">// Save guardian to wallet mapping to state
+        </span><span class="kw">for </span>guardian <span class="kw">in </span>res.guardians {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>wallets) = GUARDIANS.may_load(deps.storage, guardian.clone())<span class="question-mark">? </span>{
+                wallets.push(wallet_id);
+                GUARDIANS.save(deps.storage, guardian, <span class="kw-2">&amp;</span>wallets)<span class="question-mark">?</span>;
+            } <span class="kw">else </span>{
+                GUARDIANS.save(deps.storage, guardian, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[wallet_id])<span class="question-mark">?</span>;
+            }
+        }
 
-        GOVEC_CLAIM_LIST.save(deps.storage, wallet_addr.to_vec(), <span class="kw-2">&amp;</span>expiration)<span class="question-mark">?</span>;
-
-        <span class="kw">let </span>res = Response::new()
-            .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Govec claim list updated&quot;</span>)
-            .add_attribute(<span class="string">&quot;proxy_address&quot;</span>, res.contract_address);
-        <span class="prelude-val">Ok</span>(res)
-    } <span class="kw">else </span>{
-        <span class="prelude-val">Err</span>(ContractError::ProxyInstantiationError {})
+        <span class="prelude-val">Ok</span>(Response::new())
     }
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_wallet" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.2 (9eb3afe9e 2023-03-27)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_wallet" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0 (84c898d65 2023-04-16)" data-search-js="search-8a59a8356673ec1f.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>

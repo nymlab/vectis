@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":[["MINT_DISPATCH_ID",""]],"mod":[["contract",""],["error",""],["ibc",""],["msg",""],["state",""]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":[["BALANCES",""],["LOGO",""],["MARKETING_INFO",""],["MINT_AMOUNT",""],["MINT_CAP",""],["TOKEN_INFO",""]],"struct":[["TokenInfo",""]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["ensure_is_dao","Ensures provided addr is the state stored DAO  "],["execute",""],["execute_ibc_transfer",""],["instantiate",""],["query",""],["query_channels",""],["query_controllers",""],["query_dao",""],["reply",""],["reply_dao_actions",""]]};

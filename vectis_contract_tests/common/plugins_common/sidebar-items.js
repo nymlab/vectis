@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["PluginsSuite","PluginsSuite"]]};
+window.SIDEBAR_ITEMS = {"struct":["PluginsSuite"]};
