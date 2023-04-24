@@ -1,6 +1,46 @@
+use crate::{ProxyAddrErr, RelayTxError};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr};
 use cw_utils::Threshold;
+
+#[cw_serde]
+pub struct Controller {
+    pub addr: CanonicalAddr,
+    pub nonce: Nonce,
+}
+
+impl Controller {
+    /// Increase nonce by 1
+    pub fn increment_nonce(&mut self) {
+        self.nonce += 1;
+    }
+
+    /// Set new controller address
+    pub fn set_address(&mut self, address: CanonicalAddr) {
+        self.addr = address;
+    }
+
+    /// Ensure nonces are equal
+    pub fn ensure_nonces_are_equal(&self, nonce: &Nonce) -> Result<(), RelayTxError> {
+        if self.nonce.eq(nonce) {
+            Ok(())
+        } else {
+            Err(RelayTxError::NoncesAreNotEqual {})
+        }
+    }
+
+    /// Ensure provided address is different from current.
+    pub fn ensure_addresses_are_not_equal(
+        &self,
+        address: &CanonicalAddr,
+    ) -> Result<(), ProxyAddrErr> {
+        if self.addr.ne(address) {
+            Ok(())
+        } else {
+            Err(ProxyAddrErr::AddressesAreEqual {})
+        }
+    }
+}
 
 /// Controller nonce
 pub type Nonce = u64;

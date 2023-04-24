@@ -1,3 +1,4 @@
+use crate::Controller;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::CanonicalAddr;
 use cw_storage_plus::{Item, Map};
@@ -24,3 +25,6 @@ impl std::fmt::Display for VectisActors {
 
 /// Vectis Proxy state for other contract to query it
 pub const QUERY_PLUGINS: Map<&str, CanonicalAddr> = Map::new("query-plugins");
+
+/// Vecits Proxy Controller
+pub const CONTROLLER: Item<Controller> = Item::new("controller");
