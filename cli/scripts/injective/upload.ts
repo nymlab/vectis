@@ -2,11 +2,13 @@ import fs from "fs";
 import { MsgBroadcasterWithPk, MsgStoreCode, PrivateKey } from "@injectivelabs/sdk-ts";
 import { getNetworkEndpoints, Network } from "@injectivelabs/networks";
 import { codePaths } from "../../utils/constants";
-import { injective_testnet } from "../../config/accounts/injective";
+import * as injectiveAccounts from "../../config/accounts/injective";
 import { writeToFile } from "../../utils/fs";
 
 (async function uploadCode() {
-    const { admin } = injective_testnet;
+    const network = process.env.HOST_CHAIN;
+    console.log("Uploading to ", network);
+    const { admin } = injectiveAccounts[network as keyof typeof injectiveAccounts];
     const privateKey = PrivateKey.fromMnemonic(admin.mnemonic);
     const endpoints = getNetworkEndpoints(Network.TestnetK8s);
 
@@ -41,5 +43,5 @@ import { writeToFile } from "../../utils/fs";
         }
     }
 
-    writeToFile("./uploadReport.json", JSON.stringify(codesId, null, 2));
+    writeToFile(`../../deploy/${network}-uploadInfo.json`, JSON.stringify(codesId, null, 2));
 })();
