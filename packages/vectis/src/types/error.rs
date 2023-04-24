@@ -14,6 +14,13 @@ pub enum DeployerItemsQueryError {
     DeployerAddrNotFound,
 }
 
+/// Checks of controller addr
+#[derive(Error, Debug, PartialEq)]
+pub enum ProxyAddrErr {
+    #[error("Address Not Equal")]
+    AddressesAreEqual {},
+}
+
 /// Relay transaction related errors
 #[derive(Error, Debug, PartialEq)]
 pub enum RelayTxError {
