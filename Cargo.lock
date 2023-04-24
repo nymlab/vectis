@@ -1288,7 +1288,7 @@ dependencies = [
 
 [[package]]
 name = "vectis-factory"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -1310,7 +1310,7 @@ dependencies = [
 
 [[package]]
 name = "vectis-plugin-registry"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -1328,7 +1328,7 @@ dependencies = [
 
 [[package]]
 name = "vectis-proxy"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
