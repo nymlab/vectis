@@ -4,7 +4,7 @@ import * as accounts from "../config/accounts";
 import * as chains from "../config/chains";
 import type { Chains } from "../config/chains";
 
-dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config({ path: path.join(__dirname, "../../.env") });
 
 export const hostChainName = (process.env.HOST_CHAIN || "juno_localnet") as Chains;
 export const hostChain = chains[hostChainName as keyof typeof chains];
