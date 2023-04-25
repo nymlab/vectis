@@ -1,4 +1,3 @@
-pub use crate::func::factory::*;
 pub use crate::func::pubkey::*;
 pub use crate::func::query::*;
 pub use crate::func::signature::*;
