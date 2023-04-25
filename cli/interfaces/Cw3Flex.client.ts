@@ -71,7 +71,7 @@ export interface Cw3FlexReadOnlyInterface {
         limit?: number;
         startBefore?: number;
     }) => Promise<ProposalListResponseForEmpty>;
-    queryVote: ({ proposalId, voter }: { proposalId: number; voter: string }) => Promise<VoteResponse>;
+    vote: ({ proposalId, voter }: { proposalId: number; voter: string }) => Promise<VoteResponse>;
     listVotes: ({
         limit,
         proposalId,
@@ -97,7 +97,7 @@ export class Cw3FlexQueryClient implements Cw3FlexReadOnlyInterface {
         this.proposal = this.proposal.bind(this);
         this.listProposals = this.listProposals.bind(this);
         this.reverseProposals = this.reverseProposals.bind(this);
-        this.queryVote = this.queryVote.bind(this);
+        this.vote = this.vote.bind(this);
         this.listVotes = this.listVotes.bind(this);
         this.voter = this.voter.bind(this);
         this.listVoters = this.listVoters.bind(this);
@@ -145,7 +145,7 @@ export class Cw3FlexQueryClient implements Cw3FlexReadOnlyInterface {
             },
         });
     };
-    queryVote = async ({ proposalId, voter }: { proposalId: number; voter: string }): Promise<VoteResponse> => {
+    vote = async ({ proposalId, voter }: { proposalId: number; voter: string }): Promise<VoteResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             vote: {
                 proposal_id: proposalId,

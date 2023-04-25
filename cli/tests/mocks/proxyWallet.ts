@@ -7,6 +7,7 @@ import { CWClient } from "../../clients";
 export async function createTestProxyWallets(factoryClient: FactoryClient): Promise<FactoryT.Addr[]> {
     const initial_funds = walletInitialFunds(hostChain);
     const { wallet_fee } = await factoryClient.fees();
+
     const totalFee: Number = Number(wallet_fee.amount) + Number(initial_funds.amount);
     let walletAddress: string | null;
     let walletMSAddress: string | null;
@@ -30,7 +31,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
 
     walletAddress = CWClient.getContractAddrFromResult(res, "_contract_address");
 
-    await factoryClient.createWallet(
+    res = await factoryClient.createWallet(
         {
             createWalletMsg: {
                 controller_addr: hostAccounts.user.address,
@@ -50,7 +51,11 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
         [coin(totalFee.toString(), hostChain.feeToken) as FactoryT.Coin]
     );
 
-    walletAddress = CWClient.getContractAddrFromResult(res, "_contract_address");
+    walletMSAddress = CWClient.getContractAddrFromEvent(
+        res,
+        "wasm-vectis.proxy.v1.MsgInstantiate",
+        "_contract_address"
+    );
 
     return [walletAddress!, walletMSAddress!];
 }
@@ -85,7 +90,7 @@ export async function createSingleProxyWallet(factoryClient: FactoryClient, chai
         totalFeeToSend
     );
 
-    walletAddress = CWClient.getContractAddrFromResult(res, "_contract_address");
+    walletAddress = CWClient.getContractAddrFromEvent(res, "wasm-vectis.proxy.v1.MsgInstantiate", "_contract_address");
     return walletAddress!;
 }
 
