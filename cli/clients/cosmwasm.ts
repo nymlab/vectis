@@ -93,6 +93,13 @@ class CWClient extends SigningCosmWasmClient {
         return factoryEvent?.value as string;
     }
 
+    static getContractAddrFromEvent(result: ExecuteResult, eventType: string, attr: string): string {
+        let events = result.events;
+        const event = events.find((e) => e.type == eventType);
+        const attribute = event!.attributes.find((ele) => ele.key == attr);
+        return attribute?.value as string;
+    }
+
     static async getSignerWithMnemonic({ addressPrefix }: Chain, mnemonic: string): Promise<DirectSecp256k1HdWallet> {
         return await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
             prefix: addressPrefix,
