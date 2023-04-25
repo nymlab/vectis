@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["create_wallet","migrate_wallet","update_code_id","update_config_fee","update_controller","update_deployer_addr","update_guardians"]};

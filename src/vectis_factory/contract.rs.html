@@ -81,7 +81,6 @@
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
 <a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
 </pre><pre class="rust"><code><span class="attr">#[cfg(not(feature = <span class="string">&quot;library&quot;</span>))]
 </span><span class="kw">use </span>cosmwasm_std::entry_point;
 <span class="kw">use </span>cosmwasm_std::{
@@ -97,8 +96,7 @@
 </span><span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;crates.io:smart-contract-wallet-factory&quot;</span>;
 <span class="kw">const </span>CONTRACT_VERSION: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>);
 
-<span class="kw">use </span>vectis_wallet::factory_queries::<span class="kw-2">*</span>;
-<span class="kw">use </span>vectis_wallet::{factory_execute, factory_instantiate, factory_reply};
+<span class="kw">use </span><span class="kw">crate</span>::factory::{factory_execute, factory_instantiate, factory_queries::<span class="kw-2">*</span>, factory_reply};
 
 <span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;library&quot;</span>), entry_point)]
 </span><span class="kw">pub fn </span>instantiate(

@@ -87,6 +87,13 @@
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
 <a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
 </pre><pre class="rust"><code><span class="attr">#![allow(clippy::derive_partial_eq_without_eq)]
 </span><span class="kw">use </span>cosmwasm_std::{Addr, StdError};
 <span class="kw">use </span>cw_utils::ParseReplyError;
@@ -101,6 +108,13 @@
     </span>ItemNotSet(String),
     <span class="attr">#[error(<span class="string">&quot;Deployer Addr Not Found&quot;</span>)]
     </span>DeployerAddrNotFound,
+}
+
+<span class="doccomment">/// Checks of controller addr
+</span><span class="attr">#[derive(Error, Debug, PartialEq)]
+</span><span class="kw">pub enum </span>ProxyAddrErr {
+    <span class="attr">#[error(<span class="string">&quot;Address Not Equal&quot;</span>)]
+    </span>AddressesAreEqual {},
 }
 
 <span class="doccomment">/// Relay transaction related errors

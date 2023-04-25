@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["query_code_id","query_controller_wallets","query_deployer","query_fees","query_total","query_wallets_with_guardian"]};
