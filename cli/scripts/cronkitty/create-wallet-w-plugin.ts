@@ -1,12 +1,12 @@
-import { CWClient, FactoryClient, ProxyClient } from "../clients";
-import { pluginRegInstallFee } from "../utils/fees";
-import { toCosmosMsg } from "../utils/enconding";
-import { writeInCacheFolder } from "../utils/fs";
-import { hubDeployReportPath, hostChain, hostChainName } from "../utils/constants";
-import { Vote, ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../interfaces/Cw3Flex.types";
-import { FactoryT, ProxyT, CroncatT } from "../interfaces";
-import * as accounts from "../config/accounts";
-import { createSingleProxyWallet } from "../tests/mocks/proxyWallet";
+import { CWClient, FactoryClient, ProxyClient } from "../../clients";
+import { pluginRegInstallFee } from "../../utils/fees";
+import { toCosmosMsg } from "../../utils/enconding";
+import { writeInCacheFolder } from "../../utils/fs";
+import { hubDeployReportPath, hostChain, hostChainName } from "../../utils/constants";
+import { Vote, ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../../interfaces/Cw3Flex.types";
+import { FactoryT, ProxyT, CroncatT } from "../../interfaces";
+import * as accounts from "../../config/accounts";
+import { createSingleProxyWallet } from "../../tests/mocks/proxyWallet";
 
 const croncat_factory_addr = "juno124vcmqsukhmuy6psm45a2tdg5354rnemdetqhjt72ynju666gf0qpxmlxz";
 const plugin_id = 1;
@@ -37,7 +37,6 @@ const plugin_id = 1;
 
     let fees = pluginRegInstallFee(hostChain).amount == "0" ? undefined : [pluginRegInstallFee(hostChain)];
     let result = await userClient.execute(userClient.sender, walletAddr, installPlugin, "auto", undefined, fees);
-    console.log("RESULT: ", result);
 
     const proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
     let plugins = await proxyClient.plugins();

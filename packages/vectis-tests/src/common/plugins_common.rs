@@ -100,11 +100,10 @@ impl PluginsSuite {
         sender: &Addr,
         id: u64,
         code_id: Option<u64>,
-        name: Option<String>,
         creator: Option<String>,
         ipfs_hash: Option<String>,
         checksum: Option<String>,
-        version: Option<String>,
+        version: String,
     ) -> Result<(), PRegistryContractError> {
         self.hub
             .app
@@ -115,7 +114,6 @@ impl PluginsSuite {
                     id,
                     code_id,
                     creator,
-                    name,
                     ipfs_hash,
                     checksum,
                     version,
@@ -164,6 +162,16 @@ impl PluginsSuite {
 
     pub fn query_plugin(&self, id: u64) -> StdResult<Option<Plugin>> {
         let msg = PRegistryQueryMsg::GetPluginById { id };
+        self.hub
+            .app
+            .wrap()
+            .query_wasm_smart(self.hub.plugin_registry.clone(), &msg)
+    }
+
+    pub fn query_metadata_link(&self, addr: &Addr) -> StdResult<Option<String>> {
+        let msg = PRegistryQueryMsg::QueryMetadataLink {
+            contract_addr: addr.to_string(),
+        };
         self.hub
             .app
             .wrap()

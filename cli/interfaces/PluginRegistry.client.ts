@@ -20,7 +20,9 @@ import {
     NullablePlugin,
     CanonicalAddr,
     Plugin,
+    VersionDetails,
     PluginsResponse,
+    NullableString,
 } from "./PluginRegistry.types";
 export interface PluginRegistryReadOnlyInterface {
     contractAddress: string;
@@ -28,6 +30,7 @@ export interface PluginRegistryReadOnlyInterface {
     getPlugins: ({ limit, startAfter }: { limit?: number; startAfter?: number }) => Promise<PluginsResponse>;
     getPluginById: ({ id }: { id: number }) => Promise<NullablePlugin>;
     getFees: () => Promise<Fees>;
+    queryMetadataLink: ({ contractAddr }: { contractAddr: string }) => Promise<NullableString>;
 }
 export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterface {
     client: CosmWasmClient;
@@ -40,6 +43,7 @@ export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterfac
         this.getPlugins = this.getPlugins.bind(this);
         this.getPluginById = this.getPluginById.bind(this);
         this.getFees = this.getFees.bind(this);
+        this.queryMetadataLink = this.queryMetadataLink.bind(this);
     }
 
     getConfig = async (): Promise<ConfigResponse> => {
@@ -65,6 +69,13 @@ export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterfac
     getFees = async (): Promise<Fees> => {
         return this.client.queryContractSmart(this.contractAddress, {
             get_fees: {},
+        });
+    };
+    queryMetadataLink = async ({ contractAddr }: { contractAddr: string }): Promise<NullableString> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            query_metadata_link: {
+                contract_addr: contractAddr,
+            },
         });
     };
 }
@@ -120,7 +131,6 @@ export interface PluginRegistryInterface extends PluginRegistryReadOnlyInterface
             creator,
             id,
             ipfsHash,
-            name,
             version,
         }: {
             checksum?: string;
@@ -128,8 +138,7 @@ export interface PluginRegistryInterface extends PluginRegistryReadOnlyInterface
             creator?: string;
             id: number;
             ipfsHash?: string;
-            name?: string;
-            version?: string;
+            version: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -268,7 +277,6 @@ export class PluginRegistryClient extends PluginRegistryQueryClient implements P
             creator,
             id,
             ipfsHash,
-            name,
             version,
         }: {
             checksum?: string;
@@ -276,8 +284,7 @@ export class PluginRegistryClient extends PluginRegistryQueryClient implements P
             creator?: string;
             id: number;
             ipfsHash?: string;
-            name?: string;
-            version?: string;
+            version: string;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -293,7 +300,6 @@ export class PluginRegistryClient extends PluginRegistryQueryClient implements P
                     creator,
                     id,
                     ipfs_hash: ipfsHash,
-                    name,
                     version,
                 },
             },
