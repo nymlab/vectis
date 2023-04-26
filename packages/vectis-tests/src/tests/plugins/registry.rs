@@ -51,8 +51,7 @@ fn no_reviewer_cannot_update_plugins() {
             None,
             None,
             None,
-            None,
-            None,
+            "v-new-version".into(),
         )
         .unwrap_err();
 
@@ -141,6 +140,30 @@ fn reviewer_should_be_able_to_unregister_plugins() {
 }
 
 #[test]
+fn query_ipfs_hash() {
+    let mut suite = PluginsSuite::init().unwrap();
+
+    suite
+        .register_plugin(
+            &suite.hub.plugin_committee.clone(),
+            0,
+            "vectis-factory".into(),
+            "some-hash".into(),
+            suite.proxy.to_string(),
+            "some-checksome".into(),
+            "0.2.0".into(),
+            &coins(REGISTRY_FEE, DENOM),
+        )
+        .unwrap();
+
+    let link = suite
+        .query_metadata_link(&suite.hub.factory)
+        .unwrap()
+        .unwrap();
+    assert_eq!(link, "some-hash")
+}
+
+#[test]
 fn reviewer_should_be_able_to_update_plugins() {
     let mut suite = PluginsSuite::init().unwrap();
 
@@ -154,7 +177,6 @@ fn reviewer_should_be_able_to_update_plugins() {
     let plugin = suite.query_plugin(1).unwrap().unwrap();
 
     let new_code_id = 2;
-    let new_name = "super_cool_plugin";
     let new_creator = "creator";
     let new_ipfs_hash = "new_ipfs_hash";
     let new_checksum = "new_checksum";
@@ -165,27 +187,29 @@ fn reviewer_should_be_able_to_update_plugins() {
             &suite.hub.plugin_committee.clone(),
             plugin.id,
             Some(new_code_id),
-            Some(new_name.to_string()),
             Some(new_creator.to_string()),
             Some(new_ipfs_hash.to_string()),
             Some(new_checksum.to_string()),
-            Some(new_version.to_string()),
+            new_version.to_string(),
         )
         .unwrap();
 
     let plugin_after = suite.query_plugin(1).unwrap().unwrap();
 
-    assert_ne!(plugin.code_id, new_code_id);
-    assert_ne!(plugin.name, new_name);
-    assert_ne!(plugin.ipfs_hash, new_ipfs_hash);
-    assert_ne!(plugin.checksum, new_checksum);
-    assert_ne!(plugin.version, new_version);
+    let plugin_version_details = plugin.versions.get(&plugin.latest_version).unwrap();
+    assert_ne!(plugin_version_details.ipfs_hash, new_ipfs_hash);
+    assert_ne!(plugin_version_details.checksum, new_checksum);
+    assert_ne!(plugin_version_details.code_id, new_code_id);
+    assert_ne!(plugin.latest_version, new_version);
 
-    assert_eq!(plugin_after.code_id, new_code_id);
-    assert_eq!(plugin_after.name, new_name);
-    assert_eq!(plugin_after.ipfs_hash, new_ipfs_hash);
-    assert_eq!(plugin_after.checksum, new_checksum);
-    assert_eq!(plugin_after.version, new_version);
+    let new_plugin_version_details = plugin_after
+        .versions
+        .get(&plugin_after.latest_version)
+        .unwrap();
+    assert_eq!(new_plugin_version_details.code_id, new_code_id);
+    assert_eq!(new_plugin_version_details.ipfs_hash, new_ipfs_hash);
+    assert_eq!(new_plugin_version_details.checksum, new_checksum);
+    assert_eq!(plugin_after.latest_version, new_version);
 }
 
 #[test]

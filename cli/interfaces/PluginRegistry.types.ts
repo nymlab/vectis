@@ -48,8 +48,7 @@ export type ExecMsg =
               creator?: string | null;
               id: number;
               ipfs_hash?: string | null;
-              name?: string | null;
-              version?: string | null;
+              version: string;
               [k: string]: unknown;
           };
       }
@@ -90,6 +89,12 @@ export type QueryMsg1 =
           get_fees: {
               [k: string]: unknown;
           };
+      }
+    | {
+          query_metadata_link: {
+              contract_addr: string;
+              [k: string]: unknown;
+          };
       };
 export interface ConfigResponse {
     deployer_addr: string;
@@ -102,15 +107,21 @@ export interface Fees {
 export type NullablePlugin = Plugin | null;
 export type CanonicalAddr = Binary;
 export interface Plugin {
-    checksum: string;
-    code_id: number;
     creator: CanonicalAddr;
     id: number;
-    ipfs_hash: string;
+    latest_version: string;
     name: string;
-    version: string;
+    versions: {
+        [k: string]: VersionDetails;
+    };
+}
+export interface VersionDetails {
+    checksum: string;
+    code_id: number;
+    ipfs_hash: string;
 }
 export interface PluginsResponse {
     plugins: Plugin[];
     total: number;
 }
+export type NullableString = string | null;

@@ -1,18 +1,18 @@
-import { CWClient, Cw3FlexClient, PluginRegClient } from "../clients";
-import { pluginRegRegistryFee } from "../utils/fees";
-import { toCosmosMsg } from "../utils/enconding";
-import { writeInCacheFolder } from "../utils/fs";
-import { hubDeployReportPath, hostChain } from "../utils/constants";
-import { ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../interfaces/Cw3Flex.types";
-import { ExecuteMsg as PluginRegistryExecMsg } from "../interfaces/PluginRegistry.types";
+import { CWClient, Cw3FlexClient, PluginRegClient } from "../../clients";
+import { pluginRegRegistryFee } from "../../utils/fees";
+import { toCosmosMsg } from "../../utils/enconding";
+import { writeInCacheFolder } from "../../utils/fs";
+import { hubDeployReportPath, hostChain } from "../../utils/constants";
+import { ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../../interfaces/Cw3Flex.types";
+import { ExecuteMsg as PluginRegistryExecMsg } from "../../interfaces/PluginRegistry.types";
 
 // Uni-6
 const checksum = "d5fe0daac6794324fef16580e8a595e1a2f70572696e4d5d92b9b7645bbf4286";
-const code_id = 1685;
+const code_id = 7;
 const creator = "juno1dfd5vtxy2ty5gqqv0cs2z23pfucnpym9kcq8vv";
-const ipfs_hash = "n/a";
-const name = "Cronkitty";
-const version = "0.1";
+const ipfs_hash = "test-hash";
+const name = "cronkitty";
+const version = "0.1.0";
 
 (async function add_plugin() {
     const { PluginCommitteeGroup, PluginCommittee, PluginRegistry } = await import(hubDeployReportPath);

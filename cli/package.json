@@ -1,7 +1,7 @@
 {
     "name": "vectis-cli",
     "version": "0.2.0",
-    "license": "Apache 2.0",
+    "license": "see LICENSE",
     "authors": [
         "bwty <whalelephant@users.noreply.github.com>",
         "giovanni-orciuolo <giovanni@orciuolo.it>",
@@ -9,7 +9,7 @@
     ],
     "description": "CLI tool for Vectis smart contract wallet",
     "scripts": {
-        "dev": "npm run upload && npm run test-deploy",
+        "dev": "npm run upload && npm run deploy:hub && npm run test",
         "test": "jest host.factory.spec.ts --runInBand && jest host.proxy.spec.ts --runInBand",
         "upload": "ts-node scripts/upload.ts",
         "types:build": "tsc --project tsconfig.types.json",
@@ -18,9 +18,8 @@
         "types:version": "npm --prefix ./types version",
         "prettier": "prettier --write \"**/*.{js,ts}\"",
         "deploy:hub": "ts-node scripts/deploy-hub.ts",
-        "deploy:remote": "ts-node scripts/deploy-remote.ts",
-        "plugin:register": "ts-node scripts/add-plugin-to-reg.ts",
-        "plugin:install": "ts-node scripts/create-wallet-w-plugin.ts"
+        "cronkitty:register": "ts-node scripts/cronkitty/add-plugin-to-reg.ts",
+        "cronkitty:install": "ts-node scripts/cronkitty/create-wallet-w-plugin.ts"
     },
     "devDependencies": {
         "@confio/relayer": "^0.7.0",
