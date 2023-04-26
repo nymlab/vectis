@@ -55,23 +55,15 @@ export const downloadSchemaPath = path.join(cachePath, "/schemas");
 
 // Deploy output paths
 export const hubUploadReportPath = path.join(
-    process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
+    process.env.HOST_CHAIN == undefined || "juno_localnet" ? cachePath : deployPath,
     `${process.env.HOST_CHAIN}-uploadInfo.json`
 );
-export const remoteUploadReportPath = path.join(
-    process.env.REMOTE_CHAIN == "wasm_localnet" ? cachePath : deployPath,
-    `${process.env.REMOTE_CHAIN}-uploadInfo.json`
-);
 export const hubDeployReportPath = path.join(
-    process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
+    process.env.HOST_CHAIN == undefined || "juno_localnet" ? cachePath : deployPath,
     `${process.env.HOST_CHAIN}-deployInfo.json`
 );
-export const remoteDeployReportPath = path.join(
-    process.env.REMOTE_CHAIN == "wasm_localnet" ? cachePath : deployPath,
-    `${process.env.REMOTE_CHAIN}-deployInfo.json`
-);
 export const ibcReportPath = path.join(
-    process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
+    process.env.HOST_CHAIN == undefined || "juno_localnet" ? cachePath : deployPath,
     "ibcInfo.json"
 );
 

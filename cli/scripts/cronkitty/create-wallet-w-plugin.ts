@@ -12,15 +12,13 @@ const croncat_factory_addr = "juno124vcmqsukhmuy6psm45a2tdg5354rnemdetqhjt72ynju
 const plugin_id = 1;
 
 (async function create_wallet_with_plugin() {
-    const { Factory } = await import(hubDeployReportPath);
+    const { Factory, PluginRegistry } = await import(hubDeployReportPath);
 
     const userClient = await CWClient.connectHostWithAccount("user");
 
     //// Create Vectis Account
     const factoryClient = new FactoryClient(userClient, userClient.sender, Factory);
     let walletAddr = await createSingleProxyWallet(factoryClient, "host");
-    //let walletAddr = "juno1v9x0cy3ma0m3kazgj9w2agj565rqqnwwtq2kc63mmlj6vjvgf2cqlckq05";
-    console.log("WalletAddr: ", walletAddr);
 
     let cronkittyInstMsg = { croncat_factory_addr: croncat_factory_addr, vectis_account_addr: walletAddr };
     // Install Cronkitty on Vectis Account
@@ -41,9 +39,13 @@ const plugin_id = 1;
     const proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
     let plugins = await proxyClient.plugins();
     let cronkittyAddr = plugins.exec_plugins.pop();
+    console.log("Vectis Account: ", walletAddr);
+    console.log("CronKitty Addr: ", cronkittyAddr);
 
-    console.log("WalletAddr: ", walletAddr);
-    console.log("PluginAddr: ", cronkittyAddr);
+    let ipfs_hash = await userClient.queryContractSmart(PluginRegistry, {
+        query_metadata_link: { contract_addr: cronkittyAddr },
+    });
+    console.log("ipfs_hash: ", ipfs_hash);
 
     if (hostChainName != "juno_localnet") {
         // Create Task on Cronkitty
