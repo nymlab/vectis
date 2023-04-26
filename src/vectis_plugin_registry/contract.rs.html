@@ -446,8 +446,59 @@
 <a href="#446" id="446">446</a>
 <a href="#447" id="447">447</a>
 <a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+<a href="#496" id="496">496</a>
+<a href="#497" id="497">497</a>
+<a href="#498" id="498">498</a>
+<a href="#499" id="499">499</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::cw_serde;
-<span class="kw">use </span>cw2::set_contract_version;
+<span class="kw">use </span>cw2::{set_contract_version, ContractVersion};
 <span class="kw">use </span>cw_storage_plus::{Bound, Item, Map};
 <span class="kw">use </span>sylvia::{contract, schemars};
 
@@ -458,6 +509,7 @@
 
 <span class="kw">use </span>vectis_wallet::{get_items_from_deployer, VectisActors, DEFAULT_LIMIT, DEPLOYER, MAX_LIMIT};
 
+<span class="kw">pub use </span><span class="kw">crate</span>::plugin::Plugin;
 <span class="kw">use crate</span>::{
     error::ContractError,
     responses::{ConfigResponse, PluginsResponse},
@@ -474,21 +526,24 @@
 }
 
 <span class="attr">#[cw_serde]
-</span><span class="kw">pub struct </span>Plugin {
-    <span class="kw">pub </span>id: u64,
-    <span class="kw">pub </span>name: String,
-    <span class="kw">pub </span>creator: CanonicalAddr,
-    <span class="kw">pub </span>ipfs_hash: String,
-    <span class="kw">pub </span>version: String,
-    <span class="kw">pub </span>code_id: u64,
-    <span class="kw">pub </span>checksum: String,
+</span><span class="kw">pub struct </span>VersionDetails {
+    <span class="doccomment">/// Uploaded Plugin code id
+    </span><span class="kw">pub </span>code_id: u64,
+    <span class="doccomment">/// Should be checked upon instantiation
+    </span><span class="kw">pub </span>checksum: String,
+    <span class="doccomment">/// Useful for storing display data
+    </span><span class="kw">pub </span>ipfs_hash: String,
 }
 
 <span class="kw">pub struct </span>PluginRegistry&lt;<span class="lifetime">&#39;a</span>&gt; {
     <span class="kw">pub</span>(<span class="kw">crate</span>) total_plugins: Item&lt;<span class="lifetime">&#39;a</span>, u64&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) registry_fee: Item&lt;<span class="lifetime">&#39;a</span>, Coin&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) plugins: Map&lt;<span class="lifetime">&#39;a</span>, u64, Plugin&gt;,
+    <span class="doccomment">/// This allows easy look up from the contract to the correct plugin id
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) versioned_plugins: Map&lt;<span class="lifetime">&#39;a</span>, String, u64&gt;,
     <span class="kw">pub </span>install_fee: Item&lt;<span class="lifetime">&#39;a</span>, Coin&gt;,
+    <span class="doccomment">/// Use for querying plugins for their versions
+    </span><span class="kw">pub </span>plugin_contract_state: Item&lt;<span class="lifetime">&#39;a</span>, ContractVersion&gt;,
 }
 
 <span class="attr">#[contract]
@@ -498,7 +553,9 @@
             total_plugins: Item::new(<span class="string">&quot;total_plugins&quot;</span>),
             registry_fee: Item::new(<span class="string">&quot;registry_fee&quot;</span>),
             plugins: Map::new(<span class="string">&quot;plugins&quot;</span>),
+            versioned_plugins: Map::new(<span class="string">&quot;versioned_plugins&quot;</span>),
             install_fee: Item::new(<span class="string">&quot;install_fee&quot;</span>),
+            plugin_contract_state: Item::new(<span class="string">&quot;contract_info&quot;</span>),
         }
     }
 
@@ -531,13 +588,14 @@
         //     return Err(ContractError::ChecksumVerificationFailed);
         // }
 
-        </span><span class="kw">let </span>sub_msg = SubMsg::reply_always(
+        </span><span class="kw">let </span>plugin_version_details = plugin.get_latest_version_details()<span class="question-mark">?</span>;
+        <span class="kw">let </span>sub_msg = SubMsg::reply_always(
             WasmMsg::Instantiate {
                 admin: <span class="prelude-val">Some</span>(info.sender.to_string()),
-                code_id: plugin.code_id,
+                code_id: plugin_version_details.code_id,
                 msg: instantiate_msg,
                 funds: validated_funds,
-                label: <span class="macro">format!</span>(<span class="string">&quot;{}-{}&quot;</span>, plugin.name, plugin.version),
+                label: <span class="self">self</span>.make_versioned_key(<span class="kw-2">&amp;</span>plugin.name, <span class="kw-2">&amp;</span>plugin.latest_version),
             },
             INSTALL_REPLY,
         );
@@ -644,16 +702,21 @@
                 <span class="prelude-val">Ok</span>(total.checked_add(<span class="number">1</span>).expect(<span class="string">&quot;overflow&quot;</span>))
             })<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>plugin = Plugin {
+        <span class="comment">// Save to versioned_plugins map
+        </span><span class="self">self</span>.versioned_plugins
+            .save(deps.storage, <span class="self">self</span>.make_versioned_key(<span class="kw-2">&amp;</span>name, <span class="kw-2">&amp;</span>version), <span class="kw-2">&amp;</span>id)<span class="question-mark">?</span>;
+
+        <span class="comment">// Save to Plugins
+        </span><span class="kw">let </span>plugin = Plugin::new(
+            deps.as_ref(),
             id,
             name,
-            creator: deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>creator)<span class="question-mark">?</span>,
+            creator,
             ipfs_hash,
             version,
             code_id,
             checksum,
-        };
-
+        )<span class="question-mark">?</span>;
         <span class="self">self</span>.plugins.save(deps.storage, id, <span class="kw-2">&amp;</span>plugin)<span class="question-mark">?</span>;
 
         <span class="comment">// Send funds to the Deployer if required
@@ -691,7 +754,9 @@
                 <span class="prelude-val">Ok</span>(total.checked_sub(<span class="number">1</span>).expect(<span class="string">&quot;underflow&quot;</span>))
             })<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgUnregisterPlugin&quot;</span>)
+        <span class="comment">// TODO: for all versions, remove from `self.versioned.plugins`
+
+        </span><span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgUnregisterPlugin&quot;</span>)
             .add_attribute(<span class="string">&quot;plugin_id&quot;</span>, id.to_string());
 
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
@@ -703,9 +768,8 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         ctx: (DepsMut, Env, MessageInfo),
         id: u64,
-        name: <span class="prelude-ty">Option</span>&lt;String&gt;,
         creator: <span class="prelude-ty">Option</span>&lt;String&gt;,
-        version: <span class="prelude-ty">Option</span>&lt;String&gt;,
+        version: String,
         ipfs_hash: <span class="prelude-ty">Option</span>&lt;String&gt;,
         code_id: <span class="prelude-ty">Option</span>&lt;u64&gt;,
         checksum: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -715,30 +779,43 @@
         <span class="comment">// Check if the caller is a reviewer
         </span><span class="self">self</span>.ensure_is_reviewer(deps.as_ref(), info.sender.as_str())<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>plugin = <span class="self">self
-            </span>.plugins
-            .update(deps.storage, id, |plugin| -&gt; StdResult&lt;Plugin&gt; {
-                <span class="kw">let </span>p = plugin.unwrap();
-                <span class="prelude-val">Ok</span>(Plugin {
-                    id,
-                    name: name.unwrap_or(p.name),
-                    creator: <span class="kw">if </span>creator.is_some() {
-                        deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>creator.unwrap())<span class="question-mark">?
-                    </span>} <span class="kw">else </span>{
-                        p.creator
-                    },
-                    ipfs_hash: ipfs_hash.unwrap_or(p.ipfs_hash),
-                    version: version.unwrap_or(p.version),
-                    code_id: code_id.unwrap_or(p.code_id),
-                    checksum: checksum.unwrap_or(p.checksum),
-                })
-            })<span class="question-mark">?</span>;
+        <span class="comment">// Checks if there is existing version
+        </span><span class="kw">let </span><span class="kw-2">mut </span>plugin = <span class="self">self</span>.plugins.load(deps.storage, id)<span class="question-mark">?</span>;
+        <span class="kw">let </span>current_version = plugin.get_latest_version_details()<span class="question-mark">?</span>;
+        <span class="kw">if </span>plugin.versions.contains_key(<span class="kw-2">&amp;</span>version) {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::VersionExists(version));
+        }
+
+        <span class="comment">// Create a plugin instance with new updates
+        </span>plugin.creator = <span class="kw">if </span>creator.is_some() {
+            deps.api.addr_canonicalize(<span class="kw-2">&amp;</span>creator.unwrap())<span class="question-mark">?
+        </span>} <span class="kw">else </span>{
+            plugin.creator
+        };
+        plugin.latest_version = version.clone();
+        <span class="kw">let </span>version_details = VersionDetails {
+            code_id: code_id.unwrap_or(current_version.code_id),
+            checksum: checksum.unwrap_or(current_version.checksum),
+            ipfs_hash: ipfs_hash.unwrap_or(current_version.ipfs_hash),
+        };
+        plugin.versions.insert(version, version_details);
+
+        <span class="comment">// replace the plugin in storage for the given id
+        </span><span class="self">self</span>.plugins.save(deps.storage, id, <span class="kw-2">&amp;</span>plugin)<span class="question-mark">?</span>;
+
+        <span class="comment">// Add this version to the versioned_plugins
+        </span><span class="kw">let </span>key = <span class="self">self</span>.make_versioned_key(<span class="kw-2">&amp;</span>plugin.name, <span class="kw-2">&amp;</span>plugin.latest_version);
+        <span class="self">self</span>.versioned_plugins.save(deps.storage, key, <span class="kw-2">&amp;</span>id)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgUpdatePlugin&quot;</span>)
             .add_attribute(<span class="string">&quot;id&quot;</span>, id.to_string())
             .add_attribute(<span class="string">&quot;plugin&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{plugin:?}&quot;</span>));
 
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
+    }
+
+    <span class="kw">fn </span>make_versioned_key(<span class="kw-2">&amp;</span><span class="self">self</span>, name: <span class="kw-2">&amp;</span>str, version: <span class="kw-2">&amp;</span>str) -&gt; String {
+        <span class="macro">format!</span>(<span class="string">&quot;{name}/{version}&quot;</span>)
     }
 
     <span class="attr">#[msg(exec)]
@@ -836,6 +913,31 @@
         <span class="kw">let </span>install = <span class="self">self</span>.install_fee.load(deps.storage)<span class="question-mark">?</span>;
         <span class="kw">let </span>registry = <span class="self">self</span>.registry_fee.load(deps.storage)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(Fees { install, registry })
+    }
+
+    <span class="doccomment">/// This helps to do all the neccessary queries to allow called to know the ipfs_hash
+    </span><span class="attr">#[msg(query)]
+    </span><span class="kw">fn </span>query_metadata_link(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        ctx: (Deps, Env),
+        contract_addr: String,
+    ) -&gt; StdResult&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt; {
+        <span class="kw">let </span>(deps, ..) = ctx;
+
+        <span class="comment">// NOTE: This is NOT trusted information, we still need to check code_hash and code_id
+        </span><span class="kw">let </span>contract_info = <span class="self">self
+            </span>.plugin_contract_state
+            .query(<span class="kw-2">&amp;</span>deps.querier, deps.api.addr_validate(<span class="kw-2">&amp;</span>contract_addr)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>plugin_id = <span class="self">self</span>.versioned_plugins.load(
+            deps.storage,
+            <span class="self">self</span>.make_versioned_key(<span class="kw-2">&amp;</span>contract_info.contract, <span class="kw-2">&amp;</span>contract_info.version),
+        )<span class="question-mark">?</span>;
+        <span class="kw">let </span>plugin = <span class="self">self</span>.plugins.load(deps.storage, plugin_id)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(plugin
+            .versions
+            .get(<span class="kw-2">&amp;</span>contract_info.version)
+            .map(|details| details.ipfs_hash.to_string()))
     }
 }
 

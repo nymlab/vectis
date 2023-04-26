@@ -93,7 +93,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 <span class="comment">// version info for migration info
-</span><span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;crates.io:smart-contract-wallet-factory&quot;</span>;
+</span><span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>);
 <span class="kw">const </span>CONTRACT_VERSION: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>);
 
 <span class="kw">use </span><span class="kw">crate</span>::factory::{factory_execute, factory_instantiate, factory_queries::<span class="kw-2">*</span>, factory_reply};

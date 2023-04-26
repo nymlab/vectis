@@ -287,7 +287,7 @@
 </span><span class="kw">use </span>vectis_wallet::ProxyMigrateMsg;
 
 <span class="comment">// version info for migration info
-</span><span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;crates.io:vectis-proxy&quot;</span>;
+</span><span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>);
 <span class="kw">const </span>CONTRACT_VERSION: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>);
 
 <span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;library&quot;</span>), entry_point)]
