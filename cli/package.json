@@ -12,6 +12,8 @@
         "dev": "npm run upload && npm run deploy:hub && npm run test",
         "test": "jest host.factory.spec.ts --runInBand && jest host.proxy.spec.ts --runInBand",
         "upload": "ts-node scripts/upload.ts",
+        "upload-injective": "ts-node scripts/injective/upload.ts",
+        "deploy-injective": "ts-node scripts/injective/deploy-hub.ts",
         "types:build": "tsc --project tsconfig.types.json",
         "types:generate": "ts-node scripts/types.ts && npm run prettier",
         "types:publish": "npm run --prefix ./types publish:prod",
