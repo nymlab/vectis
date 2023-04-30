@@ -84,7 +84,7 @@ const addItem = async (
     const endpoints = getNetworkEndpoints(Network.TestnetK8s);
 
     const { factoryCodeId, proxyCodeId, cw3FixedCodeId, pluginRegCodeId, cw4GroupCodeId, cw3FlexCodeId } =
-        (await import("./uploadReport.json")) as CodeIds;
+        (await import("./../../deploy/injective_testnet-uploadInfo.json")) as CodeIds;
 
     // Admin will be removed at the end of the deploy
     const { admin } = injectiveAccounts[network as keyof typeof injectiveAccounts];
@@ -376,8 +376,6 @@ const addItem = async (
     await addItem(comittee1Client, committee1.address, vectisCommittee, VectisActors.PluginRegistry, pluginRegAddr, 4);
     await addItem(comittee1Client, committee1.address, vectisCommittee, VectisActors.PluginCommittee, techCommittee, 5);
 
-    console.log("\n5. Set dao_tunnel and committee address in DAO items");
-
     const contracts = {
         // These are the same as DaoActors
         PluginCommittee: techCommittee,
@@ -390,4 +388,67 @@ const addItem = async (
 
     console.log("\n Contracts on Chain: ", contracts);
     writeToFile(`../../deploy/${network}-deployInfo.json`, JSON.stringify(contracts, null, 2));
+
+    // ===================================================================================
+    //
+    // Add identity plugin to the registry = code-id = 998 on injective-testnet
+    //
+    // ===================================================================================
+
+    // Identity Plugin
+    const checksum = "d5fe0daac6794324fef16580e8a595e1a2f70572696e4d5d92b9b7645bbf4286";
+    const code_id = 998;
+    const creator = "inj1dr5u7sxpmmckrvj0cc9he6sdl8qnje9wlplajv";
+    const ipfs_hash = "test-ipfs-hash";
+    const name = "Avida Identity Plugin";
+    const version = "0.1.0";
+    const regMsg = MsgExecuteContract.fromJSON({
+        contractAddress: techCommittee,
+        sender: committee1.address,
+        msg: {
+            propose: {
+                description: "Add AVIDA plugin",
+                msgs: [
+                    {
+                        wasm: {
+                            execute: {
+                                contract_addr: pluginRegAddr,
+                                funds: [],
+                                msg: toCosmosMsg({
+                                    register_plugin: {
+                                        checksum,
+                                        code_id,
+                                        creator,
+                                        ipfs_hash,
+                                        name,
+                                        version,
+                                    },
+                                }),
+                            },
+                        },
+                    },
+                ],
+                title: "Add avida identity plugin",
+            },
+        },
+    });
+
+    let proposal_tx = await comittee1Client.broadcast({ injectiveAddress: committee1.address, msgs: [regMsg] });
+    const regExecuteMsg = MsgExecuteContract.fromJSON({
+        contractAddress: techCommittee,
+        sender: committee1.address,
+        msg: {
+            execute: {
+                proposal_id: 1,
+            },
+        },
+    });
+
+    let execute_tx = await comittee1Client.broadcast({
+        msgs: regExecuteMsg,
+        injectiveAddress: committee1.address,
+    });
+
+    console.log(" Proposal tx: ", JSON.stringify(execute_tx));
+    writeToFile(`../../deploy/${network}-IdentityPlugin.json`, JSON.stringify(execute_tx, null, 2));
 })();
