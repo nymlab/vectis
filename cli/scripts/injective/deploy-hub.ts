@@ -254,7 +254,7 @@ const addItem = async (
         proxy_code_id: proxyCodeId,
         proxy_multisig_code_id: cw3FixedCodeId,
         addr_prefix: "inj",
-        wallet_fee: { amount: "0", denom: "inj" },
+        wallet_fee: { amount: "10", denom: "inj" },
     };
     const deployFactoryMsg = {
         wasm: {
@@ -310,7 +310,7 @@ const addItem = async (
 
     // Vectis Committee deploy plugin registry
     const pluginRegInstMsg = {
-        install_fee: { amount: "0", denom: "inj" },
+        install_fee: { amount: "10", denom: "inj" },
         registry_fee: { amount: "0", denom: "inj" },
     };
 
@@ -387,7 +387,7 @@ const addItem = async (
     };
 
     console.log("\n Contracts on Chain: ", contracts);
-    writeToFile(`../../deploy/${network}-deployInfo.json`, JSON.stringify(contracts, null, 2));
+    writeToFile(`./deploy/${network}-deployInfo.json`, JSON.stringify(contracts, null, 2));
 
     // ===================================================================================
     //
@@ -397,7 +397,7 @@ const addItem = async (
 
     // Identity Plugin
     const checksum = "d5fe0daac6794324fef16580e8a595e1a2f70572696e4d5d92b9b7645bbf4286";
-    const code_id = 998;
+    const code_id = 1139;
     const creator = "inj1dr5u7sxpmmckrvj0cc9he6sdl8qnje9wlplajv";
     const ipfs_hash = "test-ipfs-hash";
     const name = "Avida Identity Plugin";

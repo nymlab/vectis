@@ -70,7 +70,7 @@ fn no_deployer_cannot_update_registry_fee() {
 }
 
 #[test]
-fn not_deployter_cannot_update_deployer_addr() {
+fn not_deployer_cannot_update_deployer_addr() {
     let mut suite = PluginsSuite::init().unwrap();
 
     let err = suite
