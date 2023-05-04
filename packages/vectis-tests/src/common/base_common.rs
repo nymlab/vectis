@@ -194,6 +194,7 @@ impl HubChainSuite {
     ) -> Result<Addr> {
         let g1 = Addr::unchecked(GUARD1);
         let g2 = Addr::unchecked(GUARD2);
+
         self._create_new_proxy(
             controller,
             self.factory.clone(),
@@ -228,14 +229,13 @@ impl HubChainSuite {
 
         let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
 
+        let fees = vec![];
+        if native_tokens_amount != 0u128 {
+            fees.push(coin(native_tokens_amount, DENOM))
+        };
         let res = self
             .app
-            .execute_contract(
-                controller,
-                factory,
-                &execute,
-                &[coin(native_tokens_amount, DENOM)],
-            )
+            .execute_contract(controller, factory, &execute, &fees)
             .map_err(|err| anyhow!(err))?;
 
         let wasm_events: Vec<Event> = res
