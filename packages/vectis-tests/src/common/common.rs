@@ -59,9 +59,12 @@ pub use vectis_wallet::{
 /// https://github.com/CosmWasm/cosmwasm/blob/32f308a1a56ae5b8278947891306f7a374c3df94/packages/vm/src/environment.rs#L383
 pub const DENOM: &str = "TOKEN";
 pub const MINT_AMOUNT: u128 = 2u128;
-pub const WALLET_FEE: u128 = 0u128;
-pub const REGISTRY_FEE: u128 = 0u128;
-pub const INSTALL_FEE: u128 = 0u128;
+pub const WALLET_FEE: u128 = 10u128;
+pub const REGISTRY_FEE: u128 = 10u128;
+pub const INSTALL_FEE: u128 = 10u128;
+pub const ZERO_WALLET_FEE: u128 = 0u128;
+pub const ZERO_REGISTRY_FEE: u128 = 0u128;
+pub const ZERO_INSTALL_FEE: u128 = 0u128;
 pub const MINTER_CAP: u128 = 10000;
 pub const CONTROLLER_PRIV: &[u8; 32] = &[
     239, 236, 251, 133, 8, 71, 212, 110, 21, 151, 36, 77, 3, 214, 164, 195, 116, 229, 169, 120,

@@ -1,14 +1,15 @@
 use cosmwasm_std::coins;
+use vectis_contract_tests::common::base_common::HubChainSuite;
 use vectis_contract_tests::common::common::*;
-use vectis_contract_tests::common::plugins_common::*;
+use vectis_contract_tests::common::plugins::*;
 
 #[test]
 fn cannot_register_plugins_without_fee() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
     let funds = &[];
 
     let err = suite
-        .register_plugin_mocked(&suite.hub.controller.clone(), funds)
+        .register_plugin_mocked(&suite.controller.clone(), funds)
         .unwrap_err();
 
     assert_eq!(
@@ -19,10 +20,10 @@ fn cannot_register_plugins_without_fee() {
 
 #[test]
 fn no_reviewer_cannot_register_plugins() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let err = suite
-        .register_plugin_mocked(&suite.hub.controller.clone(), &[coin(REGISTRY_FEE, DENOM)])
+        .register_plugin_mocked(&suite.controller.clone(), &[coin(REGISTRY_FEE, DENOM)])
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -30,10 +31,10 @@ fn no_reviewer_cannot_register_plugins() {
 
 #[test]
 fn no_reviewer_cannot_unregister_plugins() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let err = suite
-        .unregister_plugin(&suite.hub.controller.clone(), 1)
+        .unregister_plugin(&suite.controller.clone(), 1)
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -41,11 +42,11 @@ fn no_reviewer_cannot_unregister_plugins() {
 
 #[test]
 fn no_reviewer_cannot_update_plugins() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let err = suite
         .update_plugin(
-            &suite.hub.controller.clone(),
+            &suite.controller.clone(),
             1,
             None,
             None,
@@ -60,10 +61,10 @@ fn no_reviewer_cannot_update_plugins() {
 
 #[test]
 fn no_deployer_cannot_update_registry_fee() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let err = suite
-        .update_registry_fee(&suite.hub.controller.clone(), coin(100_000, DENOM))
+        .update_registry_fee(&suite.controller.clone(), coin(100_000, DENOM))
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -71,10 +72,10 @@ fn no_deployer_cannot_update_registry_fee() {
 
 #[test]
 fn not_deployer_cannot_update_deployer_addr() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let err = suite
-        .update_deployer_addr(&suite.hub.controller.clone(), "test")
+        .update_deployer_addr(&suite.controller.clone(), "test")
         .unwrap_err();
 
     assert_eq!(err, PRegistryContractError::Unauthorized);
@@ -82,25 +83,16 @@ fn not_deployer_cannot_update_deployer_addr() {
 
 #[test]
 fn reviewer_should_be_able_to_register_plugins() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
-    let deployer_previous_balance = suite
-        .hub
-        .query_balance(&suite.hub.deployer.clone())
-        .unwrap();
+    let deployer_previous_balance = suite.query_balance(&suite.deployer.clone()).unwrap();
 
     suite
-        .register_plugin_mocked(
-            &suite.hub.plugin_committee.clone(),
-            &coins(REGISTRY_FEE, DENOM),
-        )
+        .register_plugin_mocked(&suite.plugin_committee.clone(), &coins(REGISTRY_FEE, DENOM))
         .unwrap();
 
-    let deployer_current_balance = suite
-        .hub
-        .query_balance(&suite.hub.deployer.clone())
-        .unwrap();
-    let resp = suite.query_plugins(None, None).unwrap();
+    let deployer_current_balance = suite.query_balance(&suite.deployer.clone()).unwrap();
+    let resp = suite.query_registered_plugins(None, None).unwrap();
 
     // check there is a plugin
     assert_eq!(resp.total, 1);
@@ -117,61 +109,52 @@ fn reviewer_should_be_able_to_register_plugins() {
 
 #[test]
 fn reviewer_should_be_able_to_unregister_plugins() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     suite
-        .register_plugin_mocked(
-            &suite.hub.plugin_committee.clone(),
-            &coins(REGISTRY_FEE, DENOM),
-        )
+        .register_plugin_mocked(&suite.plugin_committee.clone(), &coins(REGISTRY_FEE, DENOM))
         .unwrap();
 
-    let resp = suite.query_plugins(None, None).unwrap();
+    let resp = suite.query_registered_plugins(None, None).unwrap();
 
     assert_eq!(resp.total, 1);
 
     suite
-        .unregister_plugin(&suite.hub.plugin_committee.clone(), 1)
+        .unregister_plugin(&suite.plugin_committee.clone(), 1)
         .unwrap();
 
-    let resp = suite.query_plugins(None, None).unwrap();
+    let resp = suite.query_registered_plugins(None, None).unwrap();
 
     assert_eq!(resp.total, 0);
 }
 
 #[test]
 fn query_ipfs_hash() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     suite
         .register_plugin(
-            &suite.hub.plugin_committee.clone(),
+            &suite.plugin_committee.clone(),
             0,
             "vectis-factory".into(),
             "some-hash".into(),
-            suite.proxy.to_string(),
+            suite.deployer.to_string(),
             "some-checksome".into(),
             "0.2.0".into(),
             &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
 
-    let link = suite
-        .query_metadata_link(&suite.hub.factory)
-        .unwrap()
-        .unwrap();
+    let link = suite.query_metadata_link(&suite.factory).unwrap().unwrap();
     assert_eq!(link, "some-hash")
 }
 
 #[test]
 fn reviewer_should_be_able_to_update_plugins() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     suite
-        .register_plugin_mocked(
-            &suite.hub.plugin_committee.clone(),
-            &coins(REGISTRY_FEE, DENOM),
-        )
+        .register_plugin_mocked(&suite.plugin_committee.clone(), &coins(REGISTRY_FEE, DENOM))
         .unwrap();
 
     let plugin = suite.query_plugin(1).unwrap().unwrap();
@@ -184,7 +167,7 @@ fn reviewer_should_be_able_to_update_plugins() {
 
     suite
         .update_plugin(
-            &suite.hub.plugin_committee.clone(),
+            &suite.plugin_committee.clone(),
             plugin.id,
             Some(new_code_id),
             Some(new_creator.to_string()),
@@ -214,12 +197,12 @@ fn reviewer_should_be_able_to_update_plugins() {
 
 #[test]
 fn deployer_should_be_able_to_update_registry_fee() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let new_registry_fee = coin(100_000, DENOM);
 
     suite
-        .update_registry_fee(&suite.hub.deployer.clone(), new_registry_fee.clone())
+        .update_registry_fee(&suite.deployer.clone(), new_registry_fee.clone())
         .unwrap();
 
     let config = suite.query_config().unwrap();
@@ -229,12 +212,12 @@ fn deployer_should_be_able_to_update_registry_fee() {
 
 #[test]
 fn deployer_should_be_able_to_update_deployer_addr() {
-    let mut suite = PluginsSuite::init().unwrap();
+    let mut suite = HubChainSuite::init().unwrap();
 
     let new_deployer_addr = "new_deployer_addr";
 
     suite
-        .update_deployer_addr(&suite.hub.deployer.clone(), new_deployer_addr)
+        .update_deployer_addr(&suite.deployer.clone(), new_deployer_addr)
         .unwrap();
 
     let config = suite.query_config().unwrap();
