@@ -30,7 +30,6 @@ impl HubChainSuite {
     /// Instantiate factory contract with
     /// - no initial funds on the factory
     /// - default WALLET_FEE
-    ///
     pub fn init() -> Result<HubChainSuite> {
         let genesis_funds = vec![coin(10_000_000_000_000, DENOM)];
         let deployer_signer = Addr::unchecked("signer");
@@ -229,7 +228,7 @@ impl HubChainSuite {
 
         let execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
 
-        let fees = vec![];
+        let mut fees = vec![];
         if native_tokens_amount != 0u128 {
             fees.push(coin(native_tokens_amount, DENOM))
         };
