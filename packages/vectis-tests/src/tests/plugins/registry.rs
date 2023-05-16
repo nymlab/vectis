@@ -14,7 +14,7 @@ fn cannot_register_plugins_without_fee() {
 
     assert_eq!(
         err,
-        PRegistryContractError::InsufficientFee(Uint128::new(REGISTRY_FEE), Uint128::zero())
+        PRegistryContractError::IncorrectFees(coin(REGISTRY_FEE, DENOM))
     );
 }
 
