@@ -554,6 +554,10 @@
 <a href="#554" id="554">554</a>
 <a href="#555" id="555">555</a>
 <a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
+<a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
     Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
@@ -985,7 +989,11 @@
     sent_fund: <span class="kw-2">&amp;</span>[Coin],
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), ContractError&gt; {
     <span class="kw">let </span>required = <span class="kw">if </span>proxy_initial_fund.is_empty() {
-        <span class="macro">vec!</span>[fee.to_owned()]
+        <span class="kw">if </span>fee.amount != Uint128::zero() {
+            <span class="macro">vec!</span>[fee.to_owned()]
+        } <span class="kw">else </span>{
+            <span class="macro">vec!</span>[]
+        }
     } <span class="kw">else </span>{
         <span class="comment">// sent_funds should be == fee + proxy_initial_funds
         </span><span class="kw">let </span><span class="kw-2">mut </span>required_funds = proxy_initial_fund.to_vec();

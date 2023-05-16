@@ -125,7 +125,6 @@
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
 <a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
 </pre><pre class="rust"><code><span class="kw">pub use </span>anyhow::{anyhow, <span class="prelude-ty">Result</span>};
 <span class="kw">pub use </span>cosmwasm_std::testing::mock_dependencies;
 <span class="kw">pub use </span>cosmwasm_std::{
@@ -187,10 +186,9 @@
 /// https://github.com/CosmWasm/cosmwasm/blob/32f308a1a56ae5b8278947891306f7a374c3df94/packages/vm/src/environment.rs#L383
 </span><span class="kw">pub const </span>DENOM: <span class="kw-2">&amp;</span>str = <span class="string">&quot;TOKEN&quot;</span>;
 <span class="kw">pub const </span>MINT_AMOUNT: u128 = <span class="number">2u128</span>;
-<span class="kw">pub const </span>WALLET_FEE: u128 = <span class="number">10u128</span>;
-<span class="kw">pub const </span>REGISTRY_FEE: u128 = <span class="number">100u128</span>;
-<span class="kw">pub const </span>INSTALL_FEE: u128 = <span class="number">50u128</span>;
-<span class="kw">pub const </span>CLAIM_FEE: u128 = <span class="number">10u128</span>;
+<span class="kw">pub const </span>WALLET_FEE: u128 = <span class="number">0u128</span>;
+<span class="kw">pub const </span>REGISTRY_FEE: u128 = <span class="number">0u128</span>;
+<span class="kw">pub const </span>INSTALL_FEE: u128 = <span class="number">0u128</span>;
 <span class="kw">pub const </span>MINTER_CAP: u128 = <span class="number">10000</span>;
 <span class="kw">pub const </span>CONTROLLER_PRIV: <span class="kw-2">&amp;</span>[u8; <span class="number">32</span>] = <span class="kw-2">&amp;</span>[
     <span class="number">239</span>, <span class="number">236</span>, <span class="number">251</span>, <span class="number">133</span>, <span class="number">8</span>, <span class="number">71</span>, <span class="number">212</span>, <span class="number">110</span>, <span class="number">21</span>, <span class="number">151</span>, <span class="number">36</span>, <span class="number">77</span>, <span class="number">3</span>, <span class="number">214</span>, <span class="number">164</span>, <span class="number">195</span>, <span class="number">116</span>, <span class="number">229</span>, <span class="number">169</span>, <span class="number">120</span>,

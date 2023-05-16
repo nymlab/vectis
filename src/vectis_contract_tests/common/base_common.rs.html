@@ -652,6 +652,7 @@
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Addr&gt; {
         <span class="kw">let </span>g1 = Addr::unchecked(GUARD1);
         <span class="kw">let </span>g2 = Addr::unchecked(GUARD2);
+
         <span class="self">self</span>._create_new_proxy(
             controller,
             <span class="self">self</span>.factory.clone(),
@@ -686,14 +687,13 @@
 
         <span class="kw">let </span>execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
 
+        <span class="kw">let </span>fees = <span class="macro">vec!</span>[];
+        <span class="kw">if </span>native_tokens_amount != <span class="number">0u128 </span>{
+            fees.push(coin(native_tokens_amount, DENOM))
+        };
         <span class="kw">let </span>res = <span class="self">self
             </span>.app
-            .execute_contract(
-                controller,
-                factory,
-                <span class="kw-2">&amp;</span>execute,
-                <span class="kw-2">&amp;</span>[coin(native_tokens_amount, DENOM)],
-            )
+            .execute_contract(controller, factory, <span class="kw-2">&amp;</span>execute, <span class="kw-2">&amp;</span>fees)
             .map_err(|err| <span class="macro">anyhow!</span>(err))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>wasm_events: Vec&lt;Event&gt; = res

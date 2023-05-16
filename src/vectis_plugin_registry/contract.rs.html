@@ -497,6 +497,7 @@
 <a href="#497" id="497">497</a>
 <a href="#498" id="498">498</a>
 <a href="#499" id="499">499</a>
+<a href="#500" id="500">500</a>
 </pre><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::cw_serde;
 <span class="kw">use </span>cw2::{set_contract_version, ContractVersion};
 <span class="kw">use </span>cw_storage_plus::{Bound, Item, Map};
@@ -729,10 +730,11 @@
                 amount: <span class="macro">vec!</span>[registry_fee],
             });
             <span class="prelude-val">Ok</span>(Response::new()
-                .add_event(Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgInstantiate&quot;</span>))
+                .add_event(Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgPluginRegistered&quot;</span>))
                 .add_message(msg))
         } <span class="kw">else </span>{
-            <span class="prelude-val">Ok</span>(Response::new().add_event(Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgInstantiate&quot;</span>)))
+            <span class="prelude-val">Ok</span>(Response::new()
+                .add_event(Event::new(<span class="string">&quot;vectis.plugin_registry.v1.MsgPluginRegistered&quot;</span>)))
         }
     }
 
