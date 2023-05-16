@@ -17,11 +17,11 @@ fn controller_can_update_proxy_multisig_with_direct_message() {
     };
 
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             Addr::unchecked(CONTROLLER_ADDR),
             vec![init_proxy_fund.clone()],
             Some(multisig.clone()),
-            WALLET_FEE + init_proxy_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -92,7 +92,11 @@ fn controller_can_update_proxy_multisig_with_direct_message() {
 fn proxy_without_multisig_can_instantiate_new_multisig_guardian() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy_without_guardians(
+            Addr::unchecked(CONTROLLER_ADDR),
+            vec![],
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -130,11 +134,11 @@ fn controller_can_remove_multisig_for_guardians() {
     };
 
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             Addr::unchecked(CONTROLLER_ADDR),
             vec![],
             Some(multisig),
-            WALLET_FEE,
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -167,11 +171,11 @@ fn relayer_can_update_proxy_multisig_with_controller_signature() {
     };
 
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             Addr::unchecked(CONTROLLER_ADDR),
             vec![],
             Some(multisig.clone()),
-            WALLET_FEE,
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -231,13 +235,13 @@ fn relayer_can_update_proxy_multisig_with_controller_signature() {
 fn non_controller_update_proxy_multisig_fails() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             Addr::unchecked(CONTROLLER_ADDR),
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
             }),
-            WALLET_FEE,
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -261,7 +265,12 @@ fn non_controller_update_proxy_multisig_fails() {
 fn relayer_update_proxy_multisig_with_non_controller_fails() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy_with_default_guardians(
+            Addr::unchecked(CONTROLLER_ADDR),
+            vec![],
+            None,
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
