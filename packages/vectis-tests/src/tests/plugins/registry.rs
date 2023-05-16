@@ -71,6 +71,32 @@ fn no_deployer_cannot_update_registry_fee() {
 }
 
 #[test]
+fn can_update_registry_fees_to_zero_registration_fee_works() {
+    let mut suite = HubChainSuite::init().unwrap();
+
+    suite
+        .update_registry_fee(&suite.deployer.clone(), coin(0, DENOM))
+        .unwrap();
+
+    suite
+        .register_plugin_mocked(&suite.plugin_committee.clone(), &[])
+        .unwrap();
+
+    let resp = suite.query_registered_plugins(None, None).unwrap();
+
+    // check there is a plugin
+    assert_eq!(resp.total, 1);
+}
+
+#[test]
+fn can_update_install_fees() {
+    let mut suite = HubChainSuite::init().unwrap();
+
+    suite
+        .update_install_fee(&suite.deployer.clone(), coin(0, DENOM))
+        .unwrap();
+}
+#[test]
 fn not_deployer_cannot_update_deployer_addr() {
     let mut suite = HubChainSuite::init().unwrap();
 

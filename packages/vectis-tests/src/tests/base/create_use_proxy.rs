@@ -18,11 +18,11 @@ fn create_new_proxy() {
     let init_deployer_fund = suite.query_balance(&suite.deployer).unwrap();
 
     let wallet_addr = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             suite.controller.clone(),
             vec![init_wallet_fund.clone()],
             None,
-            WALLET_FEE + init_wallet_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -59,11 +59,11 @@ fn create_new_proxy() {
 #[test]
 #[should_panic]
 fn cannot_create_new_proxy_without_payment() {
-    let no_wallet_fee = 0u128;
+    let no_wallet_fee = coin(0u128, DENOM);
 
     let mut suite = HubChainSuite::init().unwrap();
     suite
-        .create_new_proxy(suite.controller.clone(), vec![], None, no_wallet_fee)
+        .create_new_proxy_without_guardians(suite.controller.clone(), vec![], no_wallet_fee)
         .unwrap();
 }
 
@@ -73,10 +73,8 @@ fn create_new_proxy_without_guardians() {
     suite
         .create_new_proxy_without_guardians(
             suite.controller.clone(),
-            suite.factory.clone(),
             vec![],
-            None,
-            WALLET_FEE,
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 }
@@ -88,10 +86,8 @@ fn controller_can_rotate_keys() {
     let wallet_address = suite
         .create_new_proxy_without_guardians(
             suite.controller.clone(),
-            suite.factory.clone(),
             vec![],
-            None,
-            WALLET_FEE,
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -138,11 +134,12 @@ fn cannot_create_new_proxy_with_multisig_and_without_guardians_fails() {
     };
 
     let rsp: ContractError = suite
-        .create_new_proxy_without_guardians(
+        .create_new_proxy(
             suite.controller.clone(),
             suite.factory.clone(),
             vec![],
             Some(multisig),
+            vec![],
             10,
         )
         .unwrap_err()
@@ -160,11 +157,11 @@ fn controller_can_execute_messages() {
     let mut suite = HubChainSuite::init().unwrap();
     let init_wallet_fund: Coin = coin(100, DENOM);
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             suite.controller.clone(),
             vec![init_wallet_fund.clone()],
             None,
-            WALLET_FEE + init_wallet_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -199,13 +196,13 @@ fn create_new_proxy_with_multisig_guardians_can_freeze_wallet() {
     let mut suite = HubChainSuite::init().unwrap();
 
     let wallet_addr = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             suite.controller.clone(),
             vec![],
             Some(MultiSig {
                 threshold_absolute_count: MULTISIG_THRESHOLD,
             }),
-            WALLET_FEE,
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 

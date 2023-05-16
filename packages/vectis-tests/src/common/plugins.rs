@@ -111,6 +111,22 @@ impl HubChainSuite {
             .map(|_| ())
     }
 
+    pub fn update_install_fee(
+        &mut self,
+        sender: &Addr,
+        new_fee: Coin,
+    ) -> Result<(), PRegistryContractError> {
+        self.app
+            .execute_contract(
+                sender.clone(),
+                self.plugin_registry.clone(),
+                &PRegistryExecMsg::UpdateInstallFee { new_fee },
+                &[],
+            )
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
     pub fn update_deployer_addr(
         &mut self,
         sender: &Addr,

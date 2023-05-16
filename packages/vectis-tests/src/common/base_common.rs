@@ -165,46 +165,64 @@ impl HubChainSuite {
     pub fn create_new_proxy_without_guardians(
         &mut self,
         controller: Addr,
-        factory: Addr,
-        proxy_initial_fund: Vec<Coin>,
-        guardians_multisig: Option<MultiSig>,
-        // This is both the initial proxy wallet initial balance
-        // and the fee for wallet creation
-        native_tokens_amount: u128,
+        proxy_initial_funds: Vec<Coin>,
+        wallet_fee: Coin,
     ) -> Result<Addr> {
-        self._create_new_proxy(
+        let native_tokens_amount = proxy_initial_funds
+            .iter()
+            .find(|c| c.denom == wallet_fee.denom)
+            .map(|c| c.amount + wallet_fee.amount)
+            .unwrap_or(wallet_fee.amount);
+
+        self.create_new_proxy(
             controller,
-            factory,
-            proxy_initial_fund,
-            guardians_multisig,
+            self.factory.clone(),
+            proxy_initial_funds,
+            None,
             vec![],
-            native_tokens_amount,
+            native_tokens_amount.u128(),
         )
     }
 
-    pub fn create_new_proxy(
+    pub fn update_wallet_fee(&mut self, deployer: Addr, new_fee: Coin) -> Result<AppResponse> {
+        self.app.execute_contract(
+            deployer,
+            self.factory.clone(),
+            &FactoryExecuteMsg::UpdateConfigFee {
+                ty: vectis_wallet::FeeType::Wallet,
+                new_fee,
+            },
+            &[],
+        )
+    }
+
+    pub fn create_new_proxy_with_default_guardians(
         &mut self,
         controller: Addr,
         proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
-        // This is both the initial proxy wallet initial balance
-        // and the fee for wallet creation
-        native_tokens_amount: u128,
+        wallet_fee: Coin,
     ) -> Result<Addr> {
         let g1 = Addr::unchecked(GUARD1);
         let g2 = Addr::unchecked(GUARD2);
 
-        self._create_new_proxy(
+        let native_tokens_amount = proxy_initial_funds
+            .iter()
+            .find(|c| c.denom == wallet_fee.denom)
+            .map(|c| c.amount + wallet_fee.amount)
+            .unwrap_or(wallet_fee.amount);
+
+        self.create_new_proxy(
             controller,
             self.factory.clone(),
             proxy_initial_funds,
             guardians_multisig,
             vec![g1, g2],
-            native_tokens_amount,
+            native_tokens_amount.u128(),
         )
     }
 
-    fn _create_new_proxy(
+    pub fn create_new_proxy(
         &mut self,
         controller: Addr,
         factory: Addr,

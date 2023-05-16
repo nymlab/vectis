@@ -10,11 +10,11 @@ fn controller_can_migrate_proxy_with_direct_message() {
     let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_with_default_guardians(
             suite.controller.clone(),
             vec![init_proxy_fund.clone()],
             None,
-            WALLET_FEE + init_proxy_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -79,7 +79,12 @@ fn controller_can_migrate_proxy_with_direct_message() {
 fn relayer_can_migrate_proxy_with_controller_signature() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy_with_default_guardians(
+            suite.controller.clone(),
+            vec![],
+            None,
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -118,7 +123,11 @@ fn relayer_can_migrate_proxy_with_controller_signature() {
 fn controller_cannot_migrate_others_wallet() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(suite.controller.clone(), vec![], None, WALLET_FEE)
+        .create_new_proxy_without_guardians(
+            suite.controller.clone(),
+            vec![],
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -163,7 +172,11 @@ fn controller_cannot_migrate_others_wallet() {
 fn controller_cannot_migrate_with_mismatched_code_id() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy_without_guardians(
+            Addr::unchecked(CONTROLLER_ADDR),
+            vec![],
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -210,7 +223,11 @@ fn controller_cannot_migrate_with_mismatched_code_id() {
 fn controller_cannot_migrate_with_invalid_wasm_msg() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy_without_guardians(
+            Addr::unchecked(CONTROLLER_ADDR),
+            vec![],
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -248,7 +265,11 @@ fn controller_cannot_migrate_with_invalid_wasm_msg() {
 fn relayer_cannot_migrate_others_wallet() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy_without_guardians(
+            Addr::unchecked(CONTROLLER_ADDR),
+            vec![],
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -287,7 +308,11 @@ fn relayer_cannot_migrate_others_wallet() {
 fn relayer_cannot_migrate_proxy_with_mismatch_controller_addr() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy_without_guardians(
+            Addr::unchecked(CONTROLLER_ADDR),
+            vec![],
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -329,7 +354,11 @@ fn relayer_cannot_migrate_proxy_with_mismatch_controller_addr() {
 fn relayer_cannot_migrate_proxy_with_invalid_signature() {
     let mut suite = HubChainSuite::init().unwrap();
     let wallet_address = suite
-        .create_new_proxy(Addr::unchecked(CONTROLLER_ADDR), vec![], None, WALLET_FEE)
+        .create_new_proxy_without_guardians(
+            Addr::unchecked(CONTROLLER_ADDR),
+            vec![],
+            coin(WALLET_FEE, DENOM),
+        )
         .unwrap();
 
     let mut w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();

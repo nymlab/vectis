@@ -10,11 +10,10 @@ fn relay_proxy_controller_tx_succeeds() {
     let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_without_guardians(
             suite.controller.clone(),
             vec![init_proxy_fund.clone()],
-            None,
-            WALLET_FEE + init_proxy_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -52,11 +51,10 @@ fn relay_proxy_controller_tx_invalid_msg_fails() {
     let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_without_guardians(
             suite.controller.clone(),
             vec![init_proxy_fund.clone()],
-            None,
-            WALLET_FEE + init_proxy_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
 
@@ -104,11 +102,10 @@ fn relay_proxy_controller_tx_invalid_relayer_fails() {
     let mut suite = HubChainSuite::init().unwrap();
     let init_proxy_fund: Coin = coin(90, DENOM);
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_without_guardians(
             suite.controller.clone(),
             vec![init_proxy_fund.clone()],
-            None,
-            WALLET_FEE + init_proxy_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
@@ -144,11 +141,10 @@ fn relay_proxy_controller_tx_is_not_controller_fails() {
 
     // Creates a wallet held by the DAO
     let wallet_address = suite
-        .create_new_proxy(
+        .create_new_proxy_without_guardians(
             suite.controller.clone(),
             vec![init_proxy_fund.clone()],
-            None,
-            WALLET_FEE + init_proxy_fund.amount.u128(),
+            coin(WALLET_FEE, DENOM),
         )
         .unwrap();
     let w: WalletInfo = suite.query_wallet_info(&wallet_address).unwrap();
