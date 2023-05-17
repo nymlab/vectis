@@ -80,6 +80,9 @@ pub const PROP_APPROVER: &str = "approver";
 pub const GUARD1: &str = "guardian1";
 pub const GUARD2: &str = "guardian2";
 pub const GUARD3: &str = "guardian3";
+
+pub const VECTIS_VERSION: &str = "0.2.1";
+
 pub fn contract_factory() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(factory_execute, factory_instantiate, factory_query)
         .with_reply(factory_reply);

@@ -166,7 +166,7 @@ fn query_ipfs_hash() {
             "some-hash".into(),
             suite.deployer.to_string(),
             "some-checksome".into(),
-            "0.2.0".into(),
+            VECTIS_VERSION.into(),
             &coins(REGISTRY_FEE, DENOM),
         )
         .unwrap();
