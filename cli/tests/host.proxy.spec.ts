@@ -7,7 +7,7 @@ import { coin } from "@cosmjs/stargate";
 import { hubDeployReportPath, hostAccounts, hostChain } from "../utils/constants";
 import { createTestProxyWallets } from "./mocks/proxyWallet";
 import { CWClient } from "../clients";
-import { getDefaultRelayFee, getDefaultSendFee, getDefaultUploadFee } from "../utils/fees";
+import { getDefaultRelayFee, getDefaultSendFee, getDefaultUploadFee, walletInitialFunds } from "../utils/fees";
 import { ProxyClient } from "../interfaces";
 import { ProxyClient as ProxyHostClient } from "../clients";
 import { randomAddress } from "@confio/relayer/build/lib/helpers";
@@ -66,6 +66,8 @@ describe("Proxy Suite: ", () => {
         expect(info.is_frozen).toEqual(false);
         expect(info.multisig_address).toBeFalsy();
         expect(info.nonce).toEqual(0);
+        const walletBalanceBefore = await hostClient.getBalance(proxyWalletAddress, hostChain.feeToken);
+        expect(walletBalanceBefore.amount).toEqual(walletInitialFunds(hostChain).amount);
     });
 
     it("should be able to add or remove a relayer", async () => {
