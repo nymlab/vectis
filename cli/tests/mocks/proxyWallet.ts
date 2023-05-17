@@ -5,10 +5,11 @@ import { getDefaultWalletCreationFee, walletInitialFunds } from "../../utils/fee
 import { CWClient } from "../../clients";
 
 export async function createTestProxyWallets(factoryClient: FactoryClient): Promise<FactoryT.Addr[]> {
-    const initial_funds = walletInitialFunds(hostChain);
     const { wallet_fee } = await factoryClient.fees();
 
-    const totalFee: Number = Number(wallet_fee.amount) + Number(initial_funds.amount);
+    const proxy_initial_funds = walletInitialFunds(hostChain).amount == "0" ? [] : [walletInitialFunds(hostChain)];
+    const totalFee: Number = Number(wallet_fee.amount) + Number(walletInitialFunds(hostChain).amount);
+    let funds = totalFee == 0 ? undefined : [coin(totalFee.toString(), hostChain.feeToken) as FactoryT.Coin];
     let walletAddress: string | null;
     let walletMSAddress: string | null;
 
@@ -20,13 +21,13 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                     addresses: [hostAccounts.guardian_1.address, hostAccounts.guardian_2.address],
                 },
                 relayers: [hostAccounts.relayer_1.address, hostAccounts.relayer_2.address],
-                proxy_initial_funds: [initial_funds as FactoryT.Coin],
+                proxy_initial_funds,
                 label: "wallet",
             },
         },
         getDefaultWalletCreationFee(hostChain),
         undefined,
-        [coin(totalFee.toString(), hostChain.feeToken) as FactoryT.Coin]
+        funds
     );
 
     walletAddress = CWClient.getContractAddrFromResult(res, "_contract_address");
@@ -42,13 +43,13 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                     },
                 },
                 relayers: [hostAccounts.relayer_1.address, hostAccounts.relayer_2.address],
-                proxy_initial_funds: [initial_funds as FactoryT.Coin],
+                proxy_initial_funds,
                 label: "cronkitty test 1",
             },
         },
         getDefaultWalletCreationFee(hostChain),
         undefined,
-        [coin(totalFee.toString(), hostChain.feeToken) as FactoryT.Coin]
+        funds
     );
 
     walletMSAddress = CWClient.getContractAddrFromEvent(
@@ -63,12 +64,13 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
 export async function createSingleProxyWallet(factoryClient: FactoryClient, chain: string): Promise<FactoryT.Addr> {
     const accounts = chain == "host" ? hostAccounts : remoteAccounts;
     const chains = chain == "host" ? hostChain : remoteChain;
-    const initialFunds = walletInitialFunds(chains).amount == "0" ? [] : [walletInitialFunds(chains) as FactoryT.Coin];
+    const proxy_initial_funds =
+        walletInitialFunds(chains).amount == "0" ? [] : [walletInitialFunds(chains) as FactoryT.Coin];
     const { wallet_fee } = await factoryClient.fees();
-    const totalFee: Number = initialFunds.length == 1 ? Number(initialFunds[0].amount) + Number(wallet_fee.amount) : 0;
+    const totalFee: Number = Number(wallet_fee.amount) + Number(walletInitialFunds(hostChain).amount);
     let totalFeeToSend = totalFee == 0 ? undefined : [coin(totalFee.toString(), chains.feeToken) as FactoryT.Coin];
 
-    console.log("initial funds: ", initialFunds);
+    console.log("initial funds: ", proxy_initial_funds);
     console.log("total fees: ", totalFeeToSend);
 
     let walletAddress: string | null;
@@ -81,7 +83,7 @@ export async function createSingleProxyWallet(factoryClient: FactoryClient, chai
                     addresses: [accounts.guardian_1.address, accounts.guardian_2.address],
                 },
                 relayers: [accounts.relayer_1.address, accounts.relayer_2.address],
-                proxy_initial_funds: initialFunds,
+                proxy_initial_funds,
                 label: "wallet",
             },
         },
