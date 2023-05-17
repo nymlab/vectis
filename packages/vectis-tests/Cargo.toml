@@ -1,9 +1,13 @@
 [package]
 name = "vectis-contract-tests"
-version = "0.1.0"
-authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>"]
+version = "0.2.1"
+authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>", "j0nl1 <j0nl1@gmail.com>"]
 edition = "2021"
-publish = false
+license-file = "LICENSE"
+keywords = ["cosmwasm", "account-abstraction", "smart-contract-wallet", "vectis", "cosmos"] 
+repository = "https://github.com/nymlab/vectis"
+description = "Vectis test package for multitest, useful for plugins"
+
 
 [[test]]
 name = "multi-contracts-integration-tests"
@@ -35,5 +39,5 @@ serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 sha2 = "0.9"
 secp256k1 = {version = "0.20", features = ["bitcoin_hashes"]}
 derivative = "2"
-vectis-wallet = { path = "../../packages/vectis", features = [] }
+vectis-wallet = { path = "../../packages/vectis" }
 
