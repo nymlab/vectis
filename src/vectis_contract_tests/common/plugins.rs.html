@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis-tests/src/common/plugins_common.rs`."><title>plugins_common.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c4dbdcde0fbd8430.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-db279b6232be9c13.css"><link rel="stylesheet" disabled href="../../../static.files/dark-cf923f49f397b216.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-be46fdc453a55015.css"><script src="../../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../vectis_contract_tests/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis-tests/src/common/plugins.rs`."><title>plugins.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c4dbdcde0fbd8430.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-db279b6232be9c13.css"><link rel="stylesheet" disabled href="../../../static.files/dark-cf923f49f397b216.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-be46fdc453a55015.css"><script src="../../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../vectis_contract_tests/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -184,59 +184,11 @@
 <a href="#184" id="184">184</a>
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
-<a href="#189" id="189">189</a>
-<a href="#190" id="190">190</a>
-<a href="#191" id="191">191</a>
-<a href="#192" id="192">192</a>
-<a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
-<a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
 </pre><pre class="rust"><code><span class="kw">pub use </span><span class="kw">crate</span>::common::base_common::<span class="kw-2">*</span>;
 <span class="kw">pub use </span><span class="kw">crate</span>::common::common::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// PluginsSuite
-///
-/// PluginsSuite is a suite of contracts that are used to test the plugin registry
-/// - registry
-
-</span><span class="attr">#[derive(Derivative)]
-#[derivative(Debug)]
-</span><span class="kw">pub struct </span>PluginsSuite {
-    <span class="attr">#[derivative(Debug = <span class="string">&quot;ignore&quot;</span>)]
-    </span><span class="comment">// proxy address
-    </span><span class="kw">pub </span>proxy: Addr,
-    <span class="comment">// hub test suite
-    </span><span class="kw">pub </span>hub: HubChainSuite,
-}
-
-<span class="kw">impl </span>PluginsSuite {
-    <span class="kw">pub fn </span>init() -&gt; <span class="prelude-ty">Result</span>&lt;PluginsSuite&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>hub_chain_suite = HubChainSuite::init().unwrap();
-        <span class="kw">let </span>proxy = hub_chain_suite
-            .create_new_proxy(hub_chain_suite.controller.clone(), <span class="macro">vec!</span>[], <span class="prelude-val">None</span>, WALLET_FEE)
-            .unwrap();
-
-        <span class="prelude-val">Ok</span>(PluginsSuite {
-            hub: hub_chain_suite,
-            proxy,
-        })
-    }
-
+<span class="doccomment">/// Useful methods for registry
+</span><span class="kw">impl </span>HubChainSuite {
     <span class="attr">#[allow(clippy::too_many_arguments)]
     </span><span class="kw">pub fn </span>register_plugin(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -249,11 +201,10 @@
         version: String,
         funds: <span class="kw-2">&amp;</span>[Coin],
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), PRegistryContractError&gt; {
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .execute_contract(
                 sender.clone(),
-                <span class="self">self</span>.hub.plugin_registry.clone(),
+                <span class="self">self</span>.plugin_registry.clone(),
                 <span class="kw-2">&amp;</span>PRegistryExecMsg::RegisterPlugin {
                     code_id,
                     name,
@@ -278,7 +229,7 @@
             <span class="number">1</span>,
             <span class="string">&quot;plugin_1&quot;</span>.to_string(),
             <span class="string">&quot;ipfs_hash&quot;</span>.to_string(),
-            <span class="self">self</span>.hub.deployer.to_string(),
+            <span class="self">self</span>.deployer.to_string(),
             <span class="string">&quot;checksum&quot;</span>.to_string(),
             <span class="string">&quot;0.0.1&quot;</span>.to_string(),
             funds,
@@ -290,11 +241,10 @@
         sender: <span class="kw-2">&amp;</span>Addr,
         id: u64,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), PRegistryContractError&gt; {
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .execute_contract(
                 sender.clone(),
-                <span class="self">self</span>.hub.plugin_registry.clone(),
+                <span class="self">self</span>.plugin_registry.clone(),
                 <span class="kw-2">&amp;</span>PRegistryExecMsg::UnregisterPlugin { id },
                 <span class="kw-2">&amp;</span>[],
             )
@@ -313,11 +263,10 @@
         checksum: <span class="prelude-ty">Option</span>&lt;String&gt;,
         version: String,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), PRegistryContractError&gt; {
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .execute_contract(
                 sender.clone(),
-                <span class="self">self</span>.hub.plugin_registry.clone(),
+                <span class="self">self</span>.plugin_registry.clone(),
                 <span class="kw-2">&amp;</span>PRegistryExecMsg::UpdatePlugin {
                     id,
                     code_id,
@@ -337,12 +286,27 @@
         sender: <span class="kw-2">&amp;</span>Addr,
         new_fee: Coin,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), PRegistryContractError&gt; {
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .execute_contract(
                 sender.clone(),
-                <span class="self">self</span>.hub.plugin_registry.clone(),
+                <span class="self">self</span>.plugin_registry.clone(),
                 <span class="kw-2">&amp;</span>PRegistryExecMsg::UpdateRegistryFee { new_fee },
+                <span class="kw-2">&amp;</span>[],
+            )
+            .map_err(|err| err.downcast().unwrap())
+            .map(|<span class="kw">_</span>| ())
+    }
+
+    <span class="kw">pub fn </span>update_install_fee(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        sender: <span class="kw-2">&amp;</span>Addr,
+        new_fee: Coin,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), PRegistryContractError&gt; {
+        <span class="self">self</span>.app
+            .execute_contract(
+                sender.clone(),
+                <span class="self">self</span>.plugin_registry.clone(),
+                <span class="kw-2">&amp;</span>PRegistryExecMsg::UpdateInstallFee { new_fee },
                 <span class="kw-2">&amp;</span>[],
             )
             .map_err(|err| err.downcast().unwrap())
@@ -354,11 +318,10 @@
         sender: <span class="kw-2">&amp;</span>Addr,
         new_addr: <span class="kw-2">&amp;</span>str,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), PRegistryContractError&gt; {
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .execute_contract(
                 sender.clone(),
-                <span class="self">self</span>.hub.plugin_registry.clone(),
+                <span class="self">self</span>.plugin_registry.clone(),
                 <span class="kw-2">&amp;</span>PRegistryExecMsg::UpdateDeployerAddr {
                     new_addr: new_addr.to_string(),
                 },
@@ -370,48 +333,41 @@
 
     <span class="kw">pub fn </span>query_plugin(<span class="kw-2">&amp;</span><span class="self">self</span>, id: u64) -&gt; StdResult&lt;<span class="prelude-ty">Option</span>&lt;Plugin&gt;&gt; {
         <span class="kw">let </span>msg = PRegistryQueryMsg::GetPluginById { id };
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .wrap()
-            .query_wasm_smart(<span class="self">self</span>.hub.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
+            .query_wasm_smart(<span class="self">self</span>.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
     }
 
     <span class="kw">pub fn </span>query_metadata_link(<span class="kw-2">&amp;</span><span class="self">self</span>, addr: <span class="kw-2">&amp;</span>Addr) -&gt; StdResult&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt; {
         <span class="kw">let </span>msg = PRegistryQueryMsg::QueryMetadataLink {
             contract_addr: addr.to_string(),
         };
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .wrap()
-            .query_wasm_smart(<span class="self">self</span>.hub.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
+            .query_wasm_smart(<span class="self">self</span>.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
     }
 
     <span class="kw">pub fn </span>query_config(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; StdResult&lt;ConfigResponse&gt; {
         <span class="kw">let </span>msg = PRegistryQueryMsg::GetConfig {};
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .wrap()
-            .query_wasm_smart(<span class="self">self</span>.hub.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
+            .query_wasm_smart(<span class="self">self</span>.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
     }
 
-    <span class="kw">pub fn </span>query_plugins(
+    <span class="kw">pub fn </span>query_registered_plugins(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         limit: <span class="prelude-ty">Option</span>&lt;u32&gt;,
         start_after: <span class="prelude-ty">Option</span>&lt;u32&gt;,
     ) -&gt; StdResult&lt;PluginsResponse&gt; {
         <span class="kw">let </span>msg = PRegistryQueryMsg::GetPlugins { limit, start_after };
-        <span class="self">self</span>.hub
-            .app
+        <span class="self">self</span>.app
             .wrap()
-            .query_wasm_smart(<span class="self">self</span>.hub.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
+            .query_wasm_smart(<span class="self">self</span>.plugin_registry.clone(), <span class="kw-2">&amp;</span>msg)
     }
 
-    <span class="kw">pub fn </span>query_installed_plugins(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; StdResult&lt;PluginListResponse&gt; {
+    <span class="kw">pub fn </span>query_installed_plugins(<span class="kw-2">&amp;</span><span class="self">self</span>, proxy: <span class="kw-2">&amp;</span>Addr) -&gt; StdResult&lt;PluginListResponse&gt; {
         <span class="kw">let </span>msg = ProxyQueryMsg::Plugins {};
-        <span class="self">self</span>.hub
-            .app
-            .wrap()
-            .query_wasm_smart(<span class="self">self</span>.proxy.clone(), <span class="kw-2">&amp;</span>msg)
+        <span class="self">self</span>.app.wrap().query_wasm_smart(proxy.clone(), <span class="kw-2">&amp;</span>msg)
     }
 }
 </code></pre></div>

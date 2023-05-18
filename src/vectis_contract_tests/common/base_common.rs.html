@@ -456,6 +456,23 @@
 <a href="#456" id="456">456</a>
 <a href="#457" id="457">457</a>
 <a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
 </pre><pre class="rust"><code><span class="kw">pub use </span><span class="kw">crate</span>::common::common::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// This is initialised all the contracts
@@ -488,7 +505,6 @@
     <span class="doccomment">/// Instantiate factory contract with
     /// - no initial funds on the factory
     /// - default WALLET_FEE
-    ///
     </span><span class="kw">pub fn </span>init() -&gt; <span class="prelude-ty">Result</span>&lt;HubChainSuite&gt; {
         <span class="kw">let </span>genesis_funds = <span class="macro">vec!</span>[coin(<span class="number">10_000_000_000_000</span>, DENOM)];
         <span class="kw">let </span>deployer_signer = Addr::unchecked(<span class="string">&quot;signer&quot;</span>);
@@ -624,46 +640,64 @@
     </span><span class="kw">pub fn </span>create_new_proxy_without_guardians(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         controller: Addr,
-        factory: Addr,
-        proxy_initial_fund: Vec&lt;Coin&gt;,
-        guardians_multisig: <span class="prelude-ty">Option</span>&lt;MultiSig&gt;,
-        <span class="comment">// This is both the initial proxy wallet initial balance
-        // and the fee for wallet creation
-        </span>native_tokens_amount: u128,
+        proxy_initial_funds: Vec&lt;Coin&gt;,
+        wallet_fee: Coin,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Addr&gt; {
-        <span class="self">self</span>._create_new_proxy(
+        <span class="kw">let </span>native_tokens_amount = proxy_initial_funds
+            .iter()
+            .find(|c| c.denom == wallet_fee.denom)
+            .map(|c| c.amount + wallet_fee.amount)
+            .unwrap_or(wallet_fee.amount);
+
+        <span class="self">self</span>.create_new_proxy(
             controller,
-            factory,
-            proxy_initial_fund,
-            guardians_multisig,
+            <span class="self">self</span>.factory.clone(),
+            proxy_initial_funds,
+            <span class="prelude-val">None</span>,
             <span class="macro">vec!</span>[],
-            native_tokens_amount,
+            native_tokens_amount.u128(),
         )
     }
 
-    <span class="kw">pub fn </span>create_new_proxy(
+    <span class="kw">pub fn </span>update_wallet_fee(<span class="kw-2">&amp;mut </span><span class="self">self</span>, deployer: Addr, new_fee: Coin) -&gt; <span class="prelude-ty">Result</span>&lt;AppResponse&gt; {
+        <span class="self">self</span>.app.execute_contract(
+            deployer,
+            <span class="self">self</span>.factory.clone(),
+            <span class="kw-2">&amp;</span>FactoryExecuteMsg::UpdateConfigFee {
+                ty: vectis_wallet::FeeType::Wallet,
+                new_fee,
+            },
+            <span class="kw-2">&amp;</span>[],
+        )
+    }
+
+    <span class="kw">pub fn </span>create_new_proxy_with_default_guardians(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         controller: Addr,
         proxy_initial_funds: Vec&lt;Coin&gt;,
         guardians_multisig: <span class="prelude-ty">Option</span>&lt;MultiSig&gt;,
-        <span class="comment">// This is both the initial proxy wallet initial balance
-        // and the fee for wallet creation
-        </span>native_tokens_amount: u128,
+        wallet_fee: Coin,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Addr&gt; {
         <span class="kw">let </span>g1 = Addr::unchecked(GUARD1);
         <span class="kw">let </span>g2 = Addr::unchecked(GUARD2);
 
-        <span class="self">self</span>._create_new_proxy(
+        <span class="kw">let </span>native_tokens_amount = proxy_initial_funds
+            .iter()
+            .find(|c| c.denom == wallet_fee.denom)
+            .map(|c| c.amount + wallet_fee.amount)
+            .unwrap_or(wallet_fee.amount);
+
+        <span class="self">self</span>.create_new_proxy(
             controller,
             <span class="self">self</span>.factory.clone(),
             proxy_initial_funds,
             guardians_multisig,
             <span class="macro">vec!</span>[g1, g2],
-            native_tokens_amount,
+            native_tokens_amount.u128(),
         )
     }
 
-    <span class="kw">fn </span>_create_new_proxy(
+    <span class="kw">pub fn </span>create_new_proxy(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         controller: Addr,
         factory: Addr,
@@ -687,7 +721,7 @@
 
         <span class="kw">let </span>execute = FactoryExecuteMsg::CreateWallet { create_wallet_msg };
 
-        <span class="kw">let </span>fees = <span class="macro">vec!</span>[];
+        <span class="kw">let </span><span class="kw-2">mut </span>fees = <span class="macro">vec!</span>[];
         <span class="kw">if </span>native_tokens_amount != <span class="number">0u128 </span>{
             fees.push(coin(native_tokens_amount, DENOM))
         };
