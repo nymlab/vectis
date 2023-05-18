@@ -23,15 +23,14 @@ import {
 } from "osmojs";
 
 import {
-    codePaths,
+    coreCodePaths,
+    pluginCodePaths,
     cw3FixedMulDownloadLink,
     cw3FlexMulDownloadLink,
     cw4GroupDownloadLink,
     contractsFileNames,
     hostChain,
     hostAccounts,
-    remoteAccounts,
-    remoteChain,
     hostChainName,
 } from "../utils/constants";
 import { downloadContract, getContract } from "../utils/fs";
@@ -39,7 +38,7 @@ import { longToByteArray } from "../utils/enconding";
 import CODES from "../config/onchain-codes.json";
 
 import type { ProxyT, FactoryT } from "../interfaces";
-import type { HubContractsUploadResult, RemoteContractsUploadResult } from "../interfaces/contracts";
+import type { HubContractsUploadResult } from "../interfaces/contracts";
 import type { Accounts, Account } from "../config/accounts";
 import type { Chain } from "../config/chains";
 
@@ -62,11 +61,6 @@ class CWClient extends SigningCosmWasmClient {
     static async connectHostWithAccount(account: Accounts) {
         const acc = hostAccounts[account] as Account;
         return await this.connectWithAccount(hostChain, acc);
-    }
-
-    static async connectRemoteWithAccount(account: Accounts) {
-        const acc = remoteAccounts[account] as Account;
-        return await this.connectWithAccount(remoteChain, acc);
     }
 
     static async createRelayTransaction(
@@ -131,12 +125,20 @@ class CWClient extends SigningCosmWasmClient {
      * Uploads contracts needed for e2e tests on local nodes on the hub
      */
     async uploadHubContracts(): Promise<HubContractsUploadResult> {
-        const factory = await this.uploadContract(codePaths.factoryCodePath);
-        const proxy = await this.uploadContract(codePaths.proxyCodePath);
-        const cw3Fixed = await this.uploadContract(codePaths.cw3FixedCodePath);
-        const cw3Flex = await this.uploadContract(codePaths.cw3FlexCodePath);
-        const cw4Group = await this.uploadContract(codePaths.cw4GroupCodePath);
-        const pluginReg = await this.uploadContract(codePaths.pluginRegCodePath);
+        const factory = await this.uploadContract(coreCodePaths.factoryCodePath);
+        const proxy = await this.uploadContract(coreCodePaths.proxyCodePath);
+        const cw3Fixed = await this.uploadContract(coreCodePaths.cw3FixedCodePath);
+        const cw3Flex = await this.uploadContract(coreCodePaths.cw3FlexCodePath);
+        const cw4Group = await this.uploadContract(coreCodePaths.cw4GroupCodePath);
+        const pluginReg = await this.uploadContract(coreCodePaths.pluginRegCodePath);
+        const pluginsRes: { [key: string]: UploadResult } = {};
+
+        if (hostChain.plugins) {
+            for (let plugin of hostChain.plugins) {
+                let result = await this.uploadContract(pluginCodePaths[`${plugin}CodePath`]);
+                pluginsRes[plugin] = result;
+            }
+        }
 
         return {
             factory,
@@ -145,28 +147,7 @@ class CWClient extends SigningCosmWasmClient {
             cw3Flex,
             cw4Group,
             pluginReg,
-        };
-    }
-
-    /**
-     * Uploads contracts needed for e2e tests on local nodes on all other chains
-     * This is currently the same as hub but it may be different in the future so we keep it separate
-     */
-    async uploadRemoteContracts(): Promise<RemoteContractsUploadResult> {
-        const factory = await this.uploadContract(codePaths.factoryCodePath);
-        const proxy = await this.uploadContract(codePaths.proxyCodePath);
-        const cw3Fixed = await this.uploadContract(codePaths.cw3FixedCodePath);
-        const cw3Flex = await this.uploadContract(codePaths.cw3FlexCodePath);
-        const cw4Group = await this.uploadContract(codePaths.cw4GroupCodePath);
-        const pluginReg = await this.uploadContract(codePaths.pluginRegCodePath);
-
-        return {
-            factory,
-            proxy,
-            cw3Fixed,
-            cw3Flex,
-            cw4Group,
-            pluginReg,
+            plugins: pluginsRes,
         };
     }
 

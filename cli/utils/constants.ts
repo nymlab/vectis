@@ -25,6 +25,7 @@ export const contractsFileNames = {
     vectis_proxy: `vectis_proxy.wasm`,
     vectis_factory: `vectis_factory.wasm`,
     vectis_plugin_registry: "vectis_plugin_registry.wasm",
+    vectis_cronkitty: `cronkitty.wasm`,
     cw3_mutltisig: "cw3_fixed_multisig.wasm",
     cw3_flex_mutltisig: "cw3_flex_multisig.wasm",
     cw4_group: "cw4_group.wasm",
@@ -67,12 +68,9 @@ export const ibcReportPath = path.join(
     "ibcInfo.json"
 );
 
-// Host Contracts
 const vectisContractsPath = path.join(__dirname, "../../artifacts");
-const remoteContractsPath = path.join(__dirname, "../../artifacts");
 
-// Wasm file paths
-export const codePaths: { [index: string]: string } = {
+export const coreCodePaths: { [index: string]: string } = {
     proxyCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_proxy),
     pluginRegCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_plugin_registry),
     factoryCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_factory),
@@ -81,4 +79,8 @@ export const codePaths: { [index: string]: string } = {
     cw3FixedCodePath: path.join(downloadContractPath, contractsFileNames.cw3_mutltisig),
     cw3FlexCodePath: path.join(downloadContractPath, contractsFileNames.cw3_flex_mutltisig),
     cw4GroupCodePath: path.join(downloadContractPath, contractsFileNames.cw4_group),
+};
+
+export const pluginCodePaths: { [index: string]: string } = {
+    cronkittyCodePath: path.join(vectisContractsPath, contractsFileNames.vectis_cronkitty),
 };

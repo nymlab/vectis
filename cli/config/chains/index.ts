@@ -18,6 +18,7 @@ export interface Chain {
     readonly estimatedBlockTime: number;
     readonly estimatedIndexerTime: number;
     readonly gasPrice: number;
+    readonly plugins?: string[];
 }
 
 export * from "./juno";

@@ -1,6 +1,6 @@
-[submodule "contracts"]
-	path = contracts
+[submodule "contracts/plugins"]
+	path = contracts/plugins
+	url = git@github.com:nymlab/vectis-plugins.git
+[submodule "contracts/core"]
+	path = contracts/core
 	url = git@github.com:nymlab/vectis-contracts.git
-[submodule "vectis-plugins"]
-	path = vectis-plugins
-	url = https://github.com/nymlab/vectis-plugins.git
