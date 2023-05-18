@@ -3,7 +3,7 @@ import { join } from "path";
 import { areTypesSchemasDownloaded, downloadTypeSchema } from "../utils/fs";
 import { cw4GroupSchemaLink, cw3flexSchemaLink } from "../utils/constants";
 
-const contractsPath = (path: string) => join(__dirname, "../../contracts/", path);
+const contractsPath = (path: string) => join(__dirname, "../../contracts/core/", path);
 const downloadSchemaPath = (path: string) => join(__dirname, "../.cache/schemas/", path);
 const outPath = join(__dirname, "../interfaces");
 
