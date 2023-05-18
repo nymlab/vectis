@@ -154,6 +154,16 @@ export interface PluginRegistryInterface extends PluginRegistryReadOnlyInterface
         memo?: string,
         funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    updateInstallFee: (
+        {
+            newFee,
+        }: {
+            newFee: Coin;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        funds?: Coin[]
+    ) => Promise<ExecuteResult>;
     updateDeployerAddr: (
         {
             newAddr,
@@ -180,6 +190,7 @@ export class PluginRegistryClient extends PluginRegistryQueryClient implements P
         this.unregisterPlugin = this.unregisterPlugin.bind(this);
         this.updatePlugin = this.updatePlugin.bind(this);
         this.updateRegistryFee = this.updateRegistryFee.bind(this);
+        this.updateInstallFee = this.updateInstallFee.bind(this);
         this.updateDeployerAddr = this.updateDeployerAddr.bind(this);
     }
 
@@ -323,6 +334,29 @@ export class PluginRegistryClient extends PluginRegistryQueryClient implements P
             this.contractAddress,
             {
                 update_registry_fee: {
+                    new_fee: newFee,
+                },
+            },
+            fee,
+            memo,
+            funds
+        );
+    };
+    updateInstallFee = async (
+        {
+            newFee,
+        }: {
+            newFee: Coin;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_install_fee: {
                     new_fee: newFee,
                 },
             },

@@ -59,6 +59,12 @@ export type ExecMsg =
           };
       }
     | {
+          update_install_fee: {
+              new_fee: Coin;
+              [k: string]: unknown;
+          };
+      }
+    | {
           update_deployer_addr: {
               new_addr: string;
               [k: string]: unknown;
