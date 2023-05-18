@@ -3,4 +3,4 @@
 	url = git@github.com:nymlab/vectis-contracts.git
 [submodule "vectis-plugins"]
 	path = vectis-plugins
-	url = git@github.com:nymlab/vectis-plugins.git
+	url = https://github.com/nymlab/vectis-plugins.git
