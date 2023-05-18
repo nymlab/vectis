@@ -17,9 +17,9 @@ path = "src/tests/lib.rs"
 croncat-plugin = []
 
 [dependencies]
-vectis-factory = { path = "../../contracts/factory" }
-vectis-proxy = { path = "../../contracts/proxy", features = ["migration", "library"]}
-vectis-plugin-registry = { path = "../../contracts/plugin_registry", features = ["tests"]}
+vectis-factory = { path = "../../contracts/core/factory" }
+vectis-proxy = { path = "../../contracts/core/proxy", features = ["migration", "library"]}
+vectis-plugin-registry = { path = "../../contracts/core/plugin_registry", features = ["tests"]}
 anyhow = "1"
 assert_matches = "1"
 cosmwasm-std = { workspace = true }

@@ -223,5 +223,5 @@ async function verify(addrs: VectisHubChainContractsAddrs, vectisClient: Cw3Flex
         let addr = await vectisClient.getItem({ key: value });
         assert.strictEqual(addrs[key as keyof typeof addrs], addr);
     }
-    console.log("VectisActors stored correctly on VectisCommuittee");
+    console.log("VectisActors stored correctly on VectisCommittee");
 }

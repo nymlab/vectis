@@ -19,7 +19,6 @@ import { toCosmosMsg } from "../utils/enconding";
  */
 describe("Proxy Suite: ", () => {
     let hostUserClient: CWClient;
-    let remoteUserClient: CWClient;
     let hostGuardianClient: CWClient;
     let hostAdminClient: CWClient;
     let hostClient: CosmWasmClient;
@@ -37,7 +36,6 @@ describe("Proxy Suite: ", () => {
         addrs = await import(hubDeployReportPath);
 
         hostUserClient = await CWClient.connectHostWithAccount("user");
-        remoteUserClient = await CWClient.connectRemoteWithAccount("user");
         hostAdminClient = await CWClient.connectHostWithAccount("admin");
         hostGuardianClient = await CWClient.connectHostWithAccount("guardian_1");
         hostClient = await CosmWasmClient.connect(hostChain.rpcUrl);
