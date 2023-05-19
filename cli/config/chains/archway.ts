@@ -1,5 +1,5 @@
 export const archway_testnet = {
-    chainId: "constantine-1",
+    chainId: "constantine-3",
     chainName: "Constantine Testnet",
     addressPrefix: "archway",
     rpcUrl: "https://rpc.constantine-1.archway.tech",

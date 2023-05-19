@@ -1,7 +1,7 @@
 import fs from "fs";
 import { MsgBroadcasterWithPk, MsgStoreCode, PrivateKey } from "@injectivelabs/sdk-ts";
 import { getNetworkEndpoints, Network } from "@injectivelabs/networks";
-import { codePaths } from "../../utils/constants";
+import { coreCodePaths } from "../../utils/constants";
 import * as injectiveAccounts from "../../config/accounts/injective";
 import { writeToFile } from "../../utils/fs";
 
@@ -9,16 +9,16 @@ import { writeToFile } from "../../utils/fs";
     const network = process.env.HOST_CHAIN;
     console.log("Uploading to ", network);
     const { admin } = injectiveAccounts[network as keyof typeof injectiveAccounts];
-    const privateKey = PrivateKey.fromMnemonic(admin.mnemonic);
+    const privateKey = PrivateKey.fromMnemonic(admin.mnemonic!);
     const endpoints = getNetworkEndpoints(Network.TestnetK8s);
 
     const codesId = {} as Record<string, number>;
 
-    for await (const [key, value] of Object.entries(codePaths)) {
+    for await (const [key, value] of Object.entries(coreCodePaths)) {
         try {
             const contract = fs.readFileSync(value);
             const msg = MsgStoreCode.fromJSON({
-                sender: admin.address,
+                sender: admin.address!,
                 wasmBytes: contract,
             });
 
@@ -29,7 +29,7 @@ import { writeToFile } from "../../utils/fs";
                 simulateTx: true,
             }).broadcast({
                 msgs: msg,
-                injectiveAddress: admin.address,
+                injectiveAddress: admin.address!,
             });
 
             const [{ events }] = JSON.parse(txHash.rawLog);

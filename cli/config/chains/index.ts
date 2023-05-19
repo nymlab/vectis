@@ -4,7 +4,9 @@ export type Chains =
     | "wasm_testnet"
     | "wasm_localnet"
     | "tgrade_localnet"
-    | "injective_testnet";
+    | "injective_testnet"
+    | "neutron_testnet"
+    | "archway_testnet";
 export interface Chain {
     readonly chainId: string;
     readonly chainName: string;
@@ -25,4 +27,5 @@ export * from "./juno";
 export * from "./wasm";
 export * from "./tgrade";
 export * from "./archway";
+export * from "./neutron";
 export * from "./injective";

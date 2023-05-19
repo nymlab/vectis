@@ -35,7 +35,6 @@ import {
 } from "../utils/constants";
 import { downloadContract, getContract } from "../utils/fs";
 import { longToByteArray } from "../utils/enconding";
-import CODES from "../config/onchain-codes.json";
 
 import type { ProxyT, FactoryT } from "../interfaces";
 import type { HubContractsUploadResult } from "../interfaces/contracts";
@@ -131,8 +130,8 @@ class CWClient extends SigningCosmWasmClient {
         const cw3Flex = await this.uploadContract(coreCodePaths.cw3FlexCodePath);
         const cw4Group = await this.uploadContract(coreCodePaths.cw4GroupCodePath);
         const pluginReg = await this.uploadContract(coreCodePaths.pluginRegCodePath);
-        const pluginsRes: { [key: string]: UploadResult } = {};
 
+        const pluginsRes: { [key: string]: UploadResult } = {};
         if (hostChain.plugins) {
             for (let plugin of hostChain.plugins) {
                 let result = await this.uploadContract(pluginCodePaths[`${plugin}CodePath`]);
