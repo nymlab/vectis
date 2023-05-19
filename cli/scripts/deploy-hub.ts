@@ -95,7 +95,7 @@ import { VectisActors } from "../utils/constants";
         adminHostClient,
         cw3Flex.codeId,
         vectisCommitteeMembers,
-        "Pre Proposal MultiSig"
+        "Vectis Committee MultiSig"
     );
     const vectisCommittee = vectisCommitteeRes.contractAddress;
     const vectisComClient = new Cw3FlexClient(committee1Client, committee1.address, vectisCommittee);

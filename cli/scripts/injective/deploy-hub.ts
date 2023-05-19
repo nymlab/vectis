@@ -5,12 +5,12 @@ import {
     vectisTechCommittee2Weight,
 } from "../../clients/cw3flex";
 
-import * as injectiveAccounts from "../../config/accounts/injective";
 import { MsgBroadcasterWithPk, MsgExecuteContract, MsgInstantiateContract, PrivateKey } from "@injectivelabs/sdk-ts";
 import { Network, getNetworkEndpoints } from "@injectivelabs/networks";
 import { toCosmosMsg } from "../../utils/enconding";
 import { writeToFile } from "../../utils/fs";
 import { VectisActors } from "../../utils/constants";
+import * as injectiveAccounts from "../../config/accounts/injective";
 
 interface CodeIds {
     proxyCodeId: number;
@@ -81,15 +81,16 @@ const addItem = async (
 (async function deploy() {
     const network = process.env.HOST_CHAIN;
     console.log("Deploy Vectis to ", network);
+    const { admin } = injectiveAccounts[network as keyof typeof injectiveAccounts];
+    const privateKey = PrivateKey.fromMnemonic(admin.mnemonic!);
     const endpoints = getNetworkEndpoints(Network.TestnetK8s);
 
     const { factoryCodeId, proxyCodeId, cw3FixedCodeId, pluginRegCodeId, cw4GroupCodeId, cw3FlexCodeId } =
         (await import("./../../deploy/injective_testnet-uploadInfo.json")) as CodeIds;
 
     // Admin will be removed at the end of the deploy
-    const { admin } = injectiveAccounts[network as keyof typeof injectiveAccounts];
     const adminClient = new MsgBroadcasterWithPk({
-        privateKey: PrivateKey.fromMnemonic(admin.mnemonic),
+        privateKey: privateKey,
         network: Network.Testnet,
         endpoints,
         simulateTx: true,
@@ -103,8 +104,9 @@ const addItem = async (
 
     // These are committee members for the vectis and tech committee
     const { committee1, committee2 } = injectiveAccounts[network as keyof typeof injectiveAccounts];
+    const privateKeyCom1 = PrivateKey.fromMnemonic(committee1.mnemonic!);
     const comittee1Client = new MsgBroadcasterWithPk({
-        privateKey: PrivateKey.fromMnemonic(committee1.mnemonic),
+        privateKey: privateKeyCom1,
         network: Network.Testnet,
         endpoints,
         simulateTx: true,
@@ -112,30 +114,36 @@ const addItem = async (
 
     // Instantiate Cw4Group - which will be used for the vectis multisig and technical
 
+    const adminAddr = admin.address!;
+    const com1Addr = committee1.address!;
+    const com2Addr = committee2.address!;
+
     // vectis committee group
     let msg = MsgInstantiateContract.fromJSON({
-        sender: admin.address,
+        sender: adminAddr,
         codeId: cw4GroupCodeId,
         label: "Vectis Committee",
-        admin: admin.address,
+        admin: adminAddr,
         msg: {
-            admin: admin.address,
+            admin: adminAddr,
             members: [
                 {
-                    addr: committee1.address,
+                    addr: com1Addr,
                     weight: vectisCommittee1Weight,
                 },
                 {
-                    addr: committee2.address,
+                    addr: com2Addr,
                     weight: vectisCommittee2Weight,
                 },
             ],
         },
     });
 
+    console.log(msg);
+
     let txResponse = await adminClient.broadcast({
         msgs: msg,
-        injectiveAddress: admin.address,
+        injectiveAddress: adminAddr,
     });
 
     const vectisCommitteeMembers = extractValueFromEvent(
@@ -147,19 +155,19 @@ const addItem = async (
 
     // tech committee group
     msg = MsgInstantiateContract.fromJSON({
-        sender: admin.address,
+        sender: adminAddr,
         codeId: cw4GroupCodeId,
         label: "Vectis Tech Committee",
-        admin: admin.address,
+        admin: adminAddr,
         msg: {
-            admin: admin.address,
+            admin: adminAddr,
             members: [
                 {
-                    addr: committee1.address,
+                    addr: com1Addr,
                     weight: vectisTechCommittee1Weight,
                 },
                 {
-                    addr: committee2.address,
+                    addr: com2Addr,
                     weight: vectisTechCommittee2Weight,
                 },
             ],
@@ -168,7 +176,7 @@ const addItem = async (
 
     txResponse = await adminClient.broadcast({
         msgs: msg,
-        injectiveAddress: admin.address,
+        injectiveAddress: adminAddr,
     });
 
     const techCommitteeMembers = extractValueFromEvent(
@@ -193,10 +201,10 @@ const addItem = async (
     };
 
     msg = MsgInstantiateContract.fromJSON({
-        sender: admin.address,
+        sender: adminAddr,
         codeId: cw3FlexCodeId,
         label: "Pre Proposal MultiSig",
-        admin: admin.address,
+        admin: adminAddr,
         msg: {
             executor: null,
             group_addr: vectisCommitteeMembers,
@@ -207,7 +215,7 @@ const addItem = async (
 
     txResponse = await adminClient.broadcast({
         msgs: msg,
-        injectiveAddress: admin.address,
+        injectiveAddress: adminAddr,
     });
 
     const vectisCommittee = extractValueFromEvent(
@@ -219,10 +227,10 @@ const addItem = async (
     // Instantiate TechCommittee MultiSig
 
     msg = MsgInstantiateContract.fromJSON({
-        sender: admin.address,
+        sender: adminAddr,
         codeId: cw3FlexCodeId,
         label: "Tech Committee MultiSig",
-        admin: admin.address,
+        admin: adminAddr,
         msg: {
             executor: null,
             group_addr: techCommitteeMembers,
@@ -233,7 +241,7 @@ const addItem = async (
 
     txResponse = await adminClient.broadcast({
         msgs: msg,
-        injectiveAddress: admin.address,
+        injectiveAddress: adminAddr,
     });
 
     const techCommittee = extractValueFromEvent(
@@ -278,18 +286,18 @@ const addItem = async (
 
     let executeMsg = MsgExecuteContract.fromJSON({
         contractAddress: vectisCommittee,
-        sender: committee1.address,
+        sender: com1Addr,
         msg: proposeMsg,
     });
 
     txResponse = await comittee1Client.broadcast({
         msgs: executeMsg,
-        injectiveAddress: committee1.address,
+        injectiveAddress: com1Addr,
     });
 
     executeMsg = MsgExecuteContract.fromJSON({
         contractAddress: vectisCommittee,
-        sender: committee1.address,
+        sender: com1Addr,
         msg: {
             execute: {
                 proposal_id: 1,
@@ -299,7 +307,7 @@ const addItem = async (
 
     txResponse = await comittee1Client.broadcast({
         msgs: executeMsg,
-        injectiveAddress: committee1.address,
+        injectiveAddress: com1Addr,
     });
 
     const factoryAddr = extractValueFromEvent(
@@ -328,7 +336,7 @@ const addItem = async (
 
     executeMsg = MsgExecuteContract.fromJSON({
         contractAddress: vectisCommittee,
-        sender: committee1.address,
+        sender: com1Addr,
         msg: {
             propose: {
                 description: "deploy plugin_reg",
@@ -340,12 +348,12 @@ const addItem = async (
 
     txResponse = await comittee1Client.broadcast({
         msgs: executeMsg,
-        injectiveAddress: committee1.address,
+        injectiveAddress: com1Addr,
     });
 
     executeMsg = MsgExecuteContract.fromJSON({
         contractAddress: vectisCommittee,
-        sender: committee1.address,
+        sender: com1Addr,
         msg: {
             execute: {
                 proposal_id: 2,
@@ -355,7 +363,7 @@ const addItem = async (
 
     txResponse = await comittee1Client.broadcast({
         msgs: executeMsg,
-        injectiveAddress: committee1.address,
+        injectiveAddress: com1Addr,
     });
 
     const pluginRegAddr = extractValueFromEvent(
@@ -372,9 +380,9 @@ const addItem = async (
     //
     // ===================================================================================
 
-    await addItem(comittee1Client, committee1.address, vectisCommittee, VectisActors.Factory, factoryAddr, 3);
-    await addItem(comittee1Client, committee1.address, vectisCommittee, VectisActors.PluginRegistry, pluginRegAddr, 4);
-    await addItem(comittee1Client, committee1.address, vectisCommittee, VectisActors.PluginCommittee, techCommittee, 5);
+    await addItem(comittee1Client, com1Addr, vectisCommittee, VectisActors.Factory, factoryAddr, 3);
+    await addItem(comittee1Client, com1Addr, vectisCommittee, VectisActors.PluginRegistry, pluginRegAddr, 4);
+    await addItem(comittee1Client, com1Addr, vectisCommittee, VectisActors.PluginCommittee, techCommittee, 5);
 
     const contracts = {
         // These are the same as DaoActors
@@ -404,7 +412,7 @@ const addItem = async (
     const version = "0.1.0";
     const regMsg = MsgExecuteContract.fromJSON({
         contractAddress: techCommittee,
-        sender: committee1.address,
+        sender: com1Addr,
         msg: {
             propose: {
                 description: "Add AVIDA plugin",
@@ -433,10 +441,10 @@ const addItem = async (
         },
     });
 
-    let proposal_tx = await comittee1Client.broadcast({ injectiveAddress: committee1.address, msgs: [regMsg] });
+    let proposal_tx = await comittee1Client.broadcast({ injectiveAddress: com1Addr, msgs: [regMsg] });
     const regExecuteMsg = MsgExecuteContract.fromJSON({
         contractAddress: techCommittee,
-        sender: committee1.address,
+        sender: com1Addr,
         msg: {
             execute: {
                 proposal_id: 1,
@@ -446,7 +454,7 @@ const addItem = async (
 
     let execute_tx = await comittee1Client.broadcast({
         msgs: regExecuteMsg,
-        injectiveAddress: committee1.address,
+        injectiveAddress: com1Addr,
     });
 
     console.log(" Proposal tx: ", JSON.stringify(execute_tx));

@@ -5,7 +5,6 @@ export type Accounts =
     | "guardian_2"
     | "relayer_1"
     | "relayer_2"
-    | "token_holder"
     | "committee1"
     | "committee2";
 export interface Account {
@@ -16,3 +15,5 @@ export interface Account {
 export * from "./juno";
 export * from "./wasm";
 export * from "./injective";
+export * from "./archway";
+export * from "./neutron";

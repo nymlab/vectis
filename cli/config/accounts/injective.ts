@@ -41,5 +41,19 @@ const common = {
     },
 };
 
-export const injective_testnet = { ...common };
+export const injective_testnet = {
+    ...common,
+    admin: {
+        mnemonic: process.env.TESTNET_ADMIN_MNEMONIC,
+        address: process.env.TESTNET_INJ_ADMIN_ADDRESS,
+    },
+    committee1: {
+        mnemonic: process.env.TESTNET_COMMITTEE1_MNEMONIC,
+        address: process.env.TESTNET_INJ_COMMITTEE1_ADDRESS,
+    },
+    committee2: {
+        mnemonic: process.env.TESTNET_COMMITTEE2_MNEMONIC,
+        address: process.env.TESTNET_INJ_COMMITTEE2_ADDRESS,
+    },
+};
 export const injective_localnet = { ...common };
