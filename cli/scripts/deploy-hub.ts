@@ -1,11 +1,10 @@
 import assert from "assert";
-import { FactoryClient, CWClient, Cw3FlexClient, Cw4GroupClient, PluginRegClient, RelayerClient } from "../clients";
+import { FactoryClient, CWClient, Cw3FlexClient, Cw4GroupClient, PluginRegClient } from "../clients";
 import { Account } from "../config/accounts";
 import { toCosmosMsg } from "../utils/enconding";
 import { writeToFile } from "../utils/fs";
-import { hostChain, hostChainName, hubDeployReportPath, hubUploadReportPath, hostAccounts } from "../utils/constants";
+import { hostChainName, hubDeployReportPath, hubUploadReportPath, hostAccounts } from "../utils/constants";
 
-import type { ProxyT } from "../interfaces";
 import type { VectisHubChainContractsAddrs } from "../interfaces/contracts";
 import {
     vectisCommittee1Weight,
@@ -24,17 +23,6 @@ import { VectisActors } from "../utils/constants";
 
     // Admin will be removed at the end of the deploy
     const daoAdmin = hostAccounts["admin"] as Account;
-
-    // Check channels config exists with the existing IBC transfer channel
-    // used in ibcTunnel instantiate msg
-    //const relayerClient = new RelayerClient();
-    //const connection = await relayerClient.connect();
-    //const channels = await relayerClient.loadChannels();
-    //const { transfer: channelTransfer } = channels.transfer
-    //    ? channels
-    //    : await relayerClient.createChannel("transfer", "transfer", "ics20-1");
-
-    //console.log("IBC transfer connections: ", connection, "\n channel:", channelTransfer);
 
     // ===================================================================================
     //
@@ -130,7 +118,7 @@ import { VectisActors } from "../utils/constants";
             },
         },
     };
-    let prop_result = await vectisComClient.propose(
+    await vectisComClient.propose(
         {
             description: "deploy factory",
             latest: undefined,
@@ -159,7 +147,7 @@ import { VectisActors } from "../utils/constants";
             },
         },
     };
-    let plugin_prop_result = await vectisComClient.propose(
+    await vectisComClient.propose(
         {
             description: "deploy plugin_reg",
             latest: undefined,

@@ -43,10 +43,6 @@ const common = {
             "divorce park goat subject cake arrive liar reward favorite shed market spot harsh garden wet general enlist limb chair message current grant curtain that",
         address: "juno1ndxfpxzxg267ujpc6wwhw9fs2rvgfh06z6zs25",
     },
-    token_holder: {
-        mnemonic: "deputy undo immense because brave capital analyst use affair grit shrug unlock",
-        address: "juno1wy2n9yv5r67hfdzzjcc9fw38pk88xtwr26dz6x",
-    },
 };
 
 export const juno_mainnet = {

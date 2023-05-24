@@ -8,7 +8,7 @@ import { FactoryT, ProxyT, CroncatT } from "../../interfaces";
 import * as accounts from "../../config/accounts";
 import { createSingleProxyWallet } from "../../tests/mocks/proxyWallet";
 
-const croncat_factory_addr = "juno124vcmqsukhmuy6psm45a2tdg5354rnemdetqhjt72ynju666gf0qpxmlxz";
+const croncat_factory_addr = "juno1n7gsa2zf2qsa0rl526pqc6v2ljq45qw5df9tfm26fdm76tupv0fq38xpan";
 const plugin_id = 1;
 
 (async function create_wallet_with_plugin() {
@@ -36,11 +36,13 @@ const plugin_id = 1;
     let fees = pluginRegInstallFee(hostChain).amount == "0" ? undefined : [pluginRegInstallFee(hostChain)];
     let result = await userClient.execute(userClient.sender, walletAddr, installPlugin, "auto", undefined, fees);
 
+    //let walletAddr = "juno1g9t0avpeudadfaz9fafe6gzjuw0rltpfd2hzvmn5armwnt39smvquc0lnz";
     const proxyClient = new ProxyClient(userClient, userClient.sender, walletAddr);
     let plugins = await proxyClient.plugins();
     let cronkittyAddr = plugins.exec_plugins.pop();
     console.log("Vectis Account: ", walletAddr);
     console.log("CronKitty Addr: ", cronkittyAddr);
+    //let cronkittyAddr = "juno1jrtzgl5emvc35ds7knu6jtsa65g9hd6ymexjafmer4np22x4304qzg8ued";
 
     let ipfs_hash = await userClient.queryContractSmart(PluginRegistry, {
         query_metadata_link: { contract_addr: cronkittyAddr },
@@ -59,15 +61,15 @@ const plugin_id = 1;
                     msg: {
                         bank: {
                             send: {
-                                amount: [],
+                                amount: [funds],
                                 to_address: walletAddr,
                             },
                         },
                     },
                 },
             ],
-            boundary: { height: { end: "1093101" } },
-            interval: { block: 500 },
+            boundary: { height: { end: "1684727" } },
+            interval: { block: 100 },
             stop_on_fail: false,
         };
 
@@ -91,8 +93,12 @@ const plugin_id = 1;
         console.log("actionID: ", actionId);
         const action = await userClient.queryContractSmart(cronkittyAddr!, { action: { action_id: actionId - 1 } });
 
-        console.log("Task set for Vectis Account: ", JSON.stringify(action));
-    }
+        console.log("Task set for Vectis Account on Cronkitty: ", JSON.stringify(action));
+        const task_addr = action.tash_addr;
+        const taskRes = await userClient.queryContractSmart(task_addr, {
+            current_task: {},
+        });
 
-    writeInCacheFolder(`registeredPlugins.json`, JSON.stringify({ ...plugins, walletAddr }, null, 2));
+        console.log("Task set for Vectis Account on Croncat: ", JSON.stringify(taskRes));
+    }
 })();
