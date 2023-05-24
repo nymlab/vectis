@@ -31,7 +31,6 @@ import {
     contractsFileNames,
     hostChain,
     hostAccounts,
-    hostChainName,
 } from "../utils/constants";
 import { downloadContract, getContract } from "../utils/fs";
 import { longToByteArray } from "../utils/enconding";
@@ -117,9 +116,16 @@ class CWClient extends SigningCosmWasmClient {
         uploadFee: StdFee | number | "auto" = "auto"
     ): Promise<UploadResult> {
         const code = getContract(codePath);
-        return this.upload(senderAddress ?? this.sender, code, uploadFee);
+        return this.upload(
+            senderAddress ?? this.sender,
+            code,
+            uploadFee
+            //{
+            //amount: [{ amount: "1260000000000000000", denom: "aconst" }],
+            //gas: "1400000",
+            //}
+        );
     }
-
     /**
      * Uploads contracts needed for e2e tests on local nodes on the hub
      */
@@ -151,7 +157,7 @@ class CWClient extends SigningCosmWasmClient {
     }
 
     private static async connectWithAccount(chain: Chain, { mnemonic }: Account) {
-        const { addressPrefix, rpcUrl, gasPrice, feeToken, chainId, estimatedBlockTime } = chain;
+        const { addressPrefix, rpcUrl, gasPrice, feeToken, chainId } = chain;
 
         const signer = await CWClient.getSignerWithMnemonic(chain, mnemonic);
         const [{ address }] = await signer.getAccounts();

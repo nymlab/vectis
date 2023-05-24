@@ -11,7 +11,7 @@ const common = {
     user: {
         mnemonic:
             "useful guitar throw awesome later damage film tonight escape burger powder manage exact start title december impulse random similar eager smart absurd unaware enlist",
-        address: "",
+        address: "archway1tcxyhajlzvdheqyackfzqcmmfcr760maulundg",
     },
     guardian_1: {
         mnemonic:
@@ -49,29 +49,29 @@ export const archway_mainnet = {
     ...common,
     admin: {
         mnemonic: process.env.ADMIN_MNEMONIC,
-        address: process.env.ARCHWAY_ADMIN_ADDRESS,
+        address: process.env.ARCH_ADMIN_ADDRESS,
     },
     committee1: {
         mnemonic: process.env.COMMITTEE1_MNEMONIC,
-        address: process.env.ARCHWAY_COMMITTEE1_ADDRESS,
+        address: process.env.ARCH_COMMITTEE1_ADDRESS,
     },
     committee2: {
         mnemonic: process.env.COMMITTEE2_MNEMONIC,
-        address: process.env.ARCHWAY_COMMITTEE2_ADDRESS,
+        address: process.env.ARCH_COMMITTEE2_ADDRESS,
     },
 };
 export const archway_testnet = {
     ...common,
     admin: {
         mnemonic: process.env.TESTNET_ADMIN_MNEMONIC,
-        address: process.env.TESTNET_ARCHWAY_ADMIN_ADDRESS,
+        address: process.env.TESTNET_ARCH_ADMIN_ADDRESS,
     },
     committee1: {
         mnemonic: process.env.TESTNET_COMMITTEE1_MNEMONIC,
-        address: process.env.TESTNET_ARCHWAY_COMMITTEE1_ADDRESS,
+        address: process.env.TESTNET_ARCH_COMMITTEE1_ADDRESS,
     },
     committee2: {
         mnemonic: process.env.TESTNET_COMMITTEE2_MNEMONIC,
-        address: process.env.TESTNET_ARCHWAY_COMMITTEE2_ADDRESS,
+        address: process.env.TESTNET_ARCH_COMMITTEE2_ADDRESS,
     },
 };

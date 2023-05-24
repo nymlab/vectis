@@ -9,8 +9,8 @@ import { ExecuteMsg as PluginRegistryExecMsg } from "../../interfaces/PluginRegi
 
 // v0.2.1
 const checksum = "7d0112936d0966f2a6c7d7b34f9133e71b6324a5e11d0fcb3040d63d479a910d";
-const ipfs_hash = "test-hash";
-const name = "cronkitty";
+const ipfs_hash = "tmp-hash";
+const name = "Cronkitty - Automation Plugin wrapper powered by Croncat";
 const version = "0.2.1";
 
 (async function add_plugin() {
@@ -26,12 +26,6 @@ const version = "0.2.1";
         const cw3client = new Cw3FlexClient(tc1Client, tc1Client.sender, PluginCommittee);
         const prClient = new PluginRegClient(tc1Client, tc1Client.sender, PluginRegistry);
 
-        // Make sure there is balance
-        // TODO do checks on balances
-        const adminHostClient = await CWClient.connectHostWithAccount("admin");
-        const funds = { amount: (1800000).toString(), denom: hostChain.feeToken };
-        await adminHostClient.sendTokens(adminHostClient.sender, tc1Client.sender, [funds], "auto");
-        await adminHostClient.sendTokens(adminHostClient.sender, tc2Client.sender, [funds], "auto");
         const proposals = await cw3client.reverseProposals({ startBefore: undefined, limit: undefined });
         let currentId = proposals.proposals.length;
 
@@ -44,6 +38,7 @@ const version = "0.2.1";
                 name,
                 version,
             },
+            //unregister_plugin: { id: 1 },
         };
 
         let execMsgForPluginReg: CosmosMsgForEmpty = {
@@ -58,7 +53,7 @@ const version = "0.2.1";
 
         let proposalMsg: Cw3FlexExecMsg = {
             propose: {
-                description: "Add CronKitty Tx automation plugin",
+                description: "Add Plugin CronKitty Tx automation plugin",
                 msgs: [execMsgForPluginReg],
                 title: "Add CronKitty Plugin",
             },
