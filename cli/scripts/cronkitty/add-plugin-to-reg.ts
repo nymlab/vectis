@@ -8,26 +8,26 @@ import { ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../../interface
 import { ExecuteMsg as PluginRegistryExecMsg } from "../../interfaces/PluginRegistry.types";
 
 // v0.2.1
-const checksum = "7d0112936d0966f2a6c7d7b34f9133e71b6324a5e11d0fcb3040d63d479a910d";
+const checksum = "e7a64af980e884c88edf6d9ecf15fd8ac6e2d88ceef68ead2f4a6ce8c4ac0d07";
 const ipfs_hash = "tmp-hash";
-const name = "Cronkitty - Automation Plugin wrapper powered by Croncat";
+const name = "cronkitty";
 const version = "0.2.1";
 
 (async function add_plugin() {
     const { PluginCommittee, PluginRegistry } = await import(hubDeployReportPath);
     const uploads = await import(hubUploadReportPath);
     let uploadRes = uploads.plugins["cronkitty"];
+    console.log("uploadRes", uploadRes);
 
     if (uploadRes) {
         const code_id = uploadRes.codeId;
         const creator = hostAccounts["admin"] as Account;
         const tc1Client = await CWClient.connectHostWithAccount("committee1");
-        const tc2Client = await CWClient.connectHostWithAccount("committee2");
         const cw3client = new Cw3FlexClient(tc1Client, tc1Client.sender, PluginCommittee);
         const prClient = new PluginRegClient(tc1Client, tc1Client.sender, PluginRegistry);
 
         const proposals = await cw3client.reverseProposals({ startBefore: undefined, limit: undefined });
-        let currentId = proposals.proposals.length;
+        let currentId = proposals.proposals.length == 0 ? 0 : proposals.proposals[0].id;
 
         let pluginRegExecMsg: PluginRegistryExecMsg = {
             register_plugin: {
@@ -38,7 +38,6 @@ const version = "0.2.1";
                 name,
                 version,
             },
-            //unregister_plugin: { id: 1 },
         };
 
         let execMsgForPluginReg: CosmosMsgForEmpty = {
@@ -65,7 +64,7 @@ const version = "0.2.1";
             },
         };
 
-        console.log("proposal id: ", currentId + 1);
+        console.log("proposal id: ", currentId);
 
         let fees = pluginRegRegistryFee(hostChain).amount == "0" ? undefined : [pluginRegRegistryFee(hostChain)];
         await tc1Client.execute(tc1Client.sender, PluginCommittee, proposalMsg, "auto", undefined, undefined);

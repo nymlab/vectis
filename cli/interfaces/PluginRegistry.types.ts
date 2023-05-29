@@ -97,7 +97,7 @@ export type QueryMsg1 =
           };
       }
     | {
-          query_metadata_link: {
+          query_plugin_by_address: {
               contract_addr: string;
               [k: string]: unknown;
           };
@@ -127,7 +127,11 @@ export interface VersionDetails {
     ipfs_hash: string;
 }
 export interface PluginsResponse {
+    current_plugin_id: number;
     plugins: Plugin[];
     total: number;
 }
-export type NullableString = string | null;
+export interface PluginWithVersionResponse {
+    contract_version: string;
+    plugin_info: Plugin;
+}

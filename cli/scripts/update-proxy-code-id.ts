@@ -13,7 +13,8 @@ import type { FactoryT, Cw3FlexT } from "../interfaces";
     const vectisComClient = new Cw3FlexClient(committee1Client, committee1.address, VectisCommittee);
     const factoryUpdateCodeIdMsg: FactoryT.ExecuteMsg = {
         update_code_id: {
-            new_code_id: proxy.codeId,
+            new_code_id: 1890,
+            //new_code_id: proxy.codeId,
             type: "proxy",
         },
     };

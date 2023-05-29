@@ -44,7 +44,7 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
                 },
                 relayers: [hostAccounts.relayer_1.address, hostAccounts.relayer_2.address],
                 proxy_initial_funds,
-                label: "cronkitty test 1",
+                label: "wallet",
             },
         },
         getDefaultWalletCreationFee(hostChain),
@@ -61,7 +61,11 @@ export async function createTestProxyWallets(factoryClient: FactoryClient): Prom
     return [walletAddress!, walletMSAddress!];
 }
 
-export async function createSingleProxyWallet(factoryClient: FactoryClient, chain: string): Promise<FactoryT.Addr> {
+export async function createSingleProxyWallet(
+    factoryClient: FactoryClient,
+    chain: string,
+    label?: string
+): Promise<FactoryT.Addr> {
     const accounts = chain == "host" ? hostAccounts : remoteAccounts;
     const chains = chain == "host" ? hostChain : remoteChain;
     const proxy_initial_funds =
@@ -84,7 +88,7 @@ export async function createSingleProxyWallet(factoryClient: FactoryClient, chai
                 },
                 relayers: [accounts.relayer_1.address, accounts.relayer_2.address],
                 proxy_initial_funds,
-                label: "wallet",
+                label: label ?? "wallet",
             },
         },
         getDefaultWalletCreationFee(chains),
