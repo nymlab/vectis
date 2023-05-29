@@ -152,27 +152,32 @@ fn reviewer_should_be_able_to_unregister_plugins() {
     let resp = suite.query_registered_plugins(None, None).unwrap();
 
     assert_eq!(resp.total, 0);
+    assert_eq!(resp.current_plugin_id, 1);
 }
 
 #[test]
-fn query_ipfs_hash() {
+fn after_unregister_current_id_does_not_change() {
     let mut suite = HubChainSuite::init().unwrap();
 
+    // should have 2 plugins
     suite
-        .register_plugin(
-            &suite.plugin_committee.clone(),
-            0,
-            "vectis-factory".into(),
-            "some-hash".into(),
-            suite.deployer.to_string(),
-            "some-checksome".into(),
-            VECTIS_VERSION.into(),
-            &coins(REGISTRY_FEE, DENOM),
-        )
+        .register_plugin_mocked(&suite.plugin_committee.clone(), &coins(REGISTRY_FEE, DENOM))
         .unwrap();
+    let resp = suite.query_registered_plugins(None, None).unwrap();
+    assert_eq!(resp.total, 1);
+    suite
+        .unregister_plugin(&suite.plugin_committee.clone(), 1)
+        .unwrap();
+    let mut resp = suite.query_registered_plugins(None, None).unwrap();
+    assert_eq!(resp.total, 0);
+    assert_eq!(resp.current_plugin_id, 1);
 
-    let link = suite.query_metadata_link(&suite.factory).unwrap().unwrap();
-    assert_eq!(link, "some-hash")
+    suite
+        .register_plugin_mocked(&suite.plugin_committee.clone(), &coins(REGISTRY_FEE, DENOM))
+        .unwrap();
+    resp = suite.query_registered_plugins(None, None).unwrap();
+    assert_eq!(resp.total, 1);
+    assert_eq!(resp.plugins[0].id, 2)
 }
 
 #[test]
