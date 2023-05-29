@@ -14,7 +14,7 @@ const base = {
 };
 
 const generate = async (): Promise<void> => {
-    const prefix = "osmo";
+    const prefix = "neutron";
 
     let accounts = {} as Record<keyof typeof base, { address: string; mnemonic: string }>;
     for (const [account, mnemonic] of Object.entries(base)) {

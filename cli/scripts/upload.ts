@@ -10,6 +10,7 @@ import { hubUploadReportPath, coreCodePaths, pluginCodePaths, hostChainName } fr
     console.log("Uploading to ", hostChainName);
     const hostClient = await CosmWasmClient.connectHostWithAccount("admin");
     const uploadHostRes = await hostClient.uploadHubContracts();
+    console.log("Upload Res, ", uploadHostRes);
     writeToFile(hubUploadReportPath, JSON.stringify(uploadHostRes, null, 2));
     verifyUpload(uploadHostRes);
 })();

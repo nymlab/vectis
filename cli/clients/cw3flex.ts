@@ -70,6 +70,28 @@ class Cw3FlexClient extends Cw3FlexC {
         const propId = proposals.proposals.pop()!.id;
         await this.execute({ proposalId: propId });
     }
+
+    async migrate(contract_addr: string, new_code_id: number) {
+        let migrate_msg: Cw3FlexT.WasmMsg = {
+            migrate: { contract_addr, msg: toCosmosMsg({ migrate_with_new_state: {} }), new_code_id },
+        };
+        await this.propose(
+            {
+                description: "migrate",
+                latest: undefined,
+                msgs: [
+                    {
+                        wasm: migrate_msg,
+                    },
+                ],
+                title: "migrate",
+            },
+            "auto"
+        );
+        let proposals = await this.listProposals({});
+        const propId = proposals.proposals.pop()!.id;
+        return this.execute({ proposalId: propId });
+    }
 }
 
 export default Cw3FlexClient;

@@ -22,7 +22,7 @@ import {
     Plugin,
     VersionDetails,
     PluginsResponse,
-    NullableString,
+    PluginWithVersionResponse,
 } from "./PluginRegistry.types";
 export interface PluginRegistryReadOnlyInterface {
     contractAddress: string;
@@ -30,7 +30,7 @@ export interface PluginRegistryReadOnlyInterface {
     getPlugins: ({ limit, startAfter }: { limit?: number; startAfter?: number }) => Promise<PluginsResponse>;
     getPluginById: ({ id }: { id: number }) => Promise<NullablePlugin>;
     getFees: () => Promise<Fees>;
-    queryMetadataLink: ({ contractAddr }: { contractAddr: string }) => Promise<NullableString>;
+    queryPluginByAddress: ({ contractAddr }: { contractAddr: string }) => Promise<PluginWithVersionResponse>;
 }
 export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterface {
     client: CosmWasmClient;
@@ -43,7 +43,7 @@ export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterfac
         this.getPlugins = this.getPlugins.bind(this);
         this.getPluginById = this.getPluginById.bind(this);
         this.getFees = this.getFees.bind(this);
-        this.queryMetadataLink = this.queryMetadataLink.bind(this);
+        this.queryPluginByAddress = this.queryPluginByAddress.bind(this);
     }
 
     getConfig = async (): Promise<ConfigResponse> => {
@@ -71,9 +71,9 @@ export class PluginRegistryQueryClient implements PluginRegistryReadOnlyInterfac
             get_fees: {},
         });
     };
-    queryMetadataLink = async ({ contractAddr }: { contractAddr: string }): Promise<NullableString> => {
+    queryPluginByAddress = async ({ contractAddr }: { contractAddr: string }): Promise<PluginWithVersionResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
-            query_metadata_link: {
+            query_plugin_by_address: {
                 contract_addr: contractAddr,
             },
         });
