@@ -35,7 +35,9 @@ pub use vectis_plugin_registry::{
         PluginRegistry, QueryMsg as PRegistryQueryMsg,
     },
     error::ContractError as PRegistryContractError,
-    responses::{ConfigResponse, PluginsResponse},
+    responses::{
+        ConfigResponse, Fees as PRegistryFees, PluginWithVersionResponse, PluginsResponse,
+    },
 };
 
 pub use vectis_factory::contract::{

@@ -152,8 +152,8 @@ impl HubChainSuite {
             .query_wasm_smart(self.plugin_registry.clone(), &msg)
     }
 
-    pub fn query_metadata_link(&self, addr: &Addr) -> StdResult<Option<String>> {
-        let msg = PRegistryQueryMsg::QueryMetadataLink {
+    pub fn query_plugin_info(&self, addr: &Addr) -> StdResult<PluginWithVersionResponse> {
+        let msg = PRegistryQueryMsg::QueryPluginByAddress {
             contract_addr: addr.to_string(),
         };
         self.app
@@ -163,6 +163,13 @@ impl HubChainSuite {
 
     pub fn query_config(&self) -> StdResult<ConfigResponse> {
         let msg = PRegistryQueryMsg::GetConfig {};
+        self.app
+            .wrap()
+            .query_wasm_smart(self.plugin_registry.clone(), &msg)
+    }
+
+    pub fn query_fees(&self) -> StdResult<PRegistryFees> {
+        let msg = PRegistryQueryMsg::GetFees {};
         self.app
             .wrap()
             .query_wasm_smart(self.plugin_registry.clone(), &msg)
