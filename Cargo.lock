@@ -1373,9 +1373,9 @@ dependencies = [
 
 [[package]]
 name = "serde-json-wasm"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a15bee9b04dd165c3f4e142628982ddde884c2022a89e8ddf99c4829bf2c3a58"
+checksum = "16a62a1fad1e1828b24acac8f2b468971dade7b8c3c2e672bcadefefb1f8c137"
 dependencies = [
  "serde",
 ]
@@ -1670,6 +1670,7 @@ dependencies = [
  "cw20 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cw3 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cw3-fixed-multisig 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde-json-wasm",
  "sha2 0.9.9",
  "thiserror",
  "vectis-plugin-registry",
