@@ -3,7 +3,7 @@ import { pluginRegInstallFee } from "../../utils/fees";
 import { toCosmosMsg } from "../../utils/enconding";
 import { hubDeployReportPath, hostChain, hostChainName } from "../../utils/constants";
 import { CosmosMsgForEmpty } from "../../interfaces/Cw3Flex.types";
-import { ProxyT, CroncatT } from "../../interfaces";
+import { ProxyT, CronkittyT } from "../../interfaces";
 import { createSingleProxyWallet } from "../../tests/mocks/proxyWallet";
 
 const croncat_factory_addr = "juno1mc4wfy9unvy2mwx7dskjqhh6v7qta3vqsxmkayclg4c2jude76es0jcp38";
@@ -61,39 +61,38 @@ const plugin_id = 4;
             },
         };
 
-        //const res_new_game = await proxyClient.execute({ msgs: [new_game_msg] });
-        //console.log("\n\n New Game: \n ", JSON.stringify(res_new_game));
+        const res_new_game = await proxyClient.execute({ msgs: [new_game_msg] });
+        console.log("\n\n--> New Game: \n ", JSON.stringify(res_new_game));
 
-        //// -----------------------------------
-        //// Now controller (human) plays the first move
-        //// -----------------------------------
+        // -----------------------------------
+        // Now controller (human) plays the first move
+        // -----------------------------------
         const first_move: CosmosMsgForEmpty = {
             wasm: {
                 execute: {
                     contract_addr: tic_tac_toe,
-                    msg: toCosmosMsg({ play: { point: { x: 0, y: 2 } } }),
+                    msg: toCosmosMsg({ play: { point: { x: 1, y: 2 } } }),
                     funds: [],
                 },
             },
         };
 
-        const res_first_move = await proxyClient.execute({ msgs: [first_move] });
-        console.log("\n\n first move: \n ", JSON.stringify(res_first_move));
-        //const game_after_first_move = await userClient.queryContractSmart(tic_tac_toe, {
-        //    game_info: { owner: walletAddr },
-        //});
-        //console.log("\n\n game status \n ", JSON.stringify(game_after_first_move));
+        //await proxyClient.execute({ msgs: [first_move] });
+        const game_after_first_move = await userClient.queryContractSmart(tic_tac_toe, {
+            game_info: { owner: walletAddr },
+        });
+        console.log("\n\n--> Game Status \n ", JSON.stringify(game_after_first_move));
 
-        //// -----------------------------------
-        //// Create Task on Cronkitty
-        //// -----------------------------------
+        // -----------------------------------
+        // Create Task on Cronkitty
+        // -----------------------------------
         const amount_funds_for_task = "2500000";
         const funds_in_croncat = { amount: amount_funds_for_task, denom: hostChain.feeToken };
         let task: CroncatT.TaskRequest = {
             actions: [
                 {
                     // I am not sure what this should be, if it is 800000 it does run but then we will need to increate the `amount_funds_for_task`
-                    gas_limit: 500000,
+                    gas_limit: 1000000,
                     msg: {
                         wasm: {
                             execute: {
@@ -112,7 +111,7 @@ const plugin_id = 4;
             stop_on_fail: false,
         };
 
-        let createTaskMsg = { create_task: { task: task, auto_refill: amount_funds_for_task } };
+        let createTaskMsg: CronkittyT.ExecuteMsg = { create_task: { task: task, auto_refill: amount_funds_for_task } };
         let cronKittyMsg: CosmosMsgForEmpty = {
             wasm: {
                 execute: {
@@ -134,11 +133,5 @@ const plugin_id = 4;
             task: { task_hash: action.task_hash },
         });
         console.log("Task set for Vectis Account on Croncat: ", JSON.stringify(taskRes));
-
-        // -----------------------------------
-        // checks that cronkitty played
-        // -----------------------------------
-        const game = await userClient.queryContractSmart(tic_tac_toe, { game_info: { owner: walletAddr } });
-        console.log("\n\n game status \n ", JSON.stringify(game));
     }
 })();
