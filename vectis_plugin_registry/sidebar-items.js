@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["INSTALL_REPLY"],"fn":["execute","instantiate","query","reply"],"mod":["contract","error","multitest","plugin","responses"]};
+window.SIDEBAR_ITEMS = {"constant":["INSTALL_REPLY"],"fn":["execute","instantiate","migrate","query","reply"],"mod":["contract","error","multitest","plugin","responses"]};

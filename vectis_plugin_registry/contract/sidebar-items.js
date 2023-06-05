@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ContractExecMsg","ContractQueryMsg","ExecMsg","QueryMsg"],"struct":["Fees","InstantiateMsg","PluginRegistry","VersionDetails"]};
+window.SIDEBAR_ITEMS = {"enum":["ContractExecMsg","ContractQueryMsg","ExecMsg","QueryMsg"],"fn":["reply_execute"],"struct":["InstantiateMsg","MigrateMsg","PluginRegistry","VersionDetails"]};

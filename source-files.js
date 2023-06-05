@@ -1,5 +1,5 @@
 var sourcesIndex = JSON.parse('{\
-"cronkitty":["",[],["contract.rs","error.rs","lib.rs"]],\
+"cronkitty":["",[],["contract.rs","error.rs","execute.rs","lib.rs"]],\
 "vectis_contract_tests":["",[["common",[],["base_common.rs","common.rs","mod.rs","plugins.rs"]]],["lib.rs"]],\
 "vectis_factory":["",[],["contract.rs","error.rs","factory.rs","lib.rs","msg.rs"]],\
 "vectis_plugin_registry":["",[],["contract.rs","error.rs","lib.rs","multitest.rs","plugin.rs","responses.rs"]],\

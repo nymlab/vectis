@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ConfigResponse","PluginsResponse"]};
+window.SIDEBAR_ITEMS = {"struct":["ConfigResponse","Fees","PluginWithVersionResponse","PluginsResponse"]};
