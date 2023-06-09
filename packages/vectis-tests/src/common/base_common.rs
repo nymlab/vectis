@@ -266,7 +266,7 @@ impl HubChainSuite {
         let attr = wasm_events[0]
             .attributes
             .iter()
-            .find(|at| at.key == "_contract_addr");
+            .find(|at| at.key == "account");
 
         let proxy = &attr.unwrap().value;
 
