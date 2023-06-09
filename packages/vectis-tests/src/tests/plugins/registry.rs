@@ -227,6 +227,35 @@ fn reviewer_should_be_able_to_update_plugins() {
 }
 
 #[test]
+fn reviewer_should_not_be_able_to_update_plugins_same_version_to_overwrite() {
+    let mut suite = HubChainSuite::init().unwrap();
+
+    suite
+        .register_plugin_mocked(&suite.plugin_committee.clone(), &coins(REGISTRY_FEE, DENOM))
+        .unwrap();
+
+    let plugin = suite.query_plugin(1).unwrap().unwrap();
+
+    let new_code_id = 2;
+    let new_creator = "creator";
+    let new_ipfs_hash = "new_ipfs_hash";
+    let new_checksum = "new_checksum";
+    let old_version = "0.0.1";
+
+    suite
+        .update_plugin(
+            &suite.plugin_committee.clone(),
+            plugin.id,
+            Some(new_code_id),
+            Some(new_creator.to_string()),
+            Some(new_ipfs_hash.to_string()),
+            Some(new_checksum.to_string()),
+            old_version.to_string(),
+        )
+        .unwrap_err();
+}
+
+#[test]
 fn deployer_should_be_able_to_update_registry_fee() {
     let mut suite = HubChainSuite::init().unwrap();
 
