@@ -1,9 +1,9 @@
 {
     "factory": {
-        "codeId": 530
+        "codeId": 842
     },
     "proxy": {
-        "codeId": 536
+        "codeId": 843
     },
     "cw3Fixed": {
         "originalSize": 318350,
@@ -513,11 +513,19 @@
         "gasUsed": 1454558
     },
     "pluginReg": {
-        "codeId": 605
+        "codeId": 847
     },
     "plugins": {
         "cronkitty": {
-            "codeId": 606
+            "originalSize": 693023,
+            "originalChecksum": "418c990226c3b91356415f8b69e90fe62c342c79825b1b6c7729fe290f1dc98d",
+            "compressedSize": 205992,
+            "compressedChecksum": "232adea85fca135b4d1772a9b8a64edcc1e973b0420145656880c263df5a11e4",
+            "codeId": 848,
+            "height": 1689472,
+            "transactionHash": "B5752CCD5E2EB4B24380776431BC9CC703F8726C6C9386462C27D5BE754142B1",
+            "gasWanted": 5491078,
+            "gasUsed": 4238233
         }
     }
 }

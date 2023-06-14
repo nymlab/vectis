@@ -14,6 +14,7 @@ export interface Account {
 
 export * from "./juno";
 export * from "./wasm";
+export * from "./stargaze";
 export * from "./injective";
 export * from "./archway";
 export * from "./neutron";

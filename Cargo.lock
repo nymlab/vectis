@@ -1670,6 +1670,7 @@ dependencies = [
  "cw20 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cw3 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cw3-fixed-multisig 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde",
  "serde-json-wasm",
  "sha2 0.9.9",
  "thiserror",

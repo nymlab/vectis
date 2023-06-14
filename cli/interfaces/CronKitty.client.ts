@@ -10,6 +10,7 @@ import {
     InstantiateMsg,
     ExecuteMsg,
     ExecMsg,
+    RefillLimit,
     Uint128,
     CosmosMsgForEmpty,
     BankMsg,
@@ -28,6 +29,7 @@ import {
     WasmQuery,
     ValueIndex,
     PathToValue,
+    AutoRefill,
     TaskRequest,
     ActionForEmpty,
     Coin,
@@ -43,6 +45,7 @@ import {
     QueryMsg1,
     Addr,
     CronKittyActionResp,
+    RefillAccounting,
 } from "./CronKitty.types";
 export interface CronKittyReadOnlyInterface {
     contractAddress: string;
@@ -91,7 +94,7 @@ export interface CronKittyInterface extends CronKittyReadOnlyInterface {
             autoRefill,
             task,
         }: {
-            autoRefill?: Uint128;
+            autoRefill?: AutoRefill;
             task: TaskRequest;
         },
         fee?: number | StdFee | "auto",
@@ -165,7 +168,7 @@ export class CronKittyClient extends CronKittyQueryClient implements CronKittyIn
             autoRefill,
             task,
         }: {
-            autoRefill?: Uint128;
+            autoRefill?: AutoRefill;
             task: TaskRequest;
         },
         fee: number | StdFee | "auto" = "auto",
