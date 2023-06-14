@@ -1,0 +1,16 @@
+{
+    "contract_schema": {},
+    "name": "CronKitty - Onchain Automation",
+    "images": [
+        "ipfs://QmdQcEoKNBxW6eoaeQMyWnuKd4S49xaDE47VXrXGBrfwmx",
+        "ipfs://Qmejf4tprSgUk6DC96ufW1doCLi7YrNyyEbNZ6iPcJjuFF",
+        "ipfs://QmcsPAQikZGcicj1YWE64y5RHtqwSwpwwp8iRMQVGZwt6k",
+        "ipfs://QmWoxBhioXnGDgb9Vjo14cpmeQkQrRgzgC3mhznfaFeew8"
+    ],
+    "banner": "ipfs://QmQuWJEUUrjd4k86H7G1uCtN3SYJyA2ane1fYvHsrNKSMe",
+    "tags": ["Croncat", "Cronkitty", "Automation", "Utility", "Executing Plugins"],
+    "logo": "ipfs://QmXPLM4aVtusXTAZwu4sHByPkFy8DWvCeqTmo55DMx2aMn",
+    "description": "Wrapper for self-custodial and auto-refill Croncat tasks",
+    "links": { "github": "https://github.com/nymlab/vectis-plugins" },
+    "version": "v0.2.1"
+}

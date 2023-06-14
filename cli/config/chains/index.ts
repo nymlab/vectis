@@ -6,7 +6,8 @@ export type Chains =
     | "tgrade_localnet"
     | "injective_testnet"
     | "neutron_testnet"
-    | "archway_testnet";
+    | "archway_testnet"
+    | "stargaze_testnet";
 export interface Chain {
     readonly chainId: string;
     readonly chainName: string;
@@ -29,3 +30,4 @@ export * from "./tgrade";
 export * from "./archway";
 export * from "./neutron";
 export * from "./injective";
+export * from "./stargaze";
