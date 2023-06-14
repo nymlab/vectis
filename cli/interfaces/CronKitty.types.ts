@@ -19,7 +19,7 @@ export type ExecMsg =
       }
     | {
           create_task: {
-              auto_refill?: Uint128 | null;
+              auto_refill?: AutoRefill | null;
               task: TaskRequest;
               [k: string]: unknown;
           };
@@ -40,6 +40,13 @@ export type ExecMsg =
               task_id: number;
               [k: string]: unknown;
           };
+      };
+export type RefillLimit =
+    | {
+          failed_attempts: number;
+      }
+    | {
+          total_refilled_amount: Uint128;
       };
 export type Uint128 = string;
 export type CosmosMsgForEmpty =
@@ -248,6 +255,10 @@ export type ValueIndex =
           index: number;
       };
 export type PathToValue = ValueIndex[];
+export interface AutoRefill {
+    stop_after?: RefillLimit | null;
+    trigger_balance?: Uint128 | null;
+}
 export interface TaskRequest {
     actions: ActionForEmpty[];
     boundary?: Boundary | null;
@@ -317,9 +328,16 @@ export type QueryMsg1 =
       };
 export type Addr = string;
 export interface CronKittyActionResp {
-    auto_refill?: Uint128 | null;
+    auto_refill?: AutoRefill | null;
     manager_addr: Addr;
     msgs: CosmosMsgForEmpty[];
+    refill_accounting?: RefillAccounting | null;
     task_addr: Addr;
     task_hash?: string | null;
+}
+export interface RefillAccounting {
+    last_refill_amount: Uint128;
+    total_action_failed: number;
+    total_refill_amount: Uint128;
+    total_refills: number;
 }

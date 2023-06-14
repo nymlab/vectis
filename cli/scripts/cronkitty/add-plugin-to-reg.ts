@@ -8,8 +8,7 @@ import { ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../../interface
 import { ExecuteMsg as PluginRegistryExecMsg } from "../../interfaces/PluginRegistry.types";
 
 // v0.2.1
-const checksum = "e7a64af980e884c88edf6d9ecf15fd8ac6e2d88ceef68ead2f4a6ce8c4ac0d07";
-const ipfs_hash = "tmp-hash";
+const ipfs_hash = "Qmec1iJw7d8iuez8umpf3TKCWAPcs66Db6tsk5xLSZyirz";
 const name = "cronkitty";
 const version = "0.2.1";
 
@@ -21,6 +20,7 @@ const version = "0.2.1";
 
     if (uploadRes) {
         const code_id = uploadRes.codeId;
+        const checksum = uploadRes.originalChecksum;
         const creator = hostAccounts["admin"] as Account;
         const tc1Client = await CWClient.connectHostWithAccount("committee1");
         const cw3client = new Cw3FlexClient(tc1Client, tc1Client.sender, PluginCommittee);
@@ -38,6 +38,7 @@ const version = "0.2.1";
                 name,
                 version,
             },
+            //unregister_plugin: { id: 5 },
         };
 
         let execMsgForPluginReg: CosmosMsgForEmpty = {
@@ -76,6 +77,6 @@ const version = "0.2.1";
 
         let plugins = await prClient.getPlugins({});
         console.log("Plugins: \n", JSON.stringify(plugins));
-        writeInCacheFolder(`registeredPlugins.json`, JSON.stringify(plugins, null, 2));
+        //writeInCacheFolder(`registeredPlugins.json`, JSON.stringify(plugins, null, 2));
     }
 })();

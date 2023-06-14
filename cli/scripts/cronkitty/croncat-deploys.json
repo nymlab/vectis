@@ -1,7 +1,7 @@
 {
-    "juno_testnet": "juno1n7gsa2zf2qsa0rl526pqc6v2ljq45qw5df9tfm26fdm76tupv0fq38xpan",
-    "juno_mainnet": "juno16tzc6krytqxd7350ja4xqvzy522r3737fyaqm5xxn9n5damncx9qt884hn",
-    "neutron_pion1": "neutron1sc3r0m8zxw34jfg5xtym8tuxg38n2efuazap8nzmcgrjfampc0vqp0lg55",
-    "archway_constantine2": "archway1fz8wlm2sygmf5zzg47xeznsmljyz0pkxefuugr44lyt58l2uertqnh87ts",
-    "stargaze_testnet": "stars1kauk24v3wkyy64kc7jn0r3ys0zqy9dxqvmy6ul76z7405ur2y9lq90yd8d "
+    "juno_testnet": "juno1mc4wfy9unvy2mwx7dskjqhh6v7qta3vqsxmkayclg4c2jude76es0jcp38",
+    "juno_mainnet": "",
+    "neutron_pion1": "neutron1qdmeqpzlha2lgw7w90up895fu3a8p3g0gnfvd9yj04ks9z9p305qtpkxdt",
+    "archway_constantine2": "",
+    "stargaze_testnet": "stars1vxd9a2w4taqlv5cfjnqpqhwtl9va8k0jgs5u35s3g4cxhy44zv5q3upvx5"
 }

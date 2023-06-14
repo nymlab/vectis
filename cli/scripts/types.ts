@@ -3,7 +3,7 @@ import { join } from "path";
 import { areTypesSchemasDownloaded, downloadTypeSchema } from "../utils/fs";
 import { cw4GroupSchemaLink, cw3flexSchemaLink } from "../utils/constants";
 
-const contractsPath = (path: string) => join(__dirname, "../../contracts/core/", path);
+const contractsPath = (path: string) => join(__dirname, "../../contracts/", path);
 const downloadSchemaPath = (path: string) => join(__dirname, "../.cache/schemas/", path);
 const outPath = join(__dirname, "../interfaces");
 
@@ -23,15 +23,19 @@ const typesFiles = {
         contracts: [
             {
                 name: "proxy",
-                dir: contractsPath("proxy/schema"),
+                dir: contractsPath("core/proxy/schema"),
             },
             {
                 name: "factory",
-                dir: contractsPath("factory/schema"),
+                dir: contractsPath("core/factory/schema"),
             },
             {
                 name: "pluginRegistry",
-                dir: contractsPath("plugin_registry/schema"),
+                dir: contractsPath("core/plugin_registry/schema"),
+            },
+            {
+                name: "cronKitty",
+                dir: contractsPath("plugins/cronkitty/schema"),
             },
             {
                 name: "cw3Flex",
