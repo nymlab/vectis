@@ -4,6 +4,7 @@ import {
     vectisTechCommittee1Weight,
     vectisTechCommittee2Weight,
 } from "../../clients/cw3flex";
+import path from "path";
 
 import { MsgBroadcasterWithPk, MsgExecuteContract, MsgInstantiateContract, PrivateKey } from "@injectivelabs/sdk-ts";
 import { Network, getNetworkEndpoints } from "@injectivelabs/networks";
@@ -139,12 +140,12 @@ const addItem = async (
         },
     });
 
-    console.log(msg);
-
     let txResponse = await adminClient.broadcast({
         msgs: msg,
         injectiveAddress: adminAddr,
     });
+
+    console.log("txResponse: ", JSON.stringify(txResponse));
 
     const vectisCommitteeMembers = extractValueFromEvent(
         txResponse.rawLog,
@@ -395,6 +396,7 @@ const addItem = async (
     };
 
     console.log("\n Contracts on Chain: ", contracts);
+    let deployPath = path.join(__dirname, "../../deploy", `${process.env.HOST_CHAIN}-uploadInfo-test.json`);
     writeToFile(`./deploy/${network}-deployInfo.json`, JSON.stringify(contracts, null, 2));
 
     // ===================================================================================
