@@ -4,6 +4,7 @@ import { getNetworkEndpoints, Network } from "@injectivelabs/networks";
 import { coreCodePaths } from "../../utils/constants";
 import * as injectiveAccounts from "../../config/accounts/injective";
 import { writeToFile } from "../../utils/fs";
+import path from "path";
 
 (async function uploadCode() {
     const network = process.env.HOST_CHAIN;
@@ -33,7 +34,7 @@ import { writeToFile } from "../../utils/fs";
             });
 
             const [{ events }] = JSON.parse(txHash.rawLog);
-            const { attributes } = events.find((e: any) => e.type === "store_code");
+            const { attributes } = events.find((e: any) => e.type === "cosmwasm.wasm.v1.EventCodeStored");
             const { value: codeId } = attributes.find((a: any) => a.key === "code_id");
             const name = key.replace("Path", "Id");
             codesId[name] = Number(codeId);
@@ -42,6 +43,6 @@ import { writeToFile } from "../../utils/fs";
             console.log("Upload failed: ", key, "errr: ", err);
         }
     }
-
-    writeToFile(`../../deploy/${network}-uploadInfo.json`, JSON.stringify(codesId, null, 2));
+    let deployPath = path.join(__dirname, "../../deploy", `${process.env.HOST_CHAIN}-uploadInfo-test.json`);
+    writeToFile(deployPath, JSON.stringify(codesId, null, 2));
 })();
