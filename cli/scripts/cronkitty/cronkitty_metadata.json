@@ -10,7 +10,8 @@
     "banner": "ipfs://QmQuWJEUUrjd4k86H7G1uCtN3SYJyA2ane1fYvHsrNKSMe",
     "tags": ["Croncat", "Cronkitty", "Automation", "Utility", "Executing Plugins"],
     "logo": "ipfs://QmXPLM4aVtusXTAZwu4sHByPkFy8DWvCeqTmo55DMx2aMn",
-    "description": "Wrapper for self-custodial and auto-refill Croncat tasks",
+    "tagline": "Wrapper for self-custodial and auto-refill Croncat tasks",
+    "description": "ipfs://QmcCD2cwCSxENyzMNADosGh1yPFhUcgU8eypqAdTBm4hpH",
     "links": { "github": "https://github.com/nymlab/vectis-plugins" },
     "version": "v0.2.1"
 }
