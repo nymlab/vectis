@@ -8,7 +8,7 @@ import { ExecuteMsg as Cw3FlexExecMsg, CosmosMsgForEmpty } from "../../interface
 import { ExecuteMsg as PluginRegistryExecMsg } from "../../interfaces/PluginRegistry.types";
 
 // v0.2.1
-const ipfs_hash = "Qmec1iJw7d8iuez8umpf3TKCWAPcs66Db6tsk5xLSZyirz";
+const ipfs_hash = "QmYiz6JcREYvdoyonqfgmmoa4HkvfKkyMDGRf2a8RzFnmK";
 const name = "cronkitty";
 const version = "0.2.1";
 
@@ -30,6 +30,7 @@ const version = "0.2.1";
         let currentId = proposals.proposals.length == 0 ? 0 : proposals.proposals[0].id;
 
         let pluginRegExecMsg: PluginRegistryExecMsg = {
+            //unregister_plugin: { id: 1 },
             register_plugin: {
                 checksum,
                 code_id,
@@ -38,7 +39,6 @@ const version = "0.2.1";
                 name,
                 version,
             },
-            //unregister_plugin: { id: 5 },
         };
 
         let execMsgForPluginReg: CosmosMsgForEmpty = {
