@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["execute","instantiate","query","reply"],"mod":["contract","error","execute"]};
+window.SIDEBAR_ITEMS = {"constant":["ACTION_ERROR_REPLY_ID"],"fn":["execute","instantiate","query","reply"],"mod":["contract","error","execute","types"]};

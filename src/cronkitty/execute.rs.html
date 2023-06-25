@@ -81,11 +81,45 @@
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
 <a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     contract::{CronKittyPlugin, ExecMsg, MANAGER},
     error::ContractError,
+    ACTION_ERROR_REPLY_ID,
 };
-<span class="kw">use </span>cosmwasm_std::{coins, to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg};
+<span class="kw">use </span>cosmwasm_std::{
+    coins, to_binary, CosmosMsg, DepsMut, Empty, Env, MessageInfo, Response, SubMsg, WasmMsg,
+};
 <span class="kw">use </span>vectis_wallet::ProxyExecuteMsg;
 
 <span class="kw">pub fn </span>execute(
@@ -95,40 +129,49 @@
     info: MessageInfo,
     action_id: u64,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-    <span class="kw">let </span>(version, <span class="kw-2">mut </span>msgs, task_hash_stored, auto_refill) =
-        cronkitty.actions.load(deps.storage, action_id)<span class="question-mark">?</span>;
-    <span class="kw">let </span>mgt_addr = cronkitty.query_contract_addr(<span class="kw-2">&amp;</span>deps.as_ref(), <span class="kw-2">&amp;</span>version, MANAGER)<span class="question-mark">?</span>;
+    <span class="comment">// First thing is to make sure we overwrite whatever was stored as the current executing task
+    // We need this in the case that the actions fails, otherwise it is not read
+    </span>cronkitty.exec_action_id.save(deps.storage, <span class="kw-2">&amp;</span>action_id)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span><span class="kw-2">mut </span>action_ref = cronkitty.actions.load(deps.storage, action_id)<span class="question-mark">?</span>;
+    <span class="kw">let </span>mgt_addr = cronkitty.query_contract_addr(<span class="kw-2">&amp;</span>deps.as_ref(), <span class="kw-2">&amp;</span>action_ref.version, MANAGER)<span class="question-mark">?</span>;
 
     <span class="comment">// Make sure it is from the maanger
     </span><span class="kw">if </span>info.sender != mgt_addr {
         <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Unauthorized);
     }
 
-    <span class="comment">// Now: check latest manager taskhash to ensure it is one we created
-    // the owner field is already in the task_hash
+    <span class="comment">// Now: check latest manager taskhash to ensure it is one we created.
+    // The owner field is already in the task_hash
     </span><span class="kw">let </span>task_info = cronkitty
         .last_task_execution_info
         .query(<span class="kw-2">&amp;</span>deps.querier, mgt_addr.clone())<span class="question-mark">?</span>;
 
-    <span class="kw">if let </span><span class="prelude-val">Some</span>(task_hash) = task_hash_stored {
-        <span class="kw">if </span>task_info.task_hash != task_hash {
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(task_hash) = <span class="kw-2">&amp;</span>action_ref.task_hash {
+        <span class="kw">if </span><span class="kw-2">&amp;</span>task_info.task_hash != task_hash {
             <span class="prelude-val">Err</span>(ContractError::UnexpectedCroncatTaskHash)
         } <span class="kw">else </span>{
             <span class="kw">let </span>owner = deps
                 .api
                 .addr_humanize(<span class="kw-2">&amp;</span>cronkitty.owner.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">?
                 </span>.into_string();
-            <span class="comment">// Once we know it is the taskhash we created, we will
-            // 1. Call Proxy PluginExecute to let proxy take action as instructure
-            // 2. Check if the task requires auto-refill, if it does, we will refill it to the
-            //    expected level
 
-            </span><span class="kw">if let </span><span class="prelude-val">Some</span>(watermark) = auto_refill {
+            <span class="comment">// Once we know it is the taskhash we created, we will
+            // 1. Check if the task requires auto-refill, if it does, we will refill it to the
+            //    expected level
+            // 2. Call Proxy PluginExecute to let proxy take action as instructure
+            // These are submessages so that even if it fails, we do not error so that msgs / refill happens
+            </span><span class="kw">let </span><span class="kw-2">mut </span>forward_msgs = <span class="macro">vec!</span>[];
+
+            <span class="kw">if </span>action_ref.refillable() {
                 <span class="kw">let </span>current_task_balance_on_croncat = cronkitty
                     .task_balances
                     .query(<span class="kw-2">&amp;</span>deps.querier, mgt_addr, task_hash.as_bytes())<span class="question-mark">?
                     </span>.ok_or(ContractError::UnexpectedCroncatTaskBalance)<span class="question-mark">?</span>;
 
+                <span class="comment">// There will also be a trigger balance, if user did not enter, we replaced it with
+                // create task balance on task creation. Safe unwrap
+                </span><span class="kw">let </span>watermark = action_ref.get_watermark().unwrap();
                 <span class="kw">if </span>current_task_balance_on_croncat
                     .native_balance
                     .lt(<span class="kw-2">&amp;</span>watermark)
@@ -140,22 +183,41 @@
                         .unwrap();
                     <span class="kw">let </span>denom = cronkitty.native_denom.load(deps.storage)<span class="question-mark">?</span>;
 
-                    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                    <span class="comment">// Update action_ref and save update to state
+                    </span>action_ref.refill(to_refill_amount)<span class="question-mark">?</span>;
+                    cronkitty
+                        .actions
+                        .save(deps.storage, action_id, <span class="kw-2">&amp;</span>action_ref)<span class="question-mark">?</span>;
+
+                    <span class="kw">let </span>refill_msg = CosmosMsg::&lt;Empty&gt;::Wasm(WasmMsg::Execute {
                         contract_addr: env.contract.address.to_string(),
                         msg: to_binary(<span class="kw-2">&amp;</span>ExecMsg::RefillTask { task_id: action_id })<span class="question-mark">?</span>,
                         funds: coins(to_refill_amount.u128(), denom),
+                    });
+
+                    forward_msgs.push(SubMsg::new(WasmMsg::Execute {
+                        contract_addr: owner.clone(),
+                        msg: to_binary(<span class="kw-2">&amp;</span>ProxyExecuteMsg::PluginExecute {
+                            msgs: <span class="macro">vec!</span>[refill_msg],
+                        })<span class="question-mark">?</span>,
+                        funds: <span class="macro">vec!</span>[],
                     }))
                 }
             }
 
-            <span class="kw">let </span>forward_msgs = CosmosMsg::&lt;<span class="kw">_</span>&gt;::Wasm(WasmMsg::Execute {
-                contract_addr: owner.clone(),
-                msg: to_binary(<span class="kw-2">&amp;</span>ProxyExecuteMsg::PluginExecute { msgs })<span class="question-mark">?</span>,
-                funds: <span class="macro">vec!</span>[],
-            });
+            forward_msgs.push(SubMsg::reply_on_error(
+                WasmMsg::Execute {
+                    contract_addr: owner.clone(),
+                    msg: to_binary(<span class="kw-2">&amp;</span>ProxyExecuteMsg::PluginExecute {
+                        msgs: action_ref.msgs,
+                    })<span class="question-mark">?</span>,
+                    funds: <span class="macro">vec!</span>[],
+                },
+                ACTION_ERROR_REPLY_ID,
+            ));
 
             <span class="prelude-val">Ok</span>(Response::new()
-                .add_message(forward_msgs)
+                .add_submessages(forward_msgs)
                 .add_attribute(<span class="string">&quot;vectis.cronkitty&quot;</span>, <span class="string">&quot;MsgExecute&quot;</span>)
                 .add_attribute(<span class="string">&quot;Proxy&quot;</span>, owner)
                 .add_attribute(<span class="string">&quot;action_id&quot;</span>, action_id.to_string()))

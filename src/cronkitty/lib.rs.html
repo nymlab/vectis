@@ -110,26 +110,56 @@
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
 <a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>contract;
 <span class="kw">pub mod </span>error;
 <span class="kw">pub mod </span>execute;
+<span class="kw">pub mod </span>types;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>multitest;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
+<span class="kw">pub const </span>ACTION_ERROR_REPLY_ID: u64 = u64::MAX;
 <span class="kw">mod </span>entry_points {
     <span class="kw">use </span>cosmwasm_std::{
-        entry_point, from_binary, Binary, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, Reply,
+        entry_point, from_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply,
         Response,
     };
     <span class="kw">use </span>cw_utils::parse_reply_execute_data;
 
-    <span class="kw">use </span><span class="kw">crate</span>::contract::{
-        ContractExecMsg, ContractQueryMsg, CronKittyPlugin, CronkittyActionRef, InstantiateMsg,
+    <span class="kw">use crate</span>::{
+        contract::{ContractExecMsg, ContractQueryMsg, CronKittyPlugin, InstantiateMsg},
+        error::ContractError,
+        types::ActionRef,
+        ACTION_ERROR_REPLY_ID,
     };
-    <span class="kw">use </span><span class="kw">crate</span>::error::ContractError;
     <span class="kw">use </span>croncat_sdk_tasks::types::TaskExecutionInfo;
 
     <span class="kw">const </span>CONTRACT: CronKittyPlugin = CronKittyPlugin::new();
@@ -161,9 +191,32 @@
 
     <span class="attr">#[entry_point]
     </span><span class="kw">pub fn </span>reply(deps: DepsMut, env: Env, reply: Reply) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
-        <span class="kw">if let </span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="prelude-val">Some</span>(task_hash), <span class="kw">_</span>) = CONTRACT.actions.load(deps.storage, reply.id)<span class="question-mark">? </span>{
-            <span class="comment">// This means task_hash was stored, i.e. replied from remove_task
-            </span>CONTRACT.actions.remove(deps.storage, reply.id);
+        <span class="comment">// This is going to be an error because it is `reply_on_error`
+        </span><span class="kw">if </span>reply.id == ACTION_ERROR_REPLY_ID {
+            <span class="comment">// We update failure refill accounting
+            </span><span class="kw">let </span>action_id = CONTRACT.exec_action_id.load(deps.storage)<span class="question-mark">?</span>;
+            CONTRACT.actions.update(
+                deps.storage,
+                action_id,
+                |a| -&gt; <span class="prelude-ty">Result</span>&lt;ActionRef, ContractError&gt; {
+                    <span class="kw">let </span>action_ref = a.ok_or(ContractError::TaskNotFound)<span class="question-mark">?</span>;
+                    action_ref.failed_action()
+                },
+            )<span class="question-mark">?</span>;
+            <span class="kw">let </span>err = parse_reply_execute_data(reply).unwrap_err();
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(
+                Response::new().add_attribute(<span class="string">&quot;Vectis PluginExecute Error&quot;</span>, <span class="macro">format! </span>{<span class="string">&quot;{err}&quot;</span>})
+            );
+        }
+        <span class="kw">let </span>action = CONTRACT.actions.load(deps.storage, reply.id)<span class="question-mark">?</span>;
+
+        <span class="comment">// if reply is not an action error, it will be from either
+        // 1. task creation - previously not set task_hash
+        // 2. task deletion - have previous task_hash
+
+        // Task deletion
+        </span><span class="kw">if let </span><span class="prelude-val">Some</span>(task_hash) = <span class="kw-2">&amp;</span>action.task_hash {
+            CONTRACT.actions.remove(deps.storage, reply.id);
 
             <span class="comment">// CronCat would have refunded cronkitty
             </span><span class="kw">let </span>balances = deps
@@ -180,13 +233,13 @@
                 Response::new()
             };
 
-            <span class="prelude-val">Ok</span>(res.add_event(
-                Event::new(<span class="string">&quot;vectis.cronkitty.v1.ReplyRemoveTask&quot;</span>)
-                    .add_attribute(<span class="string">&quot;Task ID&quot;</span>, reply.id.to_string())
-                    .add_attribute(<span class="string">&quot;Task Hash&quot;</span>, task_hash),
-            ))
+            <span class="prelude-val">Ok</span>(res
+                .add_attribute(<span class="string">&quot;vectis.cronkitty.v1&quot;</span>, <span class="string">&quot;task_deletion&quot;</span>)
+                .add_attribute(<span class="string">&quot;Task ID&quot;</span>, reply.id.to_string())
+                .add_attribute(<span class="string">&quot;Task Hash&quot;</span>, task_hash))
         } <span class="kw">else </span>{
-            <span class="kw">let </span>expected_id = CONTRACT.next_action_id.load(deps.storage)<span class="question-mark">?</span>;
+            <span class="comment">// Task Creation
+            </span><span class="kw">let </span>expected_id = CONTRACT.next_action_id.load(deps.storage)<span class="question-mark">?</span>;
             <span class="kw">let </span>reply_id = reply.id;
             <span class="kw">if </span>reply_id == expected_id {
                 <span class="kw">let </span>reply_data = parse_reply_execute_data(reply)<span class="question-mark">?
@@ -197,9 +250,9 @@
                 CONTRACT.actions.update(
                     deps.storage,
                     expected_id,
-                    |t| -&gt; <span class="prelude-ty">Result</span>&lt;CronkittyActionRef, ContractError&gt; {
+                    |t| -&gt; <span class="prelude-ty">Result</span>&lt;ActionRef, ContractError&gt; {
                         <span class="kw">let </span><span class="kw-2">mut </span>task = t.ok_or(ContractError::TaskNotFound)<span class="question-mark">?</span>;
-                        task.<span class="number">2 </span>= <span class="prelude-val">Some</span>(task_hash.clone());
+                        task.task_hash = <span class="prelude-val">Some</span>(task_hash.clone());
                         <span class="prelude-val">Ok</span>(task)
                     },
                 )<span class="question-mark">?</span>;
@@ -208,11 +261,10 @@
                     id.checked_add(<span class="number">1</span>).ok_or(ContractError::Overflow)
                 })<span class="question-mark">?</span>;
 
-                <span class="prelude-val">Ok</span>(Response::new().add_event(
-                    Event::new(<span class="string">&quot;vectis.cronkitty.v1.ReplyCreateTask&quot;</span>)
-                        .add_attribute(<span class="string">&quot;Task ID&quot;</span>, reply_id.to_string())
-                        .add_attribute(<span class="string">&quot;Task Hash&quot;</span>, task_hash),
-                ))
+                <span class="prelude-val">Ok</span>(Response::new()
+                    .add_attribute(<span class="string">&quot;vectis.cronkitty.v1&quot;</span>, <span class="string">&quot;task_creation&quot;</span>)
+                    .add_attribute(<span class="string">&quot;Task ID&quot;</span>, reply_id.to_string())
+                    .add_attribute(<span class="string">&quot;Task Hash&quot;</span>, task_hash))
             } <span class="kw">else </span>{
                 <span class="prelude-val">Err</span>(ContractError::InvalidReplyId)
             }

@@ -370,15 +370,14 @@
 <a href="#370" id="370">370</a>
 <a href="#371" id="371">371</a>
 <a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::ContractError, execute};
-<span class="kw">use </span>cosmwasm_schema::cw_serde;
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+    error::ContractError,
+    execute,
+    types::{ActionRef, AutoRefill, CronKittyActionResp},
+};
 <span class="kw">use </span>cosmwasm_std::{
     to_binary, Addr, CanonicalAddr, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    StdResult, SubMsg, WasmMsg,
 };
 <span class="kw">use </span>croncat_sdk_factory::state::CONTRACT_ADDRS;
 <span class="kw">use </span>croncat_sdk_manager::{
@@ -399,31 +398,27 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>TASK: <span class="kw-2">&amp;</span>str = <span class="string">&quot;tasks&quot;</span>;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>MANAGER: <span class="kw-2">&amp;</span>str = <span class="string">&quot;manager&quot;</span>;
 
-<span class="doccomment">/// task / mgr version on croncat, msgs to execute, task_hash, auto_refill
-</span><span class="kw">pub type </span>CronkittyActionRef = ([u8; <span class="number">2</span>], Vec&lt;CosmosMsg&gt;, <span class="prelude-ty">Option</span>&lt;String&gt;, <span class="prelude-ty">Option</span>&lt;Uint128&gt;);
-
-<span class="attr">#[cw_serde]
-</span><span class="kw">pub struct </span>CronKittyActionResp {
-    <span class="kw">pub </span>msgs: Vec&lt;CosmosMsg&gt;,
-    <span class="kw">pub </span>task_hash: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>task_addr: Addr,
-    <span class="kw">pub </span>manager_addr: Addr,
-    <span class="kw">pub </span>auto_refill: <span class="prelude-ty">Option</span>&lt;Uint128&gt;,
-}
-
 <span class="kw">pub struct </span>CronKittyPlugin&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="comment">// Pending get task hash
-    // Map &lt;action_id, (task_version, mg_version, msg_for_proxy_to_exec, task_hash_on_croncat )&gt;
-    </span><span class="kw">pub </span>actions: Map&lt;<span class="lifetime">&#39;a</span>, u64, CronkittyActionRef&gt;,
-    <span class="kw">pub </span>owner: Item&lt;<span class="lifetime">&#39;a</span>, CanonicalAddr&gt;,
-    <span class="kw">pub </span>next_action_id: Item&lt;<span class="lifetime">&#39;a</span>, u64&gt;,
-    <span class="kw">pub </span>croncat_factory: Item&lt;<span class="lifetime">&#39;a</span>, CanonicalAddr&gt;,
-    <span class="comment">// Latest contract name to the version
-    // perhaps can also move this to croncat_factory_sdk::state?
+    <span class="doccomment">/// All the actions stored by Proxy
+    </span><span class="kw">pub </span>actions: Map&lt;<span class="lifetime">&#39;a</span>, u64, ActionRef&gt;,
+    <span class="doccomment">/// Owner of this contract, aka - Proxy
+    </span><span class="kw">pub </span>owner: Item&lt;<span class="lifetime">&#39;a</span>, CanonicalAddr&gt;,
+    <span class="doccomment">/// Increments of unique id for actions
+    </span><span class="kw">pub </span>next_action_id: Item&lt;<span class="lifetime">&#39;a</span>, u64&gt;,
+    <span class="doccomment">/// The action id being executed at the moment
+    </span><span class="kw">pub </span>exec_action_id: Item&lt;<span class="lifetime">&#39;a</span>, u64&gt;,
+    <span class="doccomment">/// The Croncat factory has all versions of other contracts,
+    /// this should not change over time
+    </span><span class="kw">pub </span>croncat_factory: Item&lt;<span class="lifetime">&#39;a</span>, CanonicalAddr&gt;,
+    <span class="doccomment">/// Native denom for task topup
+    </span><span class="kw">pub </span>native_denom: Item&lt;<span class="lifetime">&#39;a</span>, String&gt;,
+    <span class="doccomment">/// Croncat state: Latest contract name to the version
+    </span><span class="comment">// perhaps can also move this to croncat_factory_sdk::state?
     </span><span class="kw">pub </span>latest_versions: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, [u8; <span class="number">2</span>]&gt;,
-    <span class="kw">pub </span>last_task_execution_info: Item&lt;<span class="lifetime">&#39;a</span>, TaskExecutionInfo&gt;,
-    <span class="kw">pub </span>task_balances: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], TaskBalance&gt;,
-    <span class="kw">pub </span>native_denom: Item&lt;<span class="lifetime">&#39;a</span>, String&gt;,
+    <span class="doccomment">/// Croncat state: last task executing on the manager
+    </span><span class="kw">pub </span>last_task_execution_info: Item&lt;<span class="lifetime">&#39;a</span>, TaskExecutionInfo&gt;,
+    <span class="doccomment">/// Croncat state: Latest task balance on the manager
+    </span><span class="kw">pub </span>task_balances: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], TaskBalance&gt;,
 }
 
 <span class="attr">#[contract]
@@ -433,6 +428,7 @@
             actions: Map::new(<span class="string">&quot;actions&quot;</span>),
             owner: Item::new(<span class="string">&quot;owner&quot;</span>),
             next_action_id: Item::new(<span class="string">&quot;id&quot;</span>),
+            exec_action_id: Item::new(<span class="string">&quot;exec_id&quot;</span>),
             croncat_factory: Item::new(<span class="string">&quot;croncat-manager&quot;</span>),
             latest_versions: Map::new(<span class="string">&quot;latest_versions&quot;</span>),
             last_task_execution_info: Item::new(<span class="string">&quot;last_task_execution_info&quot;</span>),
@@ -492,7 +488,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         ctx: (DepsMut, Env, MessageInfo),
         <span class="kw-2">mut </span>task: TaskRequest,
-        auto_refill: <span class="prelude-ty">Option</span>&lt;Uint128&gt;,
+        <span class="kw-2">mut </span>auto_refill: <span class="prelude-ty">Option</span>&lt;AutoRefill&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>(deps, env, info) = ctx;
 
@@ -510,11 +506,9 @@
             <span class="kw">let </span>task_contract_addr =
                 <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps.as_ref(), <span class="kw-2">&amp;</span>contract_version, TASK)<span class="question-mark">?</span>;
 
-            <span class="comment">// check that at least the first instance has the refilled about
-            </span><span class="kw">if let </span><span class="prelude-val">Some</span>(refill_value) = <span class="kw-2">&amp;</span>auto_refill {
-                <span class="kw">if </span>info.funds[<span class="number">0</span>].amount.lt(refill_value) {
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::NotEnoughFundsForGas);
-                }
+            <span class="comment">// If auto_refill is set, we make sure there is trigger_balance
+            </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>r) = auto_refill.as_mut() {
+                r.trigger_balance = r.trigger_balance.or_else(|| <span class="prelude-val">Some</span>(info.funds[<span class="number">0</span>].amount))
             }
 
             <span class="comment">// The id for croncat to call back
@@ -522,10 +516,9 @@
             <span class="self">self</span>.actions.save(
                 deps.storage,
                 id,
-                <span class="kw-2">&amp;</span>(
+                <span class="kw-2">&amp;</span>ActionRef::new(
                     contract_version,
                     task.actions.iter().cloned().map(|a| a.msg).collect(),
-                    <span class="prelude-val">None</span>,
                     auto_refill,
                 ),
             )<span class="question-mark">?</span>;
@@ -600,17 +593,17 @@
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
         <span class="kw">let </span>(deps, _env, info) = ctx;
 
-        <span class="comment">// only the owner (proxy) can create task
+        <span class="comment">// only the owner (proxy) can remove tasks
         </span><span class="kw">if </span>info.sender != deps.api.addr_humanize(<span class="kw-2">&amp;</span><span class="self">self</span>.owner.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">? </span>{
             <span class="prelude-val">Err</span>(ContractError::Unauthorized)
-        } <span class="kw">else if let </span>(contract_version, <span class="kw">_</span>, <span class="prelude-val">Some</span>(task_hash), <span class="kw">_</span>) =
-            <span class="self">self</span>.actions.load(deps.storage, task_id)<span class="question-mark">?
-        </span>{
-            <span class="kw">let </span>task = <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps.as_ref(), <span class="kw-2">&amp;</span>contract_version, TASK)<span class="question-mark">?</span>;
+        } <span class="kw">else if let </span><span class="prelude-val">Some</span>(action) = <span class="self">self</span>.actions.may_load(deps.storage, task_id)<span class="question-mark">? </span>{
+            <span class="kw">let </span>task = <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps.as_ref(), <span class="kw-2">&amp;</span>action.version, TASK)<span class="question-mark">?</span>;
             <span class="kw">let </span>msg = SubMsg::reply_on_success(
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: task.to_string(),
-                    msg: to_binary(<span class="kw-2">&amp;</span>CCTaskExecMsg::RemoveTask { task_hash })<span class="question-mark">?</span>,
+                    msg: to_binary(<span class="kw-2">&amp;</span>CCTaskExecMsg::RemoveTask {
+                        task_hash: action.task_hash.ok_or(ContractError::TaskNotFound)<span class="question-mark">?</span>,
+                    })<span class="question-mark">?</span>,
                     funds: <span class="macro">vec!</span>[],
                 }),
                 task_id,
@@ -657,19 +650,18 @@
             <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::EmptyFunds);
         }
 
-        <span class="comment">// only the owner (proxy) can create task
+        <span class="comment">// only the owner (proxy) can refill task
         </span><span class="kw">if </span>info.sender != deps.api.addr_humanize(<span class="kw-2">&amp;</span><span class="self">self</span>.owner.load(deps.storage)<span class="question-mark">?</span>)<span class="question-mark">? </span>{
             <span class="prelude-val">Err</span>(ContractError::Unauthorized)
         } <span class="kw">else </span>{
             <span class="comment">// call croncat to refill task
-            </span><span class="kw">if let </span>(contract_version, <span class="kw">_</span>, <span class="prelude-val">Some</span>(task_hash), <span class="kw">_</span>) =
-                <span class="self">self</span>.actions.load(deps.storage, task_id)<span class="question-mark">?
-            </span>{
-                <span class="kw">let </span>manager =
-                    <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps.as_ref(), <span class="kw-2">&amp;</span>contract_version, MANAGER)<span class="question-mark">?</span>;
+            </span><span class="kw">if let </span><span class="prelude-val">Some</span>(action) = <span class="self">self</span>.actions.may_load(deps.storage, task_id)<span class="question-mark">? </span>{
+                <span class="kw">let </span>manager = <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps.as_ref(), <span class="kw-2">&amp;</span>action.version, MANAGER)<span class="question-mark">?</span>;
                 <span class="kw">let </span>msg = CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: manager.to_string(),
-                    msg: to_binary(<span class="kw-2">&amp;</span>CCManagerExecMsg::RefillTaskBalance { task_hash })<span class="question-mark">?</span>,
+                    msg: to_binary(<span class="kw-2">&amp;</span>CCManagerExecMsg::RefillTaskBalance {
+                        task_hash: action.task_hash.ok_or(ContractError::TaskNotFound)<span class="question-mark">?</span>,
+                    })<span class="question-mark">?</span>,
                     funds: info.funds,
                 });
                 <span class="prelude-val">Ok</span>(Response::new().add_message(msg))
@@ -693,16 +685,16 @@
         action_id: u64,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;CronKittyActionResp, ContractError&gt; {
         <span class="kw">let </span>(deps, <span class="kw">_</span>) = ctx;
-        <span class="kw">let </span>(contract_version, msgs, task_hash, auto_refill) =
-            <span class="self">self</span>.actions.load(deps.storage, action_id)<span class="question-mark">?</span>;
-        <span class="kw">let </span>task_addr = <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps, <span class="kw-2">&amp;</span>contract_version, TASK)<span class="question-mark">?</span>;
-        <span class="kw">let </span>manager_addr = <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps, <span class="kw-2">&amp;</span>contract_version, MANAGER)<span class="question-mark">?</span>;
+        <span class="kw">let </span>action = <span class="self">self</span>.actions.load(deps.storage, action_id)<span class="question-mark">?</span>;
+        <span class="kw">let </span>task_addr = <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps, <span class="kw-2">&amp;</span>action.version, TASK)<span class="question-mark">?</span>;
+        <span class="kw">let </span>manager_addr = <span class="self">self</span>.query_contract_addr(<span class="kw-2">&amp;</span>deps, <span class="kw-2">&amp;</span>action.version, MANAGER)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(CronKittyActionResp {
-            msgs,
-            task_hash,
+            msgs: action.msgs,
+            task_hash: action.task_hash,
             task_addr,
             manager_addr,
-            auto_refill,
+            auto_refill: action.refill_opt,
+            refill_accounting: action.refill_accounting,
         })
     }
 

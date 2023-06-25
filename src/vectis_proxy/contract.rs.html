@@ -258,6 +258,15 @@
 <a href="#258" id="258">258</a>
 <a href="#259" id="259">259</a>
 <a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
 </pre></div><pre class="rust"><code><span class="attr">#[cfg(not(feature = <span class="string">&quot;library&quot;</span>))]
 </span><span class="kw">use </span>cosmwasm_std::entry_point;
 <span class="kw">use </span>cosmwasm_std::{
@@ -439,9 +448,9 @@
                 multisig_addr: <span class="prelude-val">Some</span>(deps.api.addr_validate(<span class="kw-2">&amp;</span>res.contract_address)<span class="question-mark">?</span>),
                 guardians,
             })<span class="question-mark">?</span>;
-            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgReplyMultisigInstantiate&quot;</span>)
-                .add_attribute(<span class="string">&quot;multisig_address&quot;</span>, res.contract_address);
-
+            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+                .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Guardians Multisig Instantiated&quot;</span>)
+                .add_attribute(<span class="string">&quot;new multisig&quot;</span>, res.contract_address);
             <span class="prelude-val">Ok</span>(Response::new().add_event(event).set_data(data))
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(ContractError::MultisigInstantiationError {})
@@ -461,9 +470,13 @@
             request.old_guardians,
             request.new_guardians.addresses,
         )<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(Response::new().add_submessage(factory_msg))
+        <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+            .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Guardians Multisig Update&quot;</span>)
+            .add_attribute(<span class="string">&quot;new multisig&quot;</span>, data.contract_address);
+        <span class="prelude-val">Ok</span>(Response::new().add_submessage(factory_msg).add_event(event))
     } <span class="kw">else if </span>reply.id == PLUGIN_INST_ID {
-        <span class="kw">if let </span><span class="prelude-val">Ok</span>(res) = parse_reply_instantiate_data(reply) {
+        <span class="comment">// Plugins not from registry
+        </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(res) = parse_reply_instantiate_data(reply) {
             <span class="kw">let </span>permissions = PENDING_PLUGIN.load(deps.storage)<span class="question-mark">?</span>;
             add_plugin_to_state(
                 deps.storage,
@@ -472,7 +485,10 @@
             )<span class="question-mark">?</span>;
             PENDING_PLUGIN.remove(deps.storage);
 
-            <span class="prelude-val">Ok</span>(Response::new().add_attribute(<span class="string">&quot;Vectis plugin_address&quot;</span>, res.contract_address))
+            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+                .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Install Unregistered Plugin&quot;</span>)
+                .add_attribute(<span class="string">&quot;plugin address&quot;</span>, <span class="string">&quot;res.contract_address&quot;</span>);
+            <span class="prelude-val">Ok</span>(Response::new().add_event(event))
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(ContractError::PluginInstantiationError {})
         }
@@ -486,12 +502,14 @@
             add_plugin_to_state(deps.storage, <span class="kw-2">&amp;</span>permissions, <span class="kw-2">&amp;</span>addr)<span class="question-mark">?</span>;
             PENDING_PLUGIN.remove(deps.storage);
 
-            <span class="prelude-val">Ok</span>(Response::new()
-                .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Plugin Stored&quot;</span>)
+            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+                .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Install Registered Plugin&quot;</span>)
                 .add_attribute(
-                    <span class="string">&quot;plugin_address&quot;</span>,
+                    <span class="string">&quot;plugin address&quot;</span>,
                     deps.api.addr_humanize(<span class="kw-2">&amp;</span>addr.into())<span class="question-mark">?</span>.into_string(),
-                ))
+                );
+
+            <span class="prelude-val">Ok</span>(Response::new().add_event(event))
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(ContractError::PluginInstantiationExecError {})
         }

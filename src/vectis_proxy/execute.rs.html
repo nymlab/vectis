@@ -498,6 +498,24 @@
 <a href="#498" id="498">498</a>
 <a href="#499" id="499">499</a>
 <a href="#500" id="500">500</a>
+<a href="#501" id="501">501</a>
+<a href="#502" id="502">502</a>
+<a href="#503" id="503">503</a>
+<a href="#504" id="504">504</a>
+<a href="#505" id="505">505</a>
+<a href="#506" id="506">506</a>
+<a href="#507" id="507">507</a>
+<a href="#508" id="508">508</a>
+<a href="#509" id="509">509</a>
+<a href="#510" id="510">510</a>
+<a href="#511" id="511">511</a>
+<a href="#512" id="512">512</a>
+<a href="#513" id="513">513</a>
+<a href="#514" id="514">514</a>
+<a href="#515" id="515">515</a>
+<a href="#516" id="516">516</a>
+<a href="#517" id="517">517</a>
+<a href="#518" id="518">518</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>cosmwasm_schema::schemars;
 <span class="kw">use </span>cosmwasm_std::{
     to_binary, Addr, Binary, CosmosMsg, DepsMut, Env, Event, MessageInfo, Response, StdResult,
@@ -586,14 +604,15 @@
         // contract
         </span><span class="prelude-val">Some</span>((new_code_id, msg)) =&gt; {
             <span class="kw">let </span>wasm_msg = WasmMsg::Migrate {
-                contract_addr: plugin_addr,
+                contract_addr: plugin_addr.clone(),
                 new_code_id,
                 msg,
             };
 
-            <span class="prelude-val">Ok</span>(res
-                .add_message(wasm_msg)
-                .add_attribute(<span class="string">&quot;vectis.proxy.v1/MsgUpdatePlugin&quot;</span>, <span class="string">&quot;Migrate&quot;</span>))
+            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+                .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Plugin Migrate&quot;</span>)
+                .add_attribute(<span class="string">&quot;pluginAddr&quot;</span>, plugin_addr);
+            <span class="prelude-val">Ok</span>(res.add_message(wasm_msg).add_event(event))
         }
         <span class="comment">// This means we are either removing the plugin or adding it
         </span><span class="prelude-val">None </span>=&gt; {
@@ -602,7 +621,10 @@
                 <span class="comment">// we see if it exist in the list, if it does, we remove it
                 </span><span class="prelude-val">Some</span>(permissions) =&gt; {
                     add_plugin_to_state(deps.storage, <span class="kw-2">&amp;</span>permissions, <span class="kw-2">&amp;</span>canon_addr)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(res.add_attribute(<span class="string">&quot;vectis.proxy.v1/MsgUpdatePlugin&quot;</span>, <span class="string">&quot;Add existing&quot;</span>))
+                    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+                        .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Add Existing Plugin&quot;</span>)
+                        .add_attribute(<span class="string">&quot;pluginAddr&quot;</span>, plugin_addr);
+                    <span class="prelude-val">Ok</span>(res.add_event(event))
                 }
                 <span class="comment">// TODO: we remove plugin_addr from the list
                 </span><span class="prelude-val">None </span>=&gt; <span class="prelude-val">Err</span>(ContractError::FeatureNotSupported),
@@ -619,12 +641,12 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response, ContractError&gt; {
     <span class="kw">let </span>plugin = deps.api.addr_canonicalize(info.sender.as_str())<span class="question-mark">?</span>;
     EXEC_PLUGINS.load(deps.storage, plugin.as_slice())<span class="question-mark">?</span>;
-    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1/MsgPluginExecute&quot;</span>)
+    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+        .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Plugin Execute&quot;</span>)
         .add_attribute(
             <span class="string">&quot;msgs&quot;</span>,
             serde_json_wasm::to_string(<span class="kw-2">&amp;</span>msgs).map_err(|<span class="kw">_</span>| ContractError::ParseError)<span class="question-mark">?</span>,
-        )
-        .add_attribute(<span class="string">&quot;plugin_addr&quot;</span>, info.sender);
+        );
     <span class="prelude-val">Ok</span>(Response::new().add_messages(msgs).add_event(event))
 }
 
@@ -634,7 +656,7 @@
     msgs: Vec&lt;CosmosMsg&lt;T&gt;&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Response&lt;T&gt;, ContractError&gt;
 <span class="kw">where
-    </span>T: Clone + fmt::Debug + PartialEq + schemars::JsonSchema,
+    </span>T: Clone + fmt::Debug + PartialEq + schemars::JsonSchema + serde::Serialize,
 {
     <span class="kw">if </span>is_frozen(deps.as_ref())<span class="question-mark">? </span>{
         <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Frozen {});
@@ -643,7 +665,12 @@
     <span class="comment">// Ensure controller exists
     </span>ensure_is_controller(deps.as_ref(), info.sender.as_ref())<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgExecute&quot;</span>);
+    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+        .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;ControllerExecute&quot;</span>)
+        .add_attribute(
+            <span class="string">&quot;msgs&quot;</span>,
+            serde_json_wasm::to_string(<span class="kw-2">&amp;</span>msgs).map_err(|<span class="kw">_</span>| ContractError::ParseError)<span class="question-mark">?</span>,
+        );
 
     <span class="prelude-val">Ok</span>(Response::new().add_messages(msgs).add_event(event))
 }
@@ -689,7 +716,12 @@
                 <span class="prelude-val">Ok</span>(controller)
             })<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgRelay&quot;</span>);
+            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+                .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Relay Execute&quot;</span>)
+                .add_attribute(
+                    <span class="string">&quot;msgs&quot;</span>,
+                    serde_json_wasm::to_string(<span class="kw-2">&amp;</span>msg).map_err(|<span class="kw">_</span>| ContractError::ParseError)<span class="question-mark">?</span>,
+                );
 
             <span class="prelude-val">Ok</span>(Response::new().add_message(msg).add_event(event))
         } <span class="kw">else </span>{
@@ -718,8 +750,9 @@
 
     <span class="kw">if </span>!RELAYERS.has(deps.storage, <span class="kw-2">&amp;</span>relayer_addr_canonical) {
         RELAYERS.save(deps.storage, <span class="kw-2">&amp;</span>relayer_addr_canonical, <span class="kw-2">&amp;</span>())<span class="question-mark">?</span>;
-        <span class="kw">let </span>event =
-            Event::new(<span class="string">&quot;vectis.proxy.v1.MsgAddRelayer&quot;</span>).add_attribute(<span class="string">&quot;address&quot;</span>, relayer_addr);
+        <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+            .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Add Relayer&quot;</span>)
+            .add_attribute(<span class="string">&quot;address&quot;</span>, relayer_addr);
 
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
     } <span class="kw">else </span>{
@@ -741,8 +774,9 @@
 
     <span class="kw">if </span>RELAYERS.has(deps.storage, <span class="kw-2">&amp;</span>relayer_addr_canonical) {
         RELAYERS.remove(deps.storage, <span class="kw-2">&amp;</span>relayer_addr_canonical);
-        <span class="kw">let </span>event =
-            Event::new(<span class="string">&quot;vectis.proxy.v1.MsgRemoveRelayer&quot;</span>).add_attribute(<span class="string">&quot;address&quot;</span>, relayer_addr);
+        <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+            .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Remove Relayer&quot;</span>)
+            .add_attribute(<span class="string">&quot;address&quot;</span>, relayer_addr);
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
     } <span class="kw">else </span>{
         <span class="prelude-val">Err</span>(ContractError::RelayerDoesNotExist {})
@@ -764,8 +798,14 @@
         <span class="prelude-val">Ok</span>(frozen)
     })<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgRevertFreezeStatus&quot;</span>)
-        .add_attribute(<span class="string">&quot;status&quot;</span>, <span class="kw">if </span>frozen { <span class="string">&quot;frozen&quot; </span>} <span class="kw">else </span>{ <span class="string">&quot;unfrozen&quot; </span>});
+    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>).add_attribute(
+        <span class="string">&quot;action&quot;</span>,
+        <span class="kw">if </span>frozen {
+            <span class="string">&quot;Freeze Account&quot;
+        </span>} <span class="kw">else </span>{
+            <span class="string">&quot;Unfreeze Account&quot;
+        </span>},
+    );
 
     <span class="prelude-val">Ok</span>(Response::new().add_event(event))
 }
@@ -815,7 +855,8 @@
         funds: <span class="macro">vec!</span>[],
     });
 
-    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgRotateControllerKey&quot;</span>)
+    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>)
+        .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Update Controller Key&quot;</span>)
         .add_attribute(<span class="string">&quot;old_address&quot;</span>, deps.api.addr_humanize(<span class="kw-2">&amp;</span>controller.addr)<span class="question-mark">?</span>)
         .add_attribute(<span class="string">&quot;new_address&quot;</span>, new_controller_address);
 
@@ -866,8 +907,7 @@
         )<span class="question-mark">?</span>;
     }
 
-    <span class="kw">let </span><span class="kw-2">mut </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgUpdateGuardians&quot;</span>)
-        .add_attribute(<span class="string">&quot;guardians&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, new_guardians.addresses));
+    <span class="kw">let </span><span class="kw-2">mut </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>).add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Update Guardians&quot;</span>);
 
     <span class="kw">if let </span><span class="prelude-val">Some</span>(multisig_settings) = new_guardians.guardians_multisig {
         <span class="comment">// If new guardian is multisig, we instantiate a new multisig
@@ -935,41 +975,37 @@
     <span class="kw">if </span>is_frozen(deps.as_ref())<span class="question-mark">? </span>{
         <span class="kw">return </span><span class="prelude-val">Err</span>(ContractError::Frozen {});
     }
-    <span class="kw">match </span>request {
+    <span class="kw">let </span><span class="kw-2">mut </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>);
+
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(r) = request {
         <span class="comment">// This is to create a request update
-        </span><span class="prelude-val">Some</span>(r) =&gt; {
-            r.guardians.verify_guardians(
-                <span class="kw-2">&amp;</span>deps
-                    .api
-                    .addr_humanize(<span class="kw-2">&amp;</span>CONTROLLER.load(deps.storage)<span class="question-mark">?</span>.addr)<span class="question-mark">?</span>,
-            )<span class="question-mark">?</span>;
+        </span>r.guardians.verify_guardians(
+            <span class="kw-2">&amp;</span>deps
+                .api
+                .addr_humanize(<span class="kw-2">&amp;</span>CONTROLLER.load(deps.storage)<span class="question-mark">?</span>.addr)<span class="question-mark">?</span>,
+        )<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>old_guardians = load_addresses(<span class="kw-2">&amp;</span>deps.as_ref(), GUARDIANS)<span class="question-mark">?</span>;
+        <span class="kw">let </span>old_guardians = load_addresses(<span class="kw-2">&amp;</span>deps.as_ref(), GUARDIANS)<span class="question-mark">?</span>;
 
-            PENDING_GUARDIAN_ROTATION.save(
-                deps.storage,
-                <span class="kw-2">&amp;</span>GuardiansUpdateRequest::new(
-                    old_guardians,
-                    r.guardians.clone(),
-                    r.new_multisig_code_id,
-                    <span class="kw-2">&amp;</span>env.block,
-                ),
-            )<span class="question-mark">?</span>;
+        PENDING_GUARDIAN_ROTATION.save(
+            deps.storage,
+            <span class="kw-2">&amp;</span>GuardiansUpdateRequest::new(
+                old_guardians,
+                r.guardians.clone(),
+                r.new_multisig_code_id,
+                <span class="kw-2">&amp;</span>env.block,
+            ),
+        )<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgRequestUpdateGuardians&quot;</span>)
-                .add_attribute(<span class="string">&quot;create&quot;</span>, <span class="string">&quot;true&quot;</span>)
-                .add_attribute(<span class="string">&quot;guardians&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, r.guardians.addresses));
-
-            <span class="prelude-val">Ok</span>(Response::new().add_event(event))
-        }
-        <span class="prelude-val">None </span>=&gt; {
-            <span class="comment">// This is to remove a request update
-            </span>PENDING_GUARDIAN_ROTATION.remove(deps.storage);
-            <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgRequestUpdateGuardians&quot;</span>)
-                .add_attribute(<span class="string">&quot;create&quot;</span>, <span class="string">&quot;false&quot;</span>);
-            <span class="prelude-val">Ok</span>(Response::new().add_event(event))
-        }
+        event = event
+            .add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Update Guardians Request&quot;</span>)
+            .add_attribute(<span class="string">&quot;guardians&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, r.guardians.addresses));
+    } <span class="kw">else </span>{
+        <span class="comment">// This is to remove a request update
+        </span>PENDING_GUARDIAN_ROTATION.remove(deps.storage);
+        event = event.add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Remove Update Guardians Request&quot;</span>);
     }
+    <span class="prelude-val">Ok</span>(Response::new().add_event(event))
 }
 
 <span class="doccomment">/// Update label by controller
@@ -994,7 +1030,7 @@
         }
     })<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1.MsgUpdateLabel&quot;</span>).add_attribute(<span class="string">&quot;label&quot;</span>, new_label);
+    <span class="kw">let </span>event = Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>).add_attribute(<span class="string">&quot;action&quot;</span>, <span class="string">&quot;Update Account Label&quot;</span>);
 
     <span class="prelude-val">Ok</span>(Response::default().add_event(event))
 }

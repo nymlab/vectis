@@ -56,6 +56,9 @@
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
 <a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>cosmwasm_std::StdError;
 <span class="kw">use </span>croncat_sdk_core::error::SdkError;
 <span class="kw">use </span>cw_utils::ParseReplyError;
@@ -113,5 +116,8 @@
 
     <span class="attr">#[error(<span class="string">&quot;Croncat task balance is not found&quot;</span>)]
     </span>UnexpectedCroncatTaskBalance,
+
+    <span class="attr">#[error(<span class="string">&quot;Attempting to refill not refillable task&quot;</span>)]
+    </span>NotRefillable,
 }
 </code></pre></div></section></main></body></html>

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ContractExecMsg","ContractQueryMsg","ExecMsg","QueryMsg"],"struct":["CronKittyActionResp","CronKittyPlugin","InstantiateMsg","MigrateMsg"],"type":["CronkittyActionRef"]};
+window.SIDEBAR_ITEMS = {"enum":["ContractExecMsg","ContractQueryMsg","ExecMsg","QueryMsg"],"struct":["CronKittyPlugin","InstantiateMsg","MigrateMsg"]};
