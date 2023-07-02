@@ -14,17 +14,30 @@ export async function uploadAction(network: string, contracts: string[]) {
         logger.fatal(new Error("Network not supported"));
     }
 
+    const client = await CosmWasmClient.connectHostWithAccount("admin", network);
     const chain = chainConfigs[network as keyof typeof chainConfigs] as Chain;
-    const client = await CosmWasmClient.connectHostWithAccount("admin", chain);
 
     const toUpload = [];
     if (!contracts.length) {
         logger.info("Uploading all");
         const uploadHostRes = await client.uploadHubContracts(chain);
-        writeToFile(hubUploadReportPath, JSON.stringify(uploadHostRes, null, 2));
+        writeToFile(hubUploadReportPath(chain), JSON.stringify(uploadHostRes, null, 2));
     } else {
-        _.map(contracts, (c) => {
-            if (!(c in VectisContracts)) logger.error(new Error("Network not supported"));
+        _.map(contracts, async (c) => {
+            if (!(c in VectisContracts)) logger.error(new Error("Contract not supported"));
+            let codePath = coreCodePaths[`${c}CodePath`];
+            const result = await client.uploadContract(codePath);
+            console.log("upload results for: ", c);
+            console.log(JSON.stringify(result));
+            try {
+                const uplaodRes = await import(hubUploadReportPath(chain));
+                uplaodRes[c] = result;
+                writeToFile(hubUploadReportPath(chain), JSON.stringify(uplaodRes, null, 2));
+            } catch (_) {
+                const report: { [key: string]: UploadResult } = {};
+                report[c] = result;
+                writeToFile(hubUploadReportPath(chain), JSON.stringify(report, null, 2));
+            }
         });
     }
 }

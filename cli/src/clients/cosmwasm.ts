@@ -38,6 +38,7 @@ import type { ProxyT, FactoryT } from "../interfaces";
 import type { HubContractsUploadResult } from "../interfaces/contracts";
 import type { Accounts, Account } from "../config/accounts";
 import * as accounts from "../config/accounts";
+import * as chainConfigs from "../config/chains";
 import type { Chain } from "../config/chains";
 
 class CWClient {
@@ -54,8 +55,9 @@ class CWClient {
         });
     }
 
-    static async connectHostWithAccount(account: Accounts, chain: Chain) {
-        const acc = accounts[chain.chainName as keyof typeof accounts];
+    static async connectHostWithAccount(account: Accounts, network: string) {
+        const acc = accounts[network as keyof typeof accounts];
+        const chain = chainConfigs[network as keyof typeof chainConfigs] as Chain;
         return await this.connectWithAccount(chain, acc[account] as Account);
     }
 

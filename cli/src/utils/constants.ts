@@ -48,14 +48,12 @@ export const downloadSchemaPath = path.join(cachePath, "/schemas");
 const vectisContractsPath = path.join(__dirname, "../../../artifacts");
 
 // Deploy output paths
-export const hubUploadReportPath = path.join(
-    process.env.HOST_CHAIN == undefined || process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
-    `${process.env.HOST_CHAIN}-uploadInfo.json`
-);
-export const hubDeployReportPath = path.join(
-    process.env.HOST_CHAIN == undefined || process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
-    `${process.env.HOST_CHAIN}-deployInfo.json`
-);
+export function hubUploadReportPath(chain: Chain): string {
+    return path.join(chain.chainName == "juno_localnet" ? cachePath : deployPath, `${chain.chainId}-uploadInfo.json`);
+}
+export function hubDeployReportPath(chain: Chain): string {
+    return path.join(chain.chainName == "juno_localnet" ? cachePath : deployPath, `${chain.chainId}-deployInfo.json`);
+}
 export const ibcReportPath = path.join(
     process.env.HOST_CHAIN == undefined || process.env.HOST_CHAIN == "juno_localnet" ? cachePath : deployPath,
     "ibcInfo.json"

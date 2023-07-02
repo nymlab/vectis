@@ -3,7 +3,7 @@ import type { UploadResult } from "@cosmjs/cosmwasm-stargate";
 export enum VectisContracts {
     "factory",
     "proxy",
-    "plugin-registry",
+    "pluginReg",
     "cronkitty",
     "cw3Fixed",
     "cw3Flex",

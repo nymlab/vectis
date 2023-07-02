@@ -1,16 +1,11 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import { cachePath, downloadSchemaPath, downloadContractPath, contractsFileNames, configPath } from "./constants";
+import { cachePath, downloadSchemaPath, downloadContractPath, configPath } from "./constants";
 
 export function getContract(path: string): Uint8Array {
     return fs.readFileSync(path);
 }
-
-//export function writeInCacheFolder(fileName: string, content: string, encoding: BufferEncoding = "utf8"): void {
-//    if (!fs.existsSync(cachePath)) fs.mkdirSync(cachePath);
-//    fs.writeFileSync(path.join(cachePath, fileName), content, { encoding });
-//}
 
 export function writeToFile(fullPath: string, content: string, encoding: BufferEncoding = "utf8"): void {
     const dir = path.dirname(fullPath);
