@@ -15,6 +15,7 @@ export interface Chain {
     readonly addressPrefix: string;
     readonly rpcUrl: string;
     readonly httpUrl: string;
+    readonly exponent: number;
     readonly faucetUrl?: string;
     readonly faucetToken?: string;
     readonly feeToken: string;

@@ -4,6 +4,7 @@ export const stargaze_testnet = {
     addressPrefix: "stars",
     rpcUrl: "https://rpc.elgafar-1.stargaze-apis.com",
     httpUrl: "https://rest.elgafar-1.stargaze-apis.com",
+    exponent: 6,
     feeToken: "ustars",
     stakingToken: "ustars",
     estimatedBlockTime: 7000,

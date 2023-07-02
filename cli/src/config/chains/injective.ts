@@ -4,6 +4,7 @@ export const injective_testnet = {
     addressPrefix: "inj",
     rpcUrl: "https://k8s.testnet.tm.injective.network",
     httpUrl: "https://k8s.testnet.lcd.injective.network",
+    exponent: 18,
     feeToken: "inj",
     stakingToken: "inj",
     estimatedBlockTime: 7000,

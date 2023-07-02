@@ -4,6 +4,7 @@ export const neutron_testnet = {
     addressPrefix: "neutron",
     rpcUrl: "https://rpc-palvus.pion-1.ntrn.tech",
     httpUrl: "https://rest-palvus.pion-1.ntrn.tech",
+    exponent: 6,
     feeToken: "untrn",
     stakingToken: "untrn",
     estimatedBlockTime: 7000,

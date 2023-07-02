@@ -172,7 +172,8 @@ class CWClient {
 
         const extraOptions = chainId.includes("osmo") ? { protoRegistry, aminoConverters } : {};
 
-        if (chain.chainName.includes("archway")) {
+        if (addressPrefix == "archway") {
+            console.log("archway client");
             const client = await SigningArchwayClient.createWithSigner(tmClient, signer);
             return new CWClient(client, address);
         } else {

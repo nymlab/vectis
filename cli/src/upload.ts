@@ -5,7 +5,7 @@ import CosmWasmClient from "./clients/cosmwasm";
 import { Logger } from "tslog";
 import * as chainConfigs from "./config/chains";
 import _ from "lodash";
-import { hubUploadReportPath, coreCodePaths, pluginCodePaths } from "./utils/constants";
+import { hubUploadReportPath, coreCodePaths } from "./utils/constants";
 import { writeToFile } from "./utils/fs";
 
 export async function uploadAction(network: string, contracts: string[]) {
@@ -17,7 +17,6 @@ export async function uploadAction(network: string, contracts: string[]) {
     const client = await CosmWasmClient.connectHostWithAccount("admin", network);
     const chain = chainConfigs[network as keyof typeof chainConfigs] as Chain;
 
-    const toUpload = [];
     if (!contracts.length) {
         logger.info("Uploading all");
         const uploadHostRes = await client.uploadHubContracts(chain);
