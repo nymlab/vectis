@@ -192,7 +192,7 @@ export async function deploy(network: string) {
     await vectisComClient.add_item(VectisActors.Factory, factoryAddr);
     await vectisComClient.add_item(VectisActors.PluginRegistry, pluginRegAddr);
     await vectisComClient.add_item(VectisActors.PluginCommittee, techCommittee);
-    console.log("\n5. Set dao_tunnel and committee address in DAO items");
+    console.log("\n5. Set Factory, pluginReg and committee address in DAO items");
 
     const contracts = {
         // These are the same as DaoActors
