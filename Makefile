@@ -6,8 +6,8 @@ schemas:
 types:
 	npm run types:generate --prefix ./cli
 upload:
-	npm run upload --prefix ./cli 
+	npm run upload --prefix ./deploy-cli 
 deploy:
-	npm run deploy:hub --prefix ./cli 
+	npm run deploy:hub --prefix ./deploy-cli 
 nodes-setup:
 	./scripts/nodes-setup.sh

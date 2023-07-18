@@ -5,6 +5,7 @@ export enum SupportChains {
     "archway_testnet",
     "stargaze_testnet",
     "juno_localnet",
+    "osmosis_testnet",
 }
 
 export type Chains = keyof typeof SupportChains;
@@ -31,3 +32,4 @@ export * from "./archway";
 export * from "./neutron";
 export * from "./injective";
 export * from "./stargaze";
+export * from "./osmosis";

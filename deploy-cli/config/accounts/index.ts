@@ -18,3 +18,4 @@ export * from "./stargaze";
 export * from "./injective";
 export * from "./archway";
 export * from "./neutron";
+export * from "./osmosis";

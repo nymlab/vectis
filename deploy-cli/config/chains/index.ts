@@ -7,7 +7,8 @@ export type Chains =
     | "injective_testnet"
     | "neutron_testnet"
     | "archway_testnet"
-    | "stargaze_testnet";
+    | "stargaze_testnet"
+    | "osmosis_testnet";
 export interface Chain {
     readonly chainId: string;
     readonly chainName: string;
@@ -31,3 +32,4 @@ export * from "./archway";
 export * from "./neutron";
 export * from "./injective";
 export * from "./stargaze";
+export * from "./osmosis";
