@@ -30,11 +30,15 @@ export async function uploadAction(network: Chains, opts: OptionValues) {
 
     const uploadPath = getUploadInfoPath(network);
     let uploadedContracts: Record<string, UploadResult>;
+    let newUploadedContracts: Record<string, UploadResult> = {};
     try {
         uploadedContracts = await import(uploadPath);
     } catch (_) {
         uploadedContracts = {};
     }
+
+    // there is no setter for `uploadedContracts`
+    Object.assign(newUploadedContracts, uploadedContracts);
 
     for (let c of contractsToUplaod) {
         await new Promise(async (resolve) => {
@@ -44,12 +48,11 @@ export async function uploadAction(network: Chains, opts: OptionValues) {
             // substring ".wasm"
             const contractName = c.substring(0, c.length - 5);
             let res = await client.uploadContract(contractPath);
-            console.log(res);
-            uploadedContracts[contractName] = res;
-            resolve(uploadedContracts);
+            newUploadedContracts[contractName] = res;
+            resolve(newUploadedContracts);
         });
     }
 
-    writeToFile(uploadPath, JSON.stringify(uploadedContracts, null, 2));
+    writeToFile(uploadPath, JSON.stringify(newUploadedContracts, null, 2));
     console.log("Wrote results to file: ", uploadPath);
 }

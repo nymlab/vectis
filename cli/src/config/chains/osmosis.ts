@@ -10,4 +10,5 @@ export const osmosis_testnet = {
     estimatedIndexerTime: 250,
     gasPrice: 0.025,
     plugins: ["cronkitty"],
+    coinType: 118,
 };

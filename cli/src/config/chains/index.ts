@@ -5,11 +5,8 @@ export enum SupportChains {
     "archway_testnet",
     "stargaze_testnet",
     "juno_localnet",
-<<<<<<< HEAD
     "osmosis_testnet",
-=======
     "aura_testnet",
->>>>>>> 5729380 (wip: cli)
 }
 
 export type Chains = keyof typeof SupportChains;
@@ -36,8 +33,5 @@ export * from "./archway";
 export * from "./neutron";
 export * from "./injective";
 export * from "./stargaze";
-<<<<<<< HEAD
 export * from "./osmosis";
-=======
 export * from "./aura";
->>>>>>> 5729380 (wip: cli)

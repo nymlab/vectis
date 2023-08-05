@@ -126,6 +126,21 @@ export const juno_testnet = {
     },
 };
 
+export const osmosis_testnet = {
+    admin: {
+        mnemonic: process.env.TESTNET_ADMIN_MNEMONIC,
+        address: process.env.TESTNET_OSMOSIS_ADMIN_ADDRESS,
+    },
+    committee1: {
+        mnemonic: process.env.TESTNET_COMMITTEE1_MNEMONIC,
+        address: process.env.TESTNET_OSMOSIS_COMMITTEE1_ADDRESS,
+    },
+    committee2: {
+        mnemonic: process.env.TESTNET_COMMITTEE2_MNEMONIC,
+        address: process.env.TESTNET_OSMOSIS_COMMITTEE2_ADDRESS,
+    },
+};
+
 export const juno_localnet = {};
 
 export const injective_testnet = {
