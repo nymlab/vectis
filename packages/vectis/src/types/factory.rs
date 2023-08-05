@@ -1,5 +1,5 @@
 pub mod factory_state {
-    pub use crate::DEPLOYER;
+    pub use crate::{AuthenticatorType, DEPLOYER};
     use cosmwasm_std::{Addr, Coin};
     use cw_storage_plus::{Item, Map};
     /// The total number of wallets successfully created by the factory
@@ -19,4 +19,6 @@ pub mod factory_state {
     pub const GUARDIANS: Map<Addr, Vec<u64>> = Map::new("guardians");
     /// Map of all wallet_id to proxy addr
     pub const WALLETS: Map<u64, Addr> = Map::new("wallets");
+    /// Map of all authenticators
+    pub const AUTHENICATOR_CODE_IDS: Map<AuthenticatorType, u64> = Map::new("wallets");
 }

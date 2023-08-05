@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 
-use crate::{Guardians, MigrationMsgError, RelayTransaction, WalletAddr};
+use crate::{Controller, Guardians, MigrationMsgError, RelayTransaction, WalletAddr};
 
 /// Declares that a fixed weight of Yes votes is needed to pass.
 /// See `ThresholdResponse.AbsoluteCount` in the cw3 spec for details.
@@ -10,7 +10,7 @@ pub type ThresholdAbsoluteCount = u64;
 
 #[cw_serde]
 pub struct CreateWalletMsg {
-    pub controller_addr: String,
+    pub controller: Controller,
     pub guardians: Guardians,
     /// A List of keys can act as relayer for
     pub relayers: Vec<String>,

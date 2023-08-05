@@ -19,6 +19,7 @@ cw20 = { workspace = true }
 cw-utils= { workspace = true }
 thiserror = { workspace = true }
 derivative = "2"
+sylvia = {workspace = true}
 
 sha2 = "0.9"
 ripemd160 = "0.9.1"

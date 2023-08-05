@@ -3,30 +3,48 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr};
 use cw_utils::Threshold;
 
+/// User can decide if they want a different authenticator instead of the Vectis one
+#[cw_serde]
+pub enum AuthenticatorProvider {
+    /// User would like to use Vectis provided authenticator
+    Vectis,
+    /// User would like to use their own authenticator at this given contract address
+    Custom(String),
+}
+
+/// Authenticator type maps the authentication method for the main Controller messages
+#[cw_serde]
+pub enum AuthenticatorType {
+    CosmosEOA,
+    EthereumEOA(AuthenticatorProvider),
+    Webauthn(AuthenticatorProvider),
+    /// This is for future extensibility without neccessarily upgrading the enum type
+    /// It should be the name of the authenticator (i.e. AnonCreds)
+    Other(String, AuthenticatorProvider),
+}
+
+/// The main controller of the account
+/// Given the `data`, then authenticator associated with the authenticator type
+/// will be able to authenticate the controller
 #[cw_serde]
 pub struct Controller {
-    pub addr: CanonicalAddr,
+    pub auth: AuthenticatorType,
+    /// For CosmosEOA: this is the base64 encoding of the bytes of the addr
+    /// i.e. `toBase(toUtf8(addr))`
+    pub data: Binary,
     pub nonce: Nonce,
 }
 
-impl Controller {
-    /// Increase nonce by 1
-    pub fn increment_nonce(&mut self) {
-        self.nonce += 1;
-    }
+/// Struct for representing a CosmosEOA as an authenticator
+#[cw_serde]
+pub struct CosmosEOA {
+    pub addr: CanonicalAddr,
+}
 
+impl CosmosEOA {
     /// Set new controller address
     pub fn set_address(&mut self, address: CanonicalAddr) {
         self.addr = address;
-    }
-
-    /// Ensure nonces are equal
-    pub fn ensure_nonces_are_equal(&self, nonce: &Nonce) -> Result<(), RelayTxError> {
-        if self.nonce.eq(nonce) {
-            Ok(())
-        } else {
-            Err(RelayTxError::NoncesAreNotEqual {})
-        }
     }
 
     /// Ensure provided address is different from current.
@@ -39,6 +57,27 @@ impl Controller {
         } else {
             Err(ProxyAddrErr::AddressesAreEqual {})
         }
+    }
+}
+
+impl Controller {
+    /// Increase nonce by 1
+    pub fn increment_nonce(&mut self) {
+        self.nonce += 1;
+    }
+
+    /// Ensure nonces are equal
+    pub fn ensure_nonces_are_equal(&self, nonce: &Nonce) -> Result<(), RelayTxError> {
+        if self.nonce.eq(nonce) {
+            Ok(())
+        } else {
+            Err(RelayTxError::NoncesAreNotEqual {})
+        }
+    }
+
+    /// Returns the Authenicator
+    pub fn authenticator(&self) -> &AuthenticatorType {
+        &self.auth
     }
 }
 
