@@ -10,4 +10,5 @@ export const archway_testnet = {
     estimatedBlockTime: 7000,
     estimatedIndexerTime: 250,
     gasPrice: 0.05,
+    coinType: 118,
 };

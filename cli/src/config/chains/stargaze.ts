@@ -10,5 +10,5 @@ export const stargaze_testnet = {
     estimatedBlockTime: 7000,
     estimatedIndexerTime: 250,
     gasPrice: 0.4,
-    plugins: ["cronkitty"],
+    coinType: 118,
 };

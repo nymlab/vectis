@@ -1,42 +1,55 @@
-import { SupportChains, Chain } from "./config/chains";
-import { VectisContracts } from "./config/contracts";
+import { Chains } from "./config/chains";
+import path from "path";
 import type { UploadResult } from "@cosmjs/cosmwasm-stargate";
 import CosmWasmClient from "./clients/cosmwasm";
 import { Logger } from "tslog";
-import * as chainConfigs from "./config/chains";
-import _ from "lodash";
-import { hubUploadReportPath, coreCodePaths } from "./utils/constants";
-import { writeToFile } from "./utils/fs";
+import { writeToFile, getWasmFileNames, getUploadInfoPath } from "./utils/fs";
+import { wasmArtifactsPath, deployResultsPath } from "./config/fs";
+import { OptionValues } from "commander";
 
-export async function uploadAction(network: string, contracts: string[]) {
+export async function uploadAction(network: Chains, opts: OptionValues) {
     const logger = new Logger();
-    if (!(network in SupportChains)) {
-        logger.fatal(new Error("Network not supported"));
+    if (opts.vectis && opts.contracts) {
+        logger.fatal("Please choose to upload one of `contracts` or `Vectis`");
     }
-
     const client = await CosmWasmClient.connectHostWithAccount("admin", network);
-    const chain = chainConfigs[network as keyof typeof chainConfigs] as Chain;
-
-    if (!contracts.length) {
-        logger.info("Uploading all");
-        const uploadHostRes = await client.uploadHubContracts(chain);
-        writeToFile(hubUploadReportPath(chain), JSON.stringify(uploadHostRes, null, 2));
+    const artifactContracts = getWasmFileNames("../artifacts");
+    let contractsToUplaod: string[] = [];
+    if (!opts.contracts.length) {
+        logger.info("Uploading all: ", artifactContracts);
+        contractsToUplaod = artifactContracts;
     } else {
-        _.map(contracts, async (c) => {
-            if (!(c in VectisContracts)) logger.error(new Error("Contract not supported"));
-            let codePath = coreCodePaths[`${c}CodePath`];
-            const result = await client.uploadContract(codePath);
-            console.log("upload results for: ", c);
-            console.log(JSON.stringify(result));
-            try {
-                const uplaodRes = await import(hubUploadReportPath(chain));
-                uplaodRes[c] = result;
-                writeToFile(hubUploadReportPath(chain), JSON.stringify(uplaodRes, null, 2));
-            } catch (_) {
-                const report: { [key: string]: UploadResult } = {};
-                report[c] = result;
-                writeToFile(hubUploadReportPath(chain), JSON.stringify(report, null, 2));
+        opts.contracts.map((c: string) => {
+            if (!artifactContracts.includes(c)) {
+                throw new Error(`Contract ${c} wasm file not found in ${wasmArtifactsPath}`);
+            } else {
+                contractsToUplaod.push(c);
             }
         });
     }
+
+    const uploadPath = getUploadInfoPath(network);
+    let uploadedContracts: Record<string, UploadResult>;
+    try {
+        uploadedContracts = await import(uploadPath);
+    } catch (_) {
+        uploadedContracts = {};
+    }
+
+    for (let c of contractsToUplaod) {
+        await new Promise(async (resolve) => {
+            const contractPath = path.join(wasmArtifactsPath, `/${c}`);
+            logger.info("Uploading: ", contractPath);
+
+            // substring ".wasm"
+            const contractName = c.substring(0, c.length - 5);
+            let res = await client.uploadContract(contractPath);
+            console.log(res);
+            uploadedContracts[contractName] = res;
+            resolve(uploadedContracts);
+        });
+    }
+
+    writeToFile(uploadPath, JSON.stringify(uploadedContracts, null, 2));
+    console.log("Wrote results to file: ", uploadPath);
 }

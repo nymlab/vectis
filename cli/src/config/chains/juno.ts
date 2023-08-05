@@ -10,7 +10,7 @@ export const juno_testnet = {
     estimatedBlockTime: 7000,
     estimatedIndexerTime: 250,
     gasPrice: 0.025,
-    plugins: ["cronkitty"],
+    coinType: 118,
 };
 
 export const juno_localnet = {
@@ -25,5 +25,5 @@ export const juno_localnet = {
     estimatedBlockTime: 100,
     estimatedIndexerTime: 250,
     gasPrice: 0.025,
-    plugins: ["cronkitty"],
+    coinType: 118,
 };

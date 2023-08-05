@@ -9,7 +9,7 @@ class Cw4GroupClient extends Cw4GroupC {
     static async instantiate(
         cw: CWClient,
         codeId: number,
-        admin: string | undefined,
+        admin: string | null,
         members: Cw4GroupT.Member[],
         label: string
     ) {

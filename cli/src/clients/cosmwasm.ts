@@ -1,17 +1,12 @@
+import path from "path";
 import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
 import { SigningArchwayClient } from "@archwayhq/arch3.js";
-import {
-    SigningCosmWasmClient,
-    UploadResult,
-    Code,
-    SigningCosmWasmClientOptions,
-    ExecuteResult,
-} from "@cosmjs/cosmwasm-stargate";
-import { DirectSecp256k1HdWallet, GeneratedType, OfflineSigner, Registry } from "@cosmjs/proto-signing";
+import { SigningCosmWasmClient, UploadResult, Code, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet, GeneratedType } from "@cosmjs/proto-signing";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
-import { AminoTypes, GasPrice } from "@cosmjs/stargate";
+import { GasPrice } from "@cosmjs/stargate";
 import {
     cosmosAminoConverters,
     cosmosProtoRegistry,
@@ -23,23 +18,14 @@ import {
     osmosisProtoRegistry,
 } from "osmojs";
 
-import {
-    coreCodePaths,
-    pluginCodePaths,
-    cw3FixedMulDownloadLink,
-    cw3FlexMulDownloadLink,
-    cw4GroupDownloadLink,
-    contractsFileNames,
-} from "../utils/constants";
-import { downloadContract, getContract } from "../utils/fs";
+import { getContract } from "../utils/fs";
 import { longToByteArray } from "../utils/enconding";
 
 import type { ProxyT, FactoryT } from "../interfaces";
-import type { HubContractsUploadResult } from "../interfaces/contracts";
 import type { Accounts, Account } from "../config/accounts";
-import * as accounts from "../config/accounts";
 import * as chainConfigs from "../config/chains";
 import type { Chain } from "../config/chains";
+import { accountsPath } from "../config/fs";
 
 class CWClient {
     client: SigningArchwayClient | SigningCosmWasmClient;
@@ -56,9 +42,11 @@ class CWClient {
     }
 
     static async connectHostWithAccount(account: Accounts, network: string) {
-        const acc = accounts[network as keyof typeof accounts];
+        const accounts = await import(path.join(accountsPath, `/${network}.json`));
+        console.log("a: ", accounts);
         const chain = chainConfigs[network as keyof typeof chainConfigs] as Chain;
-        return await this.connectWithAccount(chain, acc[account] as Account);
+
+        return await this.connectWithAccount(chain, accounts[account] as Account);
     }
 
     static async createRelayTransaction(
@@ -78,10 +66,10 @@ class CWClient {
         };
     }
 
-    static getContractAddrFromResult(result: ExecuteResult, instMsg: string): string {
+    static getAddrFromInstantianteResult(result: ExecuteResult): string {
         const events = result.logs[0].events; // Wasm event is always the last
         const event = events.find((e) => e.type == "instantiate");
-        const factoryEvent = event!.attributes.find((ele) => ele.key == instMsg);
+        const factoryEvent = event!.attributes.find((ele) => ele.key == "_contract_address");
         return factoryEvent?.value as string;
     }
 
@@ -117,35 +105,6 @@ class CWClient {
     ): Promise<UploadResult> {
         const code = getContract(codePath);
         return this.client.upload(senderAddress ?? this.sender, code, uploadFee);
-    }
-    /**
-     * Uploads contracts needed for e2e tests on local nodes on the hub
-     */
-    async uploadHubContracts(chain: Chain): Promise<HubContractsUploadResult> {
-        const factory = await this.uploadContract(coreCodePaths.factoryCodePath);
-        const proxy = await this.uploadContract(coreCodePaths.proxyCodePath);
-        const cw3Fixed = await this.uploadContract(coreCodePaths.cw3FixedCodePath);
-        const cw3Flex = await this.uploadContract(coreCodePaths.cw3FlexCodePath);
-        const cw4Group = await this.uploadContract(coreCodePaths.cw4GroupCodePath);
-        const pluginReg = await this.uploadContract(coreCodePaths.pluginRegCodePath);
-
-        const pluginsRes: { [key: string]: UploadResult } = {};
-        if (chain.plugins) {
-            for (let plugin of chain.plugins) {
-                let result = await this.uploadContract(pluginCodePaths[`${plugin}CodePath`]);
-                pluginsRes[plugin] = result;
-            }
-        }
-
-        return {
-            factory,
-            proxy,
-            cw3Fixed,
-            cw3Flex,
-            cw4Group,
-            pluginReg,
-            plugins: pluginsRes,
-        };
     }
 
     private static async connectWithAccount(chain: Chain, { mnemonic }: Account) {
@@ -185,43 +144,6 @@ class CWClient {
             return new CWClient(client, address);
         }
     }
-
-    static async connectWithOsmo(chain: Chain, signer: any) {
-        const { addressPrefix, rpcUrl, gasPrice, feeToken } = chain;
-        const protoRegistry: ReadonlyArray<[string, GeneratedType]> = [
-            ...cosmosProtoRegistry,
-            ...cosmwasmProtoRegistry,
-            ...ibcProtoRegistry,
-            ...osmosisProtoRegistry,
-        ];
-
-        const aminoConverters = {
-            ...cosmosAminoConverters,
-            ...cosmwasmAminoConverters,
-            ...ibcAminoConverters,
-            ...osmosisAminoConverters,
-        };
-
-        const registry = new Registry(protoRegistry);
-        const aminoTypes = new AminoTypes(aminoConverters);
-
-        const stargateClient = await SigningCosmWasmClient.connectWithSigner(rpcUrl, signer, {
-            broadcastPollIntervalMs: 300,
-            broadcastTimeoutMs: 8_000,
-            gasPrice: GasPrice.fromString(gasPrice + feeToken),
-            registry,
-            aminoTypes,
-        });
-
-        return stargateClient;
-    }
 }
 
 export default CWClient;
-
-export async function downloadContracts() {
-    // Download CwPlus Contracts
-    await downloadContract(cw3FixedMulDownloadLink, contractsFileNames.cw3_mutltisig);
-    await downloadContract(cw3FlexMulDownloadLink, contractsFileNames.cw3_flex_mutltisig);
-    await downloadContract(cw4GroupDownloadLink, contractsFileNames.cw4_group);
-}

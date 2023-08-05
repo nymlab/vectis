@@ -1,7 +1,7 @@
 import { PluginRegT, PluginRegistryClient as PluginRegC } from "../interfaces";
 import CWClient from "./cosmwasm";
 import type { Chain } from "../config/chains";
-import { pluginRegInstallFee, pluginRegRegistryFee } from "../utils/fees";
+import { pluginRegInstallFee, pluginRegRegistryFee } from "../config/fees";
 
 class PluginRegClient extends PluginRegC {
     constructor(cw: CWClient, sender: string, contractAddress: string) {

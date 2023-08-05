@@ -1,0 +1,170 @@
+{
+  "ucan_smart_account": {
+    "checksum": "8fd41752aec34a9e09ad737da5055b5551fbbdc36adfd64a47aead97ae4dcd1e",
+    "originalSize": 187177,
+    "compressedSize": 65920,
+    "codeId": 1443,
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+              },
+              {
+                "key": "module",
+                "value": "wasm"
+              },
+              {
+                "key": "sender",
+                "value": "aura1ftyy8azjaxh7d0npa36l6rgk93hgnrvesusrgm"
+              }
+            ]
+          },
+          {
+            "type": "store_code",
+            "attributes": [
+              {
+                "key": "code_checksum",
+                "value": "8fd41752aec34a9e09ad737da5055b5551fbbdc36adfd64a47aead97ae4dcd1e"
+              },
+              {
+                "key": "code_id",
+                "value": "1443"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "height": 14697491,
+    "transactionHash": "4A38B1054B773C3FF07C078AC552BAA55E40E0F0FBC201A8385EF678CCED1A9C",
+    "events": [
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "spender",
+            "value": "aura1ftyy8azjaxh7d0npa36l6rgk93hgnrvesusrgm"
+          },
+          {
+            "key": "amount",
+            "value": "83621uaura"
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "receiver",
+            "value": "aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy"
+          },
+          {
+            "key": "amount",
+            "value": "83621uaura"
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "recipient",
+            "value": "aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy"
+          },
+          {
+            "key": "sender",
+            "value": "aura1ftyy8azjaxh7d0npa36l6rgk93hgnrvesusrgm"
+          },
+          {
+            "key": "amount",
+            "value": "83621uaura"
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "sender",
+            "value": "aura1ftyy8azjaxh7d0npa36l6rgk93hgnrvesusrgm"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "fee",
+            "value": "83621uaura"
+          },
+          {
+            "key": "fee_payer",
+            "value": "aura1ftyy8azjaxh7d0npa36l6rgk93hgnrvesusrgm"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "acc_seq",
+            "value": "aura1ftyy8azjaxh7d0npa36l6rgk93hgnrvesusrgm/4"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "signature",
+            "value": "Dz9G4XO8eqQaNz/OGQNpfQ7S57xzFg6OUEbbkWNXJpcFqKce+2RrCG7O8hb5OEgo1T+MdNi3eqSQwPqmyKIePQ=="
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "action",
+            "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "module",
+            "value": "wasm"
+          },
+          {
+            "key": "sender",
+            "value": "aura1ftyy8azjaxh7d0npa36l6rgk93hgnrvesusrgm"
+          }
+        ]
+      },
+      {
+        "type": "store_code",
+        "attributes": [
+          {
+            "key": "code_checksum",
+            "value": "8fd41752aec34a9e09ad737da5055b5551fbbdc36adfd64a47aead97ae4dcd1e"
+          },
+          {
+            "key": "code_id",
+            "value": "1443"
+          }
+        ]
+      }
+    ],
+    "gasWanted": 1672414,
+    "gasUsed": 1300806
+  }
+}

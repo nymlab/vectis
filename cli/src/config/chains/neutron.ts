@@ -10,5 +10,5 @@ export const neutron_testnet = {
     estimatedBlockTime: 7000,
     estimatedIndexerTime: 250,
     gasPrice: 0.1,
-    plugins: ["cronkitty"],
+    coinType: 118,
 };

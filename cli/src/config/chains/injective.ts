@@ -10,4 +10,5 @@ export const injective_testnet = {
     estimatedBlockTime: 7000,
     estimatedIndexerTime: 250,
     gasPrice: 0.1,
+    coinType: 60,
 };

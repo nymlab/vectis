@@ -1,17 +1,16 @@
 import type { UploadResult, Code } from "@cosmjs/cosmwasm-stargate";
 
-export interface HubContractsUploadResult {
+export interface VectisContractsUploadResult {
     factory: UploadResult;
     proxy: UploadResult;
     cw3Fixed: UploadResult;
     pluginReg: UploadResult;
     cw3Flex: UploadResult;
     cw4Group: UploadResult;
-    plugins: { [key: string]: UploadResult };
 }
 
-// These are all the contract on the Hub Chain
-export interface VectisHubChainContractsAddrs {
+// These are all the contract
+export interface VectisContractsAddrs {
     PluginCommittee: string;
     PluginCommitteeGroup: string;
     VectisCommittee: string;

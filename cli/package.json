@@ -4,19 +4,23 @@
     "license": "see LICENSE",
     "authors": [
         "bwty <whalelephant@users.noreply.github.com>",
-        "giovanni-orciuolo <giovanni@orciuolo.it>",
         "j0nl1 <jonlitech@gmail.com>"
     ],
+    "main": "./build/index.js",
+    "bin": {
+        "vectisCLI": "./bin/cli"
+    },
     "description": "CLI tool for Vectis smart contract wallet",
     "scripts": {
         "build": "rm -rf ./build && tsc",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "postinstall": "vectisCLI generateAccounts"
     },
     "keywords": [
         "vectis",
         "smart contract wallet"
     ],
     "dependencies": {
+        "@injectivelabs/sdk-ts": "^1.11.0",
         "commander": "^11.0.0",
         "figlet": "^1.6.0",
         "lodash": "^4.17.21",
@@ -24,6 +28,7 @@
         "tslog": "^4.8.2"
     },
     "devDependencies": {
+        "ts-node": "^10.8.0",
         "@archwayhq/arch3.js": "^0.4.0",
         "@cosmjs/amino": "^0.31.0",
         "@cosmjs/cosmwasm-stargate": "^0.31.0",

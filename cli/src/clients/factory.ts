@@ -2,7 +2,7 @@ import { FactoryClient as FactoryC } from "../interfaces";
 import CWClient from "./cosmwasm";
 import type { Chain } from "../config/chains";
 import type { FactoryT } from "../interfaces";
-import { walletCreationFee } from "../utils/fees";
+import { walletCreationFee } from "../config/fees";
 
 class FactoryClient extends FactoryC {
     constructor(cw: CWClient, sender: string, contractAddress: string) {
