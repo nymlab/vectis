@@ -4,12 +4,24 @@
  * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
  */
 
+export type Binary = string;
+export type AuthenticatorType =
+    | ("cosmos_e_o_a" | "ethereum_e_o_a" | "webauthn")
+    | {
+          other: string;
+      };
 export type Uint128 = string;
 export interface InstantiateMsg {
     addr_prefix: string;
+    authenticators?: AuthenticatorInstInfo[] | null;
     proxy_code_id: number;
     proxy_multisig_code_id: number;
     wallet_fee: Coin;
+}
+export interface AuthenticatorInstInfo {
+    code_id: number;
+    inst_msg: Binary;
+    ty: AuthenticatorType;
 }
 export interface Coin {
     amount: Uint128;
@@ -57,6 +69,11 @@ export type ExecuteMsg =
               old_guardians: Addr[];
           };
       };
+export type AuthenticatorProvider =
+    | "vectis"
+    | {
+          custom: string;
+      };
 export type Addr = string;
 export type ProxyMigrationTxMsg =
     | {
@@ -65,7 +82,6 @@ export type ProxyMigrationTxMsg =
     | {
           direct_migration_msg: Binary;
       };
-export type Binary = string;
 export type WalletAddr =
     | {
           canonical: CanonicalAddr;
@@ -77,11 +93,20 @@ export type CanonicalAddr = Binary;
 export type CodeIdType = "proxy" | "multisig";
 export type FeeType = "wallet";
 export interface CreateWalletMsg {
-    controller_addr: string;
+    controller: Entity;
     guardians: Guardians;
     label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
+}
+export interface Entity {
+    auth: Authenticator;
+    data: Binary;
+    nonce: number;
+}
+export interface Authenticator {
+    provider: AuthenticatorProvider;
+    ty: AuthenticatorType;
 }
 export interface Guardians {
     addresses: Addr[];
@@ -91,7 +116,6 @@ export interface MultiSig {
     threshold_absolute_count: number;
 }
 export interface RelayTransaction {
-    controller_pubkey: Binary;
     message: Binary;
     nonce: number;
     signature: Binary;
@@ -113,14 +137,20 @@ export type QueryMsg =
       }
     | {
           controller_wallets: {
-              controller: Addr;
+              controller: Binary;
           };
       }
     | {
           wallets_with_guardian: {
               guardian: Addr;
           };
+      }
+    | {
+          auth_provider_addr: {
+              ty: AuthenticatorType;
+          };
       };
+export type NullableAddr = Addr | null;
 export type Uint64 = number;
 export type ArrayOfAddr = Addr[];
 export interface FeesResponse {

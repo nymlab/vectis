@@ -7,22 +7,28 @@
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
 import {
+    Binary,
+    AuthenticatorType,
     Uint128,
     InstantiateMsg,
+    AuthenticatorInstInfo,
     Coin,
     ExecuteMsg,
+    AuthenticatorProvider,
     Addr,
     ProxyMigrationTxMsg,
-    Binary,
     WalletAddr,
     CanonicalAddr,
     CodeIdType,
     FeeType,
     CreateWalletMsg,
+    Entity,
+    Authenticator,
     Guardians,
     MultiSig,
     RelayTransaction,
     QueryMsg,
+    NullableAddr,
     Uint64,
     ArrayOfAddr,
     FeesResponse,
@@ -33,8 +39,9 @@ export interface FactoryReadOnlyInterface {
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<Uint64>;
     fees: () => Promise<FeesResponse>;
     deployerAddr: () => Promise<Addr>;
-    controllerWallets: ({ controller }: { controller: Addr }) => Promise<ArrayOfAddr>;
+    controllerWallets: ({ controller }: { controller: Binary }) => Promise<ArrayOfAddr>;
     walletsWithGuardian: ({ guardian }: { guardian: Addr }) => Promise<ArrayOfAddr>;
+    authProviderAddr: ({ ty }: { ty: AuthenticatorType }) => Promise<NullableAddr>;
 }
 export class FactoryQueryClient implements FactoryReadOnlyInterface {
     client: CosmWasmClient;
@@ -49,6 +56,7 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.deployerAddr = this.deployerAddr.bind(this);
         this.controllerWallets = this.controllerWallets.bind(this);
         this.walletsWithGuardian = this.walletsWithGuardian.bind(this);
+        this.authProviderAddr = this.authProviderAddr.bind(this);
     }
 
     totalCreated = async (): Promise<Uint64> => {
@@ -73,7 +81,7 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
             deployer_addr: {},
         });
     };
-    controllerWallets = async ({ controller }: { controller: Addr }): Promise<ArrayOfAddr> => {
+    controllerWallets = async ({ controller }: { controller: Binary }): Promise<ArrayOfAddr> => {
         return this.client.queryContractSmart(this.contractAddress, {
             controller_wallets: {
                 controller,
@@ -84,6 +92,13 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         return this.client.queryContractSmart(this.contractAddress, {
             wallets_with_guardian: {
                 guardian,
+            },
+        });
+    };
+    authProviderAddr = async ({ ty }: { ty: AuthenticatorType }): Promise<NullableAddr> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            auth_provider_addr: {
+                ty,
             },
         });
     };

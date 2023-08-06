@@ -4,6 +4,17 @@
  * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
  */
 
+export type AuthenticatorProvider =
+    | "vectis"
+    | {
+          custom: string;
+      };
+export type AuthenticatorType =
+    | ("cosmos_e_o_a" | "ethereum_e_o_a" | "webauthn")
+    | {
+          other: string;
+      };
+export type Binary = string;
 export type Addr = string;
 export type Uint128 = string;
 export interface InstantiateMsg {
@@ -12,11 +23,20 @@ export interface InstantiateMsg {
     multisig_code_id: number;
 }
 export interface CreateWalletMsg {
-    controller_addr: string;
+    controller: Entity;
     guardians: Guardians;
     label: string;
     proxy_initial_funds: Coin[];
     relayers: string[];
+}
+export interface Entity {
+    auth: Authenticator;
+    data: Binary;
+    nonce: number;
+}
+export interface Authenticator {
+    provider: AuthenticatorProvider;
+    ty: AuthenticatorType;
 }
 export interface Guardians {
     addresses: Addr[];
@@ -47,16 +67,6 @@ export type ExecuteMsg =
     | {
           rotate_controller_key: {
               new_controller_address: string;
-          };
-      }
-    | {
-          add_relayer: {
-              new_relayer_address: Addr;
-          };
-      }
-    | {
-          remove_relayer: {
-              relayer_address: Addr;
           };
       }
     | {
@@ -171,7 +181,6 @@ export type DistributionMsg =
               [k: string]: unknown;
           };
       };
-export type Binary = string;
 export type IbcMsg =
     | {
           transfer: {
@@ -218,6 +227,17 @@ export type WasmMsg =
           };
       }
     | {
+          instantiate2: {
+              admin?: string | null;
+              code_id: number;
+              funds: Coin[];
+              label: string;
+              msg: Binary;
+              salt: Binary;
+              [k: string]: unknown;
+          };
+      }
+    | {
           migrate: {
               contract_addr: string;
               msg: Binary;
@@ -238,14 +258,23 @@ export type WasmMsg =
               [k: string]: unknown;
           };
       };
-export type GovMsg = {
-    vote: {
-        proposal_id: number;
-        vote: VoteOption;
-        [k: string]: unknown;
-    };
-};
+export type GovMsg =
+    | {
+          vote: {
+              proposal_id: number;
+              vote: VoteOption;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          vote_weighted: {
+              options: WeightedVoteOption[];
+              proposal_id: number;
+              [k: string]: unknown;
+          };
+      };
 export type VoteOption = "yes" | "no" | "abstain" | "no_with_veto";
+export type Decimal = string;
 export type PluginPermissions =
     | "exec"
     | {
@@ -273,8 +302,12 @@ export interface IbcTimeoutBlock {
     revision: number;
     [k: string]: unknown;
 }
+export interface WeightedVoteOption {
+    option: VoteOption;
+    weight: Decimal;
+    [k: string]: unknown;
+}
 export interface RelayTransaction {
-    controller_pubkey: Binary;
     message: Binary;
     nonce: number;
     signature: Binary;
@@ -291,19 +324,11 @@ export type QueryMsg =
           info: {};
       }
     | {
-          can_execute_relay: {
-              sender: string;
-          };
-      }
-    | {
           guardians_update_request: {};
       }
     | {
           plugins: {};
       };
-export interface CanExecuteResponse {
-    can_execute: boolean;
-}
 export type NullableGuardiansUpdateRequest = GuardiansUpdateRequest | null;
 export type Expiration =
     | {
@@ -338,10 +363,9 @@ export type Threshold =
               threshold: Decimal;
           };
       };
-export type Decimal = string;
 export interface WalletInfo {
     code_id: number;
-    controller_addr: Addr;
+    controller: Entity;
     created_at: number;
     deployer: Addr;
     guardians: Addr[];

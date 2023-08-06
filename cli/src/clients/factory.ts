@@ -3,6 +3,8 @@ import CWClient from "./cosmwasm";
 import type { Chain } from "../config/chains";
 import type { FactoryT } from "../interfaces";
 import { walletCreationFee } from "../config/fees";
+import { toBase64, toUtf8 } from "@cosmjs/encoding";
+import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 
 class FactoryClient extends FactoryC {
     constructor(cw: CWClient, sender: string, contractAddress: string) {
@@ -38,6 +40,22 @@ class FactoryClient extends FactoryC {
         );
 
         return new FactoryClient(cw, cw.sender, contractAddress);
+    }
+
+    async createWalletWebAuthn(): Promise<ExecuteResult> {
+        let authenticatorProvider: FactoryT.AuthenticatorProvider = "vectis";
+        let authenticatorType: FactoryT.AuthenticatorType = "webauthn";
+        let authenticator: FactoryT.Authenticator = { provider: authenticatorProvider, ty: authenticatorType };
+        let controllingEntity: FactoryT.Entity = { auth: authenticator, data: toBase64(toUtf8("some-data")), nonce: 0 };
+        let guardians: FactoryT.Guardians = { addresses: [] };
+        let msg: FactoryT.CreateWalletMsg = {
+            controller: controllingEntity,
+            guardians,
+            label: "test-proxy",
+            proxy_initial_funds: [{ denom: "ujuno", amount: "100" }],
+            relayers: [],
+        };
+        return this.createWallet({ createWalletMsg: msg });
     }
 }
 

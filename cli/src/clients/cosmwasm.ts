@@ -1,11 +1,10 @@
 import path from "path";
-import { Secp256k1, Secp256k1Keypair, sha256, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
+import { Secp256k1, Secp256k1Keypair, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
 import { SigningArchwayClient } from "@archwayhq/arch3.js";
 import { SigningCosmWasmClient, UploadResult, Code, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet, GeneratedType } from "@cosmjs/proto-signing";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
-import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { GasPrice } from "@cosmjs/stargate";
 import {
     cosmosAminoConverters,
@@ -19,7 +18,6 @@ import {
 } from "osmojs";
 
 import { getContract } from "../utils/fs";
-import { longToByteArray } from "../utils/enconding";
 
 import type { ProxyT, FactoryT } from "../interfaces";
 import type { Accounts, Account } from "../config/accounts";
@@ -47,23 +45,6 @@ class CWClient {
         const chain = chainConfigs[network as keyof typeof chainConfigs] as Chain;
 
         return await this.connectWithAccount(chain, accounts[account] as Account);
-    }
-
-    static async createRelayTransaction(
-        mnemonic: string,
-        nonce: number,
-        jsonMsg: string
-    ): Promise<ProxyT.RelayTransaction> {
-        const keypair = await CWClient.mnemonicToKeyPair(mnemonic);
-        const messageNonceBytes = new Uint8Array([...toUtf8(jsonMsg), ...longToByteArray(nonce)]);
-        const messageHash = sha256(messageNonceBytes);
-        const signature = (await Secp256k1.createSignature(messageHash, keypair.privkey)).toFixedLength();
-        return {
-            controller_pubkey: toBase64(keypair.pubkey),
-            message: toBase64(toUtf8(jsonMsg)),
-            signature: toBase64(Secp256k1.trimRecoveryByte(signature)),
-            nonce,
-        };
     }
 
     static getAddrFromInstantianteResult(result: ExecuteResult): string {

@@ -1,6 +1,7 @@
 import figlet from "figlet";
 import { Command } from "commander";
 import { uploadAction } from "./upload";
+import { test } from "./tx";
 import { deploy } from "./deploy-vectis";
 import { handleAccounts } from "./accounts";
 import { handleNetworkQuery } from "./queries";
@@ -15,6 +16,8 @@ program
     .option("--contracts <contracts...>", "Array of contracts to upload, default: all")
     .option("--vectis", "Upload vectis contracts")
     .action(uploadAction);
+
+program.command("tx").argument("<network>", "Network to add contract(s) to").action(uploadAction);
 
 program.command("generateAccounts").option("--network [networks...]", "Network to generate").action(handleAccounts);
 
