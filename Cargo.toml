@@ -1,5 +1,6 @@
 [workspace]
-members = ["packages/*", "contracts/core/*", "contracts/plugins/*"]
+members = ["packages/*", "contracts/core/*"]
+#members = ["packages/*", "contracts/core/*", "contracts/plugins/*"]
 exclude = ["packages/images"]
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
@@ -15,9 +16,9 @@ incremental = false
 codegen-units = 1
 incremental = false
 
-[profile.release.package.vectis-webauthn-authenticator]
-codegen-units = 1
-incremental = false
+# [profile.release.package.vectis-webauthn-authenticator]
+# codegen-units = 1
+# incremental = false
 
 [profile.release]
 rpath = false
