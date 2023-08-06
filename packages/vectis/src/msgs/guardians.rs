@@ -12,6 +12,7 @@ pub const GUARDIAN_REQUEST_ACTIVATION_TIME: Duration = DAY;
 #[cw_serde]
 pub struct Guardians {
     /// A List of keys can act as guardian for
+    // TODO: make entities
     pub addresses: Vec<Addr>,
     /// Whether multisig option for guardians is enabled
     pub guardians_multisig: Option<MultiSig>,

@@ -1,5 +1,5 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
-use cosmwasm_std::{Addr, StdError};
+use cosmwasm_std::{Addr, Instantiate2AddressError, StdError};
 use cw_utils::ParseReplyError;
 use thiserror::Error;
 
@@ -52,9 +52,19 @@ pub enum MigrationMsgError {
 }
 
 #[derive(Error, Debug, PartialEq)]
+pub enum Inst2CalcError {
+    #[error("{0}")]
+    Std(#[from] StdError),
+    #[error("{0}")]
+    Instantiate2(#[from] Instantiate2AddressError),
+}
+
+#[derive(Error, Debug, PartialEq)]
 pub enum FactoryError {
     #[error("{0}")]
     Std(#[from] StdError),
+    #[error("{0}")]
+    Instantiate2(#[from] Inst2CalcError),
     #[error("ThresholdShouldBeGreaterThenZero")]
     ThresholdShouldBeGreaterThenZero {},
     #[error("ThresholdShouldBeLessThenGuardiansCount")]

@@ -429,8 +429,8 @@ dependencies = [
  "cw2 1.1.0",
  "schemars",
  "serde",
- "sylvia",
- "sylvia-derive",
+ "sylvia 0.2.2",
+ "sylvia-derive 0.2.2",
  "thiserror",
  "vectis-contract-tests",
  "vectis-wallet 0.2.1",
@@ -1482,7 +1482,23 @@ dependencies = [
  "schemars",
  "serde",
  "serde-cw-value",
- "sylvia-derive",
+ "sylvia-derive 0.2.2",
+]
+
+[[package]]
+name = "sylvia"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d092fadcc869aab7fd073aeee6466ce0c1a7a15a50402ceb5f970138c7424858"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "konst",
+ "schemars",
+ "serde",
+ "serde-cw-value",
+ "serde-json-wasm",
+ "sylvia-derive 0.7.0",
 ]
 
 [[package]]
@@ -1490,6 +1506,20 @@ name = "sylvia-derive"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a0772f73f499387afd9b57151e4b8f4440c3ea8d8e451e6780118543aad1c6e"
+dependencies = [
+ "convert_case",
+ "proc-macro-crate",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "sylvia-derive"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8999fd2e0df3f49f0787d45351e3b9f39a4916aa52b6358cb6bf0a67334c3b48"
 dependencies = [
  "convert_case",
  "proc-macro-crate",
@@ -1652,8 +1682,8 @@ dependencies = [
  "cw2 1.1.0",
  "semver",
  "serde",
- "sylvia",
- "sylvia-derive",
+ "sylvia 0.2.2",
+ "sylvia-derive 0.2.2",
  "thiserror",
  "vectis-wallet 0.2.1",
 ]
@@ -1716,7 +1746,10 @@ dependencies = [
  "hex",
  "primitive-types",
  "ripemd160",
+ "serde",
  "sha2 0.9.9",
+ "sylvia 0.7.0",
+ "sylvia-derive 0.7.0",
  "thiserror",
 ]
 

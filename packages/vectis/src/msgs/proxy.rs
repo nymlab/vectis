@@ -11,11 +11,11 @@ use std::fmt;
 #[cw_serde]
 pub struct ProxyInstantiateMsg {
     pub create_wallet_msg: CreateWalletMsg,
-    /// multisig_code_id,
-    /// use if CrateWalletMsg uses MS guardians
-    pub multisig_code_id: u64,
     /// Code Id used to instantiate the contract
     pub code_id: u64,
+    /// If MS guardians, the code_id, address, salt is pre-calculated can be pre-calculated on the factory
+    /// There is no reply to the factory, is if this is None, MS addresses won't be on the factory
+    pub ms_inst_info: Option<(u64, Addr, Binary)>,
 }
 
 #[cw_serde]
@@ -43,6 +43,8 @@ where
 {
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender.
+    /// This is only callable by controllers whose authentication method is support by the chain,
+    /// which is only ECDSA.
     /// Priviledge: Controller
     Execute { msgs: Vec<CosmosMsg<T>> },
     /// Freeze will freeze the account in the scenario the controller lose their key / device

@@ -1,5 +1,5 @@
 pub mod factory_state {
-    pub use crate::{AuthenticatorType, DEPLOYER};
+    pub use crate::{authenticator::AuthenticatorType, DEPLOYER};
     use cosmwasm_std::{Addr, Coin};
     use cw_storage_plus::{Item, Map};
     /// The total number of wallets successfully created by the factory
@@ -13,12 +13,14 @@ pub mod factory_state {
     pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
     /// Fee for DEPLOYER when a wallet is created
     pub const WALLET_FEE: Item<Coin> = Item::new("wallet_fee");
-    /// Map of all controller to wallet_id, which is incremented with TOTAL_CREATED;
-    pub const CONTROLLERS: Map<Addr, Vec<u64>> = Map::new("controllers");
-    /// Map of all guardians to wallet_id
+    /// Map of all Cosmos_EOA controller to wallet_id, which is incremented with TOTAL_CREATED;
+    pub const CONTROLLERS: Map<&[u8], Vec<u64>> = Map::new("controllers");
+    /// Map of Cosmos guardians to wallet_id, can be Vectis accounts
     pub const GUARDIANS: Map<Addr, Vec<u64>> = Map::new("guardians");
     /// Map of all wallet_id to proxy addr
     pub const WALLETS: Map<u64, Addr> = Map::new("wallets");
-    /// Map of all authenticators
-    pub const AUTHENICATOR_CODE_IDS: Map<AuthenticatorType, u64> = Map::new("wallets");
+    /// Map of all current authenticators code_id
+    pub const AUTHENICATOR_CODE_IDS: Map<String, u64> = Map::new("authenticators_code_ids");
+    /// Map of all current authenticators provided by Vectis
+    pub const AUTHENICATORS: Map<String, Addr> = Map::new("authenticator_providers");
 }

@@ -1,7 +1,10 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 
-use crate::{Controller, Guardians, MigrationMsgError, RelayTransaction, WalletAddr};
+use crate::{
+    authenticator::AuthenticatorType, Controller, Guardians, MigrationMsgError, RelayTransaction,
+    WalletAddr,
+};
 
 /// Declares that a fixed weight of Yes votes is needed to pass.
 /// See `ThresholdResponse.AbsoluteCount` in the cw3 spec for details.
@@ -11,6 +14,7 @@ pub type ThresholdAbsoluteCount = u64;
 #[cw_serde]
 pub struct CreateWalletMsg {
     pub controller: Controller,
+    // TODO: make Guardians can be entities
     pub guardians: Guardians,
     /// A List of keys can act as relayer for
     pub relayers: Vec<String>,
@@ -57,6 +61,13 @@ impl ProxyMigrateMsg {
 }
 
 #[cw_serde]
+pub struct AuthenticatorInstInfo {
+    pub ty: AuthenticatorType,
+    pub code_id: u64,
+    pub inst_msg: Binary,
+}
+
+#[cw_serde]
 pub struct WalletFactoryInstantiateMsg {
     /// Smart contract wallet contract code id
     pub proxy_code_id: u64,
@@ -67,6 +78,8 @@ pub struct WalletFactoryInstantiateMsg {
     pub addr_prefix: String,
     /// Fee for wallet creation in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
+    /// Authenticator
+    pub authenticators: Option<Vec<AuthenticatorInstInfo>>,
 }
 
 #[cw_serde]
@@ -116,10 +129,13 @@ pub enum WalletFactoryQueryMsg {
     DeployerAddr {},
     /// Returns the wallet controlled by this controller
     #[returns(Vec<Addr>)]
-    ControllerWallets { controller: Addr },
+    ControllerWallets { controller: Binary },
     /// Returns the wallet with this guardian
     #[returns(Vec<Addr>)]
     WalletsWithGuardian { guardian: Addr },
+    /// Returns the address of the authenticator
+    #[returns(Option<Addr>)]
+    AuthProviderAddr { ty: AuthenticatorType },
 }
 
 #[cw_serde]
