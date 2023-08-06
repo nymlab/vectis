@@ -1,12 +1,11 @@
 use crate::{
     authenticator::{Authenticator, AuthenticatorType},
+    entity::Entity,
     ProxyAddrErr, RelayTxError,
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary, CanonicalAddr};
+use cosmwasm_std::{Addr, Binary, CanonicalAddr, CosmosMsg};
 use cw_utils::Threshold;
-
-use super::entity::Entity;
 
 /// The main controller of the account
 pub type Controller = Entity;
@@ -92,15 +91,23 @@ pub struct WalletInfo {
 
 #[cw_serde]
 pub struct RelayTransaction {
-    /// Controller pubkey
-    pub controller_pubkey: Binary,
-    /// Message to verify
+    /// Message to verify,
+    /// Encoding depends on the authenticator,
+    /// but must contain the actual Vec<CosmosMsg> to execute
+    /// e.g. the structure of CosmosRelayedTx Msg
     pub message: Binary,
     /// Nonce
     pub nonce: Nonce,
-    /// Serialized signature (message + nonce). Cosmos format (64 bytes).
-    /// Cosmos format (secp256k1 verification scheme).
+    /// Serialized signature (message + nonce).
+    /// If authenticator is CosmosEOA: 64 bytes - secp256k1 verification scheme
+    /// See `AuthenticatorType` for more info
     pub signature: Binary,
+}
+
+#[cw_serde]
+pub struct CosmosRelayedTxMsg {
+    pub messages: Vec<CosmosMsg>,
+    pub nonce: Nonce,
 }
 
 #[cw_serde]
@@ -109,14 +116,6 @@ pub struct PluginListResponse {
     pub query_plugins: Vec<Addr>,
     pub pre_tx_plugins: Vec<Addr>,
     pub multisig_override: Option<Addr>,
-}
-
-#[cw_serde]
-pub struct WalletCreateReply {
-    pub controller: Addr,
-    pub proxy_addr: Addr,
-    pub multisig_addr: Option<Addr>,
-    pub guardians: Vec<Addr>,
 }
 
 /// Permission of the plugin on the proxy

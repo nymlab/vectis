@@ -25,11 +25,13 @@ pub enum ProxyAddrErr {
 #[derive(Error, Debug, PartialEq)]
 pub enum RelayTxError {
     #[error("MismatchControllerAddr")]
-    IsNotController {},
+    IsNotController,
     #[error("NoncesAreNotEqual")]
-    NoncesAreNotEqual {},
+    NoncesAreNotEqual,
+    #[error("EmptyMsgs")]
+    EmptyMsg,
     #[error("SignatureVerificationError")]
-    SignatureVerificationError {},
+    SignatureVerificationError,
 }
 
 /// Contract migration related errors

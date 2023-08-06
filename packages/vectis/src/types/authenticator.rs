@@ -1,6 +1,7 @@
 use crate::Nonce;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, StdError};
+use serde::{de::DeserializeOwned, Serialize};
 use sylvia::types::QueryCtx;
 use sylvia::{interface, schemars};
 
@@ -8,6 +9,7 @@ use sylvia::{interface, schemars};
 #[interface]
 pub trait IAuthenicator {
     type Error: From<StdError>;
+    type MsgType: DeserializeOwned + Serialize + ?Sized;
 
     #[msg(query)]
     fn authenticate(

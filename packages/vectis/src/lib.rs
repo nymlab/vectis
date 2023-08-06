@@ -1,13 +1,14 @@
 pub use crate::func::inst2;
 pub use crate::func::pubkey::*;
 pub use crate::func::query::*;
-pub use crate::func::signature::*;
+pub use crate::func::signature;
 
 pub use crate::msgs::factory::*;
 pub use crate::msgs::guardians::*;
 pub use crate::msgs::proxy::*;
 
 pub use crate::types::authenticator;
+pub use crate::types::entity;
 pub use crate::types::error::*;
 pub use crate::types::factory::*;
 pub use crate::types::state::*;

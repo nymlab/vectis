@@ -4,21 +4,14 @@ use sha2::Sha256;
 
 use crate::RelayTransaction;
 
-pub fn query_verify_cosmos(deps: &DepsMut, transaction: &RelayTransaction) -> StdResult<bool> {
-    let message_with_nonce = Binary(
-        transaction
-            .message
-            .0
-            .iter()
-            .chain(&transaction.nonce.to_be_bytes())
-            .copied()
-            .collect(),
-    );
-    let hash = Sha256::digest(&message_with_nonce);
-    let result = deps.api.secp256k1_verify(
-        hash.as_ref(),
-        &transaction.signature,
-        &transaction.controller_pubkey,
-    )?;
+pub fn verify_cosmos_sign(
+    deps: &DepsMut,
+    transaction: &RelayTransaction,
+    pubkey: &[u8],
+) -> StdResult<bool> {
+    let hash = Sha256::digest(&transaction.message);
+    let result = deps
+        .api
+        .secp256k1_verify(hash.as_ref(), &transaction.signature, &pubkey)?;
     Ok(result)
 }

@@ -296,7 +296,6 @@ impl HubChainSuite {
 
         RelayTransaction {
             message: Binary(msg_bytes.to_vec()),
-            controller_pubkey: Binary(public_key.serialize_uncompressed().to_vec()),
             signature: Binary(sig.serialize_compact().to_vec()),
             nonce,
         }

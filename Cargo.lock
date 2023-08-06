@@ -1754,6 +1754,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "vectis-webauthn-authenticator"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-utils 1.0.1",
+ "cw1",
+ "cw2 1.1.0",
+ "cw20 1.1.0",
+ "cw3 1.1.0",
+ "cw3-fixed-multisig 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde",
+ "serde-json-wasm",
+ "sha2 0.9.9",
+ "sylvia 0.7.0",
+ "sylvia-derive 0.7.0",
+ "thiserror",
+ "vectis-wallet 0.2.1",
+]
+
+[[package]]
 name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
