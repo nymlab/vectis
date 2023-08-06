@@ -7,10 +7,15 @@
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
 import {
+    AuthenticatorProvider,
+    AuthenticatorType,
+    Binary,
     Addr,
     Uint128,
     InstantiateMsg,
     CreateWalletMsg,
+    Entity,
+    Authenticator,
     Guardians,
     MultiSig,
     Coin,
@@ -19,28 +24,27 @@ import {
     BankMsg,
     StakingMsg,
     DistributionMsg,
-    Binary,
     IbcMsg,
     Timestamp,
     Uint64,
     WasmMsg,
     GovMsg,
     VoteOption,
+    Decimal,
     PluginPermissions,
     PluginSource,
     Empty,
     IbcTimeout,
     IbcTimeoutBlock,
+    WeightedVoteOption,
     RelayTransaction,
     GuardiansUpdateMsg,
     PluginParams,
     QueryMsg,
-    CanExecuteResponse,
     NullableGuardiansUpdateRequest,
     Expiration,
     GuardiansUpdateRequest,
     Threshold,
-    Decimal,
     WalletInfo,
     ContractVersion,
     PluginListResponse,
@@ -48,7 +52,6 @@ import {
 export interface ProxyReadOnlyInterface {
     contractAddress: string;
     info: () => Promise<WalletInfo>;
-    canExecuteRelay: ({ sender }: { sender: string }) => Promise<CanExecuteResponse>;
     guardiansUpdateRequest: () => Promise<NullableGuardiansUpdateRequest>;
     plugins: () => Promise<PluginListResponse>;
 }
@@ -60,7 +63,6 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.info = this.info.bind(this);
-        this.canExecuteRelay = this.canExecuteRelay.bind(this);
         this.guardiansUpdateRequest = this.guardiansUpdateRequest.bind(this);
         this.plugins = this.plugins.bind(this);
     }
@@ -68,13 +70,6 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
     info = async (): Promise<WalletInfo> => {
         return this.client.queryContractSmart(this.contractAddress, {
             info: {},
-        });
-    };
-    canExecuteRelay = async ({ sender }: { sender: string }): Promise<CanExecuteResponse> => {
-        return this.client.queryContractSmart(this.contractAddress, {
-            can_execute_relay: {
-                sender,
-            },
         });
     };
     guardiansUpdateRequest = async (): Promise<NullableGuardiansUpdateRequest> => {
@@ -117,26 +112,6 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
             newControllerAddress,
         }: {
             newControllerAddress: string;
-        },
-        fee?: number | StdFee | "auto",
-        memo?: string,
-        funds?: Coin[]
-    ) => Promise<ExecuteResult>;
-    addRelayer: (
-        {
-            newRelayerAddress,
-        }: {
-            newRelayerAddress: Addr;
-        },
-        fee?: number | StdFee | "auto",
-        memo?: string,
-        funds?: Coin[]
-    ) => Promise<ExecuteResult>;
-    removeRelayer: (
-        {
-            relayerAddress,
-        }: {
-            relayerAddress: Addr;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -218,8 +193,6 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
         this.revertFreezeStatus = this.revertFreezeStatus.bind(this);
         this.relay = this.relay.bind(this);
         this.rotateControllerKey = this.rotateControllerKey.bind(this);
-        this.addRelayer = this.addRelayer.bind(this);
-        this.removeRelayer = this.removeRelayer.bind(this);
         this.requestUpdateGuardians = this.requestUpdateGuardians.bind(this);
         this.updateGuardians = this.updateGuardians.bind(this);
         this.updateLabel = this.updateLabel.bind(this);
@@ -306,52 +279,6 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
             {
                 rotate_controller_key: {
                     new_controller_address: newControllerAddress,
-                },
-            },
-            fee,
-            memo,
-            funds
-        );
-    };
-    addRelayer = async (
-        {
-            newRelayerAddress,
-        }: {
-            newRelayerAddress: Addr;
-        },
-        fee: number | StdFee | "auto" = "auto",
-        memo?: string,
-        funds?: Coin[]
-    ): Promise<ExecuteResult> => {
-        return await this.client.execute(
-            this.sender,
-            this.contractAddress,
-            {
-                add_relayer: {
-                    new_relayer_address: newRelayerAddress,
-                },
-            },
-            fee,
-            memo,
-            funds
-        );
-    };
-    removeRelayer = async (
-        {
-            relayerAddress,
-        }: {
-            relayerAddress: Addr;
-        },
-        fee: number | StdFee | "auto" = "auto",
-        memo?: string,
-        funds?: Coin[]
-    ): Promise<ExecuteResult> => {
-        return await this.client.execute(
-            this.sender,
-            this.contractAddress,
-            {
-                remove_relayer: {
-                    relayer_address: relayerAddress,
                 },
             },
             fee,
