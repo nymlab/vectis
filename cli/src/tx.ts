@@ -11,11 +11,10 @@ export async function test(network: Chains, opts: OptionValues) {
     const logger = new Logger();
     const uploadedContracts: VectisContractsAddrs = await import(getDeployPath(network));
     const client = await CWClient.connectHostWithAccount("admin", network);
-    //const factoryClient = new FactoryClient(client, client.sender, uploadedContracts.Factory);
+    const factoryClient = new FactoryClient(client, client.sender, uploadedContracts.Factory);
 
-    //let res = await factoryClient.createWalletWebAuthn();
-    //let proxyAddr = CWClient.getEventAttrValue(res, "wasm-vectis.proxy.v1", "_contract_address");
-    let proxyAddr = "juno1lf37pxxplydvafxl2g6af5cyy4ncapn6n4z0pztj40jcjr4alepq9kw8mj";
+    let res = await factoryClient.createWalletWebAuthn();
+    let proxyAddr = CWClient.getEventAttrValue(res, "wasm-vectis.proxy.v1", "_contract_address");
     console.log("proxy Addr: ", proxyAddr);
 
     let proxyClient = new ProxyClient(client, client.sender, proxyAddr);
