@@ -52,10 +52,10 @@ class FactoryClient extends FactoryC {
             controller: controllingEntity,
             guardians,
             label: "test-proxy",
-            proxy_initial_funds: [{ denom: "ujuno", amount: "100" }],
+            proxy_initial_funds: [{ denom: "ujunox", amount: "100" }],
             relayers: [],
         };
-        return this.createWallet({ createWalletMsg: msg });
+        return this.createWallet({ createWalletMsg: msg }, "auto", "", [{ denom: "ujunox", amount: "100" }]);
     }
 }
 

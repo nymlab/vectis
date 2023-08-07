@@ -309,7 +309,6 @@ export interface WeightedVoteOption {
 }
 export interface RelayTransaction {
     message: Binary;
-    nonce: number;
     signature: Binary;
 }
 export interface GuardiansUpdateMsg {

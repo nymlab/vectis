@@ -114,7 +114,7 @@ export async function deploy(network: Chains) {
     // Vectis Committee execute deploy factory
     const factoryInstMsg = FactoryClient.createFactoryInstMsg(
         chain,
-        uploadedContracts.proxy.codeId,
+        uploadedContracts.vectis_proxy.codeId,
         uploadedContracts.cw3Fixed.codeId
     );
 
@@ -129,7 +129,7 @@ export async function deploy(network: Chains) {
         wasm: {
             instantiate: {
                 admin: vectisCommittee,
-                code_id: uploadedContracts.factory.codeId,
+                code_id: uploadedContracts.vectis_factory.codeId,
                 funds: [],
                 label: "Vectis Factory",
                 msg: toCosmosMsg(factoryInstMsg),
@@ -159,7 +159,7 @@ export async function deploy(network: Chains) {
         wasm: {
             instantiate: {
                 admin: vectisCommittee,
-                code_id: uploadedContracts.pluginReg.codeId,
+                code_id: uploadedContracts.vectis_plugin_registry.codeId,
                 funds: [],
                 label: "Vectis Plugin Registry",
                 msg: toCosmosMsg(pluginRegInstMsg),

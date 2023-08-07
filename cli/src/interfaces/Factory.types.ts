@@ -117,7 +117,6 @@ export interface MultiSig {
 }
 export interface RelayTransaction {
     message: Binary;
-    nonce: number;
     signature: Binary;
 }
 export type QueryMsg =

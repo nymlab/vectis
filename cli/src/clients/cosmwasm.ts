@@ -3,7 +3,7 @@ import { Secp256k1, Secp256k1Keypair, EnglishMnemonic, Slip10, Slip10Curve, Bip3
 import { SigningArchwayClient } from "@archwayhq/arch3.js";
 import { SigningCosmWasmClient, UploadResult, Code, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet, GeneratedType } from "@cosmjs/proto-signing";
-import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
+import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
 import { makeCosmoshubPath, StdFee } from "@cosmjs/amino";
 import { GasPrice } from "@cosmjs/stargate";
 import {
@@ -41,7 +41,6 @@ class CWClient {
 
     static async connectHostWithAccount(account: Accounts, network: string) {
         const accounts = await import(path.join(accountsPath, `/${network}.json`));
-        console.log("a: ", accounts);
         const chain = chainConfigs[network as keyof typeof chainConfigs] as Chain;
 
         return await this.connectWithAccount(chain, accounts[account] as Account);
@@ -54,7 +53,7 @@ class CWClient {
         return factoryEvent?.value as string;
     }
 
-    static getContractAddrFromEvent(result: ExecuteResult, eventType: string, attr: string): string {
+    static getEventAttrValue(result: ExecuteResult, eventType: string, attr: string): string {
         let events = result.events;
         const event = events.find((e) => e.type == eventType);
         const attribute = event!.attributes.find((ele) => ele.key == attr);
@@ -94,7 +93,7 @@ class CWClient {
         const signer = await CWClient.getSignerWithMnemonic(chain, mnemonic);
         const [{ address }] = await signer.getAccounts();
 
-        const tmClient = await Tendermint34Client.connect(rpcUrl);
+        const tmClient = await Tendermint37Client.connect(rpcUrl);
 
         const protoRegistry: ReadonlyArray<[string, GeneratedType]> = [
             ...cosmosProtoRegistry,

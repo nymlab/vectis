@@ -1,10 +1,10 @@
 import type { UploadResult, Code } from "@cosmjs/cosmwasm-stargate";
 
 export interface VectisContractsUploadResult {
-    factory: UploadResult;
-    proxy: UploadResult;
+    vectis_factory: UploadResult;
+    vectis_proxy: UploadResult;
     cw3Fixed: UploadResult;
-    pluginReg: UploadResult;
+    vectis_plugin_registry: UploadResult;
     cw3Flex: UploadResult;
     cw4Group: UploadResult;
 }

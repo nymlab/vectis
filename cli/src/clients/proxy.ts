@@ -24,32 +24,40 @@ class ProxyClient extends ProxyC {
         return {
             message: toBase64(toUtf8(jsonMsg)),
             signature: toBase64(Secp256k1.trimRecoveryByte(signature)),
-            nonce,
         };
     }
 
     async relayTxFromSelf(cosmosMsgs: CosmosMsgForEmpty[]): Promise<ExecuteResult> {
-        let msgs = toCosmosMsg(cosmosMsgs);
-        let mock_signature = toCosmosMsg("siganture");
-        let relayTxMsg: ProxyT.RelayTransaction = {
-            message: msgs,
-            signature: mock_signature,
+        //pub struct VectisRelayedTx {
+        //    /// messages to be executed on the entity's behalf
+        //    pub messages: Vec<CosmosMsg>,
+        //    /// nonce of the entity for relayed tx
+        //    pub nonce: Nonce,
+        //    /// fee for the relaying party
+        //    pub sponsor_fee: Option<Coin>,
+        //}
+        let vectisRelayedTx = {
+            messages: cosmosMsgs,
             nonce: 0,
         };
-        let proxyMsg: ProxyT.ExecuteMsg = { relay: { transaction: relayTxMsg } };
-        let txMsgs = {
-            msgs: [
-                {
-                    wasm: {
-                        execute: {
-                            contract_addr: this.contractAddress,
-                            funds: [],
-                            msg: toCosmosMsg(proxyMsg),
-                        },
-                    },
-                },
-            ],
+
+        let mock_auth_data = new Uint8Array([1, 0, 2, 4]);
+        let mock_client_data = new Uint8Array([2, 3, 1, 2]);
+        let mock_signature = new Uint8Array([2, 3, 1, 2]);
+
+        let webauthnRelayedTxMsg = {
+            signed_data: vectisRelayedTx,
+            auth_data: toBase64(mock_auth_data),
+            client_data: toBase64(mock_client_data),
         };
-        return this.execute(txMsgs);
+
+        let relayTxMsg: ProxyT.RelayTransaction = {
+            message: toCosmosMsg(webauthnRelayedTxMsg),
+            signature: toBase64(mock_signature),
+        };
+
+        return this.relay({ transaction: relayTxMsg });
     }
 }
+
+export default ProxyClient;

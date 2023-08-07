@@ -17,7 +17,7 @@ program
     .option("--vectis", "Upload vectis contracts")
     .action(uploadAction);
 
-program.command("tx").argument("<network>", "Network to add contract(s) to").action(uploadAction);
+program.command("tx").argument("<network>", "Network to add contract(s) to").action(test);
 
 program.command("generateAccounts").option("--network [networks...]", "Network to generate").action(handleAccounts);
 
