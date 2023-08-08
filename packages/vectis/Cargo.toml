@@ -22,9 +22,8 @@ thiserror = { workspace = true }
 derivative = "2"
 sylvia = {workspace = true}
 sylvia-derive = {workspace = true}
-
-sha2 = "0.9"
-ripemd160 = "0.9.1"
+sha2 = {workspace = true} 
+ripemd160 = {workspace = true}  
 hex = { version = "0.4", default-features = false }
 bech32 = "0.8.1"
 primitive-types = {version = "0.10.1", default-features = false, features = ["byteorder"]}

@@ -8,6 +8,7 @@ pub use crate::msgs::guardians::*;
 pub use crate::msgs::proxy::*;
 
 pub use crate::types::authenticator;
+pub use crate::types::authenticator::authenicator_export;
 pub use crate::types::entity;
 pub use crate::types::error::*;
 pub use crate::types::factory::*;

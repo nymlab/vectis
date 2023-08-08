@@ -4,20 +4,45 @@ use cosmwasm_std::{Binary, StdError};
 use serde::{de::DeserializeOwned, Serialize};
 use sylvia::types::QueryCtx;
 use sylvia::{interface, schemars};
+use thiserror::Error;
 
-/// The trait for each authenticator contract
-#[interface]
-pub trait IAuthenicator {
-    type Error: From<StdError>;
-    type MsgType: DeserializeOwned + Serialize + ?Sized;
+pub mod authenicator_export {
+    use crate::VectisRelayedTx;
 
-    #[msg(query)]
-    fn authenticate(
-        &self,
-        ctx: QueryCtx,
-        auth_data: Binary,
-        nonce: Nonce,
-    ) -> Result<bool, Self::Error>;
+    use super::*;
+
+    #[derive(Error, Debug, PartialEq)]
+    pub enum AuthenticatorError {
+        #[error("{0}")]
+        Std(#[from] StdError),
+        #[error("decode client data")]
+        DecodeClientData,
+        #[error("Serde")]
+        Serde,
+        #[error("invalid challenge")]
+        InvalidChallenge,
+        #[error("signature parsing {0}")]
+        SignatureParse(String),
+        #[error("pubkey parsing {0}")]
+        PubKeyParse(String),
+    }
+
+    /// The trait for each authenticator contract
+    #[interface]
+    pub trait AuthenicatorExport {
+        type Error: From<StdError>;
+        type MsgType: DeserializeOwned + Serialize + ?Sized;
+
+        #[msg(query)]
+        fn authenticate(
+            &self,
+            ctx: QueryCtx,
+            signed_data: VectisRelayedTx,
+            controller_data: Binary,
+            metadata: Vec<Binary>,
+            signature: Binary,
+        ) -> Result<bool, Self::Error>;
+    }
 }
 
 /// User can decide if they want a different authenticator instead of the Vectis one
