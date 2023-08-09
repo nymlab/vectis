@@ -2,7 +2,7 @@
 name = "vectis-wallet"
 authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>", "j0nl1 <j0nl1@gmail.com>"]
 version = "0.2.1"
-edition = "2018"
+edition = "2021"
 license-file = "LICENSE"
 keywords = ["cosmwasm", "account-abstraction", "smart-contract-wallet", "vectis", "cosmos"] 
 repository = "https://github.com/nymlab/vectis"
