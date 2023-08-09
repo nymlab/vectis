@@ -4,7 +4,7 @@ authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheio
 version = "1.0.0-beta"
 edition = "2021"
 license-file = "LICENSE"
-keywords = ["cosmwasm", "account-abstraction", "smart-contract-wallet", "vectis", "cosmos"] 
+keywords = ["cosmwasm", "account-abstraction", "smart-contract-wallet", "cosmos"] 
 repository = "https://github.com/nymlab/vectis"
 description = "Vectis library for common messages, states and functions"
 
