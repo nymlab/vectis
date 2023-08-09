@@ -31,16 +31,17 @@ pub mod authenicator_export {
     #[interface]
     pub trait AuthenicatorExport {
         type Error: From<StdError>;
-        type MsgType: DeserializeOwned + Serialize + ?Sized;
 
+        // TODO: how can we make these all &[u8]?
+        // #[interface] complains
         #[msg(query)]
         fn authenticate(
             &self,
             ctx: QueryCtx,
-            signed_data: VectisRelayedTx,
-            controller_data: Binary,
-            metadata: Vec<Binary>,
-            signature: Binary,
+            signed_data: Vec<u8>,
+            controller_data: Vec<u8>,
+            metadata: Vec<Vec<u8>>,
+            signature: Vec<u8>,
         ) -> Result<bool, Self::Error>;
     }
 }

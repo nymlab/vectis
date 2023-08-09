@@ -117,6 +117,10 @@ pub struct VectisRelayedTx {
 /// for CosmosEOA
 #[cw_serde]
 pub struct CosmosRelayedTxMsg {
+    /// This is the JSON string of the `VectisRelayTx`
+    /// We parse this string in the contract for the correct type
+    /// This is because we need this string to ensure fields are in the
+    /// same order when hashing
     pub signed_data: VectisRelayedTx,
 }
 
@@ -124,8 +128,12 @@ pub struct CosmosRelayedTxMsg {
 /// for Webauthn
 #[cw_serde]
 pub struct WebauthnRelayedTxMsg {
-    /// the data to be signed, aka, the challenge
-    pub signed_data: VectisRelayedTx,
+    /// This is the JSON string of the `VectisRelayTx`
+    /// We parse this string in the contract for the correct type
+    /// This is because we need this string to ensure fields are in the
+    /// same order when hashing
+    /// For this authenticator: it is the data to be hashed and becomes the challenge
+    pub signed_data: String,
     pub auth_data: Binary,
     pub client_data: Binary,
 }
