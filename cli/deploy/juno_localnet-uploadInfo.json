@@ -169,10 +169,10 @@
   },
   "default": {
     "passkey": {
-      "checksum": "2db7e50d2830fc908cba6f27c7fae7c906b2559e7d2305f5ef51676637333b9f",
-      "originalSize": 178659,
-      "compressedSize": 65325,
-      "codeId": 1,
+      "checksum": "bdd883595e28c6441fb0b5cbc2beea7f678183f57000640ec4028c93d1926315",
+      "originalSize": 179092,
+      "compressedSize": 65495,
+      "codeId": 13,
       "logs": [
         {
           "msg_index": 0,
@@ -200,19 +200,19 @@
               "attributes": [
                 {
                   "key": "code_checksum",
-                  "value": "2db7e50d2830fc908cba6f27c7fae7c906b2559e7d2305f5ef51676637333b9f"
+                  "value": "bdd883595e28c6441fb0b5cbc2beea7f678183f57000640ec4028c93d1926315"
                 },
                 {
                   "key": "code_id",
-                  "value": "1"
+                  "value": "13"
                 }
               ]
             }
           ]
         }
       ],
-      "height": 4244,
-      "transactionHash": "8F8DB761095D98DFF26D5EB29451745C9E373B04A5C3175A2F7EF638D82A22B4",
+      "height": 40822,
+      "transactionHash": "A77F786FA05A56D74749579FD7865FA4E8FF0248FC8CF14E42052A7B5A6BE167",
       "events": [
         {
           "type": "coin_spent",
@@ -223,7 +223,7 @@
             },
             {
               "key": "amount",
-              "value": "41136ujunox"
+              "value": "41022ujunox"
             }
           ]
         },
@@ -236,7 +236,7 @@
             },
             {
               "key": "amount",
-              "value": "41136ujunox"
+              "value": "41022ujunox"
             }
           ]
         },
@@ -253,7 +253,7 @@
             },
             {
               "key": "amount",
-              "value": "41136ujunox"
+              "value": "41022ujunox"
             }
           ]
         },
@@ -271,7 +271,7 @@
           "attributes": [
             {
               "key": "fee",
-              "value": "41136ujunox"
+              "value": "41022ujunox"
             },
             {
               "key": "fee_payer",
@@ -284,7 +284,7 @@
           "attributes": [
             {
               "key": "acc_seq",
-              "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/0"
+              "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/13"
             }
           ]
         },
@@ -293,7 +293,7 @@
           "attributes": [
             {
               "key": "signature",
-              "value": "Xm0iwp8+FHiKw7hBVN2VtQ+h7wV/tL+FZTYTU2BD7uNU3gBLu2IJ5xW0wD5xVlFhItA26cCmSAe82FvVcsNxcQ=="
+              "value": "JmxWLM7Ynx6R5O2ZHkCNPvRIhjto0PYL4uFugqMHeZU84d1GMGMmZLgZR/MOujGXAYErALP0Mw3dm4qAvvoOnA=="
             }
           ]
         },
@@ -324,17 +324,17 @@
           "attributes": [
             {
               "key": "code_checksum",
-              "value": "2db7e50d2830fc908cba6f27c7fae7c906b2559e7d2305f5ef51676637333b9f"
+              "value": "bdd883595e28c6441fb0b5cbc2beea7f678183f57000640ec4028c93d1926315"
             },
             {
               "key": "code_id",
-              "value": "1"
+              "value": "13"
             }
           ]
         }
       ],
-      "gasWanted": 1645435,
-      "gasUsed": 1280195
+      "gasWanted": 1640850,
+      "gasUsed": 1276665
     },
     "default": {
       "passkey": {
@@ -673,8 +673,341 @@
           ],
           "gasWanted": 1645435,
           "gasUsed": 1280195
+        },
+        "default": {
+          "passkey": {
+            "checksum": "2db7e50d2830fc908cba6f27c7fae7c906b2559e7d2305f5ef51676637333b9f",
+            "originalSize": 178659,
+            "compressedSize": 65325,
+            "codeId": 1,
+            "logs": [
+              {
+                "msg_index": 0,
+                "log": "",
+                "events": [
+                  {
+                    "type": "message",
+                    "attributes": [
+                      {
+                        "key": "action",
+                        "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+                      },
+                      {
+                        "key": "module",
+                        "value": "wasm"
+                      },
+                      {
+                        "key": "sender",
+                        "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "store_code",
+                    "attributes": [
+                      {
+                        "key": "code_checksum",
+                        "value": "2db7e50d2830fc908cba6f27c7fae7c906b2559e7d2305f5ef51676637333b9f"
+                      },
+                      {
+                        "key": "code_id",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "height": 4244,
+            "transactionHash": "8F8DB761095D98DFF26D5EB29451745C9E373B04A5C3175A2F7EF638D82A22B4",
+            "events": [
+              {
+                "type": "coin_spent",
+                "attributes": [
+                  {
+                    "key": "spender",
+                    "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+                  },
+                  {
+                    "key": "amount",
+                    "value": "41136ujunox"
+                  }
+                ]
+              },
+              {
+                "type": "coin_received",
+                "attributes": [
+                  {
+                    "key": "receiver",
+                    "value": "juno17xpfvakm2amg962yls6f84z3kell8c5lxtqmvp"
+                  },
+                  {
+                    "key": "amount",
+                    "value": "41136ujunox"
+                  }
+                ]
+              },
+              {
+                "type": "transfer",
+                "attributes": [
+                  {
+                    "key": "recipient",
+                    "value": "juno17xpfvakm2amg962yls6f84z3kell8c5lxtqmvp"
+                  },
+                  {
+                    "key": "sender",
+                    "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+                  },
+                  {
+                    "key": "amount",
+                    "value": "41136ujunox"
+                  }
+                ]
+              },
+              {
+                "type": "message",
+                "attributes": [
+                  {
+                    "key": "sender",
+                    "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+                  }
+                ]
+              },
+              {
+                "type": "tx",
+                "attributes": [
+                  {
+                    "key": "fee",
+                    "value": "41136ujunox"
+                  },
+                  {
+                    "key": "fee_payer",
+                    "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+                  }
+                ]
+              },
+              {
+                "type": "tx",
+                "attributes": [
+                  {
+                    "key": "acc_seq",
+                    "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/0"
+                  }
+                ]
+              },
+              {
+                "type": "tx",
+                "attributes": [
+                  {
+                    "key": "signature",
+                    "value": "Xm0iwp8+FHiKw7hBVN2VtQ+h7wV/tL+FZTYTU2BD7uNU3gBLu2IJ5xW0wD5xVlFhItA26cCmSAe82FvVcsNxcQ=="
+                  }
+                ]
+              },
+              {
+                "type": "message",
+                "attributes": [
+                  {
+                    "key": "action",
+                    "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+                  }
+                ]
+              },
+              {
+                "type": "message",
+                "attributes": [
+                  {
+                    "key": "module",
+                    "value": "wasm"
+                  },
+                  {
+                    "key": "sender",
+                    "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+                  }
+                ]
+              },
+              {
+                "type": "store_code",
+                "attributes": [
+                  {
+                    "key": "code_checksum",
+                    "value": "2db7e50d2830fc908cba6f27c7fae7c906b2559e7d2305f5ef51676637333b9f"
+                  },
+                  {
+                    "key": "code_id",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "gasWanted": 1645435,
+            "gasUsed": 1280195
+          }
         }
       }
     }
+  },
+  "vectis_proxy": {
+    "checksum": "deadae4e80e86729110ccc3182f008a96292d8d384384fee747688bb7731ae8e",
+    "originalSize": 462736,
+    "compressedSize": 157601,
+    "codeId": 1,
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+              },
+              {
+                "key": "sender",
+                "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+              },
+              {
+                "key": "module",
+                "value": "wasm"
+              }
+            ]
+          },
+          {
+            "type": "store_code",
+            "attributes": [
+              {
+                "key": "code_checksum",
+                "value": "deadae4e80e86729110ccc3182f008a96292d8d384384fee747688bb7731ae8e"
+              },
+              {
+                "key": "code_id",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "height": 18,
+    "transactionHash": "7393AE687CC38DB87DE8C81C8FA1B5EB87B366E9A6A47BDDCA4442FCE90E4FA8",
+    "events": [
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "spender",
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+          },
+          {
+            "key": "amount",
+            "value": "98669ujunox"
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "receiver",
+            "value": "juno17xpfvakm2amg962yls6f84z3kell8c5lxtqmvp"
+          },
+          {
+            "key": "amount",
+            "value": "98669ujunox"
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "recipient",
+            "value": "juno17xpfvakm2amg962yls6f84z3kell8c5lxtqmvp"
+          },
+          {
+            "key": "sender",
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+          },
+          {
+            "key": "amount",
+            "value": "98669ujunox"
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "sender",
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "fee",
+            "value": "98669ujunox"
+          },
+          {
+            "key": "fee_payer",
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "acc_seq",
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y/0"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "signature",
+            "value": "u+qMdDj4vxW8v46jtJz3V/mdaR21afH0GBxO3TPH+qMZDLoZKO08Q0Q5/e2Xupx0W2aWFpPwUVd3KbKDAPPsRQ=="
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "action",
+            "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+          },
+          {
+            "key": "sender",
+            "value": "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
+          },
+          {
+            "key": "module",
+            "value": "wasm"
+          }
+        ]
+      },
+      {
+        "type": "store_code",
+        "attributes": [
+          {
+            "key": "code_checksum",
+            "value": "deadae4e80e86729110ccc3182f008a96292d8d384384fee747688bb7731ae8e"
+          },
+          {
+            "key": "code_id",
+            "value": "1"
+          }
+        ]
+      }
+    ],
+    "gasWanted": 3946732,
+    "gasUsed": 3054704
   }
 }

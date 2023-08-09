@@ -15,15 +15,15 @@ export async function test(network: Chains, opts: OptionValues) {
 
     let res = await factoryClient.createWalletWebAuthn();
     let proxyAddr = CWClient.getEventAttrValue(res, "wasm-vectis.proxy.v1", "_contract_address");
-    console.log("proxy Addr: ", proxyAddr);
+    logger.info("proxy Addr: ", proxyAddr);
 
     let proxyClient = new ProxyClient(client, client.sender, proxyAddr);
     let info = await proxyClient.info();
-    console.log("\n\nproxy info: ", info);
+    logger.info("\n\nproxy info: ", info);
 
     // Check current balance on the proxy
     let currentBalance = await proxyClient.client.getBalance(proxyAddr, "ujunox");
-    console.log("\n\ncurrentBalance: ", currentBalance);
+    logger.info("\n\ncurrentBalance: ", currentBalance);
 
     // Relay sending from the proxy
     let bankSendMsg: CosmosMsgForEmpty = {
@@ -32,12 +32,12 @@ export async function test(network: Chains, opts: OptionValues) {
     let txRes = await proxyClient.relayTxFromSelf([bankSendMsg]);
     let action = CWClient.getEventAttrValue(txRes, "wasm-vectis.proxy.v1", "action");
     let relay = CWClient.getEventAttrValue(txRes, "wasm-vectis.proxy.v1", "msgs");
-    console.log("\n\nresult action: ", action, "\nresult msgs: ", relay);
+    logger.info("\n\nresult action: ", action, "\nresult msgs: ", relay);
 
     // wait for block
     await delay(8000);
 
     // Check current balance on the proxy
     let afterBalance = await proxyClient.client.getBalance(proxyAddr, "ujunox");
-    console.log("\n\nafterBalance: ", afterBalance);
+    logger.info("\n\nafterBalance: ", afterBalance);
 }

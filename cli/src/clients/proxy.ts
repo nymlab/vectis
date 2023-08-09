@@ -42,6 +42,8 @@ class ProxyClient extends ProxyC {
         };
 
         let mock_auth_data = new Uint8Array([1, 0, 2, 4]);
+        // Expected format for clientData
+        //let client_data = Buffer.from(JSON.stringify(clientDataJSON))
         let mock_client_data = new Uint8Array([2, 3, 1, 2]);
         let mock_signature = new Uint8Array([2, 3, 1, 2]);
 

@@ -1,0 +1,165 @@
+{
+  "vectis_webauthn_authenticator": {
+    "checksum": "2d6e21ad42f5b8f165b97ca8298fef57353a586b54ea1c7a9ea2e8874ca8d92d",
+    "originalSize": 377052,
+    "compressedSize": 121068,
+    "codeId": 3144,
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+              },
+              {
+                "key": "sender",
+                "value": "juno1qc6cq2lsd0vccceups73auddtu2p6pymwd6ush"
+              },
+              {
+                "key": "module",
+                "value": "wasm"
+              }
+            ]
+          },
+          {
+            "type": "store_code",
+            "attributes": [
+              {
+                "key": "code_checksum",
+                "value": "2d6e21ad42f5b8f165b97ca8298fef57353a586b54ea1c7a9ea2e8874ca8d92d"
+              },
+              {
+                "key": "code_id",
+                "value": "3144"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "height": 2695211,
+    "transactionHash": "F63D065E9805E0E74AA8176301D8C0C1DBB70085EB7E6FFDB7A48533C572C4AC",
+    "events": [
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "spender",
+            "value": "juno1qc6cq2lsd0vccceups73auddtu2p6pymwd6ush"
+          },
+          {
+            "key": "amount",
+            "value": "77949ujunox"
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "receiver",
+            "value": "juno17xpfvakm2amg962yls6f84z3kell8c5lxtqmvp"
+          },
+          {
+            "key": "amount",
+            "value": "77949ujunox"
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "recipient",
+            "value": "juno17xpfvakm2amg962yls6f84z3kell8c5lxtqmvp"
+          },
+          {
+            "key": "sender",
+            "value": "juno1qc6cq2lsd0vccceups73auddtu2p6pymwd6ush"
+          },
+          {
+            "key": "amount",
+            "value": "77949ujunox"
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "sender",
+            "value": "juno1qc6cq2lsd0vccceups73auddtu2p6pymwd6ush"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "fee",
+            "value": "77949ujunox"
+          },
+          {
+            "key": "fee_payer",
+            "value": "juno1qc6cq2lsd0vccceups73auddtu2p6pymwd6ush"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "acc_seq",
+            "value": "juno1qc6cq2lsd0vccceups73auddtu2p6pymwd6ush/92"
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "signature",
+            "value": "RbwDOdt5vinttdL2ZyTgPXaAxURxQs8tcy95/vaRDSck8vpFlcHQXNh8UfCYYJtXrEc6AGE8Lb7YlTDnNI7r7Q=="
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "action",
+            "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+          },
+          {
+            "key": "sender",
+            "value": "juno1qc6cq2lsd0vccceups73auddtu2p6pymwd6ush"
+          },
+          {
+            "key": "module",
+            "value": "wasm"
+          }
+        ]
+      },
+      {
+        "type": "store_code",
+        "attributes": [
+          {
+            "key": "code_checksum",
+            "value": "2d6e21ad42f5b8f165b97ca8298fef57353a586b54ea1c7a9ea2e8874ca8d92d"
+          },
+          {
+            "key": "code_id",
+            "value": "3144"
+          }
+        ]
+      }
+    ],
+    "gasWanted": 3117951,
+    "gasUsed": 2417150
+  }
+}
