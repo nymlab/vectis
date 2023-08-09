@@ -115,7 +115,8 @@ export async function deploy(network: Chains) {
     const factoryInstMsg = FactoryClient.createFactoryInstMsg(
         chain,
         uploadedContracts.vectis_proxy.codeId,
-        uploadedContracts.cw3Fixed.codeId
+        uploadedContracts.cw3Fixed.codeId,
+        uploadedContracts.vectis_webauthn_authenticator.codeId
     );
 
     // ===========================================================
@@ -151,7 +152,12 @@ export async function deploy(network: Chains) {
     const prop = proposals.proposals.pop();
     const propId = prop!.id;
     let execute = await vectisComClient.execute({ proposalId: propId });
-    const factoryAddr = CWClient.getAddrFromInstantianteResult(execute);
+    const factoryAddr = CWClient.getEventAttrValue(
+        execute,
+        "wasm-vectis.factory.v1.MsgInstantiate",
+        "_contract_address"
+    );
+    const webauthAddr = CWClient.getEventAttrValue(execute, "wasm-vectis.webauthn.v1", "_contract_address");
 
     // Vectis Committee deploy plugin registry
     let pluginRegInstMsg = PluginRegClient.createInstMsg(chain);
@@ -179,7 +185,14 @@ export async function deploy(network: Chains) {
     const pluginProp = pluginProps.proposals.pop();
     let plugin = await vectisComClient.execute({ proposalId: pluginProp!.id });
     const pluginRegAddr = CWClient.getAddrFromInstantianteResult(plugin);
-    logger.info("4. Instantiated factory: ", factoryAddr, "\n plugin registry: ", pluginRegAddr);
+    logger.info(
+        "4. Instantiated factory: ",
+        factoryAddr,
+        "\nplugin registry: ",
+        pluginRegAddr,
+        "\nWebauthn: ",
+        webauthAddr
+    );
 
     // ===================================================================================
     //
@@ -199,6 +212,7 @@ export async function deploy(network: Chains) {
         VectisCommitteeGroup: vectisCommitteeMembers,
         PluginRegistry: pluginRegAddr,
         Factory: factoryAddr,
+        Webauthn: webauthAddr,
     };
     logger.info("\n 6. Contracts on Chain: ", contracts);
     writeToFile(getDeployPath(network), JSON.stringify(contracts, null, 2));

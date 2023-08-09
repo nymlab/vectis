@@ -1,7 +1,7 @@
 import figlet from "figlet";
 import { Command } from "commander";
 import { uploadAction } from "./upload";
-import { test } from "./tx";
+import { test, test_query } from "./tx";
 import { deploy } from "./deploy-vectis";
 import { handleAccounts } from "./accounts";
 import { handleNetworkQuery } from "./queries";
