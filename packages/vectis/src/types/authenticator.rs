@@ -1,22 +1,18 @@
-use crate::Nonce;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, StdError};
-use serde::{de::DeserializeOwned, Serialize};
+use cosmwasm_std::StdError;
 use sylvia::types::QueryCtx;
 use sylvia::{interface, schemars};
 use thiserror::Error;
 
 pub mod authenicator_export {
-    use crate::VectisRelayedTx;
-
     use super::*;
 
     #[derive(Error, Debug, PartialEq)]
     pub enum AuthenticatorError {
         #[error("{0}")]
         Std(#[from] StdError),
-        #[error("decode client data")]
-        DecodeClientData,
+        #[error("decoding error {0}")]
+        DecodeData(String),
         #[error("Serde")]
         Serde,
         #[error("invalid challenge")]
