@@ -1,4 +1,4 @@
-use crate::Controller;
+use crate::types::wallet::Controller;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::CanonicalAddr;
 use cw_storage_plus::{Item, Map};
@@ -8,6 +8,7 @@ use cw_storage_plus::{Item, Map};
 pub const ITEMS: Map<String, String> = Map::new("items");
 /// In beta-V1 this is a multisig
 /// In progressive decentralisation this will be a DAAO
+pub type Deployer<'a> = Item<'a, CanonicalAddr>;
 pub const DEPLOYER: Item<CanonicalAddr> = Item::new("deployer");
 
 #[cw_serde]

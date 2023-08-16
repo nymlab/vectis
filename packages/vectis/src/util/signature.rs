@@ -1,8 +1,8 @@
-use cosmwasm_std::{Binary, DepsMut, StdResult};
+use cosmwasm_std::{DepsMut, StdResult};
 use ripemd160::Digest as Ripemd160Digest;
 use sha2::Sha256;
 
-use crate::RelayTransaction;
+use crate::types::wallet::RelayTransaction;
 
 pub fn verify_cosmos_sign(
     deps: &DepsMut,

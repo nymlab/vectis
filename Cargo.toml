@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/core/*", "contracts/plugins/*"]
+members = ["packages/vectis", "contracts/core/factory" ]
 exclude = ["packages/images"]
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
@@ -48,3 +48,6 @@ quote = "1.0"
 syn = { version = "1.0", features = ["derive"] }
 sha2 = "0.9"
 ripemd160 = "0.9.1"
+
+[workspace.dev-dependencies]
+sylvia = {version = "0.7.0", features = ["mt"]}

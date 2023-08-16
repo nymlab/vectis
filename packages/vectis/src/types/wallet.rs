@@ -1,11 +1,17 @@
-use crate::{
+use crate::types::{
     authenticator::{Authenticator, AuthenticatorType},
     entity::Entity,
-    ProxyAddrErr, RelayTxError,
+    error::RelayTxError,
+    factory::CreateWalletMsg,
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary, CanonicalAddr, Coin, CosmosMsg};
+use cosmwasm_std::{Addr, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, StdError};
 use cw_utils::Threshold;
+
+#[cw_serde]
+pub struct ProxyInstantiateMsg {
+    pub create_wallet_msg: CreateWalletMsg,
+}
 
 /// The main controller of the account
 pub type Controller = Entity;
@@ -22,16 +28,9 @@ impl CosmosEOA {
         self.addr = address;
     }
 
-    /// Ensure provided address is different from current.
-    pub fn ensure_addresses_are_not_equal(
-        &self,
-        address: &CanonicalAddr,
-    ) -> Result<(), ProxyAddrErr> {
-        if self.addr.ne(address) {
-            Ok(())
-        } else {
-            Err(ProxyAddrErr::AddressesAreEqual {})
-        }
+    /// Get human addr
+    pub fn to_human(&self, deps: Deps) -> Result<Addr, StdError> {
+        deps.api.addr_humanize(&self.addr)
     }
 }
 

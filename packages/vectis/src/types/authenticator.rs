@@ -1,46 +1,4 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::StdError;
-use sylvia::types::QueryCtx;
-use sylvia::{interface, schemars};
-use thiserror::Error;
-
-pub mod authenicator_export {
-    use super::*;
-
-    #[derive(Error, Debug, PartialEq)]
-    pub enum AuthenticatorError {
-        #[error("{0}")]
-        Std(#[from] StdError),
-        #[error("decoding error {0}")]
-        DecodeData(String),
-        #[error("Serde")]
-        Serde,
-        #[error("invalid challenge")]
-        InvalidChallenge,
-        #[error("signature parsing {0}")]
-        SignatureParse(String),
-        #[error("pubkey parsing {0}")]
-        PubKeyParse(String),
-    }
-
-    /// The trait for each authenticator contract
-    #[interface]
-    pub trait AuthenicatorExport {
-        type Error: From<StdError>;
-
-        // TODO: how can we make these all &[u8]?
-        // #[interface] complains
-        #[msg(query)]
-        fn authenticate(
-            &self,
-            ctx: QueryCtx,
-            signed_data: Vec<u8>,
-            controller_data: Vec<u8>,
-            metadata: Vec<Vec<u8>>,
-            signature: Vec<u8>,
-        ) -> Result<bool, Self::Error>;
-    }
-}
 
 /// User can decide if they want a different authenticator instead of the Vectis one
 #[cw_serde]

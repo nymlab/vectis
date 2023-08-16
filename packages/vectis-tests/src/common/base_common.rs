@@ -102,6 +102,7 @@ impl HubChainSuite {
                 denom: DENOM.to_string(),
                 amount: Uint128::new(WALLET_FEE),
             },
+            authenticators: None,
         };
 
         let plugin_reg_inst_msg = PRegistryInstantiateMsg {
@@ -224,7 +225,7 @@ impl HubChainSuite {
 
     pub fn create_new_proxy(
         &mut self,
-        controller: Addr,
+        controller: Controller,
         factory: Addr,
         proxy_initial_funds: Vec<Coin>,
         guardians_multisig: Option<MultiSig>,
@@ -234,7 +235,7 @@ impl HubChainSuite {
         let r = "relayer".to_owned();
 
         let create_wallet_msg = CreateWalletMsg {
-            controller_addr: controller.to_string(),
+            controller,
             guardians: Guardians {
                 addresses: guardians,
                 guardians_multisig,

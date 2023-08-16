@@ -1,26 +1,102 @@
-pub mod factory_state {
-    pub use crate::{authenticator::AuthenticatorType, DEPLOYER};
-    use cosmwasm_std::{Addr, Coin};
-    use cw_storage_plus::{Item, Map};
-    /// The total number of wallets successfully created by the factory
-    /// i.e. if creation fail, this is not incremented
-    pub const TOTAL_CREATED: Item<u64> = Item::new("total_created");
-    /// The latest supported `wallet_proxy` code id stored onchain
-    pub const PROXY_CODE_ID: Item<u64> = Item::new("proxy_code_id");
-    /// The latest default `multisig` code id stored onchain for the proxy
-    pub const PROXY_MULTISIG_CODE_ID: Item<u64> = Item::new("proxy_multisig_code_id");
-    /// Chain address prefix
-    pub const ADDR_PREFIX: Item<String> = Item::new("addr_prefix");
-    /// Fee for DEPLOYER when a wallet is created
-    pub const WALLET_FEE: Item<Coin> = Item::new("wallet_fee");
-    /// Map of all Cosmos_EOA controller to wallet_id, which is incremented with TOTAL_CREATED;
-    pub const CONTROLLERS: Map<&[u8], Vec<u64>> = Map::new("controllers");
-    /// Map of Cosmos guardians to wallet_id, can be Vectis accounts
-    pub const GUARDIANS: Map<Addr, Vec<u64>> = Map::new("guardians");
-    /// Map of all wallet_id to proxy addr
-    pub const WALLETS: Map<u64, Addr> = Map::new("wallets");
-    /// Map of all current authenticators code_id
-    pub const AUTHENICATOR_CODE_IDS: Map<String, u64> = Map::new("authenticators_code_ids");
-    /// Map of all current authenticators provided by Vectis
-    pub const AUTHENICATORS: Map<String, Addr> = Map::new("authenticator_providers");
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Addr, Binary, Coin};
+
+use crate::types::{
+    authenticator::AuthenticatorType,
+    error::MigrationMsgError,
+    wallet::{Controller, RelayTransaction},
+};
+
+/// Declares that a fixed weight of Yes votes is needed to pass.
+/// See `ThresholdResponse.AbsoluteCount` in the cw3 spec for details.
+/// Only Fixed multisig is supported in this version
+pub type ThresholdAbsoluteCount = u64;
+
+#[cw_serde]
+pub struct CreateWalletMsg {
+    pub controller: Controller,
+    /// A List of keys can act as relayer for
+    pub relayers: Vec<String>,
+    pub proxy_initial_funds: Vec<Coin>,
+    pub label: String,
+}
+
+#[cw_serde]
+pub enum ProxyMigrationTxMsg {
+    RelayTx(RelayTransaction),
+    DirectMigrationMsg(Binary),
+}
+
+#[cw_serde]
+pub struct ProxyMigrateMsg {
+    pub new_code_id: u64,
+}
+
+impl ProxyMigrateMsg {
+    /// Ensures code id of multisig contract is equal to current factory multisig code id,
+    pub fn ensure_is_supported_proxy_code_id(
+        &self,
+        factory_proxy_code_id: u64,
+    ) -> Result<(), MigrationMsgError> {
+        if factory_proxy_code_id != self.new_code_id {
+            return Err(MigrationMsgError::MismatchProxyCodeId);
+        }
+        Ok(())
+    }
+}
+
+#[cw_serde]
+pub struct AuthenticatorInstInfo {
+    pub ty: AuthenticatorType,
+    pub code_id: u64,
+    pub inst_msg: Binary,
+}
+
+#[cw_serde]
+pub struct WalletFactoryInstantiateMsg {
+    /// Smart contract wallet contract code id
+    pub proxy_code_id: u64,
+    /// Fee for wallet creation in native token to be sent to Admin (DAO)
+    pub wallet_fee: Coin,
+    /// Authenticator
+    pub authenticators: Option<Vec<AuthenticatorInstInfo>>,
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum WalletFactoryQueryMsg {
+    #[returns(u64)]
+    TotalCreated {},
+    #[returns(u64)]
+    CodeId { ty: CodeIdType },
+    /// Returns the fees required to create a wallet
+    #[returns(FeesResponse)]
+    Fees {},
+    /// Returns the address of the Deployer which holds the admin role of this contract
+    #[returns(Addr)]
+    DeployerAddr {},
+    /// Returns the wallet controlled by this controller
+    #[returns(Vec<Addr>)]
+    ControllerWallets { controller: Binary },
+    /// Returns the wallet with this guardian
+    #[returns(Vec<Addr>)]
+    WalletsWithGuardian { guardian: Addr },
+    /// Returns the address of the authenticator
+    #[returns(Option<Addr>)]
+    AuthProviderAddr { ty: AuthenticatorType },
+}
+
+#[cw_serde]
+pub enum CodeIdType {
+    Proxy,
+}
+
+#[cw_serde]
+pub enum FeeType {
+    Wallet,
+}
+
+#[cw_serde]
+pub struct FeesResponse {
+    pub wallet_fee: Coin,
 }

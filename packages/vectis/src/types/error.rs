@@ -1,6 +1,5 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 use cosmwasm_std::{Addr, Instantiate2AddressError, StdError};
-use cw_utils::ParseReplyError;
 use thiserror::Error;
 
 /// Relay transaction related errors
@@ -12,13 +11,6 @@ pub enum DeployerItemsQueryError {
     ItemNotSet(String),
     #[error("Deployer Addr Not Found")]
     DeployerAddrNotFound,
-}
-
-/// Checks of controller addr
-#[derive(Error, Debug, PartialEq)]
-pub enum ProxyAddrErr {
-    #[error("Address Not Equal")]
-    AddressesAreEqual {},
 }
 
 /// Relay transaction related errors
@@ -41,16 +33,12 @@ pub enum MigrationMsgError {
     InvalidWalletAddr,
     #[error("MismatchProxyCodeId")]
     MismatchProxyCodeId,
-    #[error("MismatchMultisigCodeId")]
-    MismatchMultisigCodeId,
     #[error("InvalidWasmMsg")]
     InvalidWasmMsg,
     #[error("MultisigFeatureIsNotSet")]
     MultisigFeatureIsNotSet,
     #[error("IsNotAProxyMsg")]
     IsNotAProxyMsg,
-    #[error("IsNotAMultisigMsg")]
-    IsNotAMultisigMsg,
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -82,27 +70,39 @@ pub enum FactoryError {
     #[error("SameProxyMultisigCodeId")]
     SameProxyMultisigCodeId {},
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized,
     #[error("Missing Duration")]
     MissingDuration {},
     #[error("InvalidMigrationMsg: {0}")]
     InvalidMigrationMsg(MigrationMsgError),
     #[error("InvalidRelayMigrationTx: {0}")]
     InvalidRelayMigrationTx(RelayTxError),
-    #[error("InvalidReplyId")]
-    InvalidReplyId {},
     #[error("InvalidNativeFund: Expected: {0}, Got: {1}")]
     InvalidNativeFund(String, String),
     #[error("Proxy cannot be instantiated")]
     ProxyInstantiationError {},
     #[error("Invalid Proxy Reply")]
     InvalidReplyFromProxy,
-    #[error("ParseReplyError")]
-    ParseReplyError(#[from] ParseReplyError),
 }
 
 impl From<MigrationMsgError> for FactoryError {
     fn from(error: MigrationMsgError) -> Self {
         FactoryError::InvalidMigrationMsg(error)
     }
+}
+
+#[derive(Error, Debug, PartialEq)]
+pub enum AuthenticatorError {
+    #[error("{0}")]
+    Std(#[from] StdError),
+    #[error("decoding error {0}")]
+    DecodeData(String),
+    #[error("Serde")]
+    Serde,
+    #[error("invalid challenge")]
+    InvalidChallenge,
+    #[error("signature parsing {0}")]
+    SignatureParse(String),
+    #[error("pubkey parsing {0}")]
+    PubKeyParse(String),
 }

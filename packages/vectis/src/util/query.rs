@@ -1,5 +1,5 @@
 use crate::types::error::DeployerItemsQueryError;
-use crate::VectisActors;
+use crate::types::state::VectisActors;
 use cosmwasm_std::Deps;
 
 use crate::types::state::{DEPLOYER, ITEMS};

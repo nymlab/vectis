@@ -42,7 +42,6 @@ pub use vectis_plugin_registry::{
 
 pub use vectis_factory::contract::{
     execute as factory_execute, instantiate as factory_instantiate, query as factory_query,
-    reply as factory_reply,
 };
 pub use vectis_proxy::contract::{
     execute as proxy_execute, instantiate as proxy_instantiate, migrate as proxy_migrate,
@@ -50,7 +49,7 @@ pub use vectis_proxy::contract::{
 };
 
 pub use vectis_wallet::{
-    pub_key_to_address, CodeIdType, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
+    pub_key_to_address, CodeIdType, Controller, CreateWalletMsg, Guardians, GuardiansUpdateMsg,
     GuardiansUpdateRequest, MultiSig, PluginListResponse, PluginParams, ProxyExecuteMsg,
     ProxyQueryMsg, RelayTransaction, ThresholdAbsoluteCount, VectisActors, WalletFactoryExecuteMsg,
     WalletFactoryExecuteMsg as FactoryExecuteMsg, WalletFactoryInstantiateMsg as InstantiateMsg,

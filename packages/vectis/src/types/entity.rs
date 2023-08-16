@@ -1,4 +1,4 @@
-use crate::{authenticator::Authenticator, Nonce};
+use crate::types::{authenticator::Authenticator, wallet::Nonce};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Binary;
 
