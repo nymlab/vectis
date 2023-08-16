@@ -10,7 +10,7 @@ pub mod factory_service_trait {
 
     use super::*;
 
-    /// The trait for each authenticator contract
+    /// The trait for users to interact with factory contract
     #[interface]
     pub trait FactoryServiceTrait {
         type Error: From<StdError>;
@@ -42,7 +42,7 @@ pub mod factory_management_trait {
         factory::{FeeType, FeesResponse},
     };
 
-    /// The trait for each authenticator contract
+    /// The trait for deployer to interact with factory contract
     #[interface]
     pub trait FactoryManagementTrait {
         type Error: From<StdError>;

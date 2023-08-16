@@ -157,3 +157,23 @@ pub enum PluginPermissions {
     /// Is a multisig contract, ignore controller
     MultiSigOverride,
 }
+
+/// The source of the plugin code.
+#[cw_serde]
+pub enum PluginSource {
+    VectisRegistry(u64),
+    CodeId(u64),
+}
+
+#[cw_serde]
+pub struct PluginParams {
+    // Do we want to instantitate with permission for the grantor?
+    // if so, this instantiate message goes directly to a grantor plugin
+    pub permissions: Vec<PluginPermissions>,
+}
+
+impl PluginParams {
+    pub fn has_exec_access(&self) -> bool {
+        self.permissions.contains(&PluginPermissions::Exec)
+    }
+}
