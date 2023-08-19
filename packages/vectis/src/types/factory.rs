@@ -19,6 +19,7 @@ pub struct CreateWalletMsg {
     pub relayers: Vec<String>,
     pub proxy_initial_funds: Vec<Coin>,
     pub label: String,
+    // TODO: add initial plugins
 }
 
 #[cw_serde]

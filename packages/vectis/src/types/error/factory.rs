@@ -1,30 +1,4 @@
-#![allow(clippy::derive_partial_eq_without_eq)]
-use cosmwasm_std::{Addr, Instantiate2AddressError, StdError};
-use thiserror::Error;
-
-/// Relay transaction related errors
-#[derive(Error, Debug, PartialEq)]
-pub enum DeployerItemsQueryError {
-    #[error("{0}")]
-    Std(#[from] StdError),
-    #[error("Item not set for {0}")]
-    ItemNotSet(String),
-    #[error("Deployer Addr Not Found")]
-    DeployerAddrNotFound,
-}
-
-/// Relay transaction related errors
-#[derive(Error, Debug, PartialEq)]
-pub enum RelayTxError {
-    #[error("MismatchControllerAddr")]
-    IsNotController,
-    #[error("NoncesAreNotEqual")]
-    NoncesAreNotEqual,
-    #[error("EmptyMsgs")]
-    EmptyMsg,
-    #[error("SignatureVerificationError")]
-    SignatureVerificationError,
-}
+use super::*;
 
 /// Contract migration related errors
 #[derive(Error, Debug, PartialEq)]
@@ -39,14 +13,6 @@ pub enum MigrationMsgError {
     MultisigFeatureIsNotSet,
     #[error("IsNotAProxyMsg")]
     IsNotAProxyMsg,
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum Inst2CalcError {
-    #[error("{0}")]
-    Std(#[from] StdError),
-    #[error("{0}")]
-    Instantiate2(#[from] Instantiate2AddressError),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -89,20 +55,4 @@ impl From<MigrationMsgError> for FactoryError {
     fn from(error: MigrationMsgError) -> Self {
         FactoryError::InvalidMigrationMsg(error)
     }
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum AuthenticatorError {
-    #[error("{0}")]
-    Std(#[from] StdError),
-    #[error("decoding error {0}")]
-    DecodeData(String),
-    #[error("Serde")]
-    Serde,
-    #[error("invalid challenge")]
-    InvalidChallenge,
-    #[error("signature parsing {0}")]
-    SignatureParse(String),
-    #[error("pubkey parsing {0}")]
-    PubKeyParse(String),
 }

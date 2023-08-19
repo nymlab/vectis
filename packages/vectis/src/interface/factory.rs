@@ -36,6 +36,7 @@ pub mod factory_service_trait {
 }
 
 pub mod factory_management_trait {
+
     use super::*;
     use crate::types::{
         authenticator::AuthenticatorType,
@@ -46,6 +47,16 @@ pub mod factory_management_trait {
     #[interface]
     pub trait FactoryManagementTrait {
         type Error: From<StdError>;
+
+        // TODO:
+        //#[msg(exec)]
+        //fn add_or_migrate_auth_provider(
+        //    &self,
+        //    ctx: ExecCtx,
+        //    ty: AuthenticatorType,
+        //    new_code_id: u64,
+        //    new_inst_msg: Binary,
+        //) -> Result<Response, Self::Error>;
 
         #[msg(exec)]
         fn update_code_id(

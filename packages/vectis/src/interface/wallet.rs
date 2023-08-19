@@ -17,6 +17,10 @@ pub mod wallet_trait {
         #[msg(query)]
         fn info(&self, ctx: QueryCtx) -> Result<WalletInfo, StdError>;
 
+        /// Return a list of SubAccounts
+        #[msg(query)]
+        fn sub_accounts(&self, ctx: QueryCtx) -> Result<Vec<String>, StdError>;
+
         #[msg(exec)]
         fn auth_exec(
             &self,
@@ -27,7 +31,7 @@ pub mod wallet_trait {
 }
 
 pub mod wallet_plugin_trait {
-    use crate::types::wallet::{PluginListResponse, PluginParams, PluginPermissions, PluginSource};
+    use crate::types::plugin::{PluginListResponse, PluginParams, PluginSource};
 
     use super::*;
 
@@ -36,7 +40,7 @@ pub mod wallet_plugin_trait {
     pub trait WalletPluginTrait {
         type Error: From<StdError>;
 
-        /// Returns plugins by types
+        /// Returns all installed plugins by types
         #[msg(query)]
         fn plugins(&self, ctx: QueryCtx) -> Result<PluginListResponse, StdError>;
 
@@ -57,13 +61,22 @@ pub mod wallet_plugin_trait {
             label: String,
         ) -> Result<Response, Self::Error>;
 
-        #[msg(exec)]
-        fn update_plugin(
-            &self,
-            ctx: ExecCtx,
-            plugin_addr: String,
-            plugin_permissions: Option<Vec<PluginPermissions>>,
-            migrate_msg: Option<(u64, Binary)>,
-        ) -> Result<Response, Self::Error>;
+        // TODO: implement wallet-plugin interface
+        //#[msg(exec)]
+        //fn update_plugin(
+        //    &self,
+        //    ctx: ExecCtx,
+        //    plugin_addr: String,
+        //    plugin_permissions: PluginPermissions,
+        //    migrate_msg: Option<(u64, Binary)>,
+        //) -> Result<Response, Self::Error>;
+
+        //#[msg(exec)]
+        //fn remove_plugin(
+        //    &self,
+        //    ctx: ExecCtx,
+        //    plugin_addr: String,
+        //    plugin_permissions: PluginPermissions,
+        //) -> Result<Response, Self::Error>;
     }
 }

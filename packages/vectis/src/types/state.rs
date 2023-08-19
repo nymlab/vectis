@@ -1,16 +1,12 @@
-use crate::types::wallet::Controller;
+use crate::types::plugin::Plugin;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::CanonicalAddr;
+use cosmwasm_std::{Addr, CanonicalAddr};
 use cw_storage_plus::{Item, Map};
 
+// Stored on the Multisig / DAO contract
 /// Maps `VectisActors` variant to addresses:
 /// using `String` as key to keep inline with the dao-core contract
 pub const ITEMS: Map<String, String> = Map::new("items");
-/// In beta-V1 this is a multisig
-/// In progressive decentralisation this will be a DAAO
-pub type Deployer<'a> = Item<'a, CanonicalAddr>;
-pub const DEPLOYER: Item<CanonicalAddr> = Item::new("deployer");
-
 #[cw_serde]
 pub enum VectisActors {
     Factory,
@@ -24,8 +20,18 @@ impl std::fmt::Display for VectisActors {
     }
 }
 
-/// Vectis Proxy state for other contract to query it
-pub const QUERY_PLUGINS: Map<&str, CanonicalAddr> = Map::new("query-plugins");
+// Stored on all Vectis contract help find other VectisActors
+/// In v1.0.0 this is a multisig
+/// In progressive decentralisation this will be a DAAO
+pub type Deployer<'a> = Item<'a, CanonicalAddr>;
+pub const DEPLOYER: Deployer = Item::new("deployer");
 
-/// Vecits Proxy Controller
-pub const CONTROLLER: Item<Controller> = Item::new("controller");
+// Stored on Factory
+/// These are the authenticators types stored on the factory
+pub type Authenticators<'a> = Map<'a, String, Addr>;
+pub const AUTHENTICATORS: Authenticators = Map::new("authenticators");
+
+// Stored on Plugin registry
+/// Types that allow other contracts to query the plugins from the registry
+pub type Plugins<'a> = Map<'a, u64, Plugin>;
+pub const PLUGINS: Plugins = Map::new("registry_plugins");

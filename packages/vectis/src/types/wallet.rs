@@ -6,8 +6,11 @@ use crate::types::{
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, StdError};
-use cw_utils::Threshold;
 
+/// The message sent for instantiation
+/// In this case, it is the same field as what user has input.
+// We are keeping this struct for now because it used to contain other default info from the
+// factory, like the guardian multisig code id etc.
 #[cw_serde]
 pub struct ProxyInstantiateMsg {
     pub create_wallet_msg: CreateWalletMsg,
@@ -78,13 +81,8 @@ pub struct WalletInfo {
     pub deployer: Addr,
     pub version: cw2::ContractVersion,
     pub code_id: u64,
-    pub guardians: Vec<Addr>,
     pub relayers: Vec<Addr>,
-    pub is_frozen: bool,
     pub created_at: u64,
-    pub nonce: Nonce,
-    pub multisig_address: Option<Addr>,
-    pub multisig_threshold: Option<Threshold>,
     pub label: String,
 }
 
@@ -135,45 +133,4 @@ pub struct WebauthnRelayedTxMsg {
     pub signed_data: String,
     pub auth_data: Binary,
     pub client_data: Binary,
-}
-
-#[cw_serde]
-pub struct PluginListResponse {
-    pub exec_plugins: Vec<Addr>,
-    pub query_plugins: Vec<Addr>,
-    pub pre_tx_plugins: Vec<Addr>,
-    pub multisig_override: Option<Addr>,
-}
-
-/// Permission of the plugin on the proxy
-#[cw_serde]
-pub enum PluginPermissions {
-    /// Can Exec through Proxy
-    Exec,
-    /// Addr can be queried through proxy
-    Query(String),
-    /// Is used to check tx before execution
-    PreTxCheck,
-    /// Is a multisig contract, ignore controller
-    MultiSigOverride,
-}
-
-/// The source of the plugin code.
-#[cw_serde]
-pub enum PluginSource {
-    VectisRegistry(u64),
-    CodeId(u64),
-}
-
-#[cw_serde]
-pub struct PluginParams {
-    // Do we want to instantitate with permission for the grantor?
-    // if so, this instantiate message goes directly to a grantor plugin
-    pub permissions: Vec<PluginPermissions>,
-}
-
-impl PluginParams {
-    pub fn has_exec_access(&self) -> bool {
-        self.permissions.contains(&PluginPermissions::Exec)
-    }
 }

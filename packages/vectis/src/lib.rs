@@ -1,5 +1,3 @@
-pub use crate::interface::authenticator::authenicator_export;
-
 pub mod interface;
 pub mod types;
 pub mod util;
