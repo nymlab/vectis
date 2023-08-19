@@ -5,22 +5,25 @@ use cosmwasm_std::{Binary, Coin, Response, StdError, StdResult};
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
-// We have to put traits into mods for Sylvia
-pub mod registry_trait {
+pub mod registry_service_trait {
     use super::*;
 
     /// The trait for each authenticator contract
     #[interface]
-    pub trait RegistryTrait {
+    pub trait RegistryServiceTrait {
         type Error: From<StdError>;
-
         #[msg(exec)]
-        fn proxy_install_plugin(
-            &self,
-            ctx: ExecCtx,
-            id: u64,
-            instantiate_msg: Binary,
-        ) -> Result<Response, Self::Error>;
+        fn proxy_install_plugin(&self, ctx: ExecCtx, id: u64) -> Result<Response, Self::Error>;
+    }
+}
+
+pub mod registry_management_trait {
+    use super::*;
+
+    /// The trait for each authenticator contract
+    #[interface]
+    pub trait RegistryManagementTrait {
+        type Error: From<StdError>;
 
         #[msg(exec)]
         fn register_plugin(

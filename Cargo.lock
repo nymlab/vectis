@@ -1271,6 +1271,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "vectis-plugin-registry"
+version = "1.0.0-rc1"
+dependencies = [
+ "anyhow",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus 1.1.0",
+ "cw-utils 1.0.1",
+ "cw2 1.1.0",
+ "serde",
+ "sylvia",
+ "sylvia-derive",
+ "thiserror",
+ "vectis-wallet",
+]
+
+[[package]]
 name = "vectis-proxy"
 version = "1.0.0-rc1"
 dependencies = [
