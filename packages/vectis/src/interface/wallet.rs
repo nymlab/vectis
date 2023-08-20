@@ -5,6 +5,8 @@ use sylvia::{interface, schemars};
 
 // We have to put traits into mods for Sylvia
 pub mod wallet_trait {
+    use cosmwasm_std::Record;
+
     use super::*;
     use crate::types::wallet::RelayTransaction;
 
@@ -27,11 +29,18 @@ pub mod wallet_trait {
             ctx: ExecCtx,
             transaction: RelayTransaction,
         ) -> Result<Response, Self::Error>;
+
+        #[msg(exec)]
+        fn update_data(
+            &self,
+            ctx: ExecCtx,
+            data: Vec<Record<Option<Binary>>>,
+        ) -> Result<Response, Self::Error>;
     }
 }
 
 pub mod wallet_plugin_trait {
-    use crate::types::plugin::{PluginListResponse, PluginParams, PluginSource};
+    use crate::types::plugin::{PluginInstallParams, PluginListResponse};
 
     use super::*;
 
@@ -55,10 +64,7 @@ pub mod wallet_plugin_trait {
         fn install_plugin(
             &self,
             ctx: ExecCtx,
-            src: PluginSource,
-            instantiate_msg: Binary,
-            pulgin_params: PluginParams,
-            label: String,
+            install: PluginInstallParams,
         ) -> Result<Response, Self::Error>;
 
         // TODO: implement wallet-plugin interface

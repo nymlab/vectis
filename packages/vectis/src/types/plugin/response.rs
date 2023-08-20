@@ -19,18 +19,6 @@ pub struct PluginsResponse {
 }
 
 #[cw_serde]
-pub struct ConfigResponse {
-    pub registry_fee: Coin,
-    pub deployer_addr: String,
-}
-
-#[cw_serde]
-pub struct Fees {
-    pub install: Coin,
-    pub registry: Coin,
-}
-
-#[cw_serde]
 pub struct PluginWithVersionResponse {
     pub contract_version: String,
     pub plugin_info: Plugin,

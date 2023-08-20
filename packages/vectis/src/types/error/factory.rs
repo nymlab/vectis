@@ -43,8 +43,8 @@ pub enum FactoryError {
     InvalidMigrationMsg(MigrationMsgError),
     #[error("InvalidRelayMigrationTx: {0}")]
     InvalidRelayMigrationTx(RelayTxError),
-    #[error("InvalidNativeFund: Expected: {0}, Got: {1}")]
-    InvalidNativeFund(String, String),
+    #[error("InvalidNativeFund: Expected: {0}{1}")]
+    InvalidSufficientFunds(String, String),
     #[error("Proxy cannot be instantiated")]
     ProxyInstantiationError {},
     #[error("Invalid Proxy Reply")]

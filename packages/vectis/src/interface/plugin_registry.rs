@@ -1,7 +1,5 @@
-use crate::types::plugin::{
-    ConfigResponse, Fees, Plugin, PluginWithVersionResponse, PluginsResponse,
-};
-use cosmwasm_std::{Binary, Coin, Response, StdError, StdResult};
+use crate::types::plugin::{Plugin, PluginWithVersionResponse, PluginsResponse, RegistryConfig};
+use cosmwasm_std::{Response, StdError, StdResult};
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
@@ -12,12 +10,22 @@ pub mod registry_service_trait {
     #[interface]
     pub trait RegistryServiceTrait {
         type Error: From<StdError>;
+
+        /// Called by proxy contract to record increase in plugins
+        /// Codehash of the caller is checked
         #[msg(exec)]
         fn proxy_install_plugin(&self, ctx: ExecCtx, id: u64) -> Result<Response, Self::Error>;
+
+        /// Called by proxy contract to record reduction in plugins
+        /// Codehash of the caller is checked
+        #[msg(exec)]
+        fn proxy_remove_plugin(&self, ctx: ExecCtx, id: u64) -> Result<Response, Self::Error>;
     }
 }
 
 pub mod registry_management_trait {
+    use crate::types::plugin::{PluginCodeData, PluginMetadataData};
+
     use super::*;
 
     /// The trait for each authenticator contract
@@ -29,49 +37,24 @@ pub mod registry_management_trait {
         fn register_plugin(
             &self,
             ctx: ExecCtx,
-            // This needs to be the same name as `CONTRACT_NAME`
-            // because when we do queries, we are only given the contract address,
-            // the contract info is what is set in cw2
-            name: String,
-            creator: String,
-            ipfs_hash: String,
-            version: String,
-            code_id: u64,
-            checksum: String,
+            code_data: PluginCodeData,
+            metadata_data: PluginMetadataData,
         ) -> Result<Response, Self::Error>;
 
         #[msg(exec)]
         fn unregister_plugin(&self, ctx: ExecCtx, id: u64) -> Result<Response, Self::Error>;
 
         #[msg(exec)]
-        #[allow(clippy::too_many_arguments)]
         fn update_plugin(
             &self,
             ctx: ExecCtx,
+            /// The id on the vectis plugin registry
             id: u64,
-            creator: Option<String>,
-            version: String,
-            ipfs_hash: Option<String>,
-            code_id: Option<u64>,
-            checksum: Option<String>,
+            /// Code update must pump latest_contract_version
+            code_update: Option<PluginCodeData>,
+            /// Metadata update will not require code version pump
+            metadata_update: PluginMetadataData,
         ) -> Result<Response, Self::Error>;
-
-        #[msg(exec)]
-        fn update_registry_fee(&self, ctx: ExecCtx, new_fee: Coin)
-            -> Result<Response, Self::Error>;
-
-        #[msg(exec)]
-        fn update_install_fee(&self, ctx: ExecCtx, new_fee: Coin) -> Result<Response, Self::Error>;
-
-        #[msg(exec)]
-        fn update_deployer_addr(
-            &self,
-            ctx: ExecCtx,
-            new_addr: String,
-        ) -> Result<Response, Self::Error>;
-
-        #[msg(query)]
-        fn get_config(&self, ctx: QueryCtx) -> StdResult<ConfigResponse>;
 
         #[msg(query)]
         fn get_plugins(
@@ -84,15 +67,22 @@ pub mod registry_management_trait {
         #[msg(query)]
         fn get_plugin_by_id(&self, ctx: QueryCtx, id: u64) -> StdResult<Option<Plugin>>;
 
-        #[msg(query)]
-        fn get_fees(&self, ctx: QueryCtx) -> StdResult<Fees>;
-
-        /// This helps to do all the neccessary queries to allow called to know the ipfs_hash
+        /// This helps to do all the neccessary queries to allow caller to know the ipfs_hash
         #[msg(query)]
         fn query_plugin_by_address(
             &self,
             ctx: QueryCtx,
             contract_addr: String,
         ) -> StdResult<PluginWithVersionResponse>;
+
+        #[msg(exec)]
+        fn update_config(
+            &self,
+            ctx: ExecCtx,
+            config: RegistryConfig,
+        ) -> Result<Response, Self::Error>;
+
+        #[msg(query)]
+        fn get_config(&self, ctx: QueryCtx) -> StdResult<RegistryConfig>;
     }
 }

@@ -1,7 +1,38 @@
 use crate::types::error::PluginRegError;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{CanonicalAddr, Deps};
+use cosmwasm_std::{Binary, CanonicalAddr, Coin, Deps};
 use std::collections::BTreeMap;
+
+#[cw_serde]
+pub struct PluginInstallParams {
+    pub src: PluginSource,
+    pub instantiate_msg: Binary,
+    pub plugin_params: PluginParams,
+    pub label: String,
+    pub funds: Vec<Coin>,
+}
+
+#[cw_serde]
+pub struct PluginCodeData {
+    pub latest_contract_version: String, // Must update version to the cw2 contract version
+    pub new_code_id: u64,                // Version must match new code
+    pub new_code_hash: String,           // Code_id must point to this code_hash
+}
+
+#[cw_serde]
+pub struct RegistryConfig {
+    pub registry_fee: Coin,
+    pub subscription_fee: Coin,
+    pub deployer_addr: String,
+    pub free_tier_max_plugin: u64,
+}
+
+#[cw_serde]
+pub struct PluginMetadataData {
+    pub creator: String,      // if none - no update to the creator
+    pub display_name: String, // if none - no update to the display name
+    pub ipfs_hash: String,    // if none - no update to display data
+}
 
 #[cw_serde]
 pub struct PluginInfo {
@@ -45,8 +76,8 @@ pub struct PluginParams {
 pub struct VersionDetails {
     /// Uploaded Plugin code id
     pub code_id: u64,
-    /// Should be checked upon instantiation
-    pub checksum: String,
+    /// code_hash of the contract
+    pub code_hash: String,
     /// Useful for storing display data
     pub ipfs_hash: String,
 }
@@ -55,12 +86,12 @@ pub struct VersionDetails {
 pub struct Plugin {
     /// Identifier of the plugin, does not change over time
     pub id: u64,
-    /// Name of the Plugin, does not change over time
-    pub name: String,
     /// Reference Addr onchain to the creator
     pub creator: CanonicalAddr,
-    /// Latest version of the plugin
-    pub latest_version: String,
+    /// Display name, creator can define this
+    pub display_name: String,
+    /// Latest cw2 contract version
+    pub latest_contract_version: String,
     /// Mapping of all versions to the details
     pub versions: BTreeMap<String, VersionDetails>,
 }
@@ -68,9 +99,11 @@ pub struct Plugin {
 impl Plugin {
     pub fn get_latest_version_details(&self) -> Result<VersionDetails, PluginRegError> {
         self.versions
-            .get(&self.latest_version)
+            .get(&self.latest_contract_version)
             .map(|l| l.to_owned())
-            .ok_or_else(|| PluginRegError::PluginVersionNotFound(self.latest_version.clone()))
+            .ok_or_else(|| {
+                PluginRegError::PluginVersionNotFound(self.latest_contract_version.clone())
+            })
     }
 
     pub fn get_version_details(&self, version: &str) -> Result<VersionDetails, PluginRegError> {
@@ -84,28 +117,28 @@ impl Plugin {
     pub fn new(
         deps: Deps,
         id: u64,
-        name: String,
         creator: String,
+        display_name: String,
         ipfs_hash: String,
-        version: String,
+        latest_contract_version: String,
         code_id: u64,
-        checksum: String,
+        code_hash: String,
     ) -> Result<Plugin, PluginRegError> {
         let mut record = BTreeMap::new();
         record.insert(
-            version.clone(),
+            latest_contract_version.clone(),
             VersionDetails {
                 code_id,
-                checksum,
+                code_hash,
                 ipfs_hash,
             },
         );
 
         Ok(Plugin {
             id,
-            name,
             creator: deps.api.addr_canonicalize(&creator)?,
-            latest_version: version,
+            display_name,
+            latest_contract_version,
             versions: record,
         })
     }

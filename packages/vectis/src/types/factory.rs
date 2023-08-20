@@ -1,9 +1,10 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Coin};
+use cosmwasm_std::{coins, has_coins, Addr, Binary, Coin, Record};
 
 use crate::types::{
     authenticator::AuthenticatorType,
-    error::MigrationMsgError,
+    error::{FactoryError, MigrationMsgError},
+    plugin::PluginInstallParams,
     wallet::{Controller, RelayTransaction},
 };
 
@@ -14,12 +15,46 @@ pub type ThresholdAbsoluteCount = u64;
 
 #[cw_serde]
 pub struct CreateWalletMsg {
+    /// The main controller of the wallet
     pub controller: Controller,
-    /// A List of keys can act as relayer for
+    /// A list of keys can act as relayer for
     pub relayers: Vec<String>,
+    /// The fund to send to the wallet initially when it is created
     pub proxy_initial_funds: Vec<Coin>,
+    /// Label of the wallet which must be unique
     pub label: String,
-    // TODO: add initial plugins
+    /// Initial data to be set in the proxy
+    /// Record is a kv pair  
+    pub initial_data: Vec<Record>,
+    /// Initial plugins to be instantiated
+    pub plugins: Vec<PluginInstallParams>,
+}
+
+impl CreateWalletMsg {
+    pub fn ensure_has_sufficient_funds(&self, funds: Vec<Coin>) -> Result<(), FactoryError> {
+        let mut required_coins = self.proxy_initial_funds.clone();
+        for p in &self.plugins {
+            for coin in &p.funds {
+                required_coins
+                    .iter_mut()
+                    .find(|c| c.denom == coin.denom)
+                    .map(|c| c.amount.checked_add(coin.amount))
+                    .transpose()
+                    .map_err(|_| FactoryError::OverFlow {})?;
+            }
+        }
+
+        for coin in required_coins {
+            if !has_coins(&funds, &coin) {
+                return Err(FactoryError::InvalidSufficientFunds(
+                    coin.amount.to_string(),
+                    coin.denom,
+                ));
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cw_serde]
