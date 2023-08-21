@@ -4,7 +4,7 @@ mod plugin_registry;
 mod wallet;
 
 pub use {
-    authenticator::{authenicator_trait, authenicator_trait::AuthenicatorTrait},
+    authenticator::{authenticator_trait, authenticator_trait::AuthenticatorTrait},
     factory::{
         factory_management_trait, factory_management_trait::FactoryManagementTrait,
         factory_service_trait, factory_service_trait::FactoryServiceTrait,

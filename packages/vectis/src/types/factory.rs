@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{coins, has_coins, Addr, Binary, Coin, Record};
+use cosmwasm_std::{has_coins, Addr, Binary, Coin, Record};
 
 use crate::types::{
     authenticator::AuthenticatorType,
@@ -25,25 +25,32 @@ pub struct CreateWalletMsg {
     pub label: String,
     /// Initial data to be set in the proxy
     /// Record is a kv pair  
-    pub initial_data: Vec<Record>,
+    pub initial_data: Vec<(Binary, Binary)>,
     /// Initial plugins to be instantiated
     pub plugins: Vec<PluginInstallParams>,
 }
 
 impl CreateWalletMsg {
     pub fn ensure_has_sufficient_funds(&self, funds: Vec<Coin>) -> Result<(), FactoryError> {
-        let mut required_coins = self.proxy_initial_funds.clone();
-        for p in &self.plugins {
-            for coin in &p.funds {
-                required_coins
-                    .iter_mut()
-                    .find(|c| c.denom == coin.denom)
-                    .map(|c| c.amount.checked_add(coin.amount))
-                    .transpose()
-                    .map_err(|_| FactoryError::OverFlow {})?;
+        // sum up all coins required
+        // required = proxy_initial_funds + each fund for instantiating plugin which
+        let required_coins = if self.plugins.is_empty() {
+            self.proxy_initial_funds.clone()
+        } else {
+            let mut required_coins = self.proxy_initial_funds.clone();
+            // Adds up all the funds required to install the plugins
+            for p in &self.plugins {
+                for coin in &p.funds {
+                    required_coins
+                        .iter_mut()
+                        .find(|c| c.denom == coin.denom)
+                        .map(|c| c.amount.checked_add(coin.amount))
+                        .transpose()
+                        .map_err(|_| FactoryError::OverFlow {})?;
+                }
             }
-        }
-
+            required_coins
+        };
         for coin in required_coins {
             if !has_coins(&funds, &coin) {
                 return Err(FactoryError::InvalidSufficientFunds(
@@ -96,30 +103,6 @@ pub struct WalletFactoryInstantiateMsg {
     pub wallet_fee: Coin,
     /// Authenticator
     pub authenticators: Option<Vec<AuthenticatorInstInfo>>,
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum WalletFactoryQueryMsg {
-    #[returns(u64)]
-    TotalCreated {},
-    #[returns(u64)]
-    CodeId { ty: CodeIdType },
-    /// Returns the fees required to create a wallet
-    #[returns(FeesResponse)]
-    Fees {},
-    /// Returns the address of the Deployer which holds the admin role of this contract
-    #[returns(Addr)]
-    DeployerAddr {},
-    /// Returns the wallet controlled by this controller
-    #[returns(Vec<Addr>)]
-    ControllerWallets { controller: Binary },
-    /// Returns the wallet with this guardian
-    #[returns(Vec<Addr>)]
-    WalletsWithGuardian { guardian: Addr },
-    /// Returns the address of the authenticator
-    #[returns(Option<Addr>)]
-    AuthProviderAddr { ty: AuthenticatorType },
 }
 
 #[cw_serde]

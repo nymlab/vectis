@@ -5,8 +5,6 @@ use sylvia::{interface, schemars};
 
 // We have to put traits into mods for Sylvia
 pub mod wallet_trait {
-    use cosmwasm_std::Record;
-
     use super::*;
     use crate::types::wallet::RelayTransaction;
 
@@ -34,7 +32,8 @@ pub mod wallet_trait {
         fn update_data(
             &self,
             ctx: ExecCtx,
-            data: Vec<Record<Option<Binary>>>,
+            //  TODO: Would be great to use `Record` but might have ts-codegen error
+            data: Vec<(Binary, Option<Binary>)>,
         ) -> Result<Response, Self::Error>;
     }
 }

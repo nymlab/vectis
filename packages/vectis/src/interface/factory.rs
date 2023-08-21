@@ -1,5 +1,5 @@
 use crate::types::factory::CodeIdType;
-use cosmwasm_std::{Addr, Coin, Response, StdError};
+use cosmwasm_std::{Addr, Binary, Coin, Response, StdError};
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
@@ -48,16 +48,6 @@ pub mod factory_management_trait {
     pub trait FactoryManagementTrait {
         type Error: From<StdError>;
 
-        // TODO:
-        //#[msg(exec)]
-        //fn add_or_migrate_auth_provider(
-        //    &self,
-        //    ctx: ExecCtx,
-        //    ty: AuthenticatorType,
-        //    new_code_id: u64,
-        //    new_inst_msg: Binary,
-        //) -> Result<Response, Self::Error>;
-
         #[msg(exec)]
         fn update_code_id(
             &self,
@@ -74,8 +64,30 @@ pub mod factory_management_trait {
             new_fee: Coin,
         ) -> Result<Response, Self::Error>;
 
+        ///// Updates the authenticator provider
+        ///// if `new_code_id` and `new_inst_msg` is `None`,
+        ///// the `ty` assumes to exist and will be removed.
+        ///// Otherwise, it will be added (if does not exist) or migrated
+        //#[msg(exec)]
+        //fn update_auth_provider(
+        //    &self,
+        //    ctx: ExecCtx,
+        //    ty: AuthenticatorType,
+        //    new_code_id: Option<u64>,
+        //    new_inst_msg: Option<Binary>,
+        //) -> Result<Response, Self::Error>;
+
         #[msg(exec)]
         fn update_deployer(&self, ctx: ExecCtx, addr: String) -> Result<Response, Self::Error>;
+
+        ///// Returns controlles / paginated
+        //#[msg(query)]
+        //fn controllers(
+        //    &self,
+        //    ctx: QueryCtx,
+        //    limit: Option<u32>,
+        //    start_after: Option<u32>,
+        //) -> Result<Vec<Addr>, StdError>;
 
         /// Returns total wallets created
         #[msg(query)]

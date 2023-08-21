@@ -2,12 +2,12 @@ use cosmwasm_std::StdError;
 use sylvia::types::QueryCtx;
 use sylvia::{interface, schemars};
 
-pub mod authenicator_trait {
+pub mod authenticator_trait {
     use super::*;
 
     /// The trait for each authenticator contract
     #[interface]
-    pub trait AuthenicatorTrait {
+    pub trait AuthenticatorTrait {
         type Error: From<StdError>;
 
         // TODO: how can we make these all &[u8]?

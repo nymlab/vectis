@@ -29,8 +29,8 @@ impl std::fmt::Display for AuthenticatorType {
 /// Authenticator for the controller
 #[cw_serde]
 pub struct Authenticator {
-    ty: AuthenticatorType,
-    provider: AuthenticatorProvider,
+    pub ty: AuthenticatorType,
+    pub provider: AuthenticatorProvider,
 }
 
 impl Authenticator {
