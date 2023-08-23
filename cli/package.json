@@ -25,7 +25,8 @@
         "figlet": "^1.6.0",
         "lodash": "^4.17.21",
         "osmojs": "^15.5.0",
-        "tslog": "^4.8.2"
+        "tslog": "^4.8.2",
+        "@cosmwasm/ts-codegen": "0.35.0"
     },
     "devDependencies": {
         "ts-node": "^10.8.0",

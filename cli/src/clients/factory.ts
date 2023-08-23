@@ -11,27 +11,21 @@ class FactoryClient extends FactoryC {
         super(cw.client, sender, contractAddress);
     }
 
-    static createFactoryInstMsg(
-        chain: Chain,
-        proxyCodeId: number,
-        multisigCodeId: number,
-        webauthnCodeId: number
-    ): FactoryT.InstantiateMsg {
-        const { addressPrefix } = chain;
+    static createFactoryInstMsg(chain: Chain, proxyCodeId: number, webauthnCodeId: number): FactoryT.InstantiateMsg {
         const wallet_fee = walletCreationFee(chain);
         const webauthn_inst_msg = {};
         return {
-            proxy_code_id: proxyCodeId,
-            proxy_multisig_code_id: multisigCodeId,
-            addr_prefix: addressPrefix,
-            wallet_fee: wallet_fee as FactoryT.Coin,
-            authenticators: [
-                {
-                    code_id: webauthnCodeId,
-                    inst_msg: toBase64(toUtf8(JSON.stringify(webauthn_inst_msg))),
-                    ty: "webauthn",
-                },
-            ],
+            msg: {
+                proxy_code_id: proxyCodeId,
+                wallet_fee: wallet_fee as FactoryT.Coin,
+                authenticators: [
+                    {
+                        code_id: webauthnCodeId,
+                        inst_msg: toBase64(toUtf8(JSON.stringify(webauthn_inst_msg))),
+                        ty: "webauthn",
+                    },
+                ],
+            },
         };
     }
 
@@ -55,20 +49,28 @@ class FactoryClient extends FactoryC {
         return new FactoryClient(cw, cw.sender, contractAddress);
     }
 
-    async createWalletWebAuthn(pubkey: Uint8Array): Promise<ExecuteResult> {
+    async createWalletWebAuthn(
+        pubkey: Uint8Array,
+        initial_data: [string, string][],
+        label: string,
+        plugins: FactoryT.PluginInstallParams[],
+        proxy_initial_funds: FactoryT.Coin[],
+        relayers: string[]
+    ): Promise<ExecuteResult> {
         let authenticatorProvider: FactoryT.AuthenticatorProvider = "vectis";
         let authenticatorType: FactoryT.AuthenticatorType = "webauthn";
         let authenticator: FactoryT.Authenticator = { provider: authenticatorProvider, ty: authenticatorType };
         let controllingEntity: FactoryT.Entity = { auth: authenticator, data: toBase64(pubkey), nonce: 0 };
-        let guardians: FactoryT.Guardians = { addresses: [] };
         let msg: FactoryT.CreateWalletMsg = {
+            //controller: Entity;
             controller: controllingEntity,
-            guardians,
-            label: "test-proxy",
-            proxy_initial_funds: [{ denom: "ujunox", amount: "100" }],
-            relayers: [],
+            label,
+            initial_data,
+            proxy_initial_funds,
+            relayers,
+            plugins,
         };
-        return this.createWallet({ createWalletMsg: msg }, "auto", "", [{ denom: "ujunox", amount: "100" }]);
+        return this.createWallet({ createWalletMsg: msg }, "auto", "", proxy_initial_funds);
     }
 }
 

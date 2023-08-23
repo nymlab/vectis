@@ -3,9 +3,11 @@ import { CWClient, ProxyClient, FactoryClient } from "./clients";
 import { Logger } from "tslog";
 import { getDeployPath } from "./utils/fs";
 import { delay } from "./utils/promises";
+import { toCosmosMsg } from "./utils/enconding";
 import { OptionValues } from "commander";
 import { VectisContractsAddrs } from "./interfaces";
-import { toUtf8, toBase64 } from "@cosmjs/encoding";
+import { toUtf8, toBase64, fromBase64, fromUtf8 } from "@cosmjs/encoding";
+import { coins, StdFee } from "@cosmjs/stargate";
 
 const pubkey = new Uint8Array([
     4, 254, 213, 81, 121, 242, 209, 178, 171, 160, 209, 220, 243, 199, 156, 57, 7, 187, 116, 219, 198, 101, 89, 52, 55,
@@ -63,11 +65,25 @@ export async function test(network: Chains, opts: OptionValues) {
 
     const uploadedContracts: VectisContractsAddrs = await import(getDeployPath(network));
     const factoryClient = new FactoryClient(client, client.sender, uploadedContracts.Factory);
-    let res = await factoryClient.createWalletWebAuthn(pubkey);
+    const dataKey = toCosmosMsg("Some-key");
+    const dataValue = toCosmosMsg("Some-value");
+    let res = await factoryClient.createWalletWebAuthn(
+        pubkey,
+        [[dataKey, dataValue]],
+        "label-hash-2", // the hash of the label / display name
+        [], // this is plugins to instantiate, we will keep as none for now
+        [{ denom: "ujunox", amount: "100000" }], // initial proxy token
+        [client.sender]
+    );
+    console.log("create wallet res: \n", JSON.stringify(res));
+
     let proxyAddr = CWClient.getEventAttrValue(res, "wasm-vectis.proxy.v1", "_contract_address");
     logger.info("proxy Addr: ", proxyAddr);
 
     let proxyClient = new ProxyClient(client, client.sender, proxyAddr);
+    let data = await proxyClient.data({ key: dataKey });
+    logger.info("\n\nproxy data: ", fromUtf8(fromBase64(data!)));
+
     let info = await proxyClient.info();
     logger.info("\n\nproxy info: ", info);
 
@@ -89,7 +105,27 @@ export async function test(network: Chains, opts: OptionValues) {
     // wait for block
     await delay(8000);
 
-    // Check current balance on the proxy
     let afterBalance = await proxyClient.client.getBalance(proxyAddr, "ujunox");
     logger.info("\n\nafterBalance: ", afterBalance);
+
+    let infoAfter = await proxyClient.info();
+    logger.info("\n\nproxy info after tx: ", infoAfter);
+
+    ////============== show fee grant usage ==================
+
+    let recipient = await CWClient.connectHostWithAccount("user", network);
+
+    let fee: StdFee = { amount: coins("2000", "ujunox"), gas: "80000", granter: proxyAddr };
+
+    let testFeeGrant = await client.client.sendTokens(
+        client.sender,
+        recipient.sender,
+        [{ denom: "ujunox", amount: "10" }],
+        fee
+    );
+    logger.info("testFeeGrant: ", JSON.stringify(testFeeGrant));
+
+    // Check current balance on the proxy
+    let afterTestFeeGrantBalance = await proxyClient.client.getBalance(proxyAddr, "ujunox");
+    logger.info("\n\nafterTestFeeGrantBalance: ", afterTestFeeGrantBalance);
 }

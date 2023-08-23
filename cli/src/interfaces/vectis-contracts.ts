@@ -1,5 +1,6 @@
 import type { UploadResult } from "@cosmjs/cosmwasm-stargate";
-import { CosmosMsgForEmpty, Coin } from "./Proxy.types";
+import { CosmosMsgForEmpty } from "./Cw3Flex.types";
+import { Coin } from "@cosmjs/amino";
 
 export interface VectisContractsUploadResult {
     vectis_factory: UploadResult;

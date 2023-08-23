@@ -5,6 +5,7 @@ import { test, test_query } from "./tx";
 import { deploy } from "./deploy-vectis";
 import { handleAccounts } from "./accounts";
 import { handleNetworkQuery } from "./queries";
+import { generateTypes } from "./types";
 
 console.log(figlet.textSync("Vectis"));
 
@@ -24,6 +25,8 @@ program.command("generateAccounts").option("--network [networks...]", "Network t
 program.command("deployVectis").argument("<network>", "Network deploy Vectis to for testing").action(deploy);
 
 program.command("networks").description("Query the supported networks").action(handleNetworkQuery);
+
+program.command("types").description("generate types for vectis contracts").action(generateTypes);
 
 //program
 //    .command("list-scw")

@@ -4,7 +4,7 @@ import type { UploadResult } from "@cosmjs/cosmwasm-stargate";
 import CosmWasmClient from "./clients/cosmwasm";
 import { Logger } from "tslog";
 import { writeToFile, getWasmFileNames, getUploadInfoPath } from "./utils/fs";
-import { wasmArtifactsPath, deployResultsPath } from "./config/fs";
+import { wasmArtifactsPath } from "./config/fs";
 import { OptionValues } from "commander";
 
 export async function uploadAction(network: Chains, opts: OptionValues) {

@@ -1,16 +1,16 @@
-import { PluginRegT, PluginRegistryClient as PluginRegC } from "../interfaces";
+import { PluginRegT, PluginRegistryQueryClient as PluginRegC } from "../interfaces";
 import CWClient from "./cosmwasm";
 import type { Chain } from "../config/chains";
-import { pluginRegInstallFee, pluginRegRegistryFee } from "../config/fees";
+import { pluginRegSubscriptionFee, pluginRegRegistryFee } from "../config/fees";
 
 class PluginRegClient extends PluginRegC {
-    constructor(cw: CWClient, sender: string, contractAddress: string) {
-        super(cw.client, sender, contractAddress);
+    constructor(cw: CWClient, _sender: string, contractAddress: string) {
+        super(cw.client, contractAddress);
     }
 
     static createInstMsg(chain: Chain): PluginRegT.InstantiateMsg {
         return {
-            install_fee: pluginRegInstallFee(chain),
+            subscription_fee: pluginRegSubscriptionFee(chain),
             registry_fee: pluginRegRegistryFee(chain),
         };
     }
@@ -20,7 +20,7 @@ class PluginRegClient extends PluginRegC {
             cw.sender,
             codeId,
             msg as unknown as Record<string, string>,
-            "Wallet Factory",
+            "Vectis Plugin Registry",
             "auto",
             {
                 funds: [],

@@ -115,7 +115,6 @@ export async function deploy(network: Chains) {
     const factoryInstMsg = FactoryClient.createFactoryInstMsg(
         chain,
         uploadedContracts.vectis_proxy.codeId,
-        uploadedContracts.cw3Fixed.codeId,
         uploadedContracts.vectis_webauthn_authenticator.codeId
     );
 
