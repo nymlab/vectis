@@ -14,7 +14,7 @@ import {
     PluginPermissions,
     PluginSource,
     InstantiateMsg,
-    ProxyInstantiateMsg,
+    ProxyCreateMsg,
     CreateWalletMsg,
     Entity,
     Authenticator,
@@ -32,12 +32,10 @@ import {
     Addr,
     WalletInfo,
     ContractVersion,
-    ArrayOfString,
 } from "./Proxy.types";
 export interface ProxyReadOnlyInterface {
     contractAddress: string;
     info: () => Promise<WalletInfo>;
-    subAccounts: () => Promise<ArrayOfString>;
     data: ({ key }: { key: Binary }) => Promise<NullableBinary>;
 }
 export class ProxyQueryClient implements ProxyReadOnlyInterface {
@@ -48,18 +46,12 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.info = this.info.bind(this);
-        this.subAccounts = this.subAccounts.bind(this);
         this.data = this.data.bind(this);
     }
 
     info = async (): Promise<WalletInfo> => {
         return this.client.queryContractSmart(this.contractAddress, {
             info: {},
-        });
-    };
-    subAccounts = async (): Promise<ArrayOfString> => {
-        return this.client.queryContractSmart(this.contractAddress, {
-            sub_accounts: {},
         });
     };
     data = async ({ key }: { key: Binary }): Promise<NullableBinary> => {

@@ -25,10 +25,10 @@ export type PluginSource =
           code_id: [number, string];
       };
 export interface InstantiateMsg {
-    msg: ProxyInstantiateMsg;
+    msg: ProxyCreateMsg;
     [k: string]: unknown;
 }
-export interface ProxyInstantiateMsg {
+export interface ProxyCreateMsg {
     create_wallet_msg: CreateWalletMsg;
 }
 export interface CreateWalletMsg {
@@ -90,11 +90,6 @@ export type WalletTraitQueryMsg =
           };
       }
     | {
-          sub_accounts: {
-              [k: string]: unknown;
-          };
-      }
-    | {
           data: {
               key: Binary;
               [k: string]: unknown;
@@ -116,4 +111,3 @@ export interface ContractVersion {
     contract: string;
     version: string;
 }
-export type ArrayOfString = string[];
