@@ -33,18 +33,6 @@ const typesFiles = {
                 name: "pluginRegistry",
                 dir: contractsPath("core/plugin_registry/schema"),
             },
-            {
-                name: "cronKitty",
-                dir: contractsPath("plugins/cronkitty/schema"),
-            },
-            {
-                name: "cw3Flex",
-                dir: downloadSchemaPath(typesFiles.cw3Flex),
-            },
-            {
-                name: "cw4Group",
-                dir: downloadSchemaPath(typesFiles.cw4Group),
-            },
         ],
         outPath,
         options: {
