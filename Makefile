@@ -2,7 +2,7 @@ build:
 	- ./scripts/build.sh
 	- npm install --prefix ./cli
 schemas:
-	./scripts/schemas.sh && rm -rf ./contracts/*/*/schema/raw/
+	./scripts/schemas.sh 
 types:
 	npm run types:generate --prefix ./cli
 upload:

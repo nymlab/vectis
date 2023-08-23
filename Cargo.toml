@@ -1,6 +1,7 @@
 [workspace]
 members = ["packages/vectis", "contracts/core/*" ]
 exclude = ["packages/images"]
+resolver = "2"
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
 [profile.release.package.vectis-factory]
@@ -24,9 +25,9 @@ debug = false
 debug-assertions = false
 
 [workspace.dependencies]
-cosmwasm-std = { version = "1.2", features = ["iterator", "ibc3", "staking", "cosmwasm_1_2"] }
-cosmwasm-storage = "1.2" 
-cosmwasm-schema = "1.2" 
+cosmwasm-std = { version = "^1.2", features = ["iterator", "ibc3", "staking", "cosmwasm_1_2"] }
+cosmwasm-storage = "^1.2" 
+cosmwasm-schema = "^1.2" 
 sylvia = "0.7.0"
 sylvia-derive = "0.7.0"
 cw-utils = "1.0.1"
@@ -36,9 +37,6 @@ cw2 = "1.1"
 cw3 = "1.1"
 cw4 = "1.1"
 cw4-group = "1.1"
-cw20 = "1.1"
-cw20-base = "1.1"
-cw-multi-test = "0.16"
 anyhow = { version = "1.0.51"}
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-json-wasm = "0.5.1"
@@ -47,5 +45,6 @@ quote = "1.0"
 syn = { version = "1.0", features = ["derive"] }
 sha2 = "0.9"
 ripemd160 = "0.9.1"
-cosmos-sdk-proto = { version = "0.19.0", default-features = false }
+cosmos-sdk-proto = { version = "0.19.0", default-features = false, features = ["cosmwasm"] }
+#getrandom = { version = "0.2", features = ["js"] }
 

@@ -1,5 +1,5 @@
-for dir in $PWD/contracts/*/*/; do
+for dir in $PWD/contracts/core/*/; do
  cd $dir
- cargo run --example schema
+ cargo run
  cd -
 done
