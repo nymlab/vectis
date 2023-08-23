@@ -3,6 +3,8 @@ use super::*;
 /// Relay transaction related errors
 #[derive(Error, Debug, PartialEq)]
 pub enum RelayTxError {
+    #[error("{0}")]
+    Std(#[from] StdError),
     #[error("MismatchControllerAddr")]
     IsNotController,
     #[error("NoncesAreNotEqual")]
@@ -11,6 +13,12 @@ pub enum RelayTxError {
     EmptyMsg,
     #[error("SignatureVerificationError")]
     SignatureVerificationError,
+    #[error("AuthenticatorNotFound")]
+    AuthenticatorNotFound,
+    #[error("AuthenticatorNotSupported")]
+    AuthenticatorNotSupported,
+    #[error("De VectisRelayTx")]
+    SerdeVectisRelayedTx,
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -45,10 +53,6 @@ pub enum WalletError {
     ParseError,
     #[error("Invalid authenticator")]
     InvalidAuthenticator,
-    #[error("Authentication failed")]
-    AuthenicationError,
-    #[error("De VectisRelayTx")]
-    SerdeVectisRelayedTx,
 }
 
 #[derive(Error, Debug, PartialEq)]

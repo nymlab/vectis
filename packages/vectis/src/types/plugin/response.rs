@@ -1,6 +1,5 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
-use cosmwasm_std::Coin;
 
 use super::types::*;
 

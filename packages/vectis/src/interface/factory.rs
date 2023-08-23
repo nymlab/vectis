@@ -1,11 +1,10 @@
 use crate::types::factory::CodeIdType;
-use cosmwasm_std::{Addr, Binary, Coin, Response, StdError};
+use cosmwasm_std::{Addr, Coin, Response, StdError};
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
-// We have to put traits into mods for Sylvia
 pub mod factory_service_trait {
-    use crate::types::factory::CreateWalletMsg;
+    use crate::types::factory::{CreateWalletMsg, MigrateWalletMsg};
     use sylvia::types::ExecCtx;
 
     use super::*;
@@ -22,12 +21,12 @@ pub mod factory_service_trait {
             create_wallet_msg: CreateWalletMsg,
         ) -> Result<Response, Self::Error>;
 
-        //#[msg(exec)]
-        //fn migrate_wallet(
-        //    &self,
-        //    ctx: ExecCtx,
-        //    migrations_msg: ProxyMigrateMsg,
-        //) -> Result<Response, Self::Error>;
+        #[msg(exec)]
+        fn migrate_wallet(
+            &self,
+            ctx: ExecCtx,
+            migrations_msg: MigrateWalletMsg,
+        ) -> Result<Response, Self::Error>;
 
         /// Returns the wallet address of this label
         #[msg(query)]
@@ -64,6 +63,9 @@ pub mod factory_management_trait {
             new_fee: Coin,
         ) -> Result<Response, Self::Error>;
 
+        #[msg(exec)]
+        fn update_deployer(&self, ctx: ExecCtx, addr: String) -> Result<Response, Self::Error>;
+
         ///// Updates the authenticator provider
         ///// if `new_code_id` and `new_inst_msg` is `None`,
         ///// the `ty` assumes to exist and will be removed.
@@ -76,9 +78,6 @@ pub mod factory_management_trait {
         //    new_code_id: Option<u64>,
         //    new_inst_msg: Option<Binary>,
         //) -> Result<Response, Self::Error>;
-
-        #[msg(exec)]
-        fn update_deployer(&self, ctx: ExecCtx, addr: String) -> Result<Response, Self::Error>;
 
         ///// Returns controlles / paginated
         //#[msg(query)]

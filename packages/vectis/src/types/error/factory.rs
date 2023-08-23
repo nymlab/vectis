@@ -7,12 +7,8 @@ pub enum MigrationMsgError {
     InvalidWalletAddr,
     #[error("MismatchProxyCodeId")]
     MismatchProxyCodeId,
-    #[error("InvalidWasmMsg")]
-    InvalidWasmMsg,
-    #[error("MultisigFeatureIsNotSet")]
-    MultisigFeatureIsNotSet,
-    #[error("IsNotAProxyMsg")]
-    IsNotAProxyMsg,
+    #[error("InvalidMigrationMsg")]
+    InvalidMigrationMsg,
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -21,6 +17,8 @@ pub enum FactoryError {
     Std(#[from] StdError),
     #[error("{0}")]
     Instantiate2(#[from] Inst2CalcError),
+    #[error("RelayTxError {0}")]
+    RelayTxError(#[from] RelayTxError),
     #[error("ThresholdShouldBeGreaterThenZero")]
     ThresholdShouldBeGreaterThenZero {},
     #[error("ThresholdShouldBeLessThenGuardiansCount")]

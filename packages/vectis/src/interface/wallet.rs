@@ -17,9 +17,9 @@ pub mod wallet_trait {
         #[msg(query)]
         fn info(&self, ctx: QueryCtx) -> Result<WalletInfo, StdError>;
 
-        /// Return a list of SubAccounts
+        /// Returns the data given the key
         #[msg(query)]
-        fn sub_accounts(&self, ctx: QueryCtx) -> Result<Vec<String>, StdError>;
+        fn data(&self, ctx: QueryCtx, key: Binary) -> Result<Option<Binary>, StdError>;
 
         #[msg(exec)]
         fn auth_exec(

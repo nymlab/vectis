@@ -12,8 +12,14 @@ use cosmwasm_std::{Addr, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, StdError}
 // We are keeping this struct for now because it used to contain other default info from the
 // factory, like the guardian multisig code id etc.
 #[cw_serde]
-pub struct ProxyInstantiateMsg {
+pub struct ProxyCreateMsg {
     pub create_wallet_msg: CreateWalletMsg,
+}
+
+/// Sylvia creates the instantiate message in this format - same as instantiate function signature
+#[cw_serde]
+pub struct ProxyInstantiateMsg {
+    pub msg: ProxyCreateMsg,
 }
 
 /// The main controller of the account

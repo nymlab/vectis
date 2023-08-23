@@ -10,7 +10,6 @@ pub mod authenticator_trait {
     pub trait AuthenticatorTrait {
         type Error: From<StdError>;
 
-        // TODO: how can we make these all &[u8]?
         // #[interface] complains
         #[msg(query)]
         fn authenticate(

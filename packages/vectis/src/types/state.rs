@@ -1,4 +1,4 @@
-use crate::types::plugin::Plugin;
+use crate::types::{plugin::Plugin, wallet::Controller};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CanonicalAddr};
 use cw_storage_plus::{Item, Map};
@@ -19,6 +19,10 @@ impl std::fmt::Display for VectisActors {
         write!(f, "{self:?}")
     }
 }
+
+// Stores the controller of the wallet
+pub type ControllerState<'a> = Item<'a, Controller>;
+pub const CONTROLLER: ControllerState = Item::new("controller");
 
 // Stored on all Vectis contract help find other VectisActors
 /// In v1.0.0 this is a multisig

@@ -1,5 +1,5 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{has_coins, Addr, Binary, Coin, Record};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{has_coins, Binary, Coin};
 
 use crate::types::{
     authenticator::AuthenticatorType,
@@ -65,9 +65,9 @@ impl CreateWalletMsg {
 }
 
 #[cw_serde]
-pub enum ProxyMigrationTxMsg {
-    RelayTx(RelayTransaction),
-    DirectMigrationMsg(Binary),
+pub struct MigrateWalletMsg {
+    pub addr_to_migrate: String,
+    pub tx: RelayTransaction,
 }
 
 #[cw_serde]
