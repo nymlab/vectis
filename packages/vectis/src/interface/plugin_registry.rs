@@ -1,5 +1,6 @@
 use crate::types::plugin::{Plugin, PluginWithVersionResponse, PluginsResponse, RegistryConfig};
 use cosmwasm_std::{Response, StdError, StdResult};
+use cw2::ContractVersion;
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
@@ -33,6 +34,7 @@ pub mod registry_management_trait {
     pub trait RegistryManagementTrait {
         type Error: From<StdError>;
 
+        // TODO check code hash is the ones supported
         #[msg(exec)]
         fn register_plugin(
             &self,
@@ -84,5 +86,8 @@ pub mod registry_management_trait {
 
         #[msg(query)]
         fn get_config(&self, ctx: QueryCtx) -> StdResult<RegistryConfig>;
+
+        #[msg(query)]
+        fn contract_version(&self, ctx: QueryCtx) -> Result<ContractVersion, StdError>;
     }
 }

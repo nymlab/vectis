@@ -39,7 +39,7 @@ pub mod wallet_trait {
 }
 
 pub mod wallet_plugin_trait {
-    use crate::types::plugin::{PluginInstallParams, PluginListResponse};
+    use crate::types::plugin::{PluginInstallParams, PluginListResponse, PluginMigrateParams};
 
     use super::*;
 
@@ -60,28 +60,24 @@ pub mod wallet_plugin_trait {
         ) -> Result<Response, Self::Error>;
 
         #[msg(exec)]
-        fn install_plugin(
+        fn install_plugins(
             &self,
             ctx: ExecCtx,
-            install: PluginInstallParams,
+            install: Vec<PluginInstallParams>,
         ) -> Result<Response, Self::Error>;
 
-        // TODO: implement wallet-plugin interface
-        //#[msg(exec)]
-        //fn update_plugin(
-        //    &self,
-        //    ctx: ExecCtx,
-        //    plugin_addr: String,
-        //    plugin_permissions: PluginPermissions,
-        //    migrate_msg: Option<(u64, Binary)>,
-        //) -> Result<Response, Self::Error>;
+        #[msg(exec)]
+        fn update_plugins(
+            &self,
+            ctx: ExecCtx,
+            migrate: Vec<PluginMigrateParams>,
+        ) -> Result<Response, Self::Error>;
 
-        //#[msg(exec)]
-        //fn remove_plugin(
-        //    &self,
-        //    ctx: ExecCtx,
-        //    plugin_addr: String,
-        //    plugin_permissions: PluginPermissions,
-        //) -> Result<Response, Self::Error>;
+        #[msg(exec)]
+        fn remove_plugins(
+            &self,
+            ctx: ExecCtx,
+            plugin_addrs: Vec<String>,
+        ) -> Result<Response, Self::Error>;
     }
 }

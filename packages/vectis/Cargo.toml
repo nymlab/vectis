@@ -9,9 +9,6 @@ repository = "https://github.com/nymlab/vectis"
 description = "Vectis library for common messages, states and functions"
 
 
-[features]
-multitest = []
-
 [dependencies]
 cosmwasm-std = { workspace = true }
 cw-storage-plus = { workspace = true }

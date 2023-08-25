@@ -1,4 +1,5 @@
 use cosmwasm_std::StdError;
+use cw2::ContractVersion;
 use sylvia::types::QueryCtx;
 use sylvia::{interface, schemars};
 
@@ -10,7 +11,6 @@ pub mod authenticator_trait {
     pub trait AuthenticatorTrait {
         type Error: From<StdError>;
 
-        // #[interface] complains
         #[msg(query)]
         fn authenticate(
             &self,
@@ -20,5 +20,8 @@ pub mod authenticator_trait {
             metadata: Vec<Vec<u8>>,
             signature: Vec<u8>,
         ) -> Result<bool, Self::Error>;
+
+        #[msg(query)]
+        fn contract_version(&self, ctx: QueryCtx) -> Result<ContractVersion, StdError>;
     }
 }

@@ -1,13 +1,12 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
 
 use super::types::*;
 
 #[cw_serde]
 pub struct PluginListResponse {
-    pub exec: Vec<(Addr, PluginInfo)>,
-    pub pre_tx: Vec<(Addr, PluginInfo)>,
-    pub post_tx_hooks: Vec<(Addr, PluginInfo)>,
+    pub exec: Vec<(String, PluginInfo)>,
+    pub pre_tx: Vec<(String, PluginInfo)>,
+    pub post_tx_hooks: Vec<(String, PluginInfo)>,
 }
 
 #[cw_serde]

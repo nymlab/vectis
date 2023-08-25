@@ -1,13 +1,28 @@
 use crate::types::error::PluginRegError;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, CanonicalAddr, Coin, Deps};
+use cosmwasm_std::{Addr, Binary, CanonicalAddr, Coin, Deps};
 use std::collections::BTreeMap;
 
+/// Input for migrating a plugin
+#[cw_serde]
+pub struct PluginMigrateParams {
+    /// The existing plugin addr to migrate
+    pub plugin_addr: String,
+    /// The existing plugin permission; this will not change in the migration
+    /// It is included here to help the contract find the plugin
+    pub plugin_permission: PluginPermission,
+    /// The new src; this should only be different to existing if it is not vectis registry
+    pub target_src: PluginSource,
+    pub migration_msg: Binary,
+    pub funds: Vec<Coin>,
+}
+
+/// Input for installing a plugin
 #[cw_serde]
 pub struct PluginInstallParams {
     pub src: PluginSource,
     pub instantiate_msg: Binary,
-    pub plugin_params: PluginParams,
+    pub permission: PluginPermission,
     pub label: String,
     pub funds: Vec<Coin>,
 }
@@ -29,20 +44,21 @@ pub struct RegistryConfig {
 
 #[cw_serde]
 pub struct PluginMetadataData {
-    pub creator: String,      // if none - no update to the creator
-    pub display_name: String, // if none - no update to the display name
-    pub ipfs_hash: String,    // if none - no update to display data
+    pub creator: String,
+    pub display_name: String,
+    pub ipfs_hash: String,
 }
 
 #[cw_serde]
 pub struct PluginInfo {
     pub src: PluginSource,
     pub version: String,
+    pub permission: PluginPermission,
 }
 
 /// Permission of the plugin on the proxy
 #[cw_serde]
-pub enum PluginPermissions {
+pub enum PluginPermission {
     /// Can Exec through Proxy
     Exec,
     /// Is used to check tx before execution
@@ -56,7 +72,8 @@ pub enum PluginPermissions {
 /// The source of the plugin code.
 #[cw_serde]
 pub enum PluginSource {
-    VectisRegistry(u64),
+    /// Plugin registry id and version (latest if not provided)
+    VectisRegistry(u64, Option<String>),
     /// This is the code_id and the version of the unregistered plugin
     CodeId(u64, String),
 }
@@ -65,11 +82,6 @@ impl std::fmt::Display for PluginSource {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{self:?}")
     }
-}
-
-#[cw_serde]
-pub struct PluginParams {
-    pub permission: PluginPermissions,
 }
 
 #[cw_serde]

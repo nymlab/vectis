@@ -42,3 +42,6 @@ impl Authenticator {
         &self.provider
     }
 }
+
+#[cw_serde]
+pub struct WebauthnInstantaiteMsg {}

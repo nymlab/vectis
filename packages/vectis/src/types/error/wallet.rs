@@ -63,4 +63,6 @@ pub enum WalletPluginError {
     PermissionEmpty,
     #[error("Same plugin already installed")]
     PluginInstalled,
+    #[error("Plugin was not previously installed")]
+    PluginNotExist,
 }

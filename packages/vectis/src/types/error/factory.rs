@@ -19,24 +19,14 @@ pub enum FactoryError {
     Instantiate2(#[from] Inst2CalcError),
     #[error("RelayTxError {0}")]
     RelayTxError(#[from] RelayTxError),
-    #[error("ThresholdShouldBeGreaterThenZero")]
-    ThresholdShouldBeGreaterThenZero {},
-    #[error("ThresholdShouldBeLessThenGuardiansCount")]
-    ThresholdShouldBeLessThenGuardiansCount {},
-    #[error("AlreadyExist")]
-    AlreadyExist { addr: Addr },
     #[error("NotFound")]
     NotFound { addr: Addr },
     #[error("OverFlow")]
     OverFlow {},
     #[error("SameProxyCodeId")]
     SameProxyCodeId {},
-    #[error("SameProxyMultisigCodeId")]
-    SameProxyMultisigCodeId {},
     #[error("Unauthorized")]
     Unauthorized,
-    #[error("Missing Duration")]
-    MissingDuration {},
     #[error("InvalidMigrationMsg: {0}")]
     InvalidMigrationMsg(MigrationMsgError),
     #[error("InvalidRelayMigrationTx: {0}")]
@@ -45,8 +35,10 @@ pub enum FactoryError {
     InvalidSufficientFunds(String, String),
     #[error("Proxy cannot be instantiated")]
     ProxyInstantiationError {},
-    #[error("Invalid Proxy Reply")]
-    InvalidReplyFromProxy,
+    #[error("Unexpected Update Params")]
+    UnexpectedUpdateParams,
+    #[error("AlreadyExist {addr}")]
+    AlreadyExist { addr: Addr },
 }
 
 impl From<MigrationMsgError> for FactoryError {
