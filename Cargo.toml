@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/vectis", "contracts/core/*" ]
+members = [ "packages/vectis-tests","packages/vectis", "contracts/core/*" ]
 exclude = ["packages/images"]
 resolver = "2"
 
