@@ -1,8 +1,18 @@
-# Vectis Contract Tests
+# Vectis contract tests
 
-This repo contains the Vectis testsuite, which can be useful for plugins.
-It also contains the tests for the Vectis core contracts
+Due to the current limitation [v1.3 of cosmwasm mock](https://github.com/CosmWasm/cosmwasm/issues/1648),
+we test certain functions elsewhere
 
-- `common/` contains the struct of all the instantiated contracts, params are in in `common.rs`.
-  Useful functions are provided to interact with these contracts.
-- `tests` is where the Vectis core contracts tests are
+## Factory
+
+- [ ] create wallet
+- [ ] migrate wallet
+- [ ] instantiate with authenticators
+- [ ] update / add authenticators
+
+## Proxy
+
+- [ ] create with plugin
+- [ ] add plugin
+- [ ] update plugin
+- [ ] auth_exec

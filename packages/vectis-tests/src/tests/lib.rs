@@ -1,2 +1,2 @@
-pub mod base;
-pub mod plugins;
+pub mod factory_mgmt;
+pub mod proxy;
