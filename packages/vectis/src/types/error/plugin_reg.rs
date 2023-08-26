@@ -12,8 +12,6 @@ pub enum PluginRegError {
     PluginCommitteeNotFound,
     #[error("Checksum Verification Failed")]
     ChecksumVerificationFailed,
-    #[error("Not Supported Reply Id")]
-    NotSupportedReplyId,
     #[error("Insufficient Fee Amount: Expected: {0}, Got: {1}")]
     InsufficientFee(Uint128, Uint128),
     #[error("Plugin Version Not Found for {0}")]
@@ -24,4 +22,18 @@ pub enum PluginRegError {
     IncorrectFees(Coin),
     #[error("Plugin Not found on registry {0}")]
     PluginNotFoundOnRegistry(u64),
+    #[error("Unsupported Wallet")]
+    UnsupportedWallet,
+    #[error("Fees should be only 1 coin")]
+    TooManyCoins,
+    #[error("Expired")]
+    Expired,
+    #[error("Not a subscriber")]
+    NotASubscriber,
+    #[error("Plugin Not installed")]
+    NotInstalled,
+    #[error("Invalid Checksum")]
+    InvalidChecksum,
+    #[error("Tier Exists")]
+    TierExists,
 }

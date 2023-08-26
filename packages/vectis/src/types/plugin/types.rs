@@ -1,6 +1,6 @@
 use crate::types::error::PluginRegError;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary, CanonicalAddr, Coin, Deps};
+use cosmwasm_std::{Binary, CanonicalAddr, Coin, Deps};
 use std::collections::BTreeMap;
 
 /// Input for migrating a plugin
@@ -32,14 +32,6 @@ pub struct PluginCodeData {
     pub latest_contract_version: String, // Must update version to the cw2 contract version
     pub new_code_id: u64,                // Version must match new code
     pub new_code_hash: String,           // Code_id must point to this code_hash
-}
-
-#[cw_serde]
-pub struct RegistryConfig {
-    pub registry_fee: Coin,
-    pub subscription_fee: Coin,
-    pub deployer_addr: String,
-    pub free_tier_max_plugin: u64,
 }
 
 #[cw_serde]
