@@ -1,22 +1,13 @@
 [workspace]
-members = [ "packages/vectis-tests","packages/vectis", "contracts/core/*" ]
+members = ["packages/vectis-tests", "packages/vectis", "contracts/core/*" ]
+# members = [ "packages/vectis", "contracts/core/*", "contracts/authenticators/*" ]
 exclude = ["packages/images"]
 resolver = "2"
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
-[profile.release.package.vectis-factory]
-codegen-units = 1
-incremental = false
-
-[profile.release.package.vectis-proxy]
-codegen-units = 1
-incremental = false
-
-[profile.release.package.vectis-plugin-registry]
-codegen-units = 1
-incremental = false
-
 [profile.release]
+codegen-units = 1
+incremental = false
 rpath = false
 lto = true
 overflow-checks = true
