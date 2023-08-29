@@ -20,14 +20,13 @@ import {
     FeeType,
     FactoryServiceTraitExecMsg,
     AuthenticatorProvider,
-    PluginPermissions,
+    PluginPermission,
     PluginSource,
     ExecMsg,
     CreateWalletMsg,
     Entity,
     Authenticator,
     PluginInstallParams,
-    PluginParams,
     MigrateWalletMsg,
     RelayTransaction,
     QueryMsg,
@@ -37,14 +36,17 @@ import {
     NullableAddr,
     Addr,
     Uint64,
+    ContractVersion,
     FeesResponse,
 } from "./Factory.types";
 export interface FactoryReadOnlyInterface {
     contractAddress: string;
     totalCreated: () => Promise<Uint64>;
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<Uint64>;
+    deployer: () => Promise<Addr>;
     fees: () => Promise<FeesResponse>;
     authProviderAddr: ({ ty }: { ty: AuthenticatorType }) => Promise<NullableAddr>;
+    contractVersion: () => Promise<ContractVersion>;
     walletByLabel: ({ label }: { label: string }) => Promise<NullableAddr>;
 }
 export class FactoryQueryClient implements FactoryReadOnlyInterface {
@@ -56,8 +58,10 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.contractAddress = contractAddress;
         this.totalCreated = this.totalCreated.bind(this);
         this.codeId = this.codeId.bind(this);
+        this.deployer = this.deployer.bind(this);
         this.fees = this.fees.bind(this);
         this.authProviderAddr = this.authProviderAddr.bind(this);
+        this.contractVersion = this.contractVersion.bind(this);
         this.walletByLabel = this.walletByLabel.bind(this);
     }
 
@@ -73,6 +77,11 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
             },
         });
     };
+    deployer = async (): Promise<Addr> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            deployer: {},
+        });
+    };
     fees = async (): Promise<FeesResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             fees: {},
@@ -83,6 +92,11 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
             auth_provider_addr: {
                 ty,
             },
+        });
+    };
+    contractVersion = async (): Promise<ContractVersion> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            contract_version: {},
         });
     };
     walletByLabel = async ({ label }: { label: string }): Promise<NullableAddr> => {
@@ -130,6 +144,20 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
         memo?: string,
         _funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    updateAuthProvider: (
+        {
+            newCodeId,
+            newInstMsg,
+            ty,
+        }: {
+            newCodeId?: number;
+            newInstMsg?: Binary;
+            ty: AuthenticatorType;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ) => Promise<ExecuteResult>;
     createWallet: (
         {
             createWalletMsg,
@@ -164,6 +192,7 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
         this.updateCodeId = this.updateCodeId.bind(this);
         this.updateConfigFee = this.updateConfigFee.bind(this);
         this.updateDeployer = this.updateDeployer.bind(this);
+        this.updateAuthProvider = this.updateAuthProvider.bind(this);
         this.createWallet = this.createWallet.bind(this);
         this.migrateWallet = this.migrateWallet.bind(this);
     }
@@ -236,6 +265,35 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
             {
                 update_deployer: {
                     addr,
+                },
+            },
+            fee,
+            memo,
+            _funds
+        );
+    };
+    updateAuthProvider = async (
+        {
+            newCodeId,
+            newInstMsg,
+            ty,
+        }: {
+            newCodeId?: number;
+            newInstMsg?: Binary;
+            ty: AuthenticatorType;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_auth_provider: {
+                    new_code_id: newCodeId,
+                    new_inst_msg: newInstMsg,
+                    ty,
                 },
             },
             fee,

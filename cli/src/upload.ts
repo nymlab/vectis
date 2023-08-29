@@ -15,7 +15,7 @@ export async function uploadAction(network: Chains, opts: OptionValues) {
     const client = await CosmWasmClient.connectHostWithAccount("admin", network);
     const artifactContracts = getWasmFileNames("../artifacts");
     let contractsToUplaod: string[] = [];
-    if (!opts.contracts.length) {
+    if (opts.vectis) {
         logger.info("Uploading all: ", artifactContracts);
         contractsToUplaod = artifactContracts;
     } else {

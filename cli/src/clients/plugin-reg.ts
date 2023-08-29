@@ -1,17 +1,19 @@
 import { PluginRegT, PluginRegistryQueryClient as PluginRegC } from "../interfaces";
 import CWClient from "./cosmwasm";
 import type { Chain } from "../config/chains";
-import { pluginRegSubscriptionFee, pluginRegRegistryFee } from "../config/fees";
+import { pluginRegSubscriptionFee, pluginRegRegistryFee, pluginFreeTierFee } from "../config/fees";
+import { fromHex, toHex } from "@cosmjs/encoding";
 
 class PluginRegClient extends PluginRegC {
     constructor(cw: CWClient, _sender: string, contractAddress: string) {
         super(cw.client, contractAddress);
     }
 
-    static createInstMsg(chain: Chain): PluginRegT.InstantiateMsg {
+    static createInstMsg(chain: Chain, proxy_code_hash: string, version: string): PluginRegT.InstantiateMsg {
         return {
-            subscription_fee: pluginRegSubscriptionFee(chain),
             registry_fee: pluginRegRegistryFee(chain),
+            subscription_tiers: [["free", { fee: pluginFreeTierFee(chain), max_plugins: 3 }]],
+            supported_proxies: [[toHex(fromHex(proxy_code_hash)), version]],
         };
     }
 

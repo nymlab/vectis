@@ -41,6 +41,5 @@ export async function downloadTypeSchema(url: string, contractName: string, file
 }
 
 export const getAccountsPath = (network: string) => path.join(accountsPath, `/${network}.json`);
-export const getUploadInfoPath = (network: string, vectis?: Boolean) =>
-    path.join(deployResultsPath, vectis ? `/${network}-vectis-uploadInfo.json` : `/${network}-uploadInfo.json`);
+export const getUploadInfoPath = (network: string) => path.join(deployResultsPath, `/${network}-uploadInfo.json`);
 export const getDeployPath = (network: string) => path.join(deployResultsPath, `/${network}-vectis-deployInfo.json`);

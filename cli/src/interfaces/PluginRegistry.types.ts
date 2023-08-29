@@ -5,9 +5,19 @@
  */
 
 export type Uint128 = string;
+export type SubscriptionTier = "free" | "l1" | "other";
+export type Duration =
+    | {
+          height: number;
+      }
+    | {
+          time: number;
+      };
+export type HexBinary = string;
 export interface InstantiateMsg {
     registry_fee: Coin;
-    subscription_fee: Coin;
+    subscription_tiers: [SubscriptionTier, TierDetails][];
+    supported_proxies: [HexBinary, string][];
     [k: string]: unknown;
 }
 export interface Coin {
@@ -15,7 +25,165 @@ export interface Coin {
     denom: string;
     [k: string]: unknown;
 }
-export type ExecuteMsg = ExecMsg;
+export interface TierDetails {
+    duration?: Duration | null;
+    fee: Coin;
+    max_plugins: number;
+}
+export type ExecuteMsg = RegistryServiceTraitExecMsg | RegistryManagementTraitExecMsg | ExecMsg;
+export type RegistryServiceTraitExecMsg =
+    | {
+          proxy_install_plugin: {
+              id: number;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          proxy_remove_plugin: {
+              id: number;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          subscribe: {
+              tier: SubscriptionTier;
+              [k: string]: unknown;
+          };
+      };
+export type RegistryManagementTraitExecMsg =
+    | {
+          register_plugin: {
+              code_data: PluginCodeData;
+              metadata_data: PluginMetadataData;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          unregister_plugin: {
+              id: number;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          new_plugin_version: {
+              code_update?: PluginCodeData | null;
+              id: number;
+              metadata_update: PluginMetadataData;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          update_registry_fee: {
+              new_fee: Coin;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          add_subscription_tiers: {
+              details: TierDetails;
+              tier: number;
+              [k: string]: unknown;
+          };
+      };
 export type ExecMsg = string;
-export type QueryMsg = QueryMsg1;
+export interface PluginCodeData {
+    latest_contract_version: string;
+    new_code_hash: string;
+    new_code_id: number;
+}
+export interface PluginMetadataData {
+    creator: string;
+    display_name: string;
+    ipfs_hash: string;
+}
+export type QueryMsg = RegistryServiceTraitQueryMsg | RegistryManagementTraitQueryMsg | QueryMsg1;
+export type RegistryServiceTraitQueryMsg = {
+    subsciption_details: {
+        addr: string;
+        [k: string]: unknown;
+    };
+};
+export type RegistryManagementTraitQueryMsg =
+    | {
+          get_plugins: {
+              limit?: number | null;
+              start_after?: number | null;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          get_plugin_by_id: {
+              id: number;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          get_plugin_by_address: {
+              contract_addr: string;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          get_config: {
+              [k: string]: unknown;
+          };
+      }
+    | {
+          contract_version: {
+              [k: string]: unknown;
+          };
+      };
 export type QueryMsg1 = string;
+export interface ContractVersion {
+    contract: string;
+    version: string;
+}
+export interface RegistryConfigResponse {
+    deployer_addr: string;
+    registry_fee: Coin;
+    subscription_tiers: [number, TierDetails][];
+}
+export type CanonicalAddr = Binary;
+export type Binary = string;
+export interface PluginWithVersionResponse {
+    contract_version: string;
+    plugin_info: Plugin;
+}
+export interface Plugin {
+    creator: CanonicalAddr;
+    display_name: string;
+    id: number;
+    latest_contract_version: string;
+    versions: {
+        [k: string]: VersionDetails;
+    };
+}
+export interface VersionDetails {
+    code_hash: string;
+    code_id: number;
+    ipfs_hash: string;
+}
+export type NullablePlugin = Plugin | null;
+export interface PluginsResponse {
+    current_plugin_id: number;
+    plugins: Plugin[];
+    total: number;
+}
+export type NullableSubscriber = Subscriber | null;
+export type Expiration =
+    | {
+          at_height: number;
+      }
+    | {
+          at_time: Timestamp;
+      }
+    | {
+          never: {};
+      };
+export type Timestamp = Uint64;
+export type Uint64 = string;
+export interface Subscriber {
+    expiration: Expiration;
+    plugin_installed: number[];
+    tier: SubscriptionTier;
+}

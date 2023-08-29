@@ -16,10 +16,10 @@ export type AuthenticatorType =
       };
 export type Binary = string;
 export type Uint128 = string;
-export type PluginPermissions = "exec" | "pre_tx_check" | "post_tx_hook";
+export type PluginPermission = "exec" | "pre_tx_check" | "post_tx_hook";
 export type PluginSource =
     | {
-          vectis_registry: number;
+          vectis_registry: [number, string | null];
       }
     | {
           code_id: [number, string];
@@ -52,16 +52,13 @@ export interface PluginInstallParams {
     funds: Coin[];
     instantiate_msg: Binary;
     label: string;
-    plugin_params: PluginParams;
+    permission: PluginPermission;
     src: PluginSource;
 }
 export interface Coin {
     amount: Uint128;
     denom: string;
     [k: string]: unknown;
-}
-export interface PluginParams {
-    permission: PluginPermissions;
 }
 export type ExecuteMsg = WalletTraitExecMsg | ExecMsg;
 export type WalletTraitExecMsg =

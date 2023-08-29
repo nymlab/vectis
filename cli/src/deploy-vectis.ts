@@ -25,7 +25,7 @@ export async function deploy(network: Chains) {
     logger.info("Deploying Vectis Contracts to ", network);
 
     //  Import uploaded contract results and generated accounts files
-    const uploadedContracts: VectisContractsUploadResult = await import(getUploadInfoPath(network, true));
+    const uploadedContracts: VectisContractsUploadResult = await import(getUploadInfoPath(network));
     const hostAccounts: Record<string, Account> = await import(getAccountsPath(network));
     const chain = ConfigChains[network as keyof typeof ConfigChains] as Chain;
 
@@ -151,15 +151,11 @@ export async function deploy(network: Chains) {
     const prop = proposals.proposals.pop();
     const propId = prop!.id;
     let execute = await vectisComClient.execute({ proposalId: propId });
-    const factoryAddr = CWClient.getEventAttrValue(
-        execute,
-        "wasm-vectis.factory.v1.MsgInstantiate",
-        "_contract_address"
-    );
+    const factoryAddr = CWClient.getEventAttrValue(execute, "wasm-vectis.factory.v1", "_contract_address");
     const webauthAddr = CWClient.getEventAttrValue(execute, "wasm-vectis.webauthn.v1", "_contract_address");
 
     // Vectis Committee deploy plugin registry
-    let pluginRegInstMsg = PluginRegClient.createInstMsg(chain);
+    let pluginRegInstMsg = PluginRegClient.createInstMsg(chain, uploadedContracts.vectis_proxy.checksum, "v1.0.0-rc1");
     const deployPluginRegistry = {
         wasm: {
             instantiate: {

@@ -20,5 +20,6 @@ export const getDefaultVectisWalletCreationFee = (chain: Chain) => calculateFee(
 // Factory
 export const walletCreationFee = (chain: Chain) => coin(0, chain.feeToken) as FactoryT.Coin;
 // Pluing Registry
+export const pluginFreeTierFee = (chain: Chain) => coin(0, chain.feeToken) as PluginRegT.Coin;
 export const pluginRegSubscriptionFee = (chain: Chain) => coin(0, chain.feeToken) as PluginRegT.Coin;
 export const pluginRegRegistryFee = (chain: Chain) => coin(0, chain.feeToken) as PluginRegT.Coin;
