@@ -3,7 +3,6 @@ use cosmwasm_std::{Binary, CosmosMsg, Response, StdError};
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
-// We have to put traits into mods for Sylvia
 pub mod wallet_trait {
     use super::*;
     use crate::types::wallet::RelayTransaction;

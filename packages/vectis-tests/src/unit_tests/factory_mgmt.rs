@@ -3,7 +3,7 @@ use sylvia::multitest::App;
 
 use vectis_factory::management::contract::test_utils::FactoryManagementTrait;
 use vectis_wallet::types::factory::{
-    CodeIdType, FeeType, FeesResponse, WalletFactoryInstantiateMsg,
+    ChainConnection, CodeIdType, FeeType, FeesResponse, WalletFactoryInstantiateMsg,
 };
 
 #[test]
@@ -17,12 +17,15 @@ fn factory_instantiates_correctly_without_authenticators() {
         denom: "uvectis".into(),
         amount: Uint128::one(),
     };
+    let remote_chain_id = "remote_chain_id";
+    let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());
 
     let factory = factory_code_id
         .instantiate(WalletFactoryInstantiateMsg {
             proxy_code_id: proxy_code_id.code_id(),
             wallet_fee: wallet_fee.clone(),
             authenticators: None,
+            supported_chains: Some(vec![(remote_chain_id.into(), remote_chain_connection)]),
         })
         .with_label("Vectis Factory")
         .call(deployer)
@@ -41,10 +44,19 @@ fn factory_instantiates_correctly_without_authenticators() {
         .total_created()
         .unwrap();
 
+    let total_supported_chains = factory
+        .factory_management_trait_proxy()
+        .supported_chains(None, None)
+        .unwrap();
+
     assert_eq!(code_id, proxy_code_id.code_id());
     assert_eq!(fees, FeesResponse { wallet_fee });
     assert_eq!(total_create, 0u64);
     assert_eq!(actual_deployer, deployer);
+    assert_eq!(
+        total_supported_chains,
+        vec![(remote_chain_id.into(), remote_chain_connection)]
+    );
 }
 
 #[test]
@@ -58,12 +70,15 @@ fn factory_can_update_configs() {
         denom: "uvectis".into(),
         amount: Uint128::one(),
     };
+    let remote_chain_id = "remote_chain_id";
+    let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());
 
     let factory = factory_code_id
         .instantiate(WalletFactoryInstantiateMsg {
             proxy_code_id: proxy_code_id.code_id(),
             wallet_fee: wallet_fee.clone(),
             authenticators: None,
+            supported_chains: Some(vec![(remote_chain_id.into(), remote_chain_connection)]),
         })
         .with_label("Vectis Factory")
         .call(deployer)
@@ -131,4 +146,7 @@ fn factory_can_update_configs() {
     let actual_deployer = factory.factory_management_trait_proxy().deployer().unwrap();
     assert_ne!(actual_deployer.as_str(), deployer);
     assert_eq!(actual_deployer.as_str(), new_deployer);
+
+    // Supported Chains
+    // TODO:
 }

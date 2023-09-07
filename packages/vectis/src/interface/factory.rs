@@ -29,9 +29,18 @@ pub mod factory_service_trait {
             migrations_msg: MigrateWalletMsg,
         ) -> Result<Response, Self::Error>;
 
-        /// Returns the wallet address of this label
+        /// Returns the wallet address of this vectis ID
         #[msg(query)]
-        fn wallet_by_label(&self, ctx: QueryCtx, label: String) -> Result<Option<Addr>, StdError>;
+        fn wallet_by_vid(&self, ctx: QueryCtx, vid: String) -> Result<Option<Addr>, StdError>;
+
+        /// Returns the wallet address of this vectis ID and chain_id
+        #[msg(query)]
+        fn wallet_by_vid_chain(
+            &self,
+            ctx: QueryCtx,
+            vid: String,
+            chain_id: String,
+        ) -> Result<Option<String>, StdError>;
     }
 }
 
@@ -40,7 +49,7 @@ pub mod factory_management_trait {
     use super::*;
     use crate::types::{
         authenticator::AuthenticatorType,
-        factory::{FeeType, FeesResponse},
+        factory::{ChainConnection, FeeType, FeesResponse},
     };
 
     /// The trait for deployer to interact with factory contract
@@ -48,6 +57,7 @@ pub mod factory_management_trait {
     pub trait FactoryManagementTrait {
         type Error: From<StdError>;
 
+        /// Deployer only: update the newest code_id supported by Vectis
         #[msg(exec)]
         fn update_code_id(
             &self,
@@ -56,6 +66,7 @@ pub mod factory_management_trait {
             new_code_id: u64,
         ) -> Result<Response, Self::Error>;
 
+        /// Deployer only: update the fee associated with using Vectis services
         #[msg(exec)]
         fn update_config_fee(
             &self,
@@ -64,6 +75,16 @@ pub mod factory_management_trait {
             new_fee: Coin,
         ) -> Result<Response, Self::Error>;
 
+        /// Deployer only: update the supported chains
+        #[msg(exec)]
+        fn update_supported_interchain(
+            &self,
+            ctx: ExecCtx,
+            chain_id: String,
+            chain_connection: Option<ChainConnection>,
+        ) -> Result<Response, Self::Error>;
+
+        /// Deployer only: update address associated by the deployer role
         #[msg(exec)]
         fn update_deployer(&self, ctx: ExecCtx, addr: String) -> Result<Response, Self::Error>;
 
@@ -91,6 +112,15 @@ pub mod factory_management_trait {
         /// Returns address of the deployer
         #[msg(query)]
         fn deployer(&self, ctx: QueryCtx) -> Result<Addr, StdError>;
+
+        /// Returns supported chains
+        #[msg(query)]
+        fn supported_chains(
+            &self,
+            ctx: QueryCtx,
+            start_after: Option<String>,
+            limit: Option<u32>,
+        ) -> Result<Vec<(String, ChainConnection)>, StdError>;
 
         /// Returns current fee `FeeResponse`
         #[msg(query)]

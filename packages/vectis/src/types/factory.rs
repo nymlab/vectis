@@ -103,6 +103,8 @@ pub struct WalletFactoryInstantiateMsg {
     pub wallet_fee: Coin,
     /// Authenticator
     pub authenticators: Option<Vec<AuthenticatorInstInfo>>,
+    /// Supported Chains
+    pub supported_chains: Option<Vec<(String, ChainConnection)>>,
 }
 
 #[cw_serde]
@@ -118,4 +120,13 @@ pub enum FeeType {
 #[cw_serde]
 pub struct FeesResponse {
     pub wallet_fee: Coin,
+}
+
+#[cw_serde]
+pub enum ChainConnection {
+    /// IBC connection-id establised on hub chain
+    IBC(String),
+    /// Other non-IBC chains: frontend is expected to interpret this string
+    /// For example some policy for constructing the Ethereum Addr
+    Other(String),
 }

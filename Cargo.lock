@@ -349,8 +349,6 @@ dependencies = [
 [[package]]
 name = "cosmos-sdk-proto"
 version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73c9d2043a9e617b0d602fbc0a0ecd621568edbf3a9774890a6d562389bd8e1c"
 dependencies = [
  "prost 0.11.9",
  "prost-types",

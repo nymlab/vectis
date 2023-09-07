@@ -1,7 +1,9 @@
 use crate::types::{plugin::Plugin, wallet::Controller};
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CanonicalAddr};
+use cosmwasm_std::{Addr, Binary, CanonicalAddr};
 use cw_storage_plus::{Item, Map};
+
+use super::factory::ChainConnection;
 
 // Stored on the Multisig / DAO contract
 /// Maps `VectisActors` variant to addresses:
@@ -39,3 +41,13 @@ pub const AUTHENTICATORS: Authenticators = Map::new("authenticators");
 /// Types that allow other contracts to query the plugins from the registry
 pub type Plugins<'a> = Map<'a, u64, Plugin>;
 pub const PLUGINS: Plugins = Map::new("registry_plugins");
+
+// Stored on Factory and queried by proxies
+/// The supported chains
+pub type SupportedChains<'a> = Map<'a, &'a str, ChainConnection>;
+pub const SUPPORTEDCHAINS: SupportedChains = Map::new("supported_chains");
+
+// Stored on Proxy and Queried by other contracts
+/// The data blob store in Proxy
+pub type ProxyData<'a> = Map<'a, &'a [u8], Binary>;
+pub const PROXY_DATA: ProxyData = Map::new("proxy_data");

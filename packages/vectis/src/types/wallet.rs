@@ -74,22 +74,33 @@ pub type Nonce = u64;
 
 /// Representation of the wallet address in both form used in migration
 #[cw_serde]
-pub enum WalletAddr {
-    /// CanonicalAddr
-    Canonical(CanonicalAddr),
-    /// Addr
-    Addr(Addr),
+pub struct WalletAddrs {
+    /// The chain id / name of the remote chain
+    pub chain_id: String,
+    /// The address associated on the remote chain
+    pub addr: String,
 }
 
 #[cw_serde]
 pub struct WalletInfo {
+    /// The controlling entity for this wallet
     pub controller: Controller,
+    /// The deployer of Vectis
     pub deployer: Addr,
+    /// The version of this wallet
     pub version: cw2::ContractVersion,
+    /// The code-id of this wallet
     pub code_id: u64,
+    /// The relayers for wallet tx
     pub relayers: Vec<Addr>,
+    /// Time of creation
     pub created_at: u64,
-    pub label: String,
+    /// Vectis Id
+    pub vid: String,
+    /// Addresses on other chains
+    pub addresses: Vec<WalletAddrs>,
+    /// The wallet policy
+    pub policy: Binary,
 }
 
 #[cw_serde]
