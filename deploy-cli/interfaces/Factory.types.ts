@@ -51,6 +51,14 @@ export type FactoryManagementTraitExecMsg =
               addr: string;
               [k: string]: unknown;
           };
+      }
+    | {
+          update_auth_provider: {
+              new_code_id?: number | null;
+              new_inst_msg?: Binary | null;
+              ty: AuthenticatorType;
+              [k: string]: unknown;
+          };
       };
 export type CodeIdType = "proxy";
 export type FeeType = "wallet";
@@ -72,10 +80,10 @@ export type AuthenticatorProvider =
     | {
           custom: string;
       };
-export type PluginPermissions = "exec" | "pre_tx_check" | "post_tx_hook";
+export type PluginPermission = "exec" | "pre_tx_check" | "post_tx_hook";
 export type PluginSource =
     | {
-          vectis_registry: number;
+          vectis_registry: [number, string | null];
       }
     | {
           code_id: [number, string];
@@ -102,11 +110,8 @@ export interface PluginInstallParams {
     funds: Coin[];
     instantiate_msg: Binary;
     label: string;
-    plugin_params: PluginParams;
+    permission: PluginPermission;
     src: PluginSource;
-}
-export interface PluginParams {
-    permission: PluginPermissions;
 }
 export interface MigrateWalletMsg {
     addr_to_migrate: string;
@@ -130,6 +135,11 @@ export type FactoryManagementTraitQueryMsg =
           };
       }
     | {
+          deployer: {
+              [k: string]: unknown;
+          };
+      }
+    | {
           fees: {
               [k: string]: unknown;
           };
@@ -137,6 +147,11 @@ export type FactoryManagementTraitQueryMsg =
     | {
           auth_provider_addr: {
               ty: AuthenticatorType;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          contract_version: {
               [k: string]: unknown;
           };
       };
@@ -150,6 +165,10 @@ export type QueryMsg1 = string;
 export type NullableAddr = Addr | null;
 export type Addr = string;
 export type Uint64 = number;
+export interface ContractVersion {
+    contract: string;
+    version: string;
+}
 export interface FeesResponse {
     wallet_fee: Coin;
 }
