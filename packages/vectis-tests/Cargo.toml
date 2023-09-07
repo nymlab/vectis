@@ -30,12 +30,9 @@ cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
 thiserror = { workspace = true }
-#osmosis-test-tube = "16.1.2"
-#osmosis-std = "0.16.2"
 osmosis-std = { git = "https://github.com/osmosis-labs/osmosis-rust", branch = "autobuild-v17.0.0-rc0" }
 osmosis-test-tube = "17.0.0-rc0"
 cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "9d6fae5" }
 cw4-group= { version = "1.0.1", features = ["library"] }
 cw3 = "1.0.1"
 cw4 = "1.0.1"
-

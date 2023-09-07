@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, to_binary, Binary, Coin, Uint128};
+use cosmwasm_std::{coin, to_binary, Binary};
 use sylvia::multitest::App;
 
 use vectis_proxy::wallet::contract::test_utils::WalletTrait;

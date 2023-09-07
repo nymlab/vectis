@@ -1,7 +1,7 @@
 [workspace]
 members = ["packages/vectis-tests", "packages/vectis", "contracts/core/*" ]
 # members = [ "packages/vectis", "contracts/core/*", "contracts/authenticators/*" ]
-exclude = ["packages/images"]
+exclude = ["packages/images", "packages/passkey"]
 resolver = "2"
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html

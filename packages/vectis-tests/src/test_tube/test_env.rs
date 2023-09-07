@@ -1,19 +1,15 @@
-use cosmwasm_std::{coin, to_binary, Coin, CosmosMsg, Event, Uint128, WasmMsg};
-use osmosis_test_tube::{
-    Account, Bank, Module, OsmosisTestApp, RunnerError, RunnerExecuteResult, RunnerResult,
-    SigningAccount, Wasm,
-};
+use cosmwasm_std::{coin, to_binary, Coin, CosmosMsg, HexBinary, Uint128, WasmMsg};
+use osmosis_test_tube::{Account, OsmosisTestApp, SigningAccount};
 
 use vectis_factory::contract::InstantiateMsg as FactoryInstMsg;
 use vectis_plugin_registry::contract::InstantiateMsg as PluginRegInstMsg;
-use vectis_proxy::contract::InstantiateMsg as ProxyInstMsg;
 
 use vectis_wallet::types::{
     authenticator::{AuthenticatorType, WebauthnInstantaiteMsg},
     factory::{AuthenticatorInstInfo, WalletFactoryInstantiateMsg},
 };
 
-use super::{contracts::Contract, util::*};
+use super::util::{constants::*, contract::Contract};
 use cw3_flex_multisig::msg::{ExecuteMsg as cw3flexExecMsg, InstantiateMsg as cw3flexInstMsg};
 use cw4::Member;
 use cw4_group::msg::InstantiateMsg as cw4InstMsg;
@@ -39,15 +35,12 @@ pub struct HubChainSuite<'a> {
     pub plugin_committee: String,
     // PluginRegistry addr
     pub plugin_registry: String,
-    // accounts index for both deployer and plugin_committ
-    pub committee_index: usize,
     // accounts
     pub accounts: Vec<SigningAccount>,
 }
 
 impl<'a> HubChainSuite<'a> {
     pub fn init(app: &'a OsmosisTestApp) -> Self {
-        let committee_index = 1;
         // Create some accounts for testing
         let accounts = app
             .init_accounts(&[Coin::new(1000000000000000u128, "uosmo")], 10)
@@ -60,11 +53,11 @@ impl<'a> HubChainSuite<'a> {
             &cw4InstMsg {
                 admin: None,
                 members: vec![Member {
-                    addr: accounts[1].address(),
+                    addr: accounts[ICOMMITTEE].address(),
                     weight: 1,
                 }],
             },
-            &accounts[0],
+            &accounts[IDEPLOYER],
         )
         .unwrap();
 
@@ -99,10 +92,11 @@ impl<'a> HubChainSuite<'a> {
         .unwrap();
 
         // Store code for proxy and authenticator
-        let proxy_code_id = Contract::store_code(app, PROXY_CODE_PATH, &accounts[0]);
-        let auth_code_id = Contract::store_code(app, AUTH_CODE_PATH, &accounts[0]);
-        let factory_code_id = Contract::store_code(app, FACTORY_CODE_PATH, &accounts[0]);
-        let plugin_reg_code_id = Contract::store_code(app, REGISTRY_CODE_PATH, &accounts[0]);
+        let proxy_code_id = Contract::store_code(app, PROXY_CODE_PATH, &accounts[IDEPLOYER]);
+        let auth_code_id = Contract::store_code(app, AUTH_CODE_PATH, &accounts[IDEPLOYER]);
+        let factory_code_id = Contract::store_code(app, FACTORY_CODE_PATH, &accounts[IDEPLOYER]);
+        let plugin_reg_code_id =
+            Contract::store_code(app, REGISTRY_CODE_PATH, &accounts[IDEPLOYER]);
 
         let factory_inst_msg = WalletFactoryInstantiateMsg {
             proxy_code_id,
@@ -141,10 +135,10 @@ impl<'a> HubChainSuite<'a> {
         let exeucte_factory_proposal = cw3flexExecMsg::Execute { proposal_id: 1 };
 
         deployer
-            .execute(&deploy_factory_proposal, &[], &accounts[committee_index])
+            .execute(&deploy_factory_proposal, &[], &accounts[ICOMMITTEE])
             .unwrap();
         let res = deployer
-            .execute(&exeucte_factory_proposal, &[], &accounts[committee_index])
+            .execute(&exeucte_factory_proposal, &[], &accounts[ICOMMITTEE])
             .unwrap();
 
         let mut events = res.events.into_iter();
@@ -172,9 +166,10 @@ impl<'a> HubChainSuite<'a> {
         // Propose and execute deploy of plugin-registry
         //
         // ===========================================================
+        let code_hash = HexBinary::from_hex(PROXY_CODE_HASH).unwrap();
         let plugin_reg_inst_msg = PluginRegInstMsg {
             subscription_tiers: vec![],
-            supported_proxies: vec![],
+            supported_proxies: vec![(code_hash, VECTIS_VERSION.into())],
             registry_fee: coin(REGISTRY_FEE, DENOM),
         };
         let deploy_reg_proposal = cw3flexExecMsg::Propose {
@@ -191,10 +186,10 @@ impl<'a> HubChainSuite<'a> {
         };
         let exeucte_plugin_proposal = cw3flexExecMsg::Execute { proposal_id: 2 };
         deployer
-            .execute(&deploy_reg_proposal, &[], &accounts[committee_index])
+            .execute(&deploy_reg_proposal, &[], &accounts[ICOMMITTEE])
             .unwrap();
         let res = deployer
-            .execute(&exeucte_plugin_proposal, &[], &accounts[committee_index])
+            .execute(&exeucte_plugin_proposal, &[], &accounts[ICOMMITTEE])
             .unwrap();
 
         let plugin_registry: String = res
@@ -213,7 +208,6 @@ impl<'a> HubChainSuite<'a> {
             deployer_group: mgmt_group.contract_addr,
             deployer: deployer.contract_addr,
             plugin_committee: plugin_committee.contract_addr,
-            committee_index,
             factory,
             webauthn,
             plugin_registry,

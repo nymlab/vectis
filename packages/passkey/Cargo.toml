@@ -1,0 +1,17 @@
+
+[package]
+name = "vectis-test-passkey"
+version = "1.0.0-rc1"
+authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>", "j0nl1 <j0nl1@gmail.com>"]
+edition = "2021"
+license-file = "LICENSE"
+keywords = ["cosmwasm", "account-abstraction", "smart-contract-wallet", "vectis", "cosmos"] 
+repository = "https://github.com/nymlab/vectis"
+description = "Vectis test package for multitest, useful for plugins"
+
+
+[dependencies]
+passkey = "0.1.0"
+coset = "0.3.4"
+url = "2.4.1"
+
