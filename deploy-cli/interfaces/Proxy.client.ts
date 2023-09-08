@@ -30,6 +30,7 @@ import {
     NullableBinary,
     Addr,
     WalletInfo,
+    WalletAddrs,
     ContractVersion,
 } from "./Proxy.types";
 export interface ProxyReadOnlyInterface {

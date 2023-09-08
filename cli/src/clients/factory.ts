@@ -25,6 +25,11 @@ class FactoryClient extends FactoryC {
                         ty: "webauthn",
                     },
                 ],
+                supported_chains: [
+                    ["theta-testnet-001", { i_b_c: "connection-692" }],
+                    ["elgafar-1", { i_b_c: "connection-112" }],
+                    ["osmo-test-5", { i_b_c: "connection-671" }],
+                ],
             },
         };
     }
@@ -52,7 +57,7 @@ class FactoryClient extends FactoryC {
     async createWalletWebAuthn(
         pubkey: Uint8Array,
         initial_data: [string, string][],
-        label: string,
+        vid: string,
         plugins: FactoryT.PluginInstallParams[],
         proxy_initial_funds: FactoryT.Coin[],
         relayers: string[]
@@ -64,7 +69,7 @@ class FactoryClient extends FactoryC {
         let msg: FactoryT.CreateWalletMsg = {
             //controller: Entity;
             controller: controllingEntity,
-            label,
+            vid,
             initial_data,
             proxy_initial_funds,
             relayers,

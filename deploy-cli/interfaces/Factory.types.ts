@@ -10,6 +10,13 @@ export type AuthenticatorType =
     | {
           other: string;
       };
+export type ChainConnection =
+    | {
+          i_b_c: string;
+      }
+    | {
+          other: string;
+      };
 export type Uint128 = string;
 export interface InstantiateMsg {
     msg: WalletFactoryInstantiateMsg;
@@ -18,6 +25,7 @@ export interface InstantiateMsg {
 export interface WalletFactoryInstantiateMsg {
     authenticators?: AuthenticatorInstInfo[] | null;
     proxy_code_id: number;
+    supported_chains?: [string, ChainConnection][] | null;
     wallet_fee: Coin;
 }
 export interface AuthenticatorInstInfo {
@@ -43,6 +51,13 @@ export type FactoryManagementTraitExecMsg =
           update_config_fee: {
               new_fee: Coin;
               ty: FeeType;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          update_supported_interchain: {
+              chain_connection?: ChainConnection | null;
+              chain_id: string;
               [k: string]: unknown;
           };
       }
@@ -92,10 +107,10 @@ export type ExecMsg = string;
 export interface CreateWalletMsg {
     controller: Entity;
     initial_data: [Binary, Binary][];
-    label: string;
     plugins: PluginInstallParams[];
     proxy_initial_funds: Coin[];
     relayers: string[];
+    vid: string;
 }
 export interface Entity {
     auth: Authenticator;
@@ -140,6 +155,13 @@ export type FactoryManagementTraitQueryMsg =
           };
       }
     | {
+          supported_chains: {
+              limit?: number | null;
+              start_after?: string | null;
+              [k: string]: unknown;
+          };
+      }
+    | {
           fees: {
               [k: string]: unknown;
           };
@@ -155,12 +177,20 @@ export type FactoryManagementTraitQueryMsg =
               [k: string]: unknown;
           };
       };
-export type FactoryServiceTraitQueryMsg = {
-    wallet_by_label: {
-        label: string;
-        [k: string]: unknown;
-    };
-};
+export type FactoryServiceTraitQueryMsg =
+    | {
+          wallet_by_vid: {
+              vid: string;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          wallet_by_vid_chain: {
+              chain_id: string;
+              vid: string;
+              [k: string]: unknown;
+          };
+      };
 export type QueryMsg1 = string;
 export type NullableAddr = Addr | null;
 export type Addr = string;
@@ -172,3 +202,5 @@ export interface ContractVersion {
 export interface FeesResponse {
     wallet_fee: Coin;
 }
+export type ArrayOfTupleOfStringAndChainConnection = [string, ChainConnection][];
+export type NullableString = string | null;

@@ -34,10 +34,10 @@ export interface ProxyCreateMsg {
 export interface CreateWalletMsg {
     controller: Entity;
     initial_data: [Binary, Binary][];
-    label: string;
     plugins: PluginInstallParams[];
     proxy_initial_funds: Coin[];
     relayers: string[];
+    vid: string;
 }
 export interface Entity {
     auth: Authenticator;
@@ -96,13 +96,19 @@ export type QueryMsg1 = string;
 export type NullableBinary = Binary | null;
 export type Addr = string;
 export interface WalletInfo {
+    addresses: WalletAddrs[];
     code_id: number;
     controller: Entity;
     created_at: number;
     deployer: Addr;
-    label: string;
+    policy?: Binary | null;
     relayers: Addr[];
     version: ContractVersion;
+    vid: string;
+}
+export interface WalletAddrs {
+    addr?: string | null;
+    chain_id: string;
 }
 export interface ContractVersion {
     contract: string;

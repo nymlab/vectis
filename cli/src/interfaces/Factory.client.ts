@@ -9,6 +9,7 @@ import { StdFee } from "@cosmjs/amino";
 import {
     Binary,
     AuthenticatorType,
+    ChainConnection,
     Uint128,
     InstantiateMsg,
     WalletFactoryInstantiateMsg,
@@ -38,16 +39,26 @@ import {
     Uint64,
     ContractVersion,
     FeesResponse,
+    ArrayOfTupleOfStringAndChainConnection,
+    NullableString,
 } from "./Factory.types";
 export interface FactoryReadOnlyInterface {
     contractAddress: string;
     totalCreated: () => Promise<Uint64>;
     codeId: ({ ty }: { ty: CodeIdType }) => Promise<Uint64>;
     deployer: () => Promise<Addr>;
+    supportedChains: ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: string;
+    }) => Promise<ArrayOfTupleOfStringAndChainConnection>;
     fees: () => Promise<FeesResponse>;
     authProviderAddr: ({ ty }: { ty: AuthenticatorType }) => Promise<NullableAddr>;
     contractVersion: () => Promise<ContractVersion>;
-    walletByLabel: ({ label }: { label: string }) => Promise<NullableAddr>;
+    walletByVid: ({ vid }: { vid: string }) => Promise<NullableAddr>;
+    walletByVidChain: ({ chainId, vid }: { chainId: string; vid: string }) => Promise<NullableString>;
 }
 export class FactoryQueryClient implements FactoryReadOnlyInterface {
     client: CosmWasmClient;
@@ -59,10 +70,12 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.totalCreated = this.totalCreated.bind(this);
         this.codeId = this.codeId.bind(this);
         this.deployer = this.deployer.bind(this);
+        this.supportedChains = this.supportedChains.bind(this);
         this.fees = this.fees.bind(this);
         this.authProviderAddr = this.authProviderAddr.bind(this);
         this.contractVersion = this.contractVersion.bind(this);
-        this.walletByLabel = this.walletByLabel.bind(this);
+        this.walletByVid = this.walletByVid.bind(this);
+        this.walletByVidChain = this.walletByVidChain.bind(this);
     }
 
     totalCreated = async (): Promise<Uint64> => {
@@ -82,6 +95,20 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
             deployer: {},
         });
     };
+    supportedChains = async ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: string;
+    }): Promise<ArrayOfTupleOfStringAndChainConnection> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            supported_chains: {
+                limit,
+                start_after: startAfter,
+            },
+        });
+    };
     fees = async (): Promise<FeesResponse> => {
         return this.client.queryContractSmart(this.contractAddress, {
             fees: {},
@@ -99,10 +126,18 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
             contract_version: {},
         });
     };
-    walletByLabel = async ({ label }: { label: string }): Promise<NullableAddr> => {
+    walletByVid = async ({ vid }: { vid: string }): Promise<NullableAddr> => {
         return this.client.queryContractSmart(this.contractAddress, {
-            wallet_by_label: {
-                label,
+            wallet_by_vid: {
+                vid,
+            },
+        });
+    };
+    walletByVidChain = async ({ chainId, vid }: { chainId: string; vid: string }): Promise<NullableString> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            wallet_by_vid_chain: {
+                chain_id: chainId,
+                vid,
             },
         });
     };
@@ -129,6 +164,18 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
         }: {
             newFee: Coin;
             ty: FeeType;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    updateSupportedInterchain: (
+        {
+            chainConnection,
+            chainId,
+        }: {
+            chainConnection?: ChainConnection;
+            chainId: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -191,6 +238,7 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
         this.contractAddress = contractAddress;
         this.updateCodeId = this.updateCodeId.bind(this);
         this.updateConfigFee = this.updateConfigFee.bind(this);
+        this.updateSupportedInterchain = this.updateSupportedInterchain.bind(this);
         this.updateDeployer = this.updateDeployer.bind(this);
         this.updateAuthProvider = this.updateAuthProvider.bind(this);
         this.createWallet = this.createWallet.bind(this);
@@ -242,6 +290,32 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
                 update_config_fee: {
                     new_fee: newFee,
                     ty,
+                },
+            },
+            fee,
+            memo,
+            _funds
+        );
+    };
+    updateSupportedInterchain = async (
+        {
+            chainConnection,
+            chainId,
+        }: {
+            chainConnection?: ChainConnection;
+            chainId: string;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_supported_interchain: {
+                    chain_connection: chainConnection,
+                    chain_id: chainId,
                 },
             },
             fee,

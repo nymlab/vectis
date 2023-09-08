@@ -74,8 +74,6 @@ fn create_wallet_successfully_without_relayer() {
         .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid.clone() })
         .unwrap();
 
-    // TODO wallet_by_vid_chain
-
     let total_created: u64 = factory
         .query(&FactoryMgmtQueryMsg::TotalCreated {})
         .unwrap();
@@ -87,40 +85,32 @@ fn create_wallet_successfully_without_relayer() {
         .find(|e| e.ty == "wasm-vectis.factory.v1")
         .is_some());
 
-    //let wallet = Contract::from_addr(&app, wallet_addr.unwrap().to_string());
+    let wallet = Contract::from_addr(&app, wallet_addr.unwrap().to_string());
 
-    let remote_addr: Option<Addr> = factory
-        .query(&FactoryServiceQueryMsg::WalletByVidChain {
-            vid: vid.clone(),
-            chain_id: NON_IBC_CHAIN_NAME.into(),
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+    let data: Option<Binary> = wallet
+        .query(&WalletQueryMsg::Data {
+            key: initial_data.0,
         })
         .unwrap();
 
-    println!("REMOTE_____ {remote_addr:?}");
-    //    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
-    //    let data: Option<Binary> = wallet
-    //        .query(&WalletQueryMsg::Data {
-    //            key: initial_data.0,
-    //        })
-    //        .unwrap();
-    //
-    //    assert_eq!(info.deployer, suite.deployer);
-    //    assert_eq!(info.controller, entity);
-    //    assert_eq!(data.unwrap(), initial_data.1);
-    //    assert!(info.relayers.is_empty());
-    //    assert_eq!(info.vid, vid);
-    //    assert_eq!(
-    //        info.addresses,
-    //        vec![
-    //            WalletAddrs {
-    //                chain_id: IBC_CHAIN_NAME.into(),
-    //                addr: None
-    //            },
-    //            WalletAddrs {
-    //                chain_id: NON_IBC_CHAIN_NAME.into(),
-    //                addr: Some(NON_IBC_CHAIN_ADDR.into())
-    //            },
-    //        ]
-    //    );
-    //    assert_eq!(info.policy, None);
+    assert_eq!(info.deployer, suite.deployer);
+    assert_eq!(info.controller, entity);
+    assert_eq!(data.unwrap(), initial_data.1);
+    assert!(info.relayers.is_empty());
+    assert_eq!(info.vid, vid);
+    assert_eq!(
+        info.addresses,
+        vec![
+            WalletAddrs {
+                chain_id: IBC_CHAIN_NAME.into(),
+                addr: None
+            },
+            WalletAddrs {
+                chain_id: NON_IBC_CHAIN_NAME.into(),
+                addr: Some(NON_IBC_CHAIN_ADDR.into())
+            },
+        ]
+    );
+    assert_eq!(info.policy, None);
 }
