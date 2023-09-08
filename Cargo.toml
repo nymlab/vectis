@@ -1,7 +1,6 @@
 [workspace]
-members = ["packages/vectis-tests", "packages/vectis", "contracts/core/*" ]
-# members = [ "packages/vectis", "contracts/core/*", "contracts/authenticators/*" ]
-exclude = ["packages/images", "packages/passkey"]
+members = ["packages/*", "contracts/core/*", "contracts/authenticators/*" ]
+exclude = ["packages/vectis-tests-old"]
 resolver = "2"
 
 # https://doc.rust-lang.org/cargo/reference/profiles.html
@@ -36,7 +35,7 @@ quote = "1.0"
 syn = { version = "1.0", features = ["derive"] }
 sha2 = "0.9"
 ripemd160 = "0.9.1"
-#cosmos-sdk-proto = { git = "https://github.com/nymlab/cosmos-rust", rev = "ab8bc5fa1743803df3", default-features = false, features = ["cosmwasm"] }
-cosmos-sdk-proto = { path = "../cosmos-rust/cosmos-sdk-proto", default-features = false, features = ["cosmwasm"] }
+cosmos-sdk-proto = { git = "https://github.com/nymlab/cosmos-rust", rev = "ab8bc5fa1743803df3", default-features = false, features = ["cosmwasm"] }
+# cosmos-sdk-proto = { path = "../cosmos-rust/cosmos-sdk-proto", default-features = false, features = ["cosmwasm"] }
 #getrandom = { version = "0.2", features = ["js"] }
 

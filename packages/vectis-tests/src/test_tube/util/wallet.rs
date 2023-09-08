@@ -31,13 +31,13 @@ pub fn default_entity() -> Entity {
     }
 }
 
-pub fn create_wallet_msg(label: String) -> CreateWalletMsg {
+pub fn create_wallet_msg(vid: String) -> CreateWalletMsg {
     let controller = default_entity();
     CreateWalletMsg {
         controller,
         relayers: vec![],
         proxy_initial_funds: vec![],
-        label,
+        vid,
         initial_data: vec![],
         plugins: vec![],
     }

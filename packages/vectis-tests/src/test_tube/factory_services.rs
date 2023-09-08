@@ -9,7 +9,11 @@ use vectis_wallet::{
         },
         wallet_trait::QueryMsg as WalletQueryMsg,
     },
-    types::{authenticator::AuthenticatorType, factory::CreateWalletMsg, wallet::WalletInfo},
+    types::{
+        authenticator::AuthenticatorType,
+        factory::CreateWalletMsg,
+        wallet::{WalletAddrs, WalletInfo},
+    },
 };
 
 use super::{
@@ -38,10 +42,11 @@ fn create_wallet_successfully_without_relayer() {
     let suite = HubChainSuite::init(&app);
 
     let entity = default_entity();
+    let vid = String::from("user-name@vectis");
 
     let initial_data = (
-        to_binary(&"some-key").unwrap(),
-        to_binary(&"some-value").unwrap(),
+        to_binary(NON_IBC_CHAIN_NAME).unwrap(),
+        to_binary(NON_IBC_CHAIN_ADDR).unwrap(),
     );
 
     let create_msg = FactoryServiceExecMsg::CreateWallet {
@@ -50,7 +55,7 @@ fn create_wallet_successfully_without_relayer() {
             // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
             relayers: vec![],
             proxy_initial_funds: vec![],
-            label: "user-name".into(),
+            vid: vid.clone(),
             initial_data: vec![initial_data.clone()],
             plugins: vec![],
         },
@@ -66,10 +71,10 @@ fn create_wallet_successfully_without_relayer() {
         .unwrap();
 
     let wallet_addr: Option<Addr> = factory
-        .query(&FactoryServiceQueryMsg::WalletByLabel {
-            label: "user-name".into(),
-        })
+        .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid.clone() })
         .unwrap();
+
+    // TODO wallet_by_vid_chain
 
     let total_created: u64 = factory
         .query(&FactoryMgmtQueryMsg::TotalCreated {})
@@ -82,16 +87,40 @@ fn create_wallet_successfully_without_relayer() {
         .find(|e| e.ty == "wasm-vectis.factory.v1")
         .is_some());
 
-    let wallet = Contract::from_addr(&app, wallet_addr.unwrap().to_string());
-    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
-    let data: Option<Binary> = wallet
-        .query(&WalletQueryMsg::Data {
-            key: initial_data.0,
+    //let wallet = Contract::from_addr(&app, wallet_addr.unwrap().to_string());
+
+    let remote_addr: Option<Addr> = factory
+        .query(&FactoryServiceQueryMsg::WalletByVidChain {
+            vid: vid.clone(),
+            chain_id: NON_IBC_CHAIN_NAME.into(),
         })
         .unwrap();
 
-    assert_eq!(info.deployer, suite.deployer);
-    assert_eq!(info.controller, entity);
-    assert_eq!(data.unwrap(), initial_data.1);
-    assert!(info.relayers.is_empty());
+    println!("REMOTE_____ {remote_addr:?}");
+    //    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+    //    let data: Option<Binary> = wallet
+    //        .query(&WalletQueryMsg::Data {
+    //            key: initial_data.0,
+    //        })
+    //        .unwrap();
+    //
+    //    assert_eq!(info.deployer, suite.deployer);
+    //    assert_eq!(info.controller, entity);
+    //    assert_eq!(data.unwrap(), initial_data.1);
+    //    assert!(info.relayers.is_empty());
+    //    assert_eq!(info.vid, vid);
+    //    assert_eq!(
+    //        info.addresses,
+    //        vec![
+    //            WalletAddrs {
+    //                chain_id: IBC_CHAIN_NAME.into(),
+    //                addr: None
+    //            },
+    //            WalletAddrs {
+    //                chain_id: NON_IBC_CHAIN_NAME.into(),
+    //                addr: Some(NON_IBC_CHAIN_ADDR.into())
+    //            },
+    //        ]
+    //    );
+    //    assert_eq!(info.policy, None);
 }

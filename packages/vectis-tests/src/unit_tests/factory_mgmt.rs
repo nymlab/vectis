@@ -25,7 +25,10 @@ fn factory_instantiates_correctly_without_authenticators() {
             proxy_code_id: proxy_code_id.code_id(),
             wallet_fee: wallet_fee.clone(),
             authenticators: None,
-            supported_chains: Some(vec![(remote_chain_id.into(), remote_chain_connection)]),
+            supported_chains: Some(vec![(
+                remote_chain_id.into(),
+                remote_chain_connection.clone(),
+            )]),
         })
         .with_label("Vectis Factory")
         .call(deployer)

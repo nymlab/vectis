@@ -21,8 +21,8 @@ pub struct CreateWalletMsg {
     pub relayers: Vec<String>,
     /// The fund to send to the wallet initially when it is created
     pub proxy_initial_funds: Vec<Coin>,
-    /// Label of the wallet which must be unique
-    pub label: String,
+    /// Vectis ID of the wallet which must be unique
+    pub vid: String,
     /// Initial data to be set in the proxy
     /// Record is a kv pair  
     pub initial_data: Vec<(Binary, Binary)>,
@@ -127,6 +127,6 @@ pub enum ChainConnection {
     /// IBC connection-id establised on hub chain
     IBC(String),
     /// Other non-IBC chains: frontend is expected to interpret this string
-    /// For example some policy for constructing the Ethereum Addr
+    /// For example some useful info for resolving, maybe an endpoint
     Other(String),
 }

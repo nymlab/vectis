@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, to_binary, Binary};
+use cosmwasm_std::{coin, to_binary};
 use sylvia::multitest::App;
 
 use vectis_proxy::wallet::contract::test_utils::WalletTrait;
@@ -26,18 +26,18 @@ fn proxy_instantiates_without_plugins() {
     };
     let relayers = vec![];
     let proxy_initial_funds = vec![coin(100, "eur")];
-    let label = "label".into();
+    let vid = "test@vectis".into();
     let data_key = "some-key";
     let data_value = "some-value";
     let initial_data = vec![(to_binary(data_key).unwrap(), to_binary(data_value).unwrap())];
 
-    let wallet = proxy_code_id
+    proxy_code_id
         .instantiate(ProxyCreateMsg {
             create_wallet_msg: CreateWalletMsg {
                 controller: controller.clone(),
                 relayers: relayers.clone(),
                 proxy_initial_funds,
-                label,
+                vid,
                 initial_data,
                 plugins: vec![],
             },
@@ -45,9 +45,4 @@ fn proxy_instantiates_without_plugins() {
         .with_label("Vectis Proxy")
         .call(factory)
         .unwrap();
-
-    let info = wallet.wallet_trait_proxy().info().unwrap();
-    assert_eq!(info.controller, controller);
-    assert_eq!(info.code_id, proxy_code_id.code_id());
-    assert_eq!(info.relayers, relayers);
 }

@@ -78,7 +78,7 @@ pub struct WalletAddrs {
     /// The chain id / name of the remote chain
     pub chain_id: String,
     /// The address associated on the remote chain
-    pub addr: String,
+    pub addr: Option<String>,
 }
 
 #[cw_serde]
@@ -100,7 +100,7 @@ pub struct WalletInfo {
     /// Addresses on other chains
     pub addresses: Vec<WalletAddrs>,
     /// The wallet policy
-    pub policy: Binary,
+    pub policy: Option<Binary>,
 }
 
 #[cw_serde]

@@ -25,3 +25,10 @@ pub const MINTER_CAP: u128 = 10000;
 pub const IDEPLOYER: usize = 0;
 pub const ICOMMITTEE: usize = 1;
 pub const IRELAYER: usize = 2;
+
+// storage const
+pub const IBC_CHAIN_NAME: &str = "ibc-chain-1";
+pub const IBC_CHAIN_CONN: &str = "connection-1";
+pub const NON_IBC_CHAIN_NAME: &str = "non-ibc-chain-1";
+pub const NON_IBC_CHAIN_CONN: &str = "some-url";
+pub const NON_IBC_CHAIN_ADDR: &str = "0x123";

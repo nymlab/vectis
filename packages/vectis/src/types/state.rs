@@ -42,8 +42,9 @@ pub const AUTHENTICATORS: Authenticators = Map::new("authenticators");
 pub type Plugins<'a> = Map<'a, u64, Plugin>;
 pub const PLUGINS: Plugins = Map::new("registry_plugins");
 
-// Stored on Factory and queried by proxies
-/// The supported chains
+// Stored on Factory and queried by others
+// It is assumed that proxy have the `ChainName` in the data
+/// The supported chains Map<ChainName, ChainConnection>
 pub type SupportedChains<'a> = Map<'a, &'a str, ChainConnection>;
 pub const SUPPORTEDCHAINS: SupportedChains = Map::new("supported_chains");
 

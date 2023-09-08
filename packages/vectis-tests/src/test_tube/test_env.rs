@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, to_binary, Coin, CosmosMsg, HexBinary, Uint128, WasmMsg};
+use cosmwasm_std::{coin, to_binary, Addr, Coin, CosmosMsg, HexBinary, Uint128, WasmMsg};
 use osmosis_test_tube::{Account, OsmosisTestApp, SigningAccount};
 
 use vectis_factory::contract::InstantiateMsg as FactoryInstMsg;
@@ -6,7 +6,8 @@ use vectis_plugin_registry::contract::InstantiateMsg as PluginRegInstMsg;
 
 use vectis_wallet::types::{
     authenticator::{AuthenticatorType, WebauthnInstantaiteMsg},
-    factory::{AuthenticatorInstInfo, WalletFactoryInstantiateMsg},
+    factory::{AuthenticatorInstInfo, ChainConnection, WalletFactoryInstantiateMsg},
+    state::VectisActors,
 };
 
 use super::util::{constants::*, contract::Contract};
@@ -109,6 +110,16 @@ impl<'a> HubChainSuite<'a> {
                 code_id: auth_code_id,
                 inst_msg: to_binary(&WebauthnInstantaiteMsg {}).unwrap(),
             }]),
+            supported_chains: Some(vec![
+                (
+                    IBC_CHAIN_NAME.into(),
+                    ChainConnection::IBC(NON_IBC_CHAIN_CONN.into()),
+                ),
+                (
+                    NON_IBC_CHAIN_NAME.into(),
+                    ChainConnection::Other(NON_IBC_CHAIN_CONN.into()),
+                ),
+            ]),
         };
 
         // ===========================================================
@@ -203,6 +214,72 @@ impl<'a> HubChainSuite<'a> {
             .unwrap()
             .value;
 
+        // ===============================================================
+        //
+        // Update Deployer with ITEMS: Factory, PluginReg, PluginCommitte
+        //
+        // ==============================================================
+
+        // Factory
+        deployer
+            .execute(
+                &add_item_prop_msg(
+                    deployer.contract_addr.clone(),
+                    VectisActors::Factory,
+                    factory.clone(),
+                ),
+                &[],
+                &accounts[ICOMMITTEE],
+            )
+            .unwrap();
+        deployer
+            .execute(
+                &cw3flexExecMsg::Execute { proposal_id: 3 },
+                &[],
+                &accounts[ICOMMITTEE],
+            )
+            .unwrap();
+
+        // PluginReg
+        deployer
+            .execute(
+                &add_item_prop_msg(
+                    deployer.contract_addr.clone(),
+                    VectisActors::PluginRegistry,
+                    plugin_registry.clone(),
+                ),
+                &[],
+                &accounts[ICOMMITTEE],
+            )
+            .unwrap();
+        deployer
+            .execute(
+                &cw3flexExecMsg::Execute { proposal_id: 4 },
+                &[],
+                &accounts[ICOMMITTEE],
+            )
+            .unwrap();
+
+        // Plugin Committee
+        deployer
+            .execute(
+                &add_item_prop_msg(
+                    deployer.contract_addr.clone(),
+                    VectisActors::PluginCommittee,
+                    plugin_committee.contract_addr.clone(),
+                ),
+                &[],
+                &accounts[ICOMMITTEE],
+            )
+            .unwrap();
+        deployer
+            .execute(
+                &cw3flexExecMsg::Execute { proposal_id: 5 },
+                &[],
+                &accounts[ICOMMITTEE],
+            )
+            .unwrap();
+
         Self {
             app,
             deployer_group: mgmt_group.contract_addr,
@@ -213,5 +290,22 @@ impl<'a> HubChainSuite<'a> {
             plugin_registry,
             accounts,
         }
+    }
+}
+
+pub fn add_item_prop_msg(deployer: String, key: VectisActors, value: String) -> cw3flexExecMsg {
+    cw3flexExecMsg::Propose {
+        title: "Add_Item".into(),
+        description: key.to_string(),
+        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: deployer,
+            msg: to_binary(&cw3flexExecMsg::UpdateItem {
+                key: format!("{key}"),
+                value: value.to_string(),
+            })
+            .unwrap(),
+            funds: vec![],
+        })],
+        latest: None,
     }
 }
