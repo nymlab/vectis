@@ -4,3 +4,6 @@
 [submodule "contracts/authenticators"]
 	path = contracts/authenticators
 	url = git@github.com:nymlab/vectis-authenticators.git
+[submodule "ts"]
+	path = ts
+	url = git@github.com:nymlab/vectis-types.git
