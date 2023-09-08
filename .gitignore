@@ -34,3 +34,5 @@ cli/types/**
 
 # env
 .env
+
+**/tmp/

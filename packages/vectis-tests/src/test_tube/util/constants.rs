@@ -12,16 +12,11 @@ pub const REGISTRY_CODE_PATH: &str = "./../../artifacts/vectis_plugin_registry.w
 pub const AUTH_CODE_PATH: &str = "./../../artifacts/vectis_webauthn_authenticator.wasm";
 
 pub const DENOM: &str = "uosmo";
-pub const MINT_AMOUNT: u128 = 2u128;
 pub const WALLET_FEE: u128 = 10u128;
 pub const REGISTRY_FEE: u128 = 10u128;
-pub const INSTALL_FEE: u128 = 10u128;
-pub const ZERO_WALLET_FEE: u128 = 0u128;
-pub const ZERO_REGISTRY_FEE: u128 = 0u128;
-pub const ZERO_INSTALL_FEE: u128 = 0u128;
-pub const MINTER_CAP: u128 = 10000;
+pub const INIT_BALANCE: u128 = 10u128;
 
-// Indexes
+// Indexes for test_env
 pub const IDEPLOYER: usize = 0;
 pub const ICOMMITTEE: usize = 1;
 pub const IRELAYER: usize = 2;

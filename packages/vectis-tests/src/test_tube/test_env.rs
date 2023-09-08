@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, to_binary, Addr, Coin, CosmosMsg, HexBinary, Uint128, WasmMsg};
+use cosmwasm_std::{coin, to_binary, Coin, CosmosMsg, HexBinary, Uint128, WasmMsg};
 use osmosis_test_tube::{Account, OsmosisTestApp, SigningAccount};
 
 use vectis_factory::contract::InstantiateMsg as FactoryInstMsg;

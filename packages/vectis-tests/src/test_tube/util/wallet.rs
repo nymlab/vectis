@@ -31,6 +31,17 @@ pub fn default_entity() -> Entity {
     }
 }
 
+pub fn webauthn_entity(data: &[u8]) -> Entity {
+    Entity {
+        auth: Authenticator {
+            ty: AuthenticatorType::Webauthn,
+            provider: AuthenticatorProvider::Vectis,
+        },
+        data: to_binary(&data).unwrap(),
+        nonce: 0,
+    }
+}
+
 pub fn create_wallet_msg(vid: String) -> CreateWalletMsg {
     let controller = default_entity();
     CreateWalletMsg {
