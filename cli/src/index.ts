@@ -1,11 +1,12 @@
 import figlet from "figlet";
 import { Command } from "commander";
 import { uploadAction } from "./upload";
-import { test, test_query } from "./tx";
+import { test, test_query } from "./test";
 import { deploy } from "./deploy-vectis";
 import { handleAccounts } from "./accounts";
 import { handleNetworkQuery } from "./queries";
 import { generateTypes } from "./types";
+import { factory } from "./factory";
 
 console.log(figlet.textSync("Vectis"));
 
@@ -18,7 +19,17 @@ program
     .option("--vectis", "Upload vectis contracts")
     .action(uploadAction);
 
-program.command("tx").argument("<network>", "Network to add contract(s) to").action(test);
+program.command("test").argument("<network>", "Network to test create and send tx").action(test);
+
+program
+    .command("factory")
+    .argument("<network>", "Network")
+    .option("--action [action]", "Action to perform")
+    .option("--args [args...]")
+    .description(
+        "e.g. vectisCLI factory juno_testnet --action updateSupportedChains --args theta-testnet-001 ibc connection-697"
+    )
+    .action(factory);
 
 program.command("generateAccounts").option("--network [networks...]", "Network to generate").action(handleAccounts);
 

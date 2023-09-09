@@ -1,5 +1,6 @@
 import CWClient from "./cosmwasm";
 import { Cw3FlexClient as Cw3FlexC, Cw3FlexT } from "../interfaces";
+import { FactoryT } from "../interfaces";
 import { toCosmosMsg } from "../utils/enconding";
 import { maxVotingPeriod, vectisCommitteeThreshold } from "../config/vectis";
 
@@ -28,6 +29,34 @@ class Cw3FlexClient extends Cw3FlexC {
         );
 
         return new Cw3FlexClient(cw, cw.sender, contractAddress);
+    }
+
+    async update_supported_chain(chain_id: string, chain_connection: FactoryT.ChainConnection, factoryAddr: string) {
+        let updateMsg: FactoryT.FactoryManagementTraitExecMsg = {
+            update_supported_interchain: { chain_id, chain_connection },
+        };
+        await this.propose(
+            {
+                description: "update supported chain",
+                latest: undefined,
+                msgs: [
+                    {
+                        wasm: {
+                            execute: {
+                                contract_addr: factoryAddr,
+                                funds: [],
+                                msg: toCosmosMsg(updateMsg),
+                            },
+                        },
+                    },
+                ],
+                title: "update supported chain",
+            },
+            "auto"
+        );
+        let proposals = await this.listProposals({});
+        const propId = proposals.proposals.pop()!.id;
+        await this.execute({ proposalId: propId });
     }
 
     async add_item(key: string, value: string) {
