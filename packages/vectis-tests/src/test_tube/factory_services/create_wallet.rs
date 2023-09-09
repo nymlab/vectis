@@ -1,6 +1,11 @@
+use crate::test_tube::{
+    test_env::HubChainSuite,
+    util::{constants::*, contract::Contract, wallet::default_entity},
+};
 use cosmwasm_std::{coin, to_binary, Addr, Binary};
-use osmosis_test_tube::OsmosisTestApp;
-
+use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;
+use osmosis_test_tube::{Bank, OsmosisTestApp};
+use test_tube::module::Module;
 use vectis_wallet::{
     interface::{
         factory_management_trait::QueryMsg as FactoryMgmtQueryMsg,
@@ -10,31 +15,10 @@ use vectis_wallet::{
         wallet_trait::QueryMsg as WalletQueryMsg,
     },
     types::{
-        authenticator::AuthenticatorType,
         factory::CreateWalletMsg,
         wallet::{WalletAddrs, WalletInfo},
     },
 };
-
-use crate::test_tube::{
-    test_env::HubChainSuite,
-    util::{constants::*, contract::Contract, wallet::default_entity},
-};
-
-#[test]
-fn create_factory_with_correct_authenticator() {
-    let app = OsmosisTestApp::new();
-    let suite = HubChainSuite::init(&app);
-
-    let factory = Contract::from_addr(&app, suite.factory);
-    let auth_provide: Addr = factory
-        .query(&FactoryMgmtQueryMsg::AuthProviderAddr {
-            ty: AuthenticatorType::Webauthn,
-        })
-        .unwrap();
-
-    assert_eq!(suite.webauthn, auth_provide.to_string())
-}
 
 #[test]
 fn create_wallet_successfully_without_relayer() {
@@ -115,8 +99,85 @@ fn create_wallet_successfully_without_relayer() {
     );
     assert_eq!(info.policy, None);
 }
+
 #[test]
-fn cannot_create_same_vid() {
+fn create_with_inital_balance() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+
+    let entity = default_entity();
+    let vid = String::from("user-name@vectis");
+
+    let create_msg = FactoryServiceExecMsg::CreateWallet {
+        create_wallet_msg: CreateWalletMsg {
+            controller: entity.clone(),
+            relayers: vec![],
+            proxy_initial_funds: vec![coin(INIT_BALANCE, DENOM)],
+            vid: vid.clone(),
+            initial_data: vec![],
+            plugins: vec![],
+        },
+    };
+
+    let factory = Contract::from_addr(&app, suite.factory);
+
+    factory
+        .execute(
+            &create_msg,
+            &[coin(WALLET_FEE + INIT_BALANCE, DENOM)],
+            &suite.accounts[IDEPLOYER],
+        )
+        .unwrap();
+
+    let wallet_addr: Option<Addr> = factory
+        .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid.into() })
+        .unwrap();
+
+    let bank = Bank::new(&app);
+    let init_balance = bank
+        .query_balance(&QueryBalanceRequest {
+            address: wallet_addr.unwrap().to_string(),
+            denom: DENOM.into(),
+        })
+        .unwrap();
+    assert_eq!(
+        init_balance.balance.unwrap().amount,
+        INIT_BALANCE.to_string()
+    );
+}
+
+#[test]
+fn cannot_create_with_incorrect_total_fee() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+
+    let entity = default_entity();
+    let vid = String::from("user-name@vectis");
+
+    let create_msg = FactoryServiceExecMsg::CreateWallet {
+        create_wallet_msg: CreateWalletMsg {
+            controller: entity.clone(),
+            relayers: vec![],
+            proxy_initial_funds: vec![coin(INIT_BALANCE, DENOM)],
+            vid: vid.clone(),
+            initial_data: vec![],
+            plugins: vec![],
+        },
+    };
+
+    let factory = Contract::from_addr(&app, suite.factory);
+    // incorrect fee: should be INIT_BALANCE + WALLET_FEE
+    factory
+        .execute(
+            &create_msg,
+            &[coin(WALLET_FEE, DENOM)],
+            &suite.accounts[IDEPLOYER],
+        )
+        .unwrap_err();
+}
+
+#[test]
+fn cannot_create_using_same_vid() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
 
@@ -149,6 +210,37 @@ fn cannot_create_same_vid() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE, DENOM)],
+            &suite.accounts[IDEPLOYER],
+        )
+        .unwrap_err();
+}
+
+#[test]
+fn cannot_create_with_incorrect_fee() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+
+    let entity = default_entity();
+    let vid = String::from("user-name@vectis");
+
+    let create_msg = FactoryServiceExecMsg::CreateWallet {
+        create_wallet_msg: CreateWalletMsg {
+            controller: entity.clone(),
+            // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
+            relayers: vec![],
+            proxy_initial_funds: vec![],
+            vid: vid.clone(),
+            initial_data: vec![],
+            plugins: vec![],
+        },
+    };
+
+    let factory = Contract::from_addr(&app, suite.factory);
+    // incorrect wallet fee
+    factory
+        .execute(
+            &create_msg,
+            &[coin(WALLET_FEE - 3u128, DENOM)],
             &suite.accounts[IDEPLOYER],
         )
         .unwrap_err();
