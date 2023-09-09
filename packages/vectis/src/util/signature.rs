@@ -60,6 +60,10 @@ pub fn relay_tx_auth_check(
         AuthenticatorType::Webauthn => {
             let webauthn_tx_msg: WebauthnRelayedTxMsg = from_binary(&transaction.message)?;
 
+            deps.api.debug(&format!(
+                "SIGNED DATA BEFORE BYTES: {}",
+                &webauthn_tx_msg.signed_data,
+            ));
             let msg = authenticator_trait::QueryMsg::Authenticate {
                 // this is the JSON string of the VectisRelayTx, containing the Vec<CosmosMsg>
                 signed_data: webauthn_tx_msg.signed_data.as_bytes().to_vec(),

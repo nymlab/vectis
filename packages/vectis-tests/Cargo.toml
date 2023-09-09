@@ -43,3 +43,4 @@ sha2  = { workspace = true }
 ripemd160  = { workspace = true }
 p256 = {version = "0.13.2", default-features = false, features = ["alloc", "ecdsa"]}
 base64ct = {version = "1.6.0", default-features = false, features = ["alloc"] }
+serial_test = "2.0.0"

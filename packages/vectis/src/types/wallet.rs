@@ -124,6 +124,9 @@ pub struct VectisRelayedTx {
     /// nonce of the entity for relayed tx
     pub nonce: Nonce,
     /// fee for the relaying party
+    /// We skip serializing on none because this is turned into json string to be hashed / signed
+    /// must align between rust and ts tests
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sponsor_fee: Option<Coin>,
 }
 

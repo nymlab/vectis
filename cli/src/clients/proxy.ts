@@ -46,6 +46,9 @@ class ProxyClient extends ProxyC {
             signature,
         };
 
+        console.log(relayTxMsg);
+        console.log(JSON.stringify(relayTxMsg));
+
         return this.authExec({ transaction: relayTxMsg });
     }
 }

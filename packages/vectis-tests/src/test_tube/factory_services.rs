@@ -44,9 +44,10 @@ fn create_wallet_successfully_without_relayer() {
     let entity = default_entity();
     let vid = String::from("user-name@vectis");
 
+    let remote_chain_addr_in_base_64 = to_binary(NON_IBC_CHAIN_ADDR).unwrap();
     let initial_data = (
         to_binary(NON_IBC_CHAIN_NAME).unwrap(),
-        to_binary(NON_IBC_CHAIN_ADDR).unwrap(),
+        remote_chain_addr_in_base_64.clone(),
     );
 
     let create_msg = FactoryServiceExecMsg::CreateWallet {
@@ -108,9 +109,47 @@ fn create_wallet_successfully_without_relayer() {
             },
             WalletAddrs {
                 chain_id: NON_IBC_CHAIN_NAME.into(),
-                addr: Some(NON_IBC_CHAIN_ADDR.into())
+                addr: Some(remote_chain_addr_in_base_64.to_string())
             },
         ]
     );
     assert_eq!(info.policy, None);
+}
+#[test]
+fn cannot_create_same_vid() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+
+    let entity = default_entity();
+    let vid = String::from("user-name@vectis");
+
+    let create_msg = FactoryServiceExecMsg::CreateWallet {
+        create_wallet_msg: CreateWalletMsg {
+            controller: entity.clone(),
+            // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
+            relayers: vec![],
+            proxy_initial_funds: vec![],
+            vid: vid.clone(),
+            initial_data: vec![],
+            plugins: vec![],
+        },
+    };
+
+    let factory = Contract::from_addr(&app, suite.factory);
+    factory
+        .execute(
+            &create_msg,
+            &[coin(WALLET_FEE, DENOM)],
+            &suite.accounts[IDEPLOYER],
+        )
+        .unwrap();
+
+    // Recreate again
+    factory
+        .execute(
+            &create_msg,
+            &[coin(WALLET_FEE, DENOM)],
+            &suite.accounts[IDEPLOYER],
+        )
+        .unwrap_err();
 }

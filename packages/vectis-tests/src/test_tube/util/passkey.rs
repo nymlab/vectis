@@ -15,6 +15,7 @@ pub fn must_create_credential(vid: &str) -> Vec<u8> {
         .unwrap();
 
     if !output.status.success() {
+        println!("output: {:?}", output);
         panic!("output failed")
     }
 

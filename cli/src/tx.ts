@@ -70,7 +70,7 @@ export async function test(network: Chains, opts: OptionValues) {
     let res = await factoryClient.createWalletWebAuthn(
         pubkey,
         [[dataKey, dataValue]],
-        "label-hash-2", // the hash of the label / display name
+        "test-hash-1", // the hash of the label / display name
         [], // this is plugins to instantiate, we will keep as none for now
         [{ denom: "ujunox", amount: "100000" }], // initial proxy token
         [client.sender]

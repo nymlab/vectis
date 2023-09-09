@@ -1,28 +1,19 @@
-use super::util::passkey::{
-    de_client_data, hash_to_base64url_string, hash_to_hex_string, must_create_credential,
-    must_get_credential,
-};
-use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Binary, CosmosMsg, Empty};
+use cosmwasm_std::{coin, BankMsg, CosmosMsg, Empty};
 use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;
-use osmosis_test_tube::{Account, Bank, OsmosisTestApp, SigningAccount};
-use serde_json_wasm;
+use osmosis_test_tube::{Account, Bank, OsmosisTestApp};
+use serial_test::serial;
 use test_tube::module::Module;
 
 use vectis_wallet::{
     interface::{
-        factory_management_trait::QueryMsg as FactoryMgmtQueryMsg,
         factory_service_trait::{
             ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
         },
         wallet_trait::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
     },
     types::{
-        authenticator::AuthenticatorType,
-        entity::Entity,
         factory::CreateWalletMsg,
-        wallet::{
-            RelayTransaction, VectisRelayedTx, WalletAddrs, WalletInfo, WebauthnRelayedTxMsg,
-        },
+        wallet::{Nonce, WalletInfo},
     },
 };
 
@@ -31,90 +22,104 @@ use super::{
     util::{
         constants::*,
         contract::Contract,
-        wallet::{default_entity, webauthn_entity},
+        msgs::simple_bank_send,
+        wallet::{create_webauthn_wallet, sign_and_create_relay_tx},
     },
 };
 
 #[test]
-fn wallet_can_do_webauthn_tx() {
+#[serial]
+fn wallet_can_do_webauthn_tx_success() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
 
-    let vid1 = "test-user";
-    let pubkey = must_create_credential(vid1);
-
-    let entity = webauthn_entity(&pubkey);
+    let vid = "test-user";
     let transfer = coin(5, DENOM);
 
-    let create_msg = FactoryServiceExecMsg::CreateWallet {
-        create_wallet_msg: CreateWalletMsg {
-            controller: entity.clone(),
-            relayers: vec![],
-            proxy_initial_funds: vec![coin(INIT_BALANCE, DENOM)],
-            vid: vid1.into(),
-            initial_data: vec![],
-            plugins: vec![],
-        },
-    };
-
-    let factory = Contract::from_addr(&app, suite.factory);
-    factory
-        .execute(
-            &create_msg,
-            &[coin(WALLET_FEE + INIT_BALANCE, DENOM)],
-            &suite.accounts[IDEPLOYER],
-        )
-        .unwrap();
-
-    let wallet_addr: Option<Addr> = factory
-        .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid1.into() })
-        .unwrap();
-
-    let wallet = Contract::from_addr(&app, wallet_addr.unwrap().to_string());
+    let (wallet_addr, pubkey) = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        vid,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+    let wallet = Contract::from_addr(&app, wallet_addr.into_string());
 
     let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
     assert_eq!(info.controller.nonce, 0);
-    assert_eq!(info.controller.data, to_binary(&pubkey).unwrap());
+    assert_eq!(info.controller.data, pubkey.as_slice());
 
-    let init_balance = Bank::new(&app)
+    let bank = Bank::new(&app);
+    let init_balance = bank
+        .query_balance(&QueryBalanceRequest {
+            address: wallet.contract_addr.clone(),
+            denom: DENOM.into(),
+        })
+        .unwrap();
+    assert_eq!(
+        init_balance.balance.unwrap().amount,
+        INIT_BALANCE.to_string()
+    );
+
+    // ===========================
+    // Signing and create tx data
+    // ===========================
+    let relay_tx = sign_and_create_relay_tx(
+        vec![CosmosMsg::<Empty>::Bank(BankMsg::Send {
+            to_address: suite.accounts[IDEPLOYER].address(),
+            amount: vec![transfer.clone()],
+        })],
+        info.controller.nonce,
+        vid,
+    );
+
+    wallet
+        .execute(
+            &WalletExecMsg::AuthExec {
+                transaction: relay_tx,
+            },
+            &[],
+            &suite.accounts[IRELAYER],
+        )
+        .unwrap();
+
+    let post_balance = bank
         .query_balance(&QueryBalanceRequest {
             address: wallet.contract_addr.clone(),
             denom: DENOM.into(),
         })
         .unwrap();
 
-    // =======================
-    // Signing data
-    // =======================
-    let signed_msg = VectisRelayedTx {
-        messages: vec![CosmosMsg::<Empty>::Bank(BankMsg::Send {
-            to_address: suite.accounts[IDEPLOYER].address(),
-            amount: vec![transfer],
-        })],
-        nonce: info.controller.nonce,
-        sponsor_fee: None,
-    };
+    assert_eq!(
+        (INIT_BALANCE - transfer.amount.u128()).to_string(),
+        post_balance.balance.unwrap().amount
+    )
+}
 
-    let signed_data = serde_json_wasm::to_string(&signed_msg).unwrap();
+#[test]
+#[serial]
+fn wrong_nonce_signature_fails() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
 
-    // We encode the hash vec into hex to pass to the cli
-    let challenge = hash_to_hex_string(signed_data.as_bytes());
-    let response = must_get_credential(vid1, challenge.clone());
+    let vid = "test-user";
+    let test_nonce: Nonce = 99;
 
-    // Compare the expeted challenge value to the one returned from passkey
-    let expect_challenge = hash_to_base64url_string(signed_data.as_bytes());
-    let challenge_in_client_data = de_client_data(&response.client_data_json);
-    assert_eq!(expect_challenge, challenge_in_client_data.challenge);
+    let (wallet_addr, _) = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        vid,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+    let wallet = Contract::from_addr(&app, wallet_addr.into_string());
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+    assert_ne!(info.controller.nonce, test_nonce);
 
-    let relay_tx = RelayTransaction {
-        message: to_binary(&WebauthnRelayedTxMsg {
-            signed_data,
-            auth_data: to_binary(&response.authenticator_data.to_owned()).unwrap(),
-            client_data: to_binary(&response.client_data_json.to_owned()).unwrap(),
-        })
-        .unwrap(),
-        signature: to_binary(&response.signature.to_owned()).unwrap(),
-    };
+    // ===========================
+    // Signing and create tx data
+    // ===========================
+    let relay_tx = sign_and_create_relay_tx(vec![simple_bank_send()], test_nonce, vid);
 
     let res = wallet.execute(
         &WalletExecMsg::AuthExec {
@@ -123,6 +128,44 @@ fn wallet_can_do_webauthn_tx() {
         &[],
         &suite.accounts[IRELAYER],
     );
+    assert!(res.is_err())
+}
 
-    println!("RES: {:?}", res);
+#[test]
+#[serial]
+fn wrong_entity_signature_fails() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+
+    let vid_1 = "test-user-1";
+    let vid_2 = "test-user-2";
+
+    let (wallet_addr_1, _) = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        vid_1,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+    let _ = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        vid_2,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+
+    let wallet_1 = Contract::from_addr(&app, wallet_addr_1.into_string());
+
+    // sign by wrong user
+    let relay_tx = sign_and_create_relay_tx(vec![simple_bank_send()], 0, vid_2);
+
+    let res = wallet_1.execute(
+        &WalletExecMsg::AuthExec {
+            transaction: relay_tx,
+        },
+        &[],
+        &suite.accounts[IRELAYER],
+    );
+    assert!(res.is_err())
 }
