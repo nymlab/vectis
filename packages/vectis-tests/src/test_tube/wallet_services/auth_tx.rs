@@ -17,7 +17,7 @@ use vectis_wallet::{
     },
 };
 
-use super::{
+use crate::test_tube::{
     test_env::HubChainSuite,
     util::{
         constants::*,
