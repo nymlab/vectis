@@ -1,4 +1,4 @@
-use super::constants::DENOM;
+use crate::constants::DENOM;
 use cosmwasm_std::{coin, BankMsg, CosmosMsg, Empty};
 
 pub fn simple_bank_send() -> CosmosMsg {

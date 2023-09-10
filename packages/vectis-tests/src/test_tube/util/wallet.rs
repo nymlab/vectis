@@ -1,21 +1,20 @@
 use cosmwasm_std::{coin, to_binary, Addr, Binary, CosmosMsg};
-use osmosis_test_tube::{Account, Bank, OsmosisTestApp};
+use osmosis_test_tube::OsmosisTestApp;
 use test_tube::SigningAccount;
 
-use super::{
+use crate::{
     constants::*,
-    contract::Contract,
-    passkey::{
-        de_client_data, hash_to_base64url_string, hash_to_hex_string, must_create_credential,
-        must_get_credential,
+    test_tube::util::{
+        contract::Contract,
+        passkey::{
+            de_client_data, hash_to_base64url_string, hash_to_hex_string, must_create_credential,
+            must_get_credential,
+        },
     },
 };
 use vectis_wallet::{
-    interface::{
-        factory_service_trait::{
-            ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
-        },
-        wallet_trait::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
+    interface::factory_service_trait::{
+        ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
     },
     types::{
         authenticator::{Authenticator, AuthenticatorProvider, AuthenticatorType},

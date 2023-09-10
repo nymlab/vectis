@@ -9,6 +9,8 @@ pub struct TierDetails {
     pub fee: Coin,
 }
 
+/// Subscription tiers
+/// Note: Registry interacts with the u8 so this can be extended
 #[cw_serde]
 pub enum SubscriptionTier {
     Free = 0,
@@ -31,4 +33,6 @@ pub struct RegistryConfigResponse {
     pub registry_fee: Coin,
     pub deployer_addr: String,
     pub subscription_tiers: Vec<(u8, TierDetails)>,
+    /// The supported Proxies mapped by codehash to version
+    pub supported_proxies: Vec<(String, String)>,
 }

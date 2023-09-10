@@ -1,2 +1,2 @@
-pub mod create_wallet;
+pub mod create_and_query;
 pub mod instantiate;

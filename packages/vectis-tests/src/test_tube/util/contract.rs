@@ -1,11 +1,7 @@
-use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, WasmMsg};
-use osmosis_std::types::cosmwasm::wasm::v1::{
-    AccessConfig, MsgExecuteContract, MsgExecuteContractResponse, MsgInstantiateContract,
-    MsgInstantiateContractResponse, MsgStoreCode, MsgStoreCodeResponse,
-    QuerySmartContractStateRequest, QuerySmartContractStateResponse,
-};
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, WasmMsg};
+use osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse;
 use osmosis_test_tube::{
-    Account, Bank, Module, OsmosisTestApp, Runner, RunnerError, RunnerExecuteResult, RunnerResult,
+    Account, Module, OsmosisTestApp, Runner, RunnerError, RunnerExecuteResult, RunnerResult,
     SigningAccount, Wasm,
 };
 use serde::{de::DeserializeOwned, Serialize};

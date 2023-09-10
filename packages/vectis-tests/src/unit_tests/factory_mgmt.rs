@@ -9,7 +9,6 @@ use vectis_wallet::types::factory::{
 #[test]
 fn factory_instantiates_correctly_without_authenticators() {
     let app = App::default();
-
     let deployer = "deployer";
     let factory_code_id = vectis_factory::contract::multitest_utils::CodeId::store_code(&app);
     let proxy_code_id = vectis_proxy::contract::multitest_utils::CodeId::store_code(&app);

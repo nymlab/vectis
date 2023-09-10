@@ -40,7 +40,6 @@ pub fn must_get_credential(vid: &str, challenge: String) -> AuthenticatorAsserti
     }
 
     let s = String::from_utf8(output.stdout.clone()).unwrap();
-    println!("RESPONSE::: {}", s);
 
     let response: AuthenticatorAssertionResponse = serde_json::from_str(&s).unwrap();
 
@@ -48,9 +47,7 @@ pub fn must_get_credential(vid: &str, challenge: String) -> AuthenticatorAsserti
 }
 
 pub(crate) fn hash_to_hex_string<'a>(data: &[u8]) -> String {
-    println!("hash bytes: {:?}", Sha256::digest(data).to_vec());
     let s = HexBinary::from(Sha256::digest(data).to_vec());
-    //Sha256::digest(data).to_vec()
     s.to_hex()
 }
 

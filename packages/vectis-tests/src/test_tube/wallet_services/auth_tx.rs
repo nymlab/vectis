@@ -9,13 +9,15 @@ use vectis_wallet::{
     types::wallet::{Nonce, WalletInfo},
 };
 
-use crate::test_tube::{
-    test_env::HubChainSuite,
-    util::{
-        constants::*,
-        contract::Contract,
-        msgs::simple_bank_send,
-        wallet::{create_webauthn_wallet, sign_and_create_relay_tx},
+use crate::{
+    constants::*,
+    test_tube::{
+        test_env::HubChainSuite,
+        util::{
+            contract::Contract,
+            msgs::simple_bank_send,
+            wallet::{create_webauthn_wallet, sign_and_create_relay_tx},
+        },
     },
 };
 

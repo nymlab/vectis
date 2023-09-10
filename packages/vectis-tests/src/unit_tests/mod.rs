@@ -1,3 +1,3 @@
 #![cfg(test)]
 pub mod factory_mgmt;
-pub mod proxy;
+pub mod registry_mgmt;

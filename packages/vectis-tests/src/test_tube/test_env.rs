@@ -7,10 +7,11 @@ use vectis_plugin_registry::contract::InstantiateMsg as PluginRegInstMsg;
 use vectis_wallet::types::{
     authenticator::{AuthenticatorType, WebauthnInstantaiteMsg},
     factory::{AuthenticatorInstInfo, ChainConnection, WalletFactoryInstantiateMsg},
+    plugin_registry::SubscriptionTier,
     state::VectisActors,
 };
 
-use super::util::{constants::*, contract::Contract};
+use crate::{constants::*, test_tube::util::contract::Contract};
 use cw3_flex_multisig::msg::{ExecuteMsg as cw3flexExecMsg, InstantiateMsg as cw3flexInstMsg};
 use cw4::Member;
 use cw4_group::msg::InstantiateMsg as cw4InstMsg;
@@ -26,18 +27,16 @@ pub struct HubChainSuite<'a> {
     pub factory: String,
     // Webauthn address
     pub webauthn: String,
-    // deployer address: cw3_flex_multisig
+    // Vectis committee: deployer address: cw3_flex_multisig
     pub deployer: String,
-    //// deployer signer: of the group
-    //pub deployer_signer: Addr,
     // deployer group cw4
     pub deployer_group: String,
-    // PluginCommitte addr: cw3flex
-    pub plugin_committee: String,
     // PluginRegistry addr
     pub plugin_registry: String,
     // accounts
     pub accounts: Vec<SigningAccount>,
+    // test plugin code_id
+    pub test_plugin_code_id: u64,
 }
 
 impl<'a> HubChainSuite<'a> {
@@ -64,21 +63,6 @@ impl<'a> HubChainSuite<'a> {
 
         // Deploy the cw3 Flex for deploying factory
         let deployer = Contract::deploy(
-            app,
-            CW3FLEX_CODE_PATH,
-            &cw3flexInstMsg {
-                group_addr: mgmt_group.contract_addr.to_string(),
-                threshold: cw_utils::Threshold::AbsoluteCount { weight: 1 },
-                max_voting_period: cw_utils::Duration::Time(100),
-                executor: None,
-                proposal_deposit: None,
-            },
-            &accounts[0],
-        )
-        .unwrap();
-
-        // Deploy the cw3 Flex for managing plugins
-        let plugin_committee = Contract::deploy(
             app,
             CW3FLEX_CODE_PATH,
             &cw3flexInstMsg {
@@ -179,7 +163,7 @@ impl<'a> HubChainSuite<'a> {
         // ===========================================================
         let code_hash = HexBinary::from_hex(PROXY_CODE_HASH).unwrap();
         let plugin_reg_inst_msg = PluginRegInstMsg {
-            subscription_tiers: vec![],
+            subscription_tiers: vec![(SubscriptionTier::Free, tier_0())],
             supported_proxies: vec![(code_hash, VECTIS_VERSION.into())],
             registry_fee: coin(REGISTRY_FEE, DENOM),
         };
@@ -260,35 +244,15 @@ impl<'a> HubChainSuite<'a> {
             )
             .unwrap();
 
-        // Plugin Committee
-        deployer
-            .execute(
-                &add_item_prop_msg(
-                    deployer.contract_addr.clone(),
-                    VectisActors::PluginCommittee,
-                    plugin_committee.contract_addr.clone(),
-                ),
-                &[],
-                &accounts[ICOMMITTEE],
-            )
-            .unwrap();
-        deployer
-            .execute(
-                &cw3flexExecMsg::Execute { proposal_id: 5 },
-                &[],
-                &accounts[ICOMMITTEE],
-            )
-            .unwrap();
-
         Self {
             app,
             deployer_group: mgmt_group.contract_addr,
             deployer: deployer.contract_addr,
-            plugin_committee: plugin_committee.contract_addr,
             factory,
             webauthn,
             plugin_registry,
             accounts,
+            test_plugin_code_id: proxy_code_id,
         }
     }
 }

@@ -12,7 +12,6 @@ pub const ITEMS: Map<String, String> = Map::new("items");
 #[cw_serde]
 pub enum VectisActors {
     Factory,
-    PluginCommittee,
     PluginRegistry,
 }
 

@@ -1,6 +1,9 @@
-use crate::test_tube::{
-    test_env::HubChainSuite,
-    util::{constants::*, contract::Contract, wallet::default_entity},
+use crate::{
+    constants::*,
+    test_tube::{
+        test_env::HubChainSuite,
+        util::{contract::Contract, wallet::default_entity},
+    },
 };
 use cosmwasm_std::{coin, to_binary, Addr, Binary};
 use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;
@@ -20,6 +23,8 @@ use vectis_wallet::{
     },
 };
 
+// We cannot test with relayer in osmosis-test-tube.
+// Pending neutorn test-tube
 #[test]
 fn create_wallet_successfully_without_relayer() {
     let app = OsmosisTestApp::new();
@@ -28,10 +33,9 @@ fn create_wallet_successfully_without_relayer() {
     let entity = default_entity();
     let vid = String::from("user-name@vectis");
 
-    let remote_chain_addr_in_base_64 = to_binary(NON_IBC_CHAIN_ADDR).unwrap();
     let initial_data = (
         to_binary(NON_IBC_CHAIN_NAME).unwrap(),
-        remote_chain_addr_in_base_64.clone(),
+        to_binary(NON_IBC_CHAIN_ADDR).unwrap(),
     );
 
     let create_msg = FactoryServiceExecMsg::CreateWallet {
@@ -93,7 +97,7 @@ fn create_wallet_successfully_without_relayer() {
             },
             WalletAddrs {
                 chain_id: NON_IBC_CHAIN_NAME.into(),
-                addr: Some(remote_chain_addr_in_base_64.to_string())
+                addr: Some(NON_IBC_CHAIN_ADDR.into())
             },
         ]
     );
@@ -244,4 +248,71 @@ fn cannot_create_with_incorrect_fee() {
             &suite.accounts[IDEPLOYER],
         )
         .unwrap_err();
+}
+
+#[test]
+fn create_wallet_with_addrs_can_be_queired() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+
+    let entity = default_entity();
+    let vid = String::from("user-name@vectis");
+
+    let remote_chain_addr_in_base_64 = to_binary(NON_IBC_CHAIN_ADDR).unwrap();
+    let initial_data = (
+        to_binary(NON_IBC_CHAIN_NAME).unwrap(),
+        remote_chain_addr_in_base_64.clone(),
+    );
+
+    let create_msg = FactoryServiceExecMsg::CreateWallet {
+        create_wallet_msg: CreateWalletMsg {
+            controller: entity.clone(),
+            // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
+            relayers: vec![],
+            proxy_initial_funds: vec![],
+            vid: vid.clone(),
+            initial_data: vec![initial_data.clone()],
+            plugins: vec![],
+        },
+    };
+
+    let factory = Contract::from_addr(&app, suite.factory);
+    factory
+        .execute(
+            &create_msg,
+            &[coin(WALLET_FEE, "uosmo")],
+            &suite.accounts[IDEPLOYER],
+        )
+        .unwrap();
+
+    let wallet_addr: Option<Addr> = factory
+        .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid.clone() })
+        .unwrap();
+
+    let wallet = Contract::from_addr(&app, wallet_addr.unwrap().to_string());
+
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+
+    assert_eq!(
+        info.addresses,
+        vec![
+            WalletAddrs {
+                chain_id: IBC_CHAIN_NAME.into(),
+                addr: None
+            },
+            WalletAddrs {
+                chain_id: NON_IBC_CHAIN_NAME.into(),
+                addr: Some(NON_IBC_CHAIN_ADDR.into())
+            },
+        ]
+    );
+
+    let wallet_addr_remote: Option<String> = factory
+        .query(&FactoryServiceQueryMsg::WalletByVidChain {
+            vid: vid.clone(),
+            chain_id: NON_IBC_CHAIN_NAME.into(),
+        })
+        .unwrap();
+
+    assert_eq!(Some(NON_IBC_CHAIN_ADDR.to_string()), wallet_addr_remote)
 }
