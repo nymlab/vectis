@@ -14,8 +14,6 @@ export interface VectisContractsUploadResult {
 
 // These are all the contract
 export interface VectisContractsAddrs {
-    PluginCommittee: string;
-    PluginCommitteeGroup: string;
     VectisCommittee: string;
     VectisCommitteeGroup: string;
     Factory: string;

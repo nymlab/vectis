@@ -6,13 +6,7 @@ import { Cw4GroupClient, FactoryClient, CWClient, PluginRegClient, Cw3FlexClient
 import { Account } from "./config/accounts";
 import { toCosmosMsg } from "./utils/enconding";
 import { writeToFile, getAccountsPath, getUploadInfoPath, getDeployPath } from "./utils/fs";
-import {
-    vectisCommittee1Weight,
-    vectisCommittee2Weight,
-    vectisTechCommittee1Weight,
-    vectisTechCommittee2Weight,
-    VectisActors,
-} from "./config/vectis";
+import { vectisCommittee1Weight, vectisCommittee2Weight, VectisActors } from "./config/vectis";
 import { Logger } from "tslog";
 
 export async function deploy(network: Chains) {
@@ -37,7 +31,7 @@ export async function deploy(network: Chains) {
 
     // ===================================================================================
     //
-    // Governance committees:  PreProposal + Tech
+    // Governance committee:  Vectis Committee
     //
     // ===================================================================================
 
@@ -66,26 +60,6 @@ export async function deploy(network: Chains) {
     const vectisCommitteeMembers = vectisCommitteeMemberRes.contractAddress;
     logger.info("1. Instantiated group for vectis committees at: ", vectisCommitteeMembers);
 
-    // tech committee group
-    const techCommitteeMemberRes = await Cw4GroupClient.instantiate(
-        adminHostClient,
-        uploadedContracts.cw4Group.codeId,
-        daoAdmin.address,
-        [
-            {
-                addr: committee1.address,
-                weight: vectisTechCommittee1Weight,
-            },
-            {
-                addr: committee2.address,
-                weight: vectisTechCommittee2Weight,
-            },
-        ],
-        "Vectis Tech Committee"
-    );
-    const techCommitteeMembers = techCommitteeMemberRes.contractAddress;
-    logger.info("2. Instantiated group for tech committees at: ", techCommitteeMembers);
-
     // Instantiate vectis MultiSig
     const vectisCommitteeRes = await Cw3FlexClient.instantiate(
         adminHostClient,
@@ -94,22 +68,6 @@ export async function deploy(network: Chains) {
         "Vectis Committee MultiSig"
     );
     const vectisCommittee = vectisCommitteeRes.contractAddress;
-
-    // Instantiate TechCommittee MultiSig
-    const techCommitteeRes = await Cw3FlexClient.instantiate(
-        adminHostClient,
-        uploadedContracts.cw3Flex.codeId,
-        techCommitteeMembers,
-        "Tech Committee MultiSig"
-    );
-    const techCommittee = techCommitteeRes.contractAddress;
-
-    logger.info(
-        "3. Instantiated Tech committee Multisig at: ",
-        techCommittee,
-        "\n Vectis Multisig at: ",
-        vectisCommittee
-    );
 
     // Vectis Committee execute deploy factory
     const factoryInstMsg = FactoryClient.createFactoryInstMsg(
@@ -197,12 +155,9 @@ export async function deploy(network: Chains) {
     // ===================================================================================
     await vectisComClient.add_item(VectisActors.Factory, factoryAddr);
     await vectisComClient.add_item(VectisActors.PluginRegistry, pluginRegAddr);
-    await vectisComClient.add_item(VectisActors.PluginCommittee, techCommittee);
     logger.info("\n5. Set dao_tunnel and committee address in DAO items");
 
     const contracts: VectisContractsAddrs = {
-        PluginCommittee: techCommittee,
-        PluginCommitteeGroup: techCommitteeMembers,
         VectisCommittee: vectisCommittee,
         VectisCommitteeGroup: vectisCommitteeMembers,
         PluginRegistry: pluginRegAddr,
