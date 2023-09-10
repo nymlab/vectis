@@ -72,6 +72,7 @@ pub const WALLET_FEE: u128 = 10u128;
 pub const REGISTRY_FEE: u128 = 11u128;
 pub const INIT_BALANCE: u128 = 12u128;
 pub const DEPLOYER_INIT_BALANCE: u128 = 100000u128;
+pub const TIER_1_FEE: u128 = 5u128;
 
 // Indexes for test_env
 pub const IDEPLOYER: usize = 0;

@@ -2,9 +2,10 @@ use super::contract::Contract;
 use cosmwasm_std::{to_binary, Coin, CosmosMsg, WasmMsg};
 use cw3::ProposalListResponse;
 use cw3_flex_multisig::msg::{ExecuteMsg as cw3flexExecMsg, QueryMsg as cw3flexQueryMsg};
+use osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse;
 use osmosis_test_tube::OsmosisTestApp;
 use serde::Serialize;
-use test_tube::SigningAccount;
+use test_tube::{RunnerExecuteResult, SigningAccount};
 
 pub fn execute<'a, T>(
     app: &OsmosisTestApp,
@@ -14,7 +15,8 @@ pub fn execute<'a, T>(
     exec_msg: &T,
     funds: &'a [Coin],
     signer: &SigningAccount,
-) where
+) -> RunnerExecuteResult<MsgExecuteContractResponse>
+where
     T: Serialize + ?Sized,
 {
     let deployer = Contract::from_addr(&app, deployer_addr.clone());
@@ -32,12 +34,10 @@ pub fn execute<'a, T>(
 
     let id = props.proposals[0].id;
 
-    deployer
-        .execute(&cw3flexExecMsg::Execute { proposal_id: id }, &[], signer)
-        .unwrap();
+    deployer.execute(&cw3flexExecMsg::Execute { proposal_id: id }, &[], signer)
 }
 
-pub fn execute_msg<'a, T>(
+fn execute_msg<'a, T>(
     target_contract: String,
     exec_msg: &T,
     exec_msg_fund: &'a [Coin],
