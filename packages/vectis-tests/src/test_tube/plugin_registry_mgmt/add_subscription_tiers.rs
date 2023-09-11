@@ -31,7 +31,7 @@ fn deployer_can_add_subscription_tier() {
         suite.deployer.clone(),
         suite.plugin_registry.clone(),
         &registry_management_trait::ExecMsg::AddSubscriptionTiers {
-            tier: SubscriptionTier::L1 as u8,
+            tier: SubscriptionTier::Other as u8,
             details: TierDetails {
                 max_plugins: 3,
                 duration: None,
@@ -58,7 +58,7 @@ fn existing_tier_cannot_be_added() {
     let config: RegistryConfigResponse = registry
         .query(&registry_management_trait::QueryMsg::GetConfig {})
         .unwrap();
-    assert_eq!(config.subscription_tiers.len(), 1);
+    assert_eq!(config.subscription_tiers.len(), 2);
     let (current_tier, _) = config.subscription_tiers[0];
 
     vectis_committee::execute(

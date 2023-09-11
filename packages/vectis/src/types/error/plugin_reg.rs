@@ -26,6 +26,8 @@ pub enum PluginRegError {
     UnsupportedWallet,
     #[error("Fees should be only 1 coin")]
     TooManyCoins,
+    #[error("Too many installed plugins")]
+    TooManyInstalledPlugins,
     #[error("Expired")]
     Expired,
     #[error("Not a subscriber")]

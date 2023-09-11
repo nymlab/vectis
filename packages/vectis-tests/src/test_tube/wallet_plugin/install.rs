@@ -1,8 +1,6 @@
-use cosmwasm_std::{coin, to_binary, BankMsg, CosmosMsg, Empty};
-use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;
-use osmosis_test_tube::{Account, Bank, OsmosisTestApp};
+use cosmwasm_std::{coin, to_binary, BankMsg, CosmosMsg, Empty, WasmMsg};
+use osmosis_test_tube::OsmosisTestApp;
 use serial_test::serial;
-use test_tube::module::Module;
 
 use vectis_wallet::{
     interface::{
@@ -14,7 +12,7 @@ use vectis_wallet::{
         authenticator::EmptyInstantiateMsg,
         plugin::{PluginInstallParams, PluginPermission, PluginSource, PluginsResponse},
         plugin_registry::{Subscriber, SubscriptionTier},
-        wallet::{Nonce, WalletInfo},
+        wallet::WalletInfo,
     },
 };
 
@@ -24,8 +22,7 @@ use crate::{
         test_env::HubChainSuite,
         util::{
             contract::Contract,
-            msgs::simple_bank_send,
-            wallet::{create_webauthn_wallet, sign_and_create_relay_tx},
+            wallet::{add_test_plugin, create_webauthn_wallet, sign_and_create_relay_tx},
         },
     },
 };
@@ -59,22 +56,11 @@ fn install_plugin_shows_in_proxy_and_registry() {
         .unwrap();
     let first_plugin = plugins.plugins[0].clone();
 
-    // ===========================
-    // Signing and create tx data
-    // ===========================
-    //     pub src: PluginSource,
-    //pub instantiate_msg: Binary,
-    //pub permission: PluginPermission,
-    //pub label: String,
-    //pub funds: Vec<Coin>,
-    //
-    println!("all plugins: {:?}", plugins);
-
     let install_plugin_msg = WalletPluginExecMsg::InstallPlugins {
         install: vec![PluginInstallParams {
             src: PluginSource::VectisRegistry(first_plugin.id, None),
             permission: PluginPermission::PreTxCheck,
-            label: "pre tx".into(),
+            label: "plugin_install".into(),
             funds: vec![],
             instantiate_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
         }],
@@ -107,14 +93,239 @@ fn install_plugin_shows_in_proxy_and_registry() {
     assert!(sub_result.is_some());
     let subscriber = sub_result.unwrap();
 
-    println!("subscriber: {:?}", subscriber);
     assert_eq!(subscriber.tier, SubscriptionTier::Free);
     assert_eq!(subscriber.plugin_installed.len(), 1);
     assert!(subscriber.plugin_installed.contains(&first_plugin.id));
 }
 
 #[test]
-fn todo_wrong_controller_cannot_install() {}
+#[serial]
+fn wrong_controller_cannot_install() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+    suite.register_plugins();
+
+    let vid = "test-user";
+    let other_vid = "other_test-user";
+
+    let (wallet_addr, _) = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        vid,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+
+    let (_, _) = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        other_vid,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+
+    let install_plugin_msg = WalletPluginExecMsg::InstallPlugins {
+        install: vec![PluginInstallParams {
+            src: PluginSource::VectisRegistry(1, None),
+            permission: PluginPermission::PreTxCheck,
+            label: "plugin_install".into(),
+            funds: vec![],
+            instantiate_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
+        }],
+    };
+
+    // other vid signs for vid
+    let relay_tx = sign_and_create_relay_tx(
+        vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
+            contract_addr: wallet_addr.to_string(),
+            msg: to_binary(&install_plugin_msg).unwrap(),
+            funds: vec![],
+        })],
+        0,
+        other_vid,
+    );
+
+    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
+    wallet
+        .execute(
+            &WalletExecMsg::AuthExec {
+                transaction: relay_tx,
+            },
+            &[],
+            &suite.accounts[IRELAYER],
+        )
+        .unwrap_err();
+}
 
 #[test]
-fn todo_cannot_install_same_plugin_twice() {}
+#[serial]
+fn cannot_install_same_plugin_twice() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+    suite.register_plugins();
+
+    let vid = "test-user";
+
+    let (wallet_addr, _) = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        vid,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
+
+    let install_plugin_msg = WalletPluginExecMsg::InstallPlugins {
+        install: vec![PluginInstallParams {
+            src: PluginSource::VectisRegistry(1, None),
+            permission: PluginPermission::PreTxCheck,
+            label: "plugin_install".into(),
+            funds: vec![],
+            instantiate_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
+        }],
+    };
+
+    let relay_tx_nonce_0 = sign_and_create_relay_tx(
+        vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
+            contract_addr: wallet_addr.to_string(),
+            msg: to_binary(&install_plugin_msg).unwrap(),
+            funds: vec![],
+        })],
+        0,
+        vid,
+    );
+
+    wallet
+        .execute(
+            &WalletExecMsg::AuthExec {
+                transaction: relay_tx_nonce_0,
+            },
+            &[],
+            &suite.accounts[IRELAYER],
+        )
+        .unwrap();
+
+    let relay_tx_nonce_1 = sign_and_create_relay_tx(
+        vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
+            contract_addr: wallet_addr.to_string(),
+            msg: to_binary(&install_plugin_msg).unwrap(),
+            funds: vec![],
+        })],
+        0,
+        vid,
+    );
+
+    wallet
+        .execute(
+            &WalletExecMsg::AuthExec {
+                transaction: relay_tx_nonce_1,
+            },
+            &[],
+            &suite.accounts[IRELAYER],
+        )
+        .unwrap_err();
+}
+
+#[test]
+#[serial]
+fn cannot_install_more_than_free_limit_until_subscribe() {
+    let app = OsmosisTestApp::new();
+    let suite = HubChainSuite::init(&app);
+    suite.register_plugins();
+
+    let vid = "test-user";
+
+    let (wallet_addr, _) = create_webauthn_wallet(
+        &app,
+        &suite.factory,
+        vid,
+        INIT_BALANCE,
+        &suite.accounts[IRELAYER],
+    );
+    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
+
+    // Add plugins to the max allowed for free tier
+    let max_plugins = tier_0().max_plugins;
+    for i in 1..max_plugins + 1 {
+        add_test_plugin(
+            &app,
+            vid,
+            wallet_addr.as_str(),
+            &suite.accounts[IRELAYER],
+            (i) as u64,
+        )
+        .unwrap();
+    }
+
+    let registry = Contract::from_addr(&app, suite.plugin_registry.clone());
+    let subscription: Option<Subscriber> = registry
+        .query(&registry_service_trait::QueryMsg::SubsciptionDetails {
+            addr: wallet_addr.to_string(),
+        })
+        .unwrap();
+
+    println!("plugins installed {:?}", subscription);
+
+    assert_eq!(
+        subscription.unwrap().plugin_installed.len(),
+        max_plugins as usize
+    );
+
+    // try to add one more should fail
+    add_test_plugin(
+        &app,
+        vid,
+        wallet_addr.as_str(),
+        &suite.accounts[IRELAYER],
+        (max_plugins + 1) as u64,
+    )
+    .unwrap_err();
+
+    // Now we subscribe to tier 1 to add more plugins
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+    let relay_tx = sign_and_create_relay_tx(
+        //vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        //    contract_addr: suite.plugin_registry.clone(),
+        //    msg: to_binary(&registry_service_trait::ExecMsg::subscribe(
+        //        SubscriptionTier::L1,
+        //    ))
+        //    .unwrap(),
+        //    funds: vec![coin(TIER_1_FEE, DENOM)],
+        //})],
+        vec![CosmosMsg::Bank(BankMsg::Send {
+            to_address: VALID_OSMO_ADDR.into(),
+            amount: vec![coin(1, DENOM)],
+        })],
+        info.controller.nonce,
+        vid,
+    );
+
+    wallet
+        .execute(
+            &WalletExecMsg::AuthExec {
+                transaction: relay_tx,
+            },
+            &[],
+            &suite.accounts[IRELAYER],
+        )
+        .unwrap();
+
+    // try again should succeed
+    add_test_plugin(
+        &app,
+        vid,
+        wallet_addr.as_str(),
+        &suite.accounts[IRELAYER],
+        (max_plugins + 1) as u64,
+    )
+    .unwrap();
+
+    let registry = Contract::from_addr(&app, suite.plugin_registry);
+    let subscription: Option<Subscriber> = registry
+        .query(&registry_service_trait::QueryMsg::SubsciptionDetails {
+            addr: wallet_addr.to_string(),
+        })
+        .unwrap();
+
+    assert_eq!(subscription.unwrap().plugin_installed.len(), 3)
+}

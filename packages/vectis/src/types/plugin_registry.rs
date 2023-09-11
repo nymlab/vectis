@@ -28,6 +28,16 @@ pub struct Subscriber {
     pub plugin_installed: Vec<u64>,
 }
 
+impl Default for Subscriber {
+    fn default() -> Self {
+        Self {
+            tier: SubscriptionTier::Free,
+            expiration: Expiration::Never {},
+            plugin_installed: vec![],
+        }
+    }
+}
+
 #[cw_serde]
 pub struct RegistryConfigResponse {
     pub registry_fee: Coin,

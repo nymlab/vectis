@@ -1,7 +1,3 @@
-use cosmwasm_std::{coin, to_binary, Addr, Binary, CosmosMsg};
-use osmosis_test_tube::OsmosisTestApp;
-use test_tube::SigningAccount;
-
 use crate::{
     constants::*,
     test_tube::util::{
@@ -12,15 +8,26 @@ use crate::{
         },
     },
 };
+use cosmwasm_std::{coin, to_binary, Addr, Binary, CosmosMsg};
+use osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse;
+use osmosis_test_tube::OsmosisTestApp;
+use test_tube::{RunnerExecuteResult, SigningAccount};
 use vectis_wallet::{
-    interface::factory_service_trait::{
-        ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
+    interface::{
+        factory_service_trait::{
+            ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
+        },
+        wallet_plugin_trait::ExecMsg as WalletPluginExecMsg,
+        wallet_trait::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
     },
     types::{
-        authenticator::{Authenticator, AuthenticatorProvider, AuthenticatorType},
+        authenticator::{
+            Authenticator, AuthenticatorProvider, AuthenticatorType, EmptyInstantiateMsg,
+        },
         entity::Entity,
         factory::CreateWalletMsg,
-        wallet::{Nonce, RelayTransaction, VectisRelayedTx, WebauthnRelayedTxMsg},
+        plugin::{PluginInstallParams, PluginPermission, PluginSource},
+        wallet::{Nonce, RelayTransaction, VectisRelayedTx, WalletInfo, WebauthnRelayedTxMsg},
     },
 };
 
@@ -88,9 +95,6 @@ pub fn sign_and_create_relay_tx(
     nonce: Nonce,
     vid: &str,
 ) -> RelayTransaction {
-    // =======================
-    // Signing data
-    // =======================
     let signed_msg = VectisRelayedTx {
         messages,
         nonce,
@@ -116,4 +120,42 @@ pub fn sign_and_create_relay_tx(
         .unwrap(),
         signature: Binary::from(response.signature),
     }
+}
+
+pub fn add_test_plugin(
+    app: &OsmosisTestApp,
+    vid: &str,
+    wallet_addr: &str,
+    relayer: &SigningAccount,
+    plugin_id: u64,
+) -> RunnerExecuteResult<MsgExecuteContractResponse> {
+    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+
+    let install_plugin_msg = WalletPluginExecMsg::InstallPlugins {
+        install: vec![PluginInstallParams {
+            src: PluginSource::VectisRegistry(plugin_id, None),
+            permission: PluginPermission::PreTxCheck,
+            label: "plugin_install".into(),
+            funds: vec![],
+            instantiate_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
+        }],
+    };
+    let relay_tx = sign_and_create_relay_tx(
+        vec![CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Execute {
+            contract_addr: wallet_addr.to_string(),
+            msg: to_binary(&install_plugin_msg).unwrap(),
+            funds: vec![],
+        })],
+        info.controller.nonce,
+        vid,
+    );
+
+    wallet.execute(
+        &WalletExecMsg::AuthExec {
+            transaction: relay_tx,
+        },
+        &[],
+        relayer,
+    )
 }

@@ -176,7 +176,10 @@ impl<'a> HubChainSuite<'a> {
         // ===========================================================
         let code_hash = HexBinary::from_hex(PROXY_CODE_HASH).unwrap();
         let plugin_reg_inst_msg = PluginRegInstMsg {
-            subscription_tiers: vec![(SubscriptionTier::Free, tier_0())],
+            subscription_tiers: vec![
+                (SubscriptionTier::Free, tier_0()),
+                (SubscriptionTier::L1, tier_1()),
+            ],
             supported_proxies: vec![(code_hash, VECTIS_VERSION.into())],
             registry_fee: coin(REGISTRY_FEE, DENOM),
         };

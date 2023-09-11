@@ -10,7 +10,6 @@ use test_tube::{RunnerExecuteResult, SigningAccount};
 pub fn execute<'a, T>(
     app: &OsmosisTestApp,
     deployer_addr: String,
-
     targe_contract: String,
     exec_msg: &T,
     funds: &'a [Coin],

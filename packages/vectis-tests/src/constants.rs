@@ -1,4 +1,5 @@
-use cosmwasm_std::{coin, Binary, CanonicalAddr};
+use cosmwasm_std::{coin, Binary, CanonicalAddr, Timestamp};
+use cw_utils::Expiration;
 use vectis_wallet::types::{
     plugin::{PluginCodeData, PluginMetadataData},
     plugin_registry::TierDetails,
@@ -33,6 +34,15 @@ pub fn tier_0() -> TierDetails {
         fee: coin(0u128, DENOM),
     }
 }
+
+pub fn tier_1() -> TierDetails {
+    TierDetails {
+        max_plugins: 12,
+        duration: Some(cw_utils::HOUR),
+        fee: coin(TIER_1_FEE, DENOM),
+    }
+}
+
 pub fn canonical_valid_osmo() -> CanonicalAddr {
     CanonicalAddr(Binary::from(
         hex::decode(HEX_CANONICAL_VALID_OSMO_ADDR)
