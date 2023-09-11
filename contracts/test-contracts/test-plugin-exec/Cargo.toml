@@ -1,0 +1,36 @@
+[package]
+name = "test-vectis-plugin-exec"
+version = "1.0.0-rc1"
+authors = ["bwty <whalelephant@users.noreply.github.com>"]
+edition = "2021"
+
+exclude = [
+  "contract.wasm",
+  "hash.txt",
+]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+backtraces = ["cosmwasm-std/backtraces"]
+library = []
+migration = []
+mt = ["sylvia/mt"]
+multitest = ["mt"]
+
+[dependencies]
+cosmos-sdk-proto = { workspace = true }
+cosmwasm-std = { workspace = true }
+cw-storage-plus = { workspace = true }
+cosmwasm-schema = { workspace = true }
+sylvia = { workspace = true }
+sylvia-derive = { workspace = true }
+serde = {workspace = true}
+serde-json-wasm = {workspace = true}
+cw2 = { workspace = true }
+cw-utils= { workspace = true }
+vectis-wallet = { path = "../../../packages/vectis" }
+
+[dev-dependencies]
+sylvia = {version = "0.7.0", features = ["mt"]}
