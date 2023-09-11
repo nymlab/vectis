@@ -18,13 +18,14 @@ fn can_update_metadata_with_correct_params() {
     let suite = HubChainSuite::init(&app);
     let new_display_name = "vectis-new-display-name-test";
     let new_ipfs_hash = "vectis-new-ipfs-hash-test";
+    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
 
     vectis_committee::execute(
         &app,
         suite.deployer.clone(),
         suite.plugin_registry.clone(),
         &registry_management_trait::ExecMsg::RegisterPlugin {
-            code_data: test_plugin_code_data(suite.test_plugin_code_id),
+            code_data,
             metadata_data: test_plugin_metadata(),
         },
         &[coin(REGISTRY_FEE, "uosmo")],
@@ -112,13 +113,14 @@ fn cannot_update_not_existing() {
 fn not_deployer_cannot_update() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
+    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
 
     vectis_committee::execute(
         &app,
         suite.deployer.clone(),
         suite.plugin_registry.clone(),
         &registry_management_trait::ExecMsg::RegisterPlugin {
-            code_data: test_plugin_code_data(suite.test_plugin_code_id),
+            code_data: code_data.clone(),
             metadata_data: test_plugin_metadata(),
         },
         &[coin(REGISTRY_FEE, "uosmo")],
@@ -131,7 +133,7 @@ fn not_deployer_cannot_update() {
     registry
         .execute(
             &registry_management_trait::ExecMsg::RegisterPlugin {
-                code_data: test_plugin_code_data(suite.test_plugin_code_id),
+                code_data,
                 metadata_data: test_plugin_metadata(),
             },
             &[coin(REGISTRY_FEE, "uosmo")],

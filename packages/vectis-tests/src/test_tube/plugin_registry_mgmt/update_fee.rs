@@ -43,12 +43,14 @@ fn deployer_can_update_fee() {
     assert_eq!(config.registry_fee, coin(REGISTRY_FEE + 10, DENOM));
 
     // old_fee cannot add plugin
+    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+
     vectis_committee::execute(
         &app,
         suite.deployer,
         suite.plugin_registry,
         &registry_management_trait::ExecMsg::RegisterPlugin {
-            code_data: test_plugin_code_data(suite.test_plugin_code_id),
+            code_data,
             metadata_data: test_plugin_metadata(),
         },
         &[coin(REGISTRY_FEE, "uosmo")],

@@ -23,7 +23,10 @@ fn can_register_with_correct_params() {
         suite.deployer,
         suite.plugin_registry.clone(),
         &registry_management_trait::ExecMsg::RegisterPlugin {
-            code_data: test_plugin_code_data(suite.test_plugin_code_id),
+            code_data: test_plugin_code_data(
+                suite.test_plugins.pre_tx.0,
+                suite.test_plugins.pre_tx.1,
+            ),
             metadata_data: test_plugin_metadata(),
         },
         &[coin(REGISTRY_FEE, "uosmo")],
@@ -47,7 +50,7 @@ fn can_register_with_correct_params() {
         .query(&registry_management_trait::QueryMsg::GetPluginById { id: 1 })
         .unwrap();
 
-    let code_data = test_plugin_code_data(suite.test_plugin_code_id);
+    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
     let expected_plugin = Plugin {
         id: 1,
         creator: canonical_valid_osmo(),
@@ -56,7 +59,7 @@ fn can_register_with_correct_params() {
         versions: BTreeMap::from([(
             code_data.latest_contract_version,
             VersionDetails {
-                code_id: suite.test_plugin_code_id,
+                code_id: code_data.new_code_id,
                 code_hash: code_data.new_code_hash,
                 ipfs_hash: test_plugin_metadata().ipfs_hash,
             },
@@ -71,13 +74,14 @@ fn can_register_with_correct_params() {
 fn cannot_register_without_correct_fee() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
+    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
 
     vectis_committee::execute(
         &app,
         suite.deployer,
         suite.plugin_registry.clone(),
         &registry_management_trait::ExecMsg::RegisterPlugin {
-            code_data: test_plugin_code_data(suite.test_plugin_code_id),
+            code_data,
             metadata_data: test_plugin_metadata(),
         },
         // INCORRECT fee
@@ -91,14 +95,16 @@ fn cannot_register_without_correct_fee() {
 fn cannot_register_incorrect_code_hash() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
+    // WRONG codeID - mismatch to codehash
+    let code_data =
+        test_plugin_code_data(suite.test_plugins.post_tx.0, suite.test_plugins.pre_tx.1);
 
     vectis_committee::execute(
         &app,
         suite.deployer,
         suite.plugin_registry.clone(),
         &registry_management_trait::ExecMsg::RegisterPlugin {
-            // WRONG codeID
-            code_data: test_plugin_code_data(123),
+            code_data,
             metadata_data: test_plugin_metadata(),
         },
         // INCORRECT fee
@@ -112,6 +118,7 @@ fn cannot_register_incorrect_code_hash() {
 fn not_deployer_cannot_register() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
+    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
 
     let registry = Contract::from_addr(&app, suite.plugin_registry);
 
@@ -119,7 +126,7 @@ fn not_deployer_cannot_register() {
     registry
         .execute(
             &registry_management_trait::ExecMsg::RegisterPlugin {
-                code_data: test_plugin_code_data(suite.test_plugin_code_id),
+                code_data,
                 metadata_data: test_plugin_metadata(),
             },
             &[coin(REGISTRY_FEE, "uosmo")],

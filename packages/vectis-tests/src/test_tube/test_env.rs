@@ -35,8 +35,8 @@ pub struct HubChainSuite<'a> {
     pub plugin_registry: String,
     // accounts
     pub accounts: Vec<SigningAccount>,
-    // test plugin code_id
-    pub test_plugin_code_id: u64,
+    // test plugins
+    pub test_plugins: TestPlugins,
 }
 
 impl<'a> HubChainSuite<'a> {
@@ -77,6 +77,12 @@ impl<'a> HubChainSuite<'a> {
         .unwrap();
 
         // Store code for proxy and authenticator
+        let test_pre_tx_code_id = Contract::store_code(app, PRE_TX_CODE_PATH, &accounts[IDEPLOYER]);
+        let test_post_tx_code_id =
+            Contract::store_code(app, POST_TX_CODE_PATH, &accounts[IDEPLOYER]);
+        let test_plugin_exec_code_id =
+            Contract::store_code(app, PLUGIN_EXEC_CODE_PATH, &accounts[IDEPLOYER]);
+
         let proxy_code_id = Contract::store_code(app, PROXY_CODE_PATH, &accounts[IDEPLOYER]);
         let auth_code_id = Contract::store_code(app, AUTH_CODE_PATH, &accounts[IDEPLOYER]);
         let factory_code_id = Contract::store_code(app, FACTORY_CODE_PATH, &accounts[IDEPLOYER]);
@@ -252,7 +258,11 @@ impl<'a> HubChainSuite<'a> {
             webauthn,
             plugin_registry,
             accounts,
-            test_plugin_code_id: proxy_code_id,
+            test_plugins: TestPlugins {
+                pre_tx: (test_pre_tx_code_id, PRE_TX_HASH),
+                post_tx: (test_post_tx_code_id, POST_TX_HASH),
+                exec: (test_plugin_exec_code_id, PLUGIN_EXEC_HASH),
+            },
         }
     }
 }
