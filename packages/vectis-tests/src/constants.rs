@@ -28,7 +28,7 @@ pub fn test_plugin_metadata() -> PluginMetadataData {
 
 pub fn tier_0() -> TierDetails {
     TierDetails {
-        max_plugins: u16::max_value(),
+        max_plugins: 2,
         duration: None,
         fee: coin(0u128, DENOM),
     }
@@ -48,7 +48,7 @@ pub const HEX_CANONICAL_VALID_OSMO_ADDR: &str = "0d93a9f00775dd45f6948fb11e00790
 pub const VECTIS_VERSION: &str = "v1.0.0-rc1";
 /// the proxy code_hash for this vectis version
 pub const PROXY_CODE_HASH: &str =
-    "4dc9e531f31ba8c360a9904778111764fb3a34239e7290ff865281002b8449e2";
+    "3fdd5033131a7e39eb678745001007838eee490d20b6e81ccddc38290ea5f831";
 
 pub const PLUGIN_EXEC_HASH: &str =
     "9329a0ed36848387d5c4ca20b62a87bb526d656c69cbfae18cab1d863aa39637";

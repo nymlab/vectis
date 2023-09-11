@@ -4,14 +4,21 @@ use osmosis_test_tube::{Account, OsmosisTestApp, SigningAccount};
 use vectis_factory::contract::InstantiateMsg as FactoryInstMsg;
 use vectis_plugin_registry::contract::InstantiateMsg as PluginRegInstMsg;
 
-use vectis_wallet::types::{
-    authenticator::{AuthenticatorType, WebauthnInstantaiteMsg},
-    factory::{AuthenticatorInstInfo, ChainConnection, WalletFactoryInstantiateMsg},
-    plugin_registry::SubscriptionTier,
-    state::VectisActors,
+use vectis_wallet::{
+    interface::registry_management_trait,
+    types::{
+        authenticator::{AuthenticatorType, EmptyInstantiateMsg},
+        factory::{AuthenticatorInstInfo, ChainConnection, WalletFactoryInstantiateMsg},
+        plugin::PluginsResponse,
+        plugin_registry::SubscriptionTier,
+        state::VectisActors,
+    },
 };
 
-use crate::{constants::*, test_tube::util::contract::Contract};
+use crate::{
+    constants::*,
+    test_tube::util::{contract::Contract, vectis_committee},
+};
 use cw3_flex_multisig::msg::{ExecuteMsg as cw3flexExecMsg, InstantiateMsg as cw3flexInstMsg};
 use cw4::Member;
 use cw4_group::msg::InstantiateMsg as cw4InstMsg;
@@ -98,7 +105,7 @@ impl<'a> HubChainSuite<'a> {
             authenticators: Some(vec![AuthenticatorInstInfo {
                 ty: AuthenticatorType::Webauthn,
                 code_id: auth_code_id,
-                inst_msg: to_binary(&WebauthnInstantaiteMsg {}).unwrap(),
+                inst_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
             }]),
             supported_chains: Some(vec![
                 (
@@ -264,6 +271,69 @@ impl<'a> HubChainSuite<'a> {
                 exec: (test_plugin_exec_code_id, PLUGIN_EXEC_HASH),
             },
         }
+    }
+}
+
+impl HubChainSuite<'_> {
+    pub fn register_plugins(&self) {
+        vectis_committee::execute(
+            self.app,
+            self.deployer.clone(),
+            self.plugin_registry.clone(),
+            &registry_management_trait::ExecMsg::RegisterPlugin {
+                code_data: test_plugin_code_data(
+                    self.test_plugins.pre_tx.0,
+                    self.test_plugins.pre_tx.1,
+                ),
+                metadata_data: test_plugin_metadata(),
+            },
+            &[coin(REGISTRY_FEE, "uosmo")],
+            &self.accounts[ICOMMITTEE],
+        )
+        .unwrap();
+
+        vectis_committee::execute(
+            self.app,
+            self.deployer.clone(),
+            self.plugin_registry.clone(),
+            &registry_management_trait::ExecMsg::RegisterPlugin {
+                code_data: test_plugin_code_data(
+                    self.test_plugins.post_tx.0,
+                    self.test_plugins.post_tx.1,
+                ),
+                metadata_data: test_plugin_metadata(),
+            },
+            &[coin(REGISTRY_FEE, "uosmo")],
+            &self.accounts[ICOMMITTEE],
+        )
+        .unwrap();
+
+        vectis_committee::execute(
+            self.app,
+            self.deployer.clone(),
+            self.plugin_registry.clone(),
+            &registry_management_trait::ExecMsg::RegisterPlugin {
+                code_data: test_plugin_code_data(
+                    self.test_plugins.exec.0,
+                    self.test_plugins.exec.1,
+                ),
+                metadata_data: test_plugin_metadata(),
+            },
+            &[coin(REGISTRY_FEE, "uosmo")],
+            &self.accounts[ICOMMITTEE],
+        )
+        .unwrap();
+
+        let registry = Contract::from_addr(self.app, self.plugin_registry.clone());
+
+        let plugins: PluginsResponse = registry
+            .query(&registry_management_trait::QueryMsg::GetPlugins {
+                limit: None,
+                start_after: None,
+            })
+            .unwrap();
+
+        assert_eq!(plugins.total, 3);
     }
 }
 

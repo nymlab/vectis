@@ -44,4 +44,4 @@ impl Authenticator {
 }
 
 #[cw_serde]
-pub struct WebauthnInstantaiteMsg {}
+pub struct EmptyInstantiateMsg {}
