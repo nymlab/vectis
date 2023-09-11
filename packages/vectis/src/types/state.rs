@@ -3,7 +3,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, CanonicalAddr};
 use cw_storage_plus::{Item, Map};
 
-use super::factory::ChainConnection;
+use super::{factory::ChainConnection, plugin_registry::Subscriber};
 
 // Stored on the Multisig / DAO contract
 /// Maps `VectisActors` variant to addresses:
@@ -40,6 +40,11 @@ pub const AUTHENTICATORS: Authenticators = Map::new("authenticators");
 /// Types that allow other contracts to query the plugins from the registry
 pub type Plugins<'a> = Map<'a, u64, Plugin>;
 pub const PLUGINS: Plugins = Map::new("registry_plugins");
+
+// Stored on Plugin registry, queried externally by proxy
+/// Types that allow other contracts to query the plugins from the registry
+pub type Subscribers<'a> = Map<'a, &'a str, Subscriber>;
+pub const SUBSCRIBERS: Subscribers = Map::new("subscribers");
 
 // Stored on Factory and queried by others
 // It is assumed that proxy have the `ChainName` in the data

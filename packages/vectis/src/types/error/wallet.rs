@@ -53,6 +53,10 @@ pub enum WalletError {
     ParseError,
     #[error("Invalid authenticator")]
     InvalidAuthenticator,
+    #[error("Not Exec Plugin")]
+    NotExecPlugin,
+    #[error("Pre Check Invalid by Plugin {0}")]
+    PreTxCheckFailed(String),
 }
 
 #[derive(Error, Debug, PartialEq)]

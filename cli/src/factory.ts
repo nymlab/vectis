@@ -6,7 +6,6 @@ import { Account } from "./config/accounts";
 import { OptionValues } from "commander";
 import { VectisContractsAddrs, FactoryT } from "./interfaces";
 import { FactoryAction } from "./config/actions/factory";
-import { VectisActors } from "./config/vectis";
 
 export async function factory(network: Chains, opts: OptionValues) {
     const logger = new Logger();

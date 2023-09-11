@@ -62,12 +62,11 @@ pub enum PluginPermission {
 }
 
 /// The source of the plugin code.
+/// Currently only support VectisRegistry but this can be others in the future
 #[cw_serde]
 pub enum PluginSource {
     /// Plugin registry id and version (latest if not provided)
     VectisRegistry(u64, Option<String>),
-    /// This is the code_id and the version of the unregistered plugin
-    CodeId(u64, String),
 }
 
 impl std::fmt::Display for PluginSource {

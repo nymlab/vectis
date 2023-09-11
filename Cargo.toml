@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/core/*", "contracts/authenticators/*" ]
+members = ["packages/*", "contracts/core/*", "contracts/authenticators/*", "contracts/test-contracts/*" ]
 exclude = ["packages/vectis-tests-old"]
 resolver = "2"
 
