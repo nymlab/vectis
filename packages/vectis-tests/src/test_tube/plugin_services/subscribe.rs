@@ -26,7 +26,7 @@ use vectis_wallet::{
 #[serial]
 fn proxy_can_subscribe_with_fee() {
     let app = OsmosisTestApp::new();
-    let suite = HubChainSuite::init(&app);
+    let mut suite = HubChainSuite::init(&app);
     let vid = "test-user";
     suite.register_plugins();
 
@@ -98,7 +98,7 @@ fn proxy_can_subscribe_with_fee() {
 #[serial]
 fn proxy_cannot_subscribe_without_correct_fee() {
     let app = OsmosisTestApp::new();
-    let suite = HubChainSuite::init(&app);
+    let mut suite = HubChainSuite::init(&app);
     let vid = "test-user";
     suite.register_plugins();
 

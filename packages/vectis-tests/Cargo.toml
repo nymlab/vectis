@@ -9,9 +9,6 @@ repository = "https://github.com/nymlab/vectis"
 description = "Vectis test package for multitest, useful for plugins"
 
 
-#[[test]]
-#name = "multi-contracts-integration-tests"
-#path = "src/lib.rs"
 
 [dependencies]
 vectis-factory = { path = "../../contracts/core/factory", features = ["mt"] }
@@ -19,6 +16,8 @@ vectis-proxy = { path = "../../contracts/core/proxy", features = ["multitest"]}
 vectis-plugin-registry = { path = "../../contracts/core/plugin_registry", features = ["mt"]}
 vectis-webauthn-authenticator = { path = "../../contracts/authenticators/webauthn", features = ["mt"]}
 vectis-wallet = { path = "../vectis"}
+test-vectis-post-tx-exec = { path = "../../contracts/test-contracts/test-post-tx-plugin" }
+test-vectis-plugin-exec = { path = "../../contracts/test-contracts/test-plugin-exec" }
 sylvia = { workspace = true } 
 sylvia-derive = { workspace = true } 
 serde = {workspace = true}

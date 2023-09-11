@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, to_binary, BankMsg, CosmosMsg, Empty, WasmMsg};
+use cosmwasm_std::{coin, to_binary, CosmosMsg, Empty, WasmMsg};
 use osmosis_test_tube::OsmosisTestApp;
 use serial_test::serial;
 
@@ -6,13 +6,12 @@ use vectis_wallet::{
     interface::{
         registry_management_trait, registry_service_trait,
         wallet_plugin_trait::ExecMsg as WalletPluginExecMsg,
-        wallet_trait::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
+        wallet_trait::ExecMsg as WalletExecMsg,
     },
     types::{
         authenticator::EmptyInstantiateMsg,
         plugin::{PluginInstallParams, PluginPermission, PluginSource, PluginsResponse},
         plugin_registry::{Subscriber, SubscriptionTier},
-        wallet::WalletInfo,
     },
 };
 
@@ -22,7 +21,9 @@ use crate::{
         test_env::HubChainSuite,
         util::{
             contract::Contract,
-            wallet::{add_test_plugin, create_webauthn_wallet, sign_and_create_relay_tx},
+            wallet::{
+                add_test_plugin, create_webauthn_wallet, sign_and_create_relay_tx, sign_and_submit,
+            },
         },
     },
 };
@@ -31,7 +32,8 @@ use crate::{
 #[serial]
 fn install_plugin_shows_in_proxy_and_registry() {
     let app = OsmosisTestApp::new();
-    let suite = HubChainSuite::init(&app);
+    let mut suite = HubChainSuite::init(&app);
+
     suite.register_plugins();
 
     let vid = "test-user";
@@ -43,8 +45,6 @@ fn install_plugin_shows_in_proxy_and_registry() {
         INIT_BALANCE,
         &suite.accounts[IRELAYER],
     );
-    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
-    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
 
     let registry = Contract::from_addr(&app, suite.plugin_registry);
 
@@ -65,25 +65,19 @@ fn install_plugin_shows_in_proxy_and_registry() {
             instantiate_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
         }],
     };
-    let relay_tx = sign_and_create_relay_tx(
+
+    sign_and_submit(
+        &app,
         vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
             contract_addr: wallet_addr.to_string(),
             msg: to_binary(&install_plugin_msg).unwrap(),
             funds: vec![],
         })],
-        info.controller.nonce,
         vid,
-    );
-
-    wallet
-        .execute(
-            &WalletExecMsg::AuthExec {
-                transaction: relay_tx,
-            },
-            &[],
-            &suite.accounts[IRELAYER],
-        )
-        .unwrap();
+        wallet_addr.as_str(),
+        &suite.accounts[IRELAYER],
+    )
+    .unwrap();
 
     let sub_result: Option<Subscriber> = registry
         .query(&registry_service_trait::QueryMsg::SubsciptionDetails {
@@ -102,7 +96,8 @@ fn install_plugin_shows_in_proxy_and_registry() {
 #[serial]
 fn wrong_controller_cannot_install() {
     let app = OsmosisTestApp::new();
-    let suite = HubChainSuite::init(&app);
+    let mut suite = HubChainSuite::init(&app);
+
     suite.register_plugins();
 
     let vid = "test-user";
@@ -161,7 +156,8 @@ fn wrong_controller_cannot_install() {
 #[serial]
 fn cannot_install_same_plugin_twice() {
     let app = OsmosisTestApp::new();
-    let suite = HubChainSuite::init(&app);
+    let mut suite = HubChainSuite::init(&app);
+
     suite.register_plugins();
 
     let vid = "test-user";
@@ -173,7 +169,6 @@ fn cannot_install_same_plugin_twice() {
         INIT_BALANCE,
         &suite.accounts[IRELAYER],
     );
-    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
 
     let install_plugin_msg = WalletPluginExecMsg::InstallPlugins {
         install: vec![PluginInstallParams {
@@ -185,52 +180,40 @@ fn cannot_install_same_plugin_twice() {
         }],
     };
 
-    let relay_tx_nonce_0 = sign_and_create_relay_tx(
+    sign_and_submit(
+        &app,
         vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
             contract_addr: wallet_addr.to_string(),
             msg: to_binary(&install_plugin_msg).unwrap(),
             funds: vec![],
         })],
-        0,
         vid,
-    );
+        wallet_addr.as_str(),
+        &suite.accounts[IRELAYER],
+    )
+    .unwrap();
 
-    wallet
-        .execute(
-            &WalletExecMsg::AuthExec {
-                transaction: relay_tx_nonce_0,
-            },
-            &[],
-            &suite.accounts[IRELAYER],
-        )
-        .unwrap();
-
-    let relay_tx_nonce_1 = sign_and_create_relay_tx(
+    // install the second time should fail
+    sign_and_submit(
+        &app,
         vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
             contract_addr: wallet_addr.to_string(),
             msg: to_binary(&install_plugin_msg).unwrap(),
             funds: vec![],
         })],
-        0,
         vid,
-    );
-
-    wallet
-        .execute(
-            &WalletExecMsg::AuthExec {
-                transaction: relay_tx_nonce_1,
-            },
-            &[],
-            &suite.accounts[IRELAYER],
-        )
-        .unwrap_err();
+        wallet_addr.as_str(),
+        &suite.accounts[IRELAYER],
+    )
+    .unwrap_err();
 }
 
 #[test]
 #[serial]
 fn cannot_install_more_than_free_limit_until_subscribe() {
     let app = OsmosisTestApp::new();
-    let suite = HubChainSuite::init(&app);
+    let mut suite = HubChainSuite::init(&app);
+
     suite.register_plugins();
 
     let vid = "test-user";
@@ -242,9 +225,9 @@ fn cannot_install_more_than_free_limit_until_subscribe() {
         INIT_BALANCE,
         &suite.accounts[IRELAYER],
     );
-    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
 
     // Add plugins to the max allowed for free tier
+    // we are adding 1 that we know is pre-tx check
     let max_plugins = tier_0().max_plugins;
     for i in 1..max_plugins + 1 {
         add_test_plugin(
@@ -264,8 +247,6 @@ fn cannot_install_more_than_free_limit_until_subscribe() {
         })
         .unwrap();
 
-    println!("plugins installed {:?}", subscription);
-
     assert_eq!(
         subscription.unwrap().plugin_installed.len(),
         max_plugins as usize
@@ -281,34 +262,21 @@ fn cannot_install_more_than_free_limit_until_subscribe() {
     )
     .unwrap_err();
 
-    // Now we subscribe to tier 1 to add more plugins
-    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
-    let relay_tx = sign_and_create_relay_tx(
-        //vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        //    contract_addr: suite.plugin_registry.clone(),
-        //    msg: to_binary(&registry_service_trait::ExecMsg::subscribe(
-        //        SubscriptionTier::L1,
-        //    ))
-        //    .unwrap(),
-        //    funds: vec![coin(TIER_1_FEE, DENOM)],
-        //})],
-        vec![CosmosMsg::Bank(BankMsg::Send {
-            to_address: VALID_OSMO_ADDR.into(),
-            amount: vec![coin(1, DENOM)],
+    sign_and_submit(
+        &app,
+        vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: suite.plugin_registry.clone(),
+            msg: to_binary(&registry_service_trait::ExecMsg::subscribe(
+                SubscriptionTier::L1,
+            ))
+            .unwrap(),
+            funds: vec![coin(TIER_1_FEE, DENOM)],
         })],
-        info.controller.nonce,
         vid,
-    );
-
-    wallet
-        .execute(
-            &WalletExecMsg::AuthExec {
-                transaction: relay_tx,
-            },
-            &[],
-            &suite.accounts[IRELAYER],
-        )
-        .unwrap();
+        wallet_addr.as_str(),
+        &suite.accounts[IRELAYER],
+    )
+    .unwrap();
 
     // try again should succeed
     add_test_plugin(
@@ -320,12 +288,15 @@ fn cannot_install_more_than_free_limit_until_subscribe() {
     )
     .unwrap();
 
-    let registry = Contract::from_addr(&app, suite.plugin_registry);
+    let registry = Contract::from_addr(&app, suite.plugin_registry.clone());
     let subscription: Option<Subscriber> = registry
         .query(&registry_service_trait::QueryMsg::SubsciptionDetails {
             addr: wallet_addr.to_string(),
         })
         .unwrap();
 
-    assert_eq!(subscription.unwrap().plugin_installed.len(), 3)
+    assert_eq!(
+        subscription.unwrap().plugin_installed.len(),
+        (max_plugins + 1) as usize
+    )
 }

@@ -89,7 +89,8 @@ pub struct WalletInfo {
     pub deployer: Addr,
     /// The version of this wallet
     pub version: cw2::ContractVersion,
-    /// The code-id of this wallet
+    /// The code-id of this wallet,
+    /// MUST always be returned for frontend
     pub code_id: u64,
     /// The relayers for wallet tx
     pub relayers: Vec<Addr>,

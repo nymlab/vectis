@@ -269,16 +269,16 @@ impl<'a> HubChainSuite<'a> {
             plugin_registry,
             accounts,
             test_plugins: TestPlugins {
-                pre_tx: (test_pre_tx_code_id, PRE_TX_HASH),
-                post_tx: (test_post_tx_code_id, POST_TX_HASH),
-                exec: (test_plugin_exec_code_id, PLUGIN_EXEC_HASH),
+                pre_tx: (test_pre_tx_code_id, PRE_TX_HASH, 0),
+                post_tx: (test_post_tx_code_id, POST_TX_HASH, 0),
+                exec: (test_plugin_exec_code_id, PLUGIN_EXEC_HASH, 0),
             },
         }
     }
 }
 
 impl HubChainSuite<'_> {
-    pub fn register_plugins(&self) {
+    pub fn register_plugins(&mut self) {
         vectis_committee::execute(
             self.app,
             self.deployer.clone(),
@@ -337,6 +337,10 @@ impl HubChainSuite<'_> {
             .unwrap();
 
         assert_eq!(plugins.total, 3);
+
+        self.test_plugins.pre_tx.2 = 1;
+        self.test_plugins.post_tx.2 = 2;
+        self.test_plugins.exec.2 = 3;
     }
 }
 

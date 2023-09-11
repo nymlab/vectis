@@ -8,7 +8,7 @@ use crate::{
         },
     },
 };
-use cosmwasm_std::{coin, to_binary, Addr, Binary, CosmosMsg};
+use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Binary, CosmosMsg, Empty};
 use osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse;
 use osmosis_test_tube::OsmosisTestApp;
 use test_tube::{RunnerExecuteResult, SigningAccount};
@@ -90,6 +90,27 @@ pub fn create_webauthn_wallet<'a>(
     (wallet_addr.unwrap(), pubkey)
 }
 
+pub fn sign_and_submit(
+    app: &OsmosisTestApp,
+    messages: Vec<CosmosMsg>,
+    vid: &str,
+    wallet_addr: &str,
+    relayer: &SigningAccount,
+) -> RunnerExecuteResult<MsgExecuteContractResponse> {
+    let wallet = Contract::from_addr(&app, wallet_addr.into());
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+
+    let relay_tx = sign_and_create_relay_tx(messages, info.controller.nonce, vid);
+
+    wallet.execute(
+        &WalletExecMsg::AuthExec {
+            transaction: relay_tx,
+        },
+        &[],
+        relayer,
+    )
+}
+
 pub fn sign_and_create_relay_tx(
     messages: Vec<CosmosMsg>,
     nonce: Nonce,
@@ -132,10 +153,18 @@ pub fn add_test_plugin(
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
 
+    let permission = match plugin_id {
+        1 => PluginPermission::PreTxCheck,
+        2 => PluginPermission::PostTxHook,
+        3 => PluginPermission::Exec,
+        // allow random number through for testing
+        _ => PluginPermission::PreTxCheck,
+    };
+
     let install_plugin_msg = WalletPluginExecMsg::InstallPlugins {
         install: vec![PluginInstallParams {
             src: PluginSource::VectisRegistry(plugin_id, None),
-            permission: PluginPermission::PreTxCheck,
+            permission,
             label: "plugin_install".into(),
             funds: vec![],
             instantiate_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),

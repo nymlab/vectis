@@ -1,14 +1,15 @@
-use cosmwasm_std::{coin, Binary, CanonicalAddr, Timestamp};
-use cw_utils::Expiration;
+use cosmwasm_std::{coin, Binary, CanonicalAddr};
 use vectis_wallet::types::{
     plugin::{PluginCodeData, PluginMetadataData},
     plugin_registry::TierDetails,
 };
 
+// Plugins for testing
+// (code_id, hash, registry_id)
 pub struct TestPlugins {
-    pub pre_tx: (u64, &'static str),
-    pub post_tx: (u64, &'static str),
-    pub exec: (u64, &'static str),
+    pub pre_tx: (u64, &'static str, u64),
+    pub post_tx: (u64, &'static str, u64),
+    pub exec: (u64, &'static str, u64),
 }
 
 pub fn test_plugin_code_data(code_id: u64, code_hash: &'static str) -> PluginCodeData {
@@ -58,11 +59,10 @@ pub const HEX_CANONICAL_VALID_OSMO_ADDR: &str = "0d93a9f00775dd45f6948fb11e00790
 pub const VECTIS_VERSION: &str = "v1.0.0-rc1";
 /// the proxy code_hash for this vectis version
 pub const PROXY_CODE_HASH: &str =
-    "3fdd5033131a7e39eb678745001007838eee490d20b6e81ccddc38290ea5f831";
-
+    "906b8eecb40101c591020da36ded0e6c974136e0be83819f17e98b40d49e4be8";
 pub const PLUGIN_EXEC_HASH: &str =
     "9329a0ed36848387d5c4ca20b62a87bb526d656c69cbfae18cab1d863aa39637";
-pub const POST_TX_HASH: &str = "48ac1de48aeb8bc34a3d206de6121472fb11a4b4356b14771ab9ede5768e671a";
+pub const POST_TX_HASH: &str = "616a7e39b87ceadb959084b9112f02e53d4a937d67a1a3efbde60eed2e5ac2f1";
 pub const PRE_TX_HASH: &str = "90b5cfe278e15e316a611dc5a99609be671b1941c8a146770590dad550775ef6";
 
 pub const CW4_CODE_PATH: &str = "./artifacts/cw4_group.wasm";

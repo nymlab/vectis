@@ -1,1 +1,1 @@
-mod contract;
+pub mod contract;

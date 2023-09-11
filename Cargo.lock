@@ -3063,6 +3063,8 @@ dependencies = [
  "sylvia",
  "sylvia-derive",
  "test-tube",
+ "test-vectis-plugin-exec",
+ "test-vectis-post-tx-exec",
  "thiserror",
  "vectis-factory",
  "vectis-plugin-registry",
