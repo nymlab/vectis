@@ -66,22 +66,13 @@ fn plugin_exec_works() {
         INIT_BALANCE.to_string()
     );
 
-    //  Proxy to exec this tx
-    let bank_msg = CosmosMsg::<Empty>::Bank(BankMsg::Send {
-        to_address: VALID_OSMO_ADDR.into(),
-        amount: vec![coin(2, DENOM)],
-    });
-
+    // Plugin contract exec the bank msg on the Proxy
     exec_contract
         .execute(
             &ExecMsg::Exec {
-                msgs: vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
-                    contract_addr: wallet_addr.to_string(),
-                    msg: to_binary(&wallet_plugin_trait::ExecMsg::PluginExecute {
-                        msg: vec![bank_msg],
-                    })
-                    .unwrap(),
-                    funds: vec![],
+                msgs: vec![CosmosMsg::<Empty>::Bank(BankMsg::Send {
+                    to_address: VALID_OSMO_ADDR.into(),
+                    amount: vec![coin(2, DENOM)],
                 })],
             },
             &[],
