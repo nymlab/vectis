@@ -59,7 +59,7 @@ pub const HEX_CANONICAL_VALID_OSMO_ADDR: &str = "0d93a9f00775dd45f6948fb11e00790
 pub const VECTIS_VERSION: &str = "v1.0.0-rc1";
 /// the proxy code_hash for this vectis version
 pub const PROXY_CODE_HASH: &str =
-    "dabb50ac04839886986c7eec961e411fbf436959cbde347d408242bb3853c5a2";
+    "7f4223db17bbc06ecfa8b3b9384c3ed52e424f8605874c5cec5d175164a7e035";
 pub const PLUGIN_EXEC_HASH: &str =
     "55d76db604a5a191f94877273255503bd563263fbebc3cf83141010d5fa16c92";
 pub const POST_TX_HASH: &str = "f6eb9e54070ba0cd14933a12bd122267ae318b9aefdd0e48b7aec51d90d29c37";
@@ -79,7 +79,6 @@ pub const DENOM: &str = "uosmo";
 pub const WALLET_FEE: u128 = 10u128;
 pub const REGISTRY_FEE: u128 = 11u128;
 pub const INIT_BALANCE: u128 = 12u128;
-pub const DEPLOYER_INIT_BALANCE: u128 = 100000u128;
 pub const TIER_1_FEE: u128 = 5u128;
 
 // Indexes for test_env

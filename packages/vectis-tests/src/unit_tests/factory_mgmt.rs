@@ -136,7 +136,6 @@ fn factory_can_update_configs() {
 }
 
 #[test]
-#[test]
 fn update_proxy_code_id_as_expected() {
     let app = App::default();
 

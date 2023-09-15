@@ -175,7 +175,6 @@ impl<'a> HubChainSuite<'a> {
         // Propose and execute deploy of plugin-registry
         //
         // ===========================================================
-        let code_hash = HexBinary::from_hex(PROXY_CODE_HASH).unwrap();
         let plugin_reg_inst_msg = PluginRegInstMsg {
             subscription_tiers: vec![
                 (SubscriptionTier::Free, tier_0()),

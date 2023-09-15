@@ -28,8 +28,9 @@ pub struct CreateWalletMsg {
     pub initial_data: Vec<(Binary, Binary)>,
     /// Initial plugins to be instantiated
     pub plugins: Vec<PluginInstallParams>,
-    /// Initial chains
-    pub chains: Option<Vec<String>>,
+    /// Initial chains: (chain, metadata stringified)
+    // https://ibc.cosmos.network/main/apps/interchain-accounts/messages.html
+    pub chains: Option<Vec<(String, String)>>,
     /// Proxy code id: default to the default on factory
     pub code_id: Option<u64>,
 }
