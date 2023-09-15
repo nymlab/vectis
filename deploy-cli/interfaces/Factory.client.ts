@@ -36,16 +36,17 @@ import {
     QueryMsg1,
     NullableAddr,
     Addr,
-    Uint64,
     ContractVersion,
+    Uint64,
     FeesResponse,
     ArrayOfTupleOfStringAndChainConnection,
+    ArrayOfTupleOfUint64AndString,
     NullableString,
 } from "./Factory.types";
 export interface FactoryReadOnlyInterface {
     contractAddress: string;
     totalCreated: () => Promise<Uint64>;
-    codeId: ({ ty }: { ty: CodeIdType }) => Promise<Uint64>;
+    defaultProxyCodeId: () => Promise<Uint64>;
     deployer: () => Promise<Addr>;
     supportedChains: ({
         limit,
@@ -54,6 +55,13 @@ export interface FactoryReadOnlyInterface {
         limit?: number;
         startAfter?: string;
     }) => Promise<ArrayOfTupleOfStringAndChainConnection>;
+    supportedProxies: ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: number;
+    }) => Promise<ArrayOfTupleOfUint64AndString>;
     fees: () => Promise<FeesResponse>;
     authProviderAddr: ({ ty }: { ty: AuthenticatorType }) => Promise<NullableAddr>;
     contractVersion: () => Promise<ContractVersion>;
@@ -68,9 +76,10 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
         this.client = client;
         this.contractAddress = contractAddress;
         this.totalCreated = this.totalCreated.bind(this);
-        this.codeId = this.codeId.bind(this);
+        this.defaultProxyCodeId = this.defaultProxyCodeId.bind(this);
         this.deployer = this.deployer.bind(this);
         this.supportedChains = this.supportedChains.bind(this);
+        this.supportedProxies = this.supportedProxies.bind(this);
         this.fees = this.fees.bind(this);
         this.authProviderAddr = this.authProviderAddr.bind(this);
         this.contractVersion = this.contractVersion.bind(this);
@@ -83,11 +92,9 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
             total_created: {},
         });
     };
-    codeId = async ({ ty }: { ty: CodeIdType }): Promise<Uint64> => {
+    defaultProxyCodeId = async (): Promise<Uint64> => {
         return this.client.queryContractSmart(this.contractAddress, {
-            code_id: {
-                ty,
-            },
+            default_proxy_code_id: {},
         });
     };
     deployer = async (): Promise<Addr> => {
@@ -104,6 +111,20 @@ export class FactoryQueryClient implements FactoryReadOnlyInterface {
     }): Promise<ArrayOfTupleOfStringAndChainConnection> => {
         return this.client.queryContractSmart(this.contractAddress, {
             supported_chains: {
+                limit,
+                start_after: startAfter,
+            },
+        });
+    };
+    supportedProxies = async ({
+        limit,
+        startAfter,
+    }: {
+        limit?: number;
+        startAfter?: number;
+    }): Promise<ArrayOfTupleOfUint64AndString> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            supported_proxies: {
                 limit,
                 start_after: startAfter,
             },
@@ -147,11 +168,15 @@ export interface FactoryInterface extends FactoryReadOnlyInterface {
     sender: string;
     updateCodeId: (
         {
-            newCodeId,
+            codeId,
+            setAsDefault,
             ty,
+            version,
         }: {
-            newCodeId: number;
+            codeId: number;
+            setAsDefault: boolean;
             ty: CodeIdType;
+            version?: string;
         },
         fee?: number | StdFee | "auto",
         memo?: string,
@@ -247,11 +272,15 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
 
     updateCodeId = async (
         {
-            newCodeId,
+            codeId,
+            setAsDefault,
             ty,
+            version,
         }: {
-            newCodeId: number;
+            codeId: number;
+            setAsDefault: boolean;
             ty: CodeIdType;
+            version?: string;
         },
         fee: number | StdFee | "auto" = "auto",
         memo?: string,
@@ -262,8 +291,10 @@ export class FactoryClient extends FactoryQueryClient implements FactoryInterfac
             this.contractAddress,
             {
                 update_code_id: {
-                    new_code_id: newCodeId,
+                    code_id: codeId,
+                    set_as_default: setAsDefault,
                     ty,
+                    version,
                 },
             },
             fee,
