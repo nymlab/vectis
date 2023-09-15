@@ -35,7 +35,6 @@ quote = "1.0"
 syn = { version = "1.0", features = ["derive"] }
 sha2 = "0.9"
 ripemd160 = "0.9.1"
-cosmos-sdk-proto = { git = "https://github.com/nymlab/cosmos-rust", rev = "ab8bc5fa1743803df3", default-features = false, features = ["cosmwasm"] }
+cosmos-sdk-proto = { git = "https://github.com/nymlab/cosmos-rust", rev = "acfd7b1a34b832c578a0afa", default-features = false, features = ["cosmwasm"] }
 # cosmos-sdk-proto = { path = "../cosmos-rust/cosmos-sdk-proto", default-features = false, features = ["cosmwasm"] }
-#getrandom = { version = "0.2", features = ["js"] }
 

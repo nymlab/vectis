@@ -3,7 +3,7 @@ use cosmwasm_std::{has_coins, Binary, Coin};
 
 use crate::types::{
     authenticator::AuthenticatorType,
-    error::{FactoryError, MigrationMsgError},
+    error::FactoryError,
     plugin::PluginInstallParams,
     wallet::{Controller, RelayTransaction},
 };
@@ -30,6 +30,8 @@ pub struct CreateWalletMsg {
     pub plugins: Vec<PluginInstallParams>,
     /// Initial chains
     pub chains: Option<Vec<String>>,
+    /// Proxy code id: default to the default on factory
+    pub code_id: Option<u64>,
 }
 
 impl CreateWalletMsg {
@@ -73,24 +75,6 @@ pub struct MigrateWalletMsg {
 }
 
 #[cw_serde]
-pub struct ProxyMigrateMsg {
-    pub new_code_id: u64,
-}
-
-impl ProxyMigrateMsg {
-    /// Ensures code id of multisig contract is equal to current factory multisig code id,
-    pub fn ensure_is_supported_proxy_code_id(
-        &self,
-        factory_proxy_code_id: u64,
-    ) -> Result<(), MigrationMsgError> {
-        if factory_proxy_code_id != self.new_code_id {
-            return Err(MigrationMsgError::MismatchProxyCodeId);
-        }
-        Ok(())
-    }
-}
-
-#[cw_serde]
 pub struct AuthenticatorInstInfo {
     pub ty: AuthenticatorType,
     pub code_id: u64,
@@ -100,7 +84,9 @@ pub struct AuthenticatorInstInfo {
 #[cw_serde]
 pub struct WalletFactoryInstantiateMsg {
     /// Smart contract wallet contract code id
-    pub proxy_code_id: u64,
+    pub default_proxy_code_id: u64,
+    /// The supported proxy, must be at least the info for the default one
+    pub supported_proxies: Vec<(u64, String)>,
     /// Fee for wallet creation in native token to be sent to Admin (DAO)
     pub wallet_fee: Coin,
     /// Authenticator

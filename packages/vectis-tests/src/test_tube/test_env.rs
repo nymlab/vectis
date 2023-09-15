@@ -97,7 +97,8 @@ impl<'a> HubChainSuite<'a> {
             Contract::store_code(app, REGISTRY_CODE_PATH, &accounts[IDEPLOYER]);
 
         let factory_inst_msg = WalletFactoryInstantiateMsg {
-            proxy_code_id,
+            default_proxy_code_id: proxy_code_id,
+            supported_proxies: vec![(proxy_code_id, VECTIS_VERSION.into())],
             wallet_fee: Coin {
                 denom: DENOM.to_string(),
                 amount: Uint128::new(WALLET_FEE),
@@ -180,7 +181,6 @@ impl<'a> HubChainSuite<'a> {
                 (SubscriptionTier::Free, tier_0()),
                 (SubscriptionTier::L1, tier_1()),
             ],
-            supported_proxies: vec![(code_hash, VECTIS_VERSION.into())],
             registry_fee: coin(REGISTRY_FEE, DENOM),
         };
         let deploy_reg_proposal = cw3flexExecMsg::Propose {

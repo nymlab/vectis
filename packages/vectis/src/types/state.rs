@@ -56,3 +56,7 @@ pub const SUPPORTEDCHAINS: SupportedChains = Map::new("supported_chains");
 /// The data blob store in Proxy
 pub type ProxyData<'a> = Map<'a, &'a [u8], Binary>;
 pub const PROXY_DATA: ProxyData = Map::new("proxy_data");
+
+/// The bytes of the code_id that are supported to the version
+pub type SupportedProxies<'a> = Map<'a, u64, String>;
+pub const SUPPORTEDPROXIES: SupportedProxies = Map::new("supported_proxies");

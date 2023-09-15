@@ -8,7 +8,7 @@ use crate::{
         },
     },
 };
-use cosmwasm_std::{coin, to_binary, Addr, BankMsg, Binary, CosmosMsg, Empty};
+use cosmwasm_std::{coin, to_binary, Addr, Binary, CosmosMsg};
 use osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse;
 use osmosis_test_tube::OsmosisTestApp;
 use test_tube::{RunnerExecuteResult, SigningAccount};
@@ -71,6 +71,8 @@ pub fn create_webauthn_wallet<'a>(
             vid: vid.into(),
             initial_data: vec![],
             plugins: vec![],
+            chains: None,
+            code_id: None,
         },
     };
 

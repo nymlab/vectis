@@ -4,13 +4,13 @@ use crate::{
         test_env::HubChainSuite,
         util::{
             contract::Contract,
-            wallet::{add_test_plugin, create_webauthn_wallet, sign_and_submit},
+            wallet::{add_test_plugin, create_webauthn_wallet},
         },
     },
 };
-use cosmwasm_std::{coin, to_binary, BankMsg, CosmosMsg, Empty, WasmMsg};
+use cosmwasm_std::{coin, BankMsg, CosmosMsg, Empty};
 use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;
-use osmosis_test_tube::{Account, Bank, OsmosisTestApp};
+use osmosis_test_tube::{Bank, OsmosisTestApp};
 use serial_test::serial;
 use test_tube::module::Module;
 use test_vectis_plugin_exec::contract::ExecMsg;

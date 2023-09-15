@@ -58,12 +58,16 @@ pub mod factory_management_trait {
         type Error: From<StdError>;
 
         /// Deployer only: update the newest code_id supported by Vectis
+        /// removes supported ones if version is `None`;
+        /// fails if code_id exist and version is `Some`;
         #[msg(exec)]
         fn update_code_id(
             &self,
             ctx: ExecCtx,
             ty: CodeIdType,
-            new_code_id: u64,
+            code_id: u64,
+            version: Option<String>,
+            set_as_default: bool,
         ) -> Result<Response, Self::Error>;
 
         /// Deployer only: update the fee associated with using Vectis services
@@ -107,7 +111,7 @@ pub mod factory_management_trait {
 
         /// Returns existing codeIds of the proxy and others
         #[msg(query)]
-        fn code_id(&self, ctx: QueryCtx, ty: CodeIdType) -> Result<u64, StdError>;
+        fn default_proxy_code_id(&self, ctx: QueryCtx) -> Result<u64, StdError>;
 
         /// Returns address of the deployer
         #[msg(query)]
@@ -121,6 +125,15 @@ pub mod factory_management_trait {
             start_after: Option<String>,
             limit: Option<u32>,
         ) -> Result<Vec<(String, ChainConnection)>, StdError>;
+
+        /// Returns supported proxies
+        #[msg(query)]
+        fn supported_proxies(
+            &self,
+            ctx: QueryCtx,
+            start_after: Option<u64>,
+            limit: Option<u32>,
+        ) -> Result<Vec<(u64, String)>, StdError>;
 
         /// Returns current fee `FeeResponse`
         #[msg(query)]

@@ -59,11 +59,11 @@ pub const HEX_CANONICAL_VALID_OSMO_ADDR: &str = "0d93a9f00775dd45f6948fb11e00790
 pub const VECTIS_VERSION: &str = "v1.0.0-rc1";
 /// the proxy code_hash for this vectis version
 pub const PROXY_CODE_HASH: &str =
-    "906b8eecb40101c591020da36ded0e6c974136e0be83819f17e98b40d49e4be8";
+    "dabb50ac04839886986c7eec961e411fbf436959cbde347d408242bb3853c5a2";
 pub const PLUGIN_EXEC_HASH: &str =
-    "9329a0ed36848387d5c4ca20b62a87bb526d656c69cbfae18cab1d863aa39637";
-pub const POST_TX_HASH: &str = "616a7e39b87ceadb959084b9112f02e53d4a937d67a1a3efbde60eed2e5ac2f1";
-pub const PRE_TX_HASH: &str = "90b5cfe278e15e316a611dc5a99609be671b1941c8a146770590dad550775ef6";
+    "55d76db604a5a191f94877273255503bd563263fbebc3cf83141010d5fa16c92";
+pub const POST_TX_HASH: &str = "f6eb9e54070ba0cd14933a12bd122267ae318b9aefdd0e48b7aec51d90d29c37";
+pub const PRE_TX_HASH: &str = "96c9f0f98163a8946d4d4f041a0c3125649513c1b62ac85836927e7e71b932b0";
 
 pub const CW4_CODE_PATH: &str = "./artifacts/cw4_group.wasm";
 pub const CW3FLEX_CODE_PATH: &str = "./artifacts/cw3_flex_multisig.wasm";

@@ -22,6 +22,7 @@ use vectis_wallet::{
         wallet::{WalletAddrs, WalletInfo},
     },
 };
+// NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
 
 // We cannot test with relayer in osmosis-test-tube.
 // Pending neutorn test-tube
@@ -41,12 +42,13 @@ fn create_wallet_successfully_without_relayer() {
     let create_msg = FactoryServiceExecMsg::CreateWallet {
         create_wallet_msg: CreateWalletMsg {
             controller: entity.clone(),
-            // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
             relayers: vec![],
             proxy_initial_funds: vec![],
             vid: vid.clone(),
             initial_data: vec![initial_data.clone()],
             plugins: vec![],
+            code_id: None,
+            chains: None,
         },
     };
 
@@ -120,6 +122,8 @@ fn create_with_inital_balance() {
             vid: vid.clone(),
             initial_data: vec![],
             plugins: vec![],
+            code_id: None,
+            chains: None,
         },
     };
 
@@ -166,6 +170,8 @@ fn cannot_create_with_incorrect_total_fee() {
             vid: vid.clone(),
             initial_data: vec![],
             plugins: vec![],
+            code_id: None,
+            chains: None,
         },
     };
 
@@ -197,6 +203,8 @@ fn cannot_create_using_same_vid() {
             vid: vid.clone(),
             initial_data: vec![],
             plugins: vec![],
+            code_id: None,
+            chains: None,
         },
     };
 
@@ -230,12 +238,13 @@ fn cannot_create_with_incorrect_fee() {
     let create_msg = FactoryServiceExecMsg::CreateWallet {
         create_wallet_msg: CreateWalletMsg {
             controller: entity.clone(),
-            // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
             relayers: vec![],
             proxy_initial_funds: vec![],
             vid: vid.clone(),
             initial_data: vec![],
             plugins: vec![],
+            code_id: None,
+            chains: None,
         },
     };
 
@@ -267,12 +276,13 @@ fn create_wallet_with_addrs_can_be_queired() {
     let create_msg = FactoryServiceExecMsg::CreateWallet {
         create_wallet_msg: CreateWalletMsg {
             controller: entity.clone(),
-            // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
             relayers: vec![],
             proxy_initial_funds: vec![],
             vid: vid.clone(),
             initial_data: vec![initial_data.clone()],
             plugins: vec![],
+            code_id: None,
+            chains: None,
         },
     };
 

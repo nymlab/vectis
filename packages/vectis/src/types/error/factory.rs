@@ -5,8 +5,8 @@ use super::*;
 pub enum MigrationMsgError {
     #[error("InvalidWalletAddr")]
     InvalidWalletAddr,
-    #[error("MismatchProxyCodeId")]
-    MismatchProxyCodeId,
+    #[error("UnsupportedProxyId")]
+    UnsupportedProxyId,
     #[error("InvalidMigrationMsg")]
     InvalidMigrationMsg,
 }
@@ -23,8 +23,12 @@ pub enum FactoryError {
     NotFound { addr: Addr },
     #[error("OverFlow")]
     OverFlow {},
-    #[error("SameProxyCodeId")]
-    SameProxyCodeId {},
+    #[error("ExistingProxyCodeId")]
+    ExistingProxyCodeId,
+    #[error("ProxyVersionRequired")]
+    ProxyVersionRequired,
+    #[error("CannotRemoveDefaultProxyId")]
+    CannotRemoveDefault,
     #[error("Unauthorized")]
     Unauthorized,
     #[error("InvalidMigrationMsg: {0}")]
@@ -39,6 +43,8 @@ pub enum FactoryError {
     UnexpectedUpdateParams,
     #[error("AlreadyExist {addr}")]
     AlreadyExist { addr: Addr },
+    #[error("InstantiationWithoutProxy")]
+    InstantiationWithoutProxy,
 }
 
 impl From<MigrationMsgError> for FactoryError {

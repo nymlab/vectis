@@ -1,13 +1,12 @@
-use cosmwasm_std::{coin, to_binary, BankMsg, CosmosMsg, Empty, WasmMsg};
+use cosmwasm_std::{coin, BankMsg, CosmosMsg, Empty};
 use osmosis_test_tube::OsmosisTestApp;
 use serial_test::serial;
 
 use test_vectis_post_tx_exec::contract::QueryMsg as PostTxQueryMsg;
 use vectis_wallet::{
-    interface::{registry_service_trait, wallet_plugin_trait, wallet_trait},
+    interface::{wallet_plugin_trait},
     types::{
-        plugin::{PluginListResponse, PluginsResponse},
-        plugin_registry::SubscriptionTier,
+        plugin::{PluginListResponse},
     },
 };
 

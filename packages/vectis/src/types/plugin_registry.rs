@@ -43,6 +43,4 @@ pub struct RegistryConfigResponse {
     pub registry_fee: Coin,
     pub deployer_addr: String,
     pub subscription_tiers: Vec<(u8, TierDetails)>,
-    /// The supported Proxies mapped by codehash to version
-    pub supported_proxies: Vec<(String, String)>,
 }

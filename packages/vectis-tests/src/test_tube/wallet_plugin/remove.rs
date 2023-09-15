@@ -4,14 +4,13 @@ use serial_test::serial;
 
 use vectis_wallet::{
     interface::{
-        registry_management_trait, registry_service_trait,
+        registry_service_trait,
         wallet_plugin_trait::{self, ExecMsg as WalletPluginExecMsg},
-        wallet_trait::{self, ExecMsg as WalletExecMsg},
     },
     types::{
         authenticator::EmptyInstantiateMsg,
-        plugin::{Plugin, PluginInstallParams, PluginListResponse, PluginPermission, PluginSource},
-        plugin_registry::{Subscriber, SubscriptionTier},
+        plugin::{PluginInstallParams, PluginListResponse, PluginPermission, PluginSource},
+        plugin_registry::{Subscriber},
     },
 };
 
@@ -22,7 +21,7 @@ use crate::{
         util::{
             contract::Contract,
             wallet::{
-                add_test_plugin, create_webauthn_wallet, sign_and_create_relay_tx, sign_and_submit,
+                create_webauthn_wallet, sign_and_submit,
             },
         },
     },
