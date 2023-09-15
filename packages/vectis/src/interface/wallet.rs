@@ -5,7 +5,7 @@ use sylvia::{interface, schemars};
 
 pub mod wallet_trait {
     use super::*;
-    use crate::types::wallet::RelayTransaction;
+    use crate::types::wallet::{Controller, RelayTransaction};
 
     /// The trait for each authenticator contract
     #[interface]
@@ -19,6 +19,13 @@ pub mod wallet_trait {
         /// Returns the data given the key
         #[msg(query)]
         fn data(&self, ctx: QueryCtx, key: Binary) -> Result<Option<Binary>, StdError>;
+
+        #[msg(exec)]
+        fn controller_rotation(
+            &self,
+            ctx: ExecCtx,
+            new_controller: Controller,
+        ) -> Result<Response, Self::Error>;
 
         #[msg(exec)]
         fn auth_exec(

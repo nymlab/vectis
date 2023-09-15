@@ -28,6 +28,8 @@ pub struct CreateWalletMsg {
     pub initial_data: Vec<(Binary, Binary)>,
     /// Initial plugins to be instantiated
     pub plugins: Vec<PluginInstallParams>,
+    /// Initial chains
+    pub chains: Option<Vec<String>>,
 }
 
 impl CreateWalletMsg {

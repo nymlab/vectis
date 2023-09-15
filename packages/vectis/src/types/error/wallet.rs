@@ -47,10 +47,14 @@ pub enum WalletError {
     PubKeyIsNotValid {},
     #[error("PubKeyLengthIsNotValid")]
     PubKeyLengthIsNotValid {},
+    #[error("SameControllerData")]
+    SameControllerData,
     #[error("Feature is not yet supported")]
     FeatureNotSupported,
     #[error("Error in parsing msgs to JSON")]
     ParseError,
+    #[error("Chain not supported in factory")]
+    ChainNotSupportedInFactory,
     #[error("Invalid authenticator")]
     InvalidAuthenticator,
     #[error("Not Exec Plugin")]
