@@ -24,8 +24,9 @@ export interface InstantiateMsg {
 }
 export interface WalletFactoryInstantiateMsg {
     authenticators?: AuthenticatorInstInfo[] | null;
-    proxy_code_id: number;
+    default_proxy_code_id: number;
     supported_chains?: [string, ChainConnection][] | null;
+    supported_proxies: [number, string][];
     wallet_fee: Coin;
 }
 export interface AuthenticatorInstInfo {
@@ -42,8 +43,10 @@ export type ExecuteMsg = FactoryManagementTraitExecMsg | FactoryServiceTraitExec
 export type FactoryManagementTraitExecMsg =
     | {
           update_code_id: {
-              new_code_id: number;
+              code_id: number;
+              set_as_default: boolean;
               ty: CodeIdType;
+              version?: string | null;
               [k: string]: unknown;
           };
       }
@@ -96,15 +99,13 @@ export type AuthenticatorProvider =
           custom: string;
       };
 export type PluginPermission = "exec" | "pre_tx_check" | "post_tx_hook";
-export type PluginSource =
-    | {
-          vectis_registry: [number, string | null];
-      }
-    | {
-          code_id: [number, string];
-      };
+export type PluginSource = {
+    vectis_registry: [number, string | null];
+};
 export type ExecMsg = string;
 export interface CreateWalletMsg {
+    chains?: [string, string][] | null;
+    code_id?: number | null;
     controller: Entity;
     initial_data: [Binary, Binary][];
     plugins: PluginInstallParams[];
@@ -144,8 +145,7 @@ export type FactoryManagementTraitQueryMsg =
           };
       }
     | {
-          code_id: {
-              ty: CodeIdType;
+          default_proxy_code_id: {
               [k: string]: unknown;
           };
       }
@@ -158,6 +158,13 @@ export type FactoryManagementTraitQueryMsg =
           supported_chains: {
               limit?: number | null;
               start_after?: string | null;
+              [k: string]: unknown;
+          };
+      }
+    | {
+          supported_proxies: {
+              limit?: number | null;
+              start_after?: number | null;
               [k: string]: unknown;
           };
       }
@@ -194,13 +201,14 @@ export type FactoryServiceTraitQueryMsg =
 export type QueryMsg1 = string;
 export type NullableAddr = Addr | null;
 export type Addr = string;
-export type Uint64 = number;
 export interface ContractVersion {
     contract: string;
     version: string;
 }
+export type Uint64 = number;
 export interface FeesResponse {
     wallet_fee: Coin;
 }
 export type ArrayOfTupleOfStringAndChainConnection = [string, ChainConnection][];
+export type ArrayOfTupleOfUint64AndString = [number, string][];
 export type NullableString = string | null;

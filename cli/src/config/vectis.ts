@@ -18,7 +18,6 @@ export const vectisTechCommittee2Weight: number = 50;
 
 // This is manual translate onchain VectisActors to string
 export enum VectisActors {
-    PluginCommittee = "PluginCommittee",
     PluginRegistry = "PluginRegistry",
     Factory = "Factory",
 }

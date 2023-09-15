@@ -13,11 +13,9 @@ export type Duration =
     | {
           time: number;
       };
-export type HexBinary = string;
 export interface InstantiateMsg {
     registry_fee: Coin;
     subscription_tiers: [SubscriptionTier, TierDetails][];
-    supported_proxies: [HexBinary, string][];
     [k: string]: unknown;
 }
 export interface Coin {

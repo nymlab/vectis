@@ -16,7 +16,8 @@ class FactoryClient extends FactoryC {
         const webauthn_inst_msg = {};
         return {
             msg: {
-                proxy_code_id: proxyCodeId,
+                default_proxy_code_id: proxyCodeId,
+                supported_proxies: [[proxyCodeId, "v1.0.0-rc1"]],
                 wallet_fee: wallet_fee as FactoryT.Coin,
                 authenticators: [
                     {
@@ -26,8 +27,8 @@ class FactoryClient extends FactoryC {
                     },
                 ],
                 supported_chains: [
-                    ["theta-testnet-001", { i_b_c: "connection-692" }],
-                    ["elgafar-1", { i_b_c: "connection-112" }],
+                    ["theta-testnet-001", { i_b_c: "connection-697" }],
+                    ["elgafar-1", { i_b_c: "connection-658" }],
                     ["osmo-test-5", { i_b_c: "connection-671" }],
                 ],
             },
@@ -67,13 +68,18 @@ class FactoryClient extends FactoryC {
         let authenticator: FactoryT.Authenticator = { provider: authenticatorProvider, ty: authenticatorType };
         let controllingEntity: FactoryT.Entity = { auth: authenticator, data: toBase64(pubkey), nonce: 0 };
         let msg: FactoryT.CreateWalletMsg = {
-            //controller: Entity;
             controller: controllingEntity,
             vid,
             initial_data,
             proxy_initial_funds,
             relayers,
             plugins,
+            chains: [
+                [
+                    "theta-testnet-001",
+                    '{"version":"ics27-1","encoding":"proto3","tx_type":"sdk_multi_msg","controller_connection_id":"connection-697","host_connection_id":"connection-2707"}',
+                ],
+            ],
         };
         return this.createWallet({ createWalletMsg: msg }, "auto", "", proxy_initial_funds);
     }

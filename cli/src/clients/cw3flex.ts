@@ -31,6 +31,34 @@ class Cw3FlexClient extends Cw3FlexC {
         return new Cw3FlexClient(cw, cw.sender, contractAddress);
     }
 
+    async update_supported_proxy(factoryAddr: string, new_code_id: number, set_default: boolean, version?: string) {
+        let updateMsg: FactoryT.FactoryManagementTraitExecMsg = {
+            update_code_id: { code_id: new_code_id, set_as_default: set_default, ty: "proxy", version },
+        };
+        await this.propose(
+            {
+                description: "update supported chain",
+                latest: undefined,
+                msgs: [
+                    {
+                        wasm: {
+                            execute: {
+                                contract_addr: factoryAddr,
+                                funds: [],
+                                msg: toCosmosMsg(updateMsg),
+                            },
+                        },
+                    },
+                ],
+                title: "update supported chain",
+            },
+            "auto"
+        );
+        let proposals = await this.listProposals({});
+        const propId = proposals.proposals.pop()!.id;
+        await this.execute({ proposalId: propId });
+    }
+
     async update_supported_chain(chain_id: string, chain_connection: FactoryT.ChainConnection, factoryAddr: string) {
         let updateMsg: FactoryT.FactoryManagementTraitExecMsg = {
             update_supported_interchain: { chain_id, chain_connection },

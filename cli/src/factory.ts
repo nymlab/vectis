@@ -13,6 +13,36 @@ export async function factory(network: Chains, opts: OptionValues) {
     const args = opts.args;
 
     switch (action) {
+        case "updateSupportedProxy": {
+            logger.info("Updating Supported Chains");
+            logger.info("Updating proxy code_id: ", args[0]);
+            logger.info("default:", args[1]);
+            logger.info("version:", args[2]);
+
+            const client = await CWClient.connectHostWithAccount("admin", network);
+            const uploadedContracts: VectisContractsAddrs = await import(getDeployPath(network));
+            const factoryClient = new FactoryClient(client, client.sender, uploadedContracts.Factory);
+            const hostAccounts: Record<string, Account> = await import(getAccountsPath(network));
+            const committee1Client = await CWClient.connectHostWithAccount("committee1", network);
+            const committee1 = hostAccounts["committee1"] as Account;
+
+            const vectisComClient = new Cw3FlexClient(
+                committee1Client,
+                committee1.address,
+                uploadedContracts.VectisCommittee
+            );
+            await vectisComClient.update_supported_proxy(
+                uploadedContracts.Factory,
+                +args[0],
+                args[1] == "true" ? true : false,
+                args[2]
+            );
+
+            let supported = await factoryClient.supportedProxies({});
+            logger.info("Updated Supported Proxy :", supported);
+
+            break;
+        }
         case "updateSupportedChains": {
             logger.info("Updating Supported Chains");
             logger.info("Updating chain id: ", args[0]);

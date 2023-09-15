@@ -70,7 +70,7 @@ export async function test(network: Chains, opts: OptionValues) {
     let res = await factoryClient.createWalletWebAuthn(
         pubkey,
         [[dataKey, dataValue]],
-        "test-hash-1", // the hash of the label / display name
+        "test-hash-2", // the hash of the label / display name
         [], // this is plugins to instantiate, we will keep as none for now
         [{ denom: "ujunox", amount: "100000" }], // initial proxy token
         [client.sender]
@@ -91,16 +91,12 @@ export async function test(network: Chains, opts: OptionValues) {
     let currentBalance = await proxyClient.client.getBalance(proxyAddr, "ujunox");
     logger.info("\n\ncurrentBalance: ", currentBalance);
 
-    let txRes = await proxyClient.relayTxFromSelf(
+    await proxyClient.relayTxFromSelf(
         vectisRelayTxStr,
         toBase64(authData),
         toBase64(clientData),
         toBase64(asn1Signature)
     );
-
-    let action = CWClient.getEventAttrValue(txRes, "wasm-vectis.proxy.v1", "action");
-    let relay = CWClient.getEventAttrValue(txRes, "wasm-vectis.proxy.v1", "msgs");
-    logger.info("\n\nresult action: ", action, "\nresult msgs: ", relay);
 
     // wait for block
     await delay(8000);

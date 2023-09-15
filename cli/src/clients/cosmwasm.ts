@@ -19,7 +19,7 @@ import {
 
 import { getContract } from "../utils/fs";
 
-import type { ProxyT, FactoryT } from "../interfaces";
+import type { FactoryT } from "../interfaces";
 import type { Accounts, Account } from "../config/accounts";
 import * as chainConfigs from "../config/chains";
 import type { Chain } from "../config/chains";

@@ -1,9 +1,8 @@
 {
-  "PluginCommittee": "juno1rvz6c9wmf4g9ztz3txvpftcmqpxecclfslugf9p6jem8fvgz9cqq6lp7xe",
-  "PluginCommitteeGroup": "juno1g6u077k8lz4qhxafukdq6kt84c7alpcgce5vj00knpx9qg3y3dlqlmzdec",
-  "VectisCommittee": "juno1g0fy4squ5lvfqvcuz3ntym6rn3lu287z5dfk8sfljdep5c46rr8skseh9w",
-  "VectisCommitteeGroup": "juno1094rx2emun4jtj236uzcqls022lh2fknz4ud4lqc97crkms7se0stvt325",
-  "PluginRegistry": "juno1amft5629wlwu5fs6u32v0wykewl0pea8wmd754v7vtryxgng2lusk04glx",
-  "Factory": "juno1gre5xtsldkpdmcu7gnuvrmcuwdq268e2umpzxqv4lpmmn3z0y3qqtlpu50",
-  "Webauthn": "juno14etajyshajcsg34wvw5w6puc04an24a0regvnghm2c5pa0sflkzsnm97lg"
+    "VectisCommittee": "juno1wq4suglesrvrls9u8dyvgyd2uhjcajlhna85grl9vnhcz2s4shhsaxngh3",
+    "VectisCommitteeGroup": "juno1nltvk4zwuh490w4pvvc3vecejw2krtgpd0lr9k4dhuurwmmdwrzq4uqa56",
+    "PluginRegistry": "juno1k6rm7rchrsj5v3fec54d3uvuw297a5xplvptt4uyysrfmyghveyqwdz2pu",
+    "Factory": "juno1ql86cvcley27mcrypvf394wuakmpuf0z4l7e20d8a3s66ulue77s8kvfqc",
+    "Webauthn": "juno1fv92a6yf6lmfe3pxre6p7m76l0rz2gwp8szud2kd0hr2cudtvfsqytd5v8"
 }
+

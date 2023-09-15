@@ -22,21 +22,42 @@ import {
     Coin,
     ExecuteMsg,
     WalletTraitExecMsg,
+    WalletPluginTraitExecMsg,
+    CosmosMsgForEmpty,
+    BankMsg,
+    StakingMsg,
+    DistributionMsg,
+    IbcMsg,
+    Timestamp,
+    Uint64,
+    WasmMsg,
+    GovMsg,
+    VoteOption,
+    Decimal,
     ExecMsg,
     RelayTransaction,
+    Empty,
+    IbcTimeout,
+    IbcTimeoutBlock,
+    WeightedVoteOption,
+    PluginMigrateParams,
     QueryMsg,
     WalletTraitQueryMsg,
+    WalletPluginTraitQueryMsg,
     QueryMsg1,
     NullableBinary,
     Addr,
     WalletInfo,
     WalletAddrs,
     ContractVersion,
+    PluginListResponse,
+    PluginInfo,
 } from "./Proxy.types";
 export interface ProxyReadOnlyInterface {
     contractAddress: string;
     info: () => Promise<WalletInfo>;
     data: ({ key }: { key: Binary }) => Promise<NullableBinary>;
+    plugins: () => Promise<PluginListResponse>;
 }
 export class ProxyQueryClient implements ProxyReadOnlyInterface {
     client: CosmWasmClient;
@@ -47,6 +68,7 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
         this.contractAddress = contractAddress;
         this.info = this.info.bind(this);
         this.data = this.data.bind(this);
+        this.plugins = this.plugins.bind(this);
     }
 
     info = async (): Promise<WalletInfo> => {
@@ -61,10 +83,25 @@ export class ProxyQueryClient implements ProxyReadOnlyInterface {
             },
         });
     };
+    plugins = async (): Promise<PluginListResponse> => {
+        return this.client.queryContractSmart(this.contractAddress, {
+            plugins: {},
+        });
+    };
 }
 export interface ProxyInterface extends ProxyReadOnlyInterface {
     contractAddress: string;
     sender: string;
+    controllerRotation: (
+        {
+            newController,
+        }: {
+            newController: Entity;
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ) => Promise<ExecuteResult>;
     authExec: (
         {
             transaction,
@@ -85,6 +122,46 @@ export interface ProxyInterface extends ProxyReadOnlyInterface {
         memo?: string,
         _funds?: Coin[]
     ) => Promise<ExecuteResult>;
+    pluginExecute: (
+        {
+            msg,
+        }: {
+            msg: CosmosMsgForEmpty[];
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    installPlugins: (
+        {
+            install,
+        }: {
+            install: PluginInstallParams[];
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    updatePlugins: (
+        {
+            migrate,
+        }: {
+            migrate: PluginMigrateParams[];
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ) => Promise<ExecuteResult>;
+    removePlugins: (
+        {
+            pluginAddrs,
+        }: {
+            pluginAddrs: string[];
+        },
+        fee?: number | StdFee | "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ) => Promise<ExecuteResult>;
 }
 export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
     override client: SigningCosmWasmClient;
@@ -96,10 +173,38 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
         this.client = client;
         this.sender = sender;
         this.contractAddress = contractAddress;
+        this.controllerRotation = this.controllerRotation.bind(this);
         this.authExec = this.authExec.bind(this);
         this.updateData = this.updateData.bind(this);
+        this.pluginExecute = this.pluginExecute.bind(this);
+        this.installPlugins = this.installPlugins.bind(this);
+        this.updatePlugins = this.updatePlugins.bind(this);
+        this.removePlugins = this.removePlugins.bind(this);
     }
 
+    controllerRotation = async (
+        {
+            newController,
+        }: {
+            newController: Entity;
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                controller_rotation: {
+                    new_controller: newController,
+                },
+            },
+            fee,
+            memo,
+            _funds
+        );
+    };
     authExec = async (
         {
             transaction,
@@ -139,6 +244,98 @@ export class ProxyClient extends ProxyQueryClient implements ProxyInterface {
             {
                 update_data: {
                     data,
+                },
+            },
+            fee,
+            memo,
+            _funds
+        );
+    };
+    pluginExecute = async (
+        {
+            msg,
+        }: {
+            msg: CosmosMsgForEmpty[];
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                plugin_execute: {
+                    msg,
+                },
+            },
+            fee,
+            memo,
+            _funds
+        );
+    };
+    installPlugins = async (
+        {
+            install,
+        }: {
+            install: PluginInstallParams[];
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                install_plugins: {
+                    install,
+                },
+            },
+            fee,
+            memo,
+            _funds
+        );
+    };
+    updatePlugins = async (
+        {
+            migrate,
+        }: {
+            migrate: PluginMigrateParams[];
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                update_plugins: {
+                    migrate,
+                },
+            },
+            fee,
+            memo,
+            _funds
+        );
+    };
+    removePlugins = async (
+        {
+            pluginAddrs,
+        }: {
+            pluginAddrs: string[];
+        },
+        fee: number | StdFee | "auto" = "auto",
+        memo?: string,
+        _funds?: Coin[]
+    ): Promise<ExecuteResult> => {
+        return await this.client.execute(
+            this.sender,
+            this.contractAddress,
+            {
+                remove_plugins: {
+                    plugin_addrs: pluginAddrs,
                 },
             },
             fee,

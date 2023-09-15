@@ -10,7 +10,6 @@ import {
     Uint128,
     SubscriptionTier,
     Duration,
-    HexBinary,
     InstantiateMsg,
     Coin,
     TierDetails,
