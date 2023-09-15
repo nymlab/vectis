@@ -32,9 +32,9 @@ cw-multi-test = { version = "0.16.5"}
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
 thiserror = { workspace = true }
-osmosis-std = "=0.17.0-rc0"
-test-tube = "=0.1.6"
-osmosis-test-tube = "=17.0.0-rc0" 
+osmosis-std = "=0.19.1"
+test-tube = "=0.1.7"
+osmosis-test-tube = "=19.0.0" 
 cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "9d6fae5" }
 cw4-group= { version = "1.0.1", features = ["library"] }
 cw3 = "1.0.1"

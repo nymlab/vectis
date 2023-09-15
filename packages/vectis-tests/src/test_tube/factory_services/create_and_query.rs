@@ -15,7 +15,7 @@ use vectis_wallet::{
         factory_service_trait::{
             ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
         },
-        wallet_trait::QueryMsg as WalletQueryMsg,
+        wallet_trait::{self, QueryMsg as WalletQueryMsg},
     },
     types::{
         factory::CreateWalletMsg,
@@ -153,6 +153,64 @@ fn create_with_inital_balance() {
         INIT_BALANCE.to_string()
     );
 }
+
+//#[test]
+//fn create_with_ica() {
+//    let app = OsmosisTestApp::new();
+//    let suite = HubChainSuite::init(&app);
+//
+//    let entity = default_entity();
+//    let vid = String::from("user-name@vectis");
+//
+//    let create_msg = FactoryServiceExecMsg::CreateWallet {
+//        create_wallet_msg: CreateWalletMsg {
+//            controller: entity.clone(),
+//            relayers: vec![],
+//            proxy_initial_funds: vec![coin(INIT_BALANCE, DENOM)],
+//            vid: vid.clone(),
+//            initial_data: vec![],
+//            plugins: vec![],
+//            code_id: None,
+//            chains: Some(vec![(
+//                IBC_CHAIN_NAME.into(),
+//                r#"{"version":"ics27-1","encoding":"proto3","tx_type":"sdk_multi_msg","controller_connection_id":"connection-1","host_connection_id":"connection-12"}"#.into(),
+//            )]),
+//        },
+//    };
+//
+//    let factory = Contract::from_addr(&app, suite.factory);
+//
+//    factory
+//        .execute(
+//            &create_msg,
+//            &[coin(WALLET_FEE + INIT_BALANCE, DENOM)],
+//            &suite.accounts[IDEPLOYER],
+//        )
+//        .unwrap();
+//
+//    let wallet_addr: Option<Addr> = factory
+//        .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid.into() })
+//        .unwrap();
+//    let wallet_addr = wallet_addr.unwrap().to_string();
+//
+//    let bank = Bank::new(&app);
+//    let init_balance = bank
+//        .query_balance(&QueryBalanceRequest {
+//            address: wallet_addr.clone(),
+//            denom: DENOM.into(),
+//        })
+//        .unwrap();
+//    assert_eq!(
+//        init_balance.balance.unwrap().amount,
+//        INIT_BALANCE.to_string()
+//    );
+//
+//    let wallet = Contract::from_addr(&app, wallet_addr);
+//
+//    let info: WalletInfo = wallet.query(&wallet_trait::QueryMsg::Info {}).unwrap();
+//
+//    println!("info {:?}", info);
+//}
 
 #[test]
 fn cannot_create_with_incorrect_total_fee() {
