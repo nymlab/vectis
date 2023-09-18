@@ -53,7 +53,7 @@ impl PluginExec<'_> {
     }
 
     pub(crate) fn get_event(&self, action: impl Into<String>) -> Event {
-        Event::new("vectis.webauthn.v1").add_attribute("action", action)
+        Event::new("vectis.plugin-exec-test.v1").add_attribute("action", action)
     }
 
     #[msg(query)]

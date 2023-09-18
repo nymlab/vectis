@@ -15,7 +15,6 @@ crate-type = ["cdylib", "rlib"]
 [features]
 backtraces = ["cosmwasm-std/backtraces"]
 library = []
-migration = []
 mt = ["sylvia/mt"]
 multitest = ["mt"]
 

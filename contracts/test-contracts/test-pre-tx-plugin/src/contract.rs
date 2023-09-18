@@ -2,9 +2,12 @@ use cosmwasm_std::{CosmosMsg, Event, Response, StdError};
 use cw2::{get_contract_version, set_contract_version, ContractVersion};
 use sylvia::{
     contract, schemars,
-    types::{InstantiateCtx, QueryCtx},
+    types::{InstantiateCtx, MigrateCtx, QueryCtx},
 };
-use vectis_wallet::interface::{pre_tx_check_trait, PreTxCheckTrait};
+use vectis_wallet::{
+    interface::{pre_tx_check_trait, PreTxCheckTrait},
+    types::wallet::TestMigrateMsg,
+};
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
@@ -52,6 +55,13 @@ impl PreTxCheck {
     }
 
     pub(crate) fn get_event(&self, action: impl Into<String>) -> Event {
-        Event::new("vectis.webauthn.v1").add_attribute("action", action)
+        Event::new("vectis.pre-tx-test.v1").add_attribute("action", action)
+    }
+
+    #[msg(migrate)]
+    fn migrate(&self, ctx: MigrateCtx, msg: TestMigrateMsg) -> Result<Response, StdError> {
+        set_contract_version(ctx.deps.storage, msg.name, msg.version)?;
+        let event = self.get_event("migrated");
+        Ok(Response::new().add_event(event))
     }
 }
