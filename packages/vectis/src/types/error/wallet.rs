@@ -61,6 +61,8 @@ pub enum WalletError {
     NotExecPlugin,
     #[error("Pre Check Invalid by Plugin {0}")]
     PreTxCheckFailed(String),
+    #[error("Not Factory")]
+    NotFactory,
 }
 
 #[derive(Error, Debug, PartialEq)]

@@ -24,8 +24,8 @@ fn can_register_with_correct_params() {
         suite.plugin_registry.clone(),
         &registry_management_trait::ExecMsg::RegisterPlugin {
             code_data: test_plugin_code_data(
-                suite.test_plugins.pre_tx.0,
-                suite.test_plugins.pre_tx.1,
+                suite.test_contracts.pre_tx.0,
+                suite.test_contracts.pre_tx.1,
             ),
             metadata_data: test_plugin_metadata(),
         },
@@ -50,7 +50,8 @@ fn can_register_with_correct_params() {
         .query(&registry_management_trait::QueryMsg::GetPluginById { id: 1 })
         .unwrap();
 
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
     let expected_plugin = Plugin {
         id: 1,
         creator: canonical_valid_osmo(),
@@ -74,7 +75,8 @@ fn can_register_with_correct_params() {
 fn cannot_register_without_correct_fee() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
 
     vectis_committee::execute(
         &app,
@@ -96,8 +98,10 @@ fn cannot_register_incorrect_code_hash() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
     // WRONG codeID - mismatch to codehash
-    let code_data =
-        test_plugin_code_data(suite.test_plugins.post_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data = test_plugin_code_data(
+        suite.test_contracts.post_tx.0,
+        suite.test_contracts.pre_tx.1,
+    );
 
     vectis_committee::execute(
         &app,
@@ -118,7 +122,8 @@ fn cannot_register_incorrect_code_hash() {
 fn not_deployer_cannot_register() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
 
     let registry = Contract::from_addr(&app, suite.plugin_registry);
 

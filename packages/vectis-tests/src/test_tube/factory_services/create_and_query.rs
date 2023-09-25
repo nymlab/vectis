@@ -15,7 +15,7 @@ use vectis_wallet::{
         factory_service_trait::{
             ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
         },
-        wallet_trait::{self, QueryMsg as WalletQueryMsg},
+        wallet_trait::QueryMsg as WalletQueryMsg,
     },
     types::{
         factory::CreateWalletMsg,
@@ -23,6 +23,7 @@ use vectis_wallet::{
     },
 };
 // NOTE: we cannot test feegrant on osmosis-test-tube as it is not registered
+// we also cannot test create ica - pending neutron test tube
 
 // We cannot test with relayer in osmosis-test-tube.
 // Pending neutorn test-tube

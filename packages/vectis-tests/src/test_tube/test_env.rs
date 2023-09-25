@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, to_binary, Coin, CosmosMsg, HexBinary, Uint128, WasmMsg};
+use cosmwasm_std::{coin, to_binary, Coin, CosmosMsg, Uint128, WasmMsg};
 use osmosis_test_tube::{Account, OsmosisTestApp, SigningAccount};
 
 use vectis_factory::contract::InstantiateMsg as FactoryInstMsg;
@@ -43,7 +43,7 @@ pub struct HubChainSuite<'a> {
     // accounts
     pub accounts: Vec<SigningAccount>,
     // test plugins
-    pub test_plugins: TestPlugins,
+    pub test_contracts: TestContracts,
 }
 
 impl<'a> HubChainSuite<'a> {
@@ -95,10 +95,16 @@ impl<'a> HubChainSuite<'a> {
         let factory_code_id = Contract::store_code(app, FACTORY_CODE_PATH, &accounts[IDEPLOYER]);
         let plugin_reg_code_id =
             Contract::store_code(app, REGISTRY_CODE_PATH, &accounts[IDEPLOYER]);
+        let proxy_migration_code_id =
+            Contract::store_code(app, PROXY_MIGRATION_CODE_PATH, &accounts[IDEPLOYER]);
 
         let factory_inst_msg = WalletFactoryInstantiateMsg {
             default_proxy_code_id: proxy_code_id,
-            supported_proxies: vec![(proxy_code_id, VECTIS_VERSION.into())],
+            supported_proxies: vec![
+                (proxy_code_id, VECTIS_VERSION.into()),
+                (proxy_migration_code_id, PROXY_MIGRATE_VERSION.into()),
+                (test_pre_tx_code_id, "should-fail-v2.0.0-test".into()),
+            ],
             wallet_fee: Coin {
                 denom: DENOM.to_string(),
                 amount: Uint128::new(WALLET_FEE),
@@ -267,10 +273,11 @@ impl<'a> HubChainSuite<'a> {
             webauthn,
             plugin_registry,
             accounts,
-            test_plugins: TestPlugins {
+            test_contracts: TestContracts {
                 pre_tx: (test_pre_tx_code_id, PRE_TX_HASH, 0),
                 post_tx: (test_post_tx_code_id, POST_TX_HASH, 0),
                 exec: (test_plugin_exec_code_id, PLUGIN_EXEC_HASH, 0),
+                proxy_migrate: (proxy_migration_code_id, PROXY_MIGRATION_HASH),
             },
         }
     }
@@ -284,8 +291,8 @@ impl HubChainSuite<'_> {
             self.plugin_registry.clone(),
             &registry_management_trait::ExecMsg::RegisterPlugin {
                 code_data: test_plugin_code_data(
-                    self.test_plugins.pre_tx.0,
-                    self.test_plugins.pre_tx.1,
+                    self.test_contracts.pre_tx.0,
+                    self.test_contracts.pre_tx.1,
                 ),
                 metadata_data: test_plugin_metadata(),
             },
@@ -300,8 +307,8 @@ impl HubChainSuite<'_> {
             self.plugin_registry.clone(),
             &registry_management_trait::ExecMsg::RegisterPlugin {
                 code_data: test_plugin_code_data(
-                    self.test_plugins.post_tx.0,
-                    self.test_plugins.post_tx.1,
+                    self.test_contracts.post_tx.0,
+                    self.test_contracts.post_tx.1,
                 ),
                 metadata_data: test_plugin_metadata(),
             },
@@ -316,8 +323,8 @@ impl HubChainSuite<'_> {
             self.plugin_registry.clone(),
             &registry_management_trait::ExecMsg::RegisterPlugin {
                 code_data: test_plugin_code_data(
-                    self.test_plugins.exec.0,
-                    self.test_plugins.exec.1,
+                    self.test_contracts.exec.0,
+                    self.test_contracts.exec.1,
                 ),
                 metadata_data: test_plugin_metadata(),
             },
@@ -337,9 +344,9 @@ impl HubChainSuite<'_> {
 
         assert_eq!(plugins.total, 3);
 
-        self.test_plugins.pre_tx.2 = 1;
-        self.test_plugins.post_tx.2 = 2;
-        self.test_plugins.exec.2 = 3;
+        self.test_contracts.pre_tx.2 = 1;
+        self.test_contracts.post_tx.2 = 2;
+        self.test_contracts.exec.2 = 3;
     }
 }
 

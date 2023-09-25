@@ -25,7 +25,7 @@ use vectis_wallet::{
             Authenticator, AuthenticatorProvider, AuthenticatorType, EmptyInstantiateMsg,
         },
         entity::Entity,
-        factory::CreateWalletMsg,
+        factory::{CreateWalletMsg, MigrateWalletMsg},
         plugin::{PluginInstallParams, PluginPermission, PluginSource},
         wallet::{Nonce, RelayTransaction, VectisRelayedTx, WalletInfo, WebauthnRelayedTxMsg},
     },
@@ -107,6 +107,33 @@ pub fn sign_and_submit(
     wallet.execute(
         &WalletExecMsg::AuthExec {
             transaction: relay_tx,
+        },
+        &[],
+        relayer,
+    )
+}
+
+pub fn sign_migration_msg(
+    app: &OsmosisTestApp,
+    messages: Vec<CosmosMsg>,
+    vid: &str,
+    wallet_addr: &str,
+    factory_addr: &str,
+    relayer: &SigningAccount,
+) -> RunnerExecuteResult<MsgExecuteContractResponse> {
+    let wallet = Contract::from_addr(&app, wallet_addr.into());
+    let factory = Contract::from_addr(&app, factory_addr.into());
+
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+
+    let relay_tx = sign_and_create_relay_tx(messages, info.controller.nonce, vid);
+
+    factory.execute(
+        &FactoryServiceExecMsg::MigrateWallet {
+            migrations_msg: MigrateWalletMsg {
+                addr_to_migrate: wallet_addr.into(),
+                tx: relay_tx,
+            },
         },
         &[],
         relayer,

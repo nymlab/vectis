@@ -155,3 +155,9 @@ pub struct WebauthnRelayedTxMsg {
     pub auth_data: Binary,
     pub client_data: Binary,
 }
+
+#[cw_serde]
+pub struct TestMigrateMsg {
+    pub name: String,
+    pub version: String,
+}

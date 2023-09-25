@@ -35,6 +35,9 @@ pub mod wallet_trait {
         ) -> Result<Response, Self::Error>;
 
         #[msg(exec)]
+        fn controller_nonce_update(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
+
+        #[msg(exec)]
         fn update_data(
             &self,
             ctx: ExecCtx,

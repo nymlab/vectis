@@ -10,7 +10,7 @@ use vectis_wallet::{
     types::{
         authenticator::EmptyInstantiateMsg,
         plugin::{PluginInstallParams, PluginListResponse, PluginPermission, PluginSource},
-        plugin_registry::{Subscriber},
+        plugin_registry::Subscriber,
     },
 };
 
@@ -20,9 +20,7 @@ use crate::{
         test_env::HubChainSuite,
         util::{
             contract::Contract,
-            wallet::{
-                create_webauthn_wallet, sign_and_submit,
-            },
+            wallet::{create_webauthn_wallet, sign_and_submit},
         },
     },
 };
@@ -56,7 +54,7 @@ fn remove_installed_plugin_successfully() {
 
     let install_plugin_msg = WalletPluginExecMsg::InstallPlugins {
         install: vec![PluginInstallParams {
-            src: PluginSource::VectisRegistry(suite.test_plugins.pre_tx.2, None),
+            src: PluginSource::VectisRegistry(suite.test_contracts.pre_tx.2, None),
             permission: PluginPermission::PreTxCheck,
             label: "plugin_install".into(),
             funds: vec![],

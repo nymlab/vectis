@@ -18,8 +18,8 @@ debug-assertions = false
 cosmwasm-std = { version = "^1.2", features = ["iterator", "ibc3", "staking", "cosmwasm_1_2"] }
 cosmwasm-storage = "^1.2" 
 cosmwasm-schema = "^1.2" 
-sylvia = "0.7.0"
-sylvia-derive = "0.7.0"
+sylvia = "0.8.1"
+sylvia-derive = "0.8.1"
 cw-utils = "1.0.1"
 thiserror = { version = "1.0.30" }
 cw-storage-plus = "1.1"

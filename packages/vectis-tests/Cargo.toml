@@ -16,6 +16,7 @@ vectis-proxy = { path = "../../contracts/core/proxy", features = ["multitest"]}
 vectis-plugin-registry = { path = "../../contracts/core/plugin_registry", features = ["mt"]}
 vectis-webauthn-authenticator = { path = "../../contracts/authenticators/webauthn", features = ["mt"]}
 vectis-wallet = { path = "../vectis"}
+test-vectis-pre-tx = { path = "../../contracts/test-contracts/test-pre-tx-plugin" }
 test-vectis-post-tx-exec = { path = "../../contracts/test-contracts/test-post-tx-plugin" }
 test-vectis-plugin-exec = { path = "../../contracts/test-contracts/test-plugin-exec" }
 sylvia = { workspace = true } 
@@ -33,8 +34,10 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 thiserror = { workspace = true }
 osmosis-std = "=0.19.1"
-test-tube = "=0.1.7"
 osmosis-test-tube = "=19.0.0" 
+test-tube = "=0.1.7"
+#  test-tube = {path = "../../../../test-tube/packages/test-tube"} 
+#  osmosis-test-tube =  { path = "../../../../test-tube/packages/osmosis-test-tube" } 
 cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "9d6fae5" }
 cw4-group= { version = "1.0.1", features = ["library"] }
 cw3 = "1.0.1"

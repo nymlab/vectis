@@ -13,7 +13,8 @@ use vectis_wallet::{interface::registry_management_trait, types::plugin::Plugins
 fn can_unregister_with_correct_params() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
 
     vectis_committee::execute(
         &app,
@@ -90,7 +91,8 @@ fn cannot_unregister_not_existing() {
 fn not_deployer_cannot_unregister() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
 
     vectis_committee::execute(
         &app,

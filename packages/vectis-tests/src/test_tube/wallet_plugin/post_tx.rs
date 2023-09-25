@@ -3,12 +3,7 @@ use osmosis_test_tube::OsmosisTestApp;
 use serial_test::serial;
 
 use test_vectis_post_tx_exec::contract::QueryMsg as PostTxQueryMsg;
-use vectis_wallet::{
-    interface::{wallet_plugin_trait},
-    types::{
-        plugin::{PluginListResponse},
-    },
-};
+use vectis_wallet::{interface::wallet_plugin_trait, types::plugin::PluginListResponse};
 
 use crate::{
     constants::*,
@@ -46,7 +41,7 @@ fn post_tx_executes() {
         vid,
         wallet_addr.as_str(),
         &suite.accounts[IRELAYER],
-        suite.test_plugins.post_tx.2,
+        suite.test_contracts.post_tx.2,
     )
     .unwrap();
 

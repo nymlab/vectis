@@ -42,7 +42,7 @@ pub type Plugins<'a> = Map<'a, u64, Plugin>;
 pub const PLUGINS: Plugins = Map::new("registry_plugins");
 
 // Stored on Plugin registry, queried externally by proxy
-/// Types that allow other contracts to query the plugins from the registry
+/// Types that allow other contracts to query the subscriber status from the registry
 pub type Subscribers<'a> = Map<'a, &'a str, Subscriber>;
 pub const SUBSCRIBERS: Subscribers = Map::new("subscribers");
 

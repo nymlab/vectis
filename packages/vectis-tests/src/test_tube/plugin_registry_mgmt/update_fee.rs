@@ -43,7 +43,8 @@ fn deployer_can_update_fee() {
     assert_eq!(config.registry_fee, coin(REGISTRY_FEE + 10, DENOM));
 
     // old_fee cannot add plugin
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
 
     vectis_committee::execute(
         &app,

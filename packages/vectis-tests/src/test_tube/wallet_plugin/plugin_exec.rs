@@ -40,7 +40,7 @@ fn plugin_exec_works() {
         vid,
         wallet_addr.as_str(),
         &suite.accounts[IRELAYER],
-        suite.test_plugins.exec.2,
+        suite.test_contracts.exec.2,
     )
     .unwrap();
 

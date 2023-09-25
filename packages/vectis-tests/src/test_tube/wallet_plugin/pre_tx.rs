@@ -36,7 +36,7 @@ fn pre_tx_checks() {
         vid,
         wallet_addr.as_str(),
         &suite.accounts[IRELAYER],
-        suite.test_plugins.pre_tx.2,
+        suite.test_contracts.pre_tx.2,
     )
     .unwrap();
 

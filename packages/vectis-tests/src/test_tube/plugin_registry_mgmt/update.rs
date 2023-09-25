@@ -18,7 +18,8 @@ fn can_update_metadata_with_correct_params() {
     let suite = HubChainSuite::init(&app);
     let new_display_name = "vectis-new-display-name-test";
     let new_ipfs_hash = "vectis-new-ipfs-hash-test";
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
 
     vectis_committee::execute(
         &app,
@@ -113,7 +114,8 @@ fn cannot_update_not_existing() {
 fn not_deployer_cannot_update() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
 
     vectis_committee::execute(
         &app,
@@ -146,9 +148,12 @@ fn not_deployer_cannot_update() {
 fn cannot_update_incorrect_code_data() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
-    let incorrect_code_data =
-        test_plugin_code_data(suite.test_plugins.post_tx.0, suite.test_plugins.pre_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
+    let incorrect_code_data = test_plugin_code_data(
+        suite.test_contracts.post_tx.0,
+        suite.test_contracts.pre_tx.1,
+    );
 
     vectis_committee::execute(
         &app,
@@ -183,9 +188,12 @@ fn cannot_update_incorrect_code_data() {
 fn can_update_correct_code_data() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
-    let code_data = test_plugin_code_data(suite.test_plugins.pre_tx.0, suite.test_plugins.pre_tx.1);
-    let mut new_code_data =
-        test_plugin_code_data(suite.test_plugins.post_tx.0, suite.test_plugins.post_tx.1);
+    let code_data =
+        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
+    let mut new_code_data = test_plugin_code_data(
+        suite.test_contracts.post_tx.0,
+        suite.test_contracts.post_tx.1,
+    );
     new_code_data.latest_contract_version = "new-version".into();
 
     vectis_committee::execute(

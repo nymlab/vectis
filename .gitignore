@@ -1,6 +1,6 @@
 # Build results
 **/target
-**/artifacts
+artifacts
 
 # Coverage results
 **/coverage
