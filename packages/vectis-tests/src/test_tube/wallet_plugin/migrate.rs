@@ -50,7 +50,6 @@ fn can_migrate_plugin() {
         .query(&wallet_plugin_trait::QueryMsg::Plugins {})
         .unwrap();
 
-    // TODO new contracts -> migrate_pre_tx
     let mut new_code_data =
         test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
     new_code_data.latest_contract_version = "new-version".into();
@@ -68,8 +67,6 @@ fn can_migrate_plugin() {
         &suite.accounts[ICOMMITTEE],
     )
     .unwrap();
-
-    //let registry = Contract::from_addr(&app, suite.plugin_registry.clone());
 
     sign_and_submit(
         &app,
