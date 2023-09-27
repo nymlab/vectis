@@ -34,10 +34,12 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 thiserror = { workspace = true }
 osmosis-std = "=0.19.1"
-osmosis-test-tube = "=19.0.0" 
-test-tube = "=0.1.7"
-#  test-tube = {path = "../../../../test-tube/packages/test-tube"} 
+# osmosis-test-tube = "=19.0.0" 
+# test-tube = "=0.1.7"
+#  test-tube = { path = "../../../../test-tube/packages/test-tube"} 
 #  osmosis-test-tube =  { path = "../../../../test-tube/packages/osmosis-test-tube" } 
+test-tube = { git = "https://github.com/osmosis-labs/test-tube",  rev = "78f99ff"} 
+osmosis-test-tube =  { git = "https://github.com/osmosis-labs/test-tube", rev = "78f99ff"} 
 cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "9d6fae5" }
 cw4-group= { version = "1.0.1", features = ["library"] }
 cw3 = "1.0.1"

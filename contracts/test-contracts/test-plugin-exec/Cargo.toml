@@ -30,6 +30,3 @@ serde-json-wasm = {workspace = true}
 cw2 = { workspace = true }
 cw-utils= { workspace = true }
 vectis-wallet = { path = "../../../packages/vectis" }
-
-[dev-dependencies]
-sylvia = {version = "0.7.0", features = ["mt"]}
