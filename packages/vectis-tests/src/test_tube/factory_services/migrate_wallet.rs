@@ -34,6 +34,7 @@ fn controller_can_migrate_wallet() {
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let info: WalletInfo = wallet.query(&wallet_trait::QueryMsg::Info {}).unwrap();
 
+    let initial_nonce = info.controller.nonce;
     assert_eq!(info.version.version, VECTIS_VERSION);
     assert_eq!(info.version.contract, "vectis-proxy");
 
@@ -62,6 +63,7 @@ fn controller_can_migrate_wallet() {
 
     assert_eq!(info.version.version, PROXY_MIGRATE_VERSION);
     assert_eq!(info.version.contract, "TESTNAME");
+    assert_eq!(info.controller.nonce, initial_nonce + 1);
 }
 
 #[test]
