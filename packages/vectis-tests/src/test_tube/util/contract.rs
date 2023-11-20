@@ -25,9 +25,8 @@ impl<'a> Contract<'a> {
     pub fn store_code(app: &'a OsmosisTestApp, code_path: &str, signer: &SigningAccount) -> u64 {
         let wasm = Wasm::new(app);
         let wasm_byte_code = std::fs::read(code_path).unwrap();
-        
-        wasm
-            .store_code(&wasm_byte_code, None, signer)
+
+        wasm.store_code(&wasm_byte_code, None, signer)
             .unwrap()
             .data
             .code_id

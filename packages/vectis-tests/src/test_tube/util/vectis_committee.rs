@@ -36,11 +36,7 @@ where
     deployer.execute(&cw3flexExecMsg::Execute { proposal_id: id }, &[], signer)
 }
 
-fn execute_msg<T>(
-    target_contract: String,
-    exec_msg: &T,
-    exec_msg_fund: &[Coin],
-) -> cw3flexExecMsg
+fn execute_msg<T>(target_contract: String, exec_msg: &T, exec_msg_fund: &[Coin]) -> cw3flexExecMsg
 where
     T: Serialize + ?Sized,
 {
