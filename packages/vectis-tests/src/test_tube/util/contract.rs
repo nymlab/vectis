@@ -25,12 +25,12 @@ impl<'a> Contract<'a> {
     pub fn store_code(app: &'a OsmosisTestApp, code_path: &str, signer: &SigningAccount) -> u64 {
         let wasm = Wasm::new(app);
         let wasm_byte_code = std::fs::read(code_path).unwrap();
-        let code_id = wasm
+        
+        wasm
             .store_code(&wasm_byte_code, None, signer)
             .unwrap()
             .data
-            .code_id;
-        code_id
+            .code_id
     }
 
     pub fn deploy<M>(
@@ -80,7 +80,7 @@ impl<'a> Contract<'a> {
             funds: funds.to_vec(),
         });
         self.app
-            .execute_cosmos_msgs::<MsgExecuteContractResponse>(&[execute_msg], &signer)
+            .execute_cosmos_msgs::<MsgExecuteContractResponse>(&[execute_msg], signer)
     }
 
     pub fn query<T, M>(&self, msg: &M) -> RunnerResult<T>

@@ -60,7 +60,7 @@ impl Controller {
 
     /// Returns the AuthenicatorType
     pub fn auth_type(&self) -> &AuthenticatorType {
-        &self.auth.ty()
+        self.auth.ty()
     }
 
     /// Returns the Authenicator

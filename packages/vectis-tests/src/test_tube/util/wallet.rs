@@ -76,7 +76,7 @@ pub fn create_webauthn_wallet<'a>(
         },
     };
 
-    let factory = Contract::from_addr(&app, factory_addr.into());
+    let factory = Contract::from_addr(app, factory_addr.into());
     factory
         .execute(
             &create_msg,
@@ -99,7 +99,7 @@ pub fn sign_and_submit(
     wallet_addr: &str,
     relayer: &SigningAccount,
 ) -> RunnerExecuteResult<MsgExecuteContractResponse> {
-    let wallet = Contract::from_addr(&app, wallet_addr.into());
+    let wallet = Contract::from_addr(app, wallet_addr.into());
     let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
 
     let relay_tx = sign_and_create_relay_tx(messages, info.controller.nonce, vid);
@@ -121,8 +121,8 @@ pub fn sign_migration_msg(
     factory_addr: &str,
     relayer: &SigningAccount,
 ) -> RunnerExecuteResult<MsgExecuteContractResponse> {
-    let wallet = Contract::from_addr(&app, wallet_addr.into());
-    let factory = Contract::from_addr(&app, factory_addr.into());
+    let wallet = Contract::from_addr(app, wallet_addr.into());
+    let factory = Contract::from_addr(app, factory_addr.into());
 
     let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
 
@@ -179,7 +179,7 @@ pub fn add_test_plugin(
     relayer: &SigningAccount,
     plugin_id: u64,
 ) -> RunnerExecuteResult<MsgExecuteContractResponse> {
-    let wallet = Contract::from_addr(&app, wallet_addr.to_string());
+    let wallet = Contract::from_addr(app, wallet_addr.to_string());
     let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
 
     let permission = match plugin_id {

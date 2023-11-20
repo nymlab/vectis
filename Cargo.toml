@@ -19,8 +19,8 @@ cosmwasm-storage = "^1.2"
 cosmwasm-schema = "^1.2"
 # sylvia = "0.9.1"
 # sylvia-derive = "0.9.1"
-sylvia = {path = "./../../sylvia/sylvia"}
-sylvia-derive = { path = "./../../sylvia/sylvia-derive"}
+sylvia = { git = "https://github.com/nymlab/sylvia", rev = "6877a6b"}
+sylvia-derive = { git = "https://github.com/nymlab/sylvia", rev = "6877a6b"}
 cw-utils = "1.0.1"
 thiserror = { version = "1.0.50" }
 cw-storage-plus = "1.1"
