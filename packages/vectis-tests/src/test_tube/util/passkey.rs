@@ -1,9 +1,8 @@
 use base64ct::Encoding;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::HexBinary;
-use ripemd160::Digest as Ripemd160Digest;
 use serde::{Deserialize, Serialize};
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 use std::process::Command;
 
 pub fn must_create_credential(vid: &str) -> Vec<u8> {

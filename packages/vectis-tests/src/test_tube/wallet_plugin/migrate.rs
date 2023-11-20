@@ -47,7 +47,7 @@ fn can_migrate_plugin() {
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let plugins: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::QueryMsg::Plugins {})
+        .query(&wallet_plugin_trait::sv::QueryMsg::Plugins {})
         .unwrap();
 
     let mut new_code_data =
@@ -58,7 +58,7 @@ fn can_migrate_plugin() {
         &app,
         suite.deployer,
         suite.plugin_registry.clone(),
-        &registry_management_trait::ExecMsg::NewPluginVersion {
+        &registry_management_trait::sv::ExecMsg::NewPluginVersion {
             id: suite.test_contracts.pre_tx.2,
             code_update: Some(new_code_data.clone()),
             metadata_update: test_plugin_metadata(),
@@ -72,7 +72,7 @@ fn can_migrate_plugin() {
         &app,
         vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: wallet_addr.to_string(),
-            msg: to_binary(&wallet_plugin_trait::ExecMsg::update_plugins(vec![
+            msg: to_binary(&wallet_plugin_trait::sv::ExecMsg::update_plugins(vec![
                 PluginMigrateParams {
                     plugin_addr: plugins.pre_tx[0].clone().0,
                     plugin_permission: PluginPermission::PreTxCheck,
@@ -80,7 +80,7 @@ fn can_migrate_plugin() {
                         suite.test_contracts.pre_tx.2,
                         Some("new-version".into()),
                     ),
-                    migration_msg: to_binary(&test_vectis_pre_tx::contract::MigrateMsg {
+                    migration_msg: to_binary(&test_vectis_pre_tx::contract::sv::MigrateMsg {
                         msg: TestMigrateMsg {
                             name: "NEW".into(),
                             version: "new-version".into(),

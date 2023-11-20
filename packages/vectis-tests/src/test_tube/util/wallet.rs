@@ -14,11 +14,11 @@ use osmosis_test_tube::OsmosisTestApp;
 use test_tube::{RunnerExecuteResult, SigningAccount};
 use vectis_wallet::{
     interface::{
-        factory_service_trait::{
+        factory_service_trait::sv::{
             ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
         },
-        wallet_plugin_trait::ExecMsg as WalletPluginExecMsg,
-        wallet_trait::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
+        wallet_plugin_trait::sv::ExecMsg as WalletPluginExecMsg,
+        wallet_trait::sv::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
     },
     types::{
         authenticator::{

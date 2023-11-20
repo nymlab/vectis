@@ -14,10 +14,10 @@ use osmosis_test_tube::{Bank, OsmosisTestApp};
 use serial_test::serial;
 use test_tube::module::Module;
 use vectis_wallet::{
-    interface::registry_service_trait::{
+    interface::registry_service_trait::sv::{
         ExecMsg as RegistryServiceExecMsg, QueryMsg as RegistryServiceQueryMsg,
     },
-    interface::wallet_trait::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
+    interface::wallet_trait::sv::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
     types::plugin_registry::{Subscriber, SubscriptionTier},
     types::wallet::WalletInfo,
 };

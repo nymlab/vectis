@@ -7,7 +7,10 @@ use crate::{
 };
 use cosmwasm_std::coin;
 use osmosis_test_tube::OsmosisTestApp;
-use vectis_wallet::{interface::registry_management_trait, types::plugin::PluginsResponse};
+use vectis_wallet::{
+    interface::registry_management_trait::sv as registry_management_trait,
+    types::plugin::PluginsResponse,
+};
 
 #[test]
 fn can_unregister_with_correct_params() {

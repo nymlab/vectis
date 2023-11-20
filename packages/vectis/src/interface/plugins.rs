@@ -11,7 +11,6 @@ pub mod pre_tx_check_trait {
     pub trait PreTxCheckTrait {
         type Error: From<StdError>;
 
-        // TODO: maybe ref to vec?
         #[msg(query)]
         fn pre_tx_check(&self, ctx: QueryCtx, msgs: Vec<CosmosMsg>) -> Result<bool, Self::Error>;
 

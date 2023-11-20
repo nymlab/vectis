@@ -62,7 +62,7 @@ fn pre_tx_checks() {
         &app,
         vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: suite.plugin_registry.clone(),
-            msg: to_binary(&registry_service_trait::ExecMsg::subscribe(
+            msg: to_binary(&registry_service_trait::sv::ExecMsg::subscribe(
                 SubscriptionTier::L1,
             ))
             .unwrap(),

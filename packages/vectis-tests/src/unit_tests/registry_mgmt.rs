@@ -1,16 +1,11 @@
-use sylvia::multitest::App;
-
-use crate::constants::*;
-use cosmwasm_std::coin;
-use vectis_plugin_registry::management::contract::test_utils::RegistryManagementTrait;
-use vectis_wallet::types::plugin_registry::{SubscriptionTier, TierDetails};
+use crate::unit_tests::utils::*;
 
 #[test]
 fn instantiate_registry_correctly() {
     let app = App::default();
     let deployer = "deployer";
     let registry_code_id =
-        vectis_plugin_registry::contract::multitest_utils::CodeId::store_code(&app);
+        vectis_plugin_registry::contract::sv::multitest_utils::CodeId::store_code(&app);
     let subscription_tier = vec![(SubscriptionTier::Free, tier_0())];
 
     let registry = registry_code_id

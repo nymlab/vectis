@@ -16,7 +16,6 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 library = []
 mt = ["sylvia/mt"]
-multitest = ["mt"]
 
 [dependencies]
 cosmos-sdk-proto = { workspace = true }

@@ -4,7 +4,6 @@ use serial_test::serial;
 
 use vectis_wallet::interface::wallet_trait;
 
-
 use crate::{
     constants::*,
     test_tube::{
@@ -42,7 +41,7 @@ fn controller_can_update_data() {
         ),
     ];
 
-    let update_data_msg = wallet_trait::ExecMsg::UpdateData { data: data.clone() };
+    let update_data_msg = wallet_trait::sv::ExecMsg::UpdateData { data: data.clone() };
 
     sign_and_submit(
         &app,
@@ -60,7 +59,7 @@ fn controller_can_update_data() {
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
 
     let mut value: Option<Binary> = wallet
-        .query(&wallet_trait::QueryMsg::Data {
+        .query(&wallet_trait::sv::QueryMsg::Data {
             key: data[0].clone().0,
         })
         .unwrap();
@@ -68,7 +67,7 @@ fn controller_can_update_data() {
     assert_eq!(value.unwrap(), data[0].clone().1.unwrap());
 
     value = wallet
-        .query(&wallet_trait::QueryMsg::Data {
+        .query(&wallet_trait::sv::QueryMsg::Data {
             key: data[1].clone().0,
         })
         .unwrap();
@@ -77,7 +76,7 @@ fn controller_can_update_data() {
 
     let data = vec![(to_binary("some_key_1").unwrap(), None)];
 
-    let update_data_msg = wallet_trait::ExecMsg::UpdateData { data: data.clone() };
+    let update_data_msg = wallet_trait::sv::ExecMsg::UpdateData { data: data.clone() };
 
     sign_and_submit(
         &app,
@@ -93,7 +92,7 @@ fn controller_can_update_data() {
     .unwrap();
 
     value = wallet
-        .query(&wallet_trait::QueryMsg::Data {
+        .query(&wallet_trait::sv::QueryMsg::Data {
             key: data[0].clone().0,
         })
         .unwrap();

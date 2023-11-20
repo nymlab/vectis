@@ -12,8 +12,6 @@ pub enum AuthenticatorProvider {
 /// Authenticator type maps the authentication method for the main Controller messages
 #[cw_serde]
 pub enum AuthenticatorType {
-    CosmosEOA,
-    EthereumEOA,
     Webauthn,
     /// This is for future extensibility without neccessarily upgrading the enum type
     /// It should be the name of the authenticator (i.e. AnonCreds)

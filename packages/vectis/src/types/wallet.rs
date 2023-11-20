@@ -109,7 +109,7 @@ pub struct RelayTransaction {
     /// Message to verify,
     /// Encoding depends on the authenticator,
     /// but must contain the actual Vec<CosmosMsg> to execute
-    /// e.g. the structure of CosmosRelayedTxMsg or WebauthnRelayedTxMsg
+    /// e.g. the structure of WebauthnRelayedTxMsg
     pub message: Binary,
     /// Serialized signature (message + nonce).
     /// If authenticator is CosmosEOA: 64 bytes - secp256k1 verification scheme
@@ -132,17 +132,6 @@ pub struct VectisRelayedTx {
 }
 
 /// The struct that RelayTransaction.message should decode to
-/// for CosmosEOA
-#[cw_serde]
-pub struct CosmosRelayedTxMsg {
-    /// This is the JSON string of the `VectisRelayTx`
-    /// We parse this string in the contract for the correct type
-    /// This is because we need this string to ensure fields are in the
-    /// same order when hashing
-    pub signed_data: VectisRelayedTx,
-}
-
-/// The struct that RelayTransaction.message should decode to
 /// for Webauthn
 #[cw_serde]
 pub struct WebauthnRelayedTxMsg {
@@ -150,7 +139,6 @@ pub struct WebauthnRelayedTxMsg {
     /// We parse this string in the contract for the correct type
     /// This is because we need this string to ensure fields are in the
     /// same order when hashing
-    /// For this authenticator: it is the data to be hashed and becomes the challenge
     pub signed_data: String,
     pub auth_data: Binary,
     pub client_data: Binary,

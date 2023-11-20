@@ -17,24 +17,28 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub struct PreTxCheck {}
 
-#[contract]
-#[messages(pre_tx_check_trait as PreTxQueryTrait)]
-impl PreTxCheckTrait for PreTxCheck {
-    type Error = StdError;
+mod pretxchecktrait {
+    use super::*;
 
-    #[msg(query)]
-    fn pre_tx_check(&self, _ctx: QueryCtx, msgs: Vec<CosmosMsg>) -> Result<bool, Self::Error> {
-        for msg in msgs {
-            if let CosmosMsg::Bank(_) = msg {
-                return Ok(false);
+    #[contract(module=crate::contract)]
+    #[messages(pre_tx_check_trait as PreTxQueryTrait)]
+    impl PreTxCheckTrait for PreTxCheck {
+        type Error = StdError;
+
+        #[msg(query)]
+        fn pre_tx_check(&self, _ctx: QueryCtx, msgs: Vec<CosmosMsg>) -> Result<bool, Self::Error> {
+            for msg in msgs {
+                if let CosmosMsg::Bank(_) = msg {
+                    return Ok(false);
+                }
             }
+            Ok(true)
         }
-        Ok(true)
-    }
 
-    #[msg(query)]
-    fn contract_version(&self, ctx: QueryCtx) -> Result<ContractVersion, StdError> {
-        get_contract_version(ctx.deps.storage)
+        #[msg(query)]
+        fn contract_version(&self, ctx: QueryCtx) -> Result<ContractVersion, StdError> {
+            get_contract_version(ctx.deps.storage)
+        }
     }
 }
 

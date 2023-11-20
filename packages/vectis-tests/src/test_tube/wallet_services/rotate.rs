@@ -36,7 +36,7 @@ fn controller_can_rotate_to_new_controlle() {
     let pubkey = must_create_credential(new_vid);
     let entity = webauthn_entity(&pubkey);
 
-    let rotate_msg = wallet_trait::ExecMsg::ControllerRotation {
+    let rotate_msg = wallet_trait::sv::ExecMsg::ControllerRotation {
         new_controller: entity,
     };
 
@@ -54,7 +54,7 @@ fn controller_can_rotate_to_new_controlle() {
     .unwrap();
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
-    let info: WalletInfo = wallet.query(&wallet_trait::QueryMsg::Info {}).unwrap();
+    let info: WalletInfo = wallet.query(&wallet_trait::sv::QueryMsg::Info {}).unwrap();
 
     assert_eq!(info.controller.data, pubkey);
 
