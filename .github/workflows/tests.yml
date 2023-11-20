@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - berlin
   pull_request:
 
 jobs:
@@ -33,8 +34,8 @@ jobs:
           cargo install grcov
           rustup component add llvm-tools-preview
 
-      - name: Run multi contract tests
-        run: cargo test -p vectis-contract-tests
+      - name: Run cw-multi-test contract tests
+        run: cargo test -p vectis-contract-tests -- unit_tests
         env:
           RUST_BACKTRACE: 1
 
