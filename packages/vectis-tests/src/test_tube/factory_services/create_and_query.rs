@@ -74,8 +74,7 @@ fn create_wallet_successfully_without_relayer() {
     assert!(res
         .events
         .into_iter()
-        .find(|e| e.ty == "wasm-vectis.factory.v1")
-        .is_some());
+        .any(|e| e.ty == "wasm-vectis.factory.v1"));
 
     let wallet = Contract::from_addr(&app, wallet_addr.unwrap().to_string());
 
@@ -139,7 +138,7 @@ fn create_with_inital_balance() {
         .unwrap();
 
     let wallet_addr: Option<Addr> = factory
-        .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid.into() })
+        .query(&FactoryServiceQueryMsg::WalletByVid { vid: vid })
         .unwrap();
 
     let bank = Bank::new(&app);

@@ -19,7 +19,7 @@ pub fn verify_cosmos_sign(
     let hash = Sha256::digest(&transaction.message);
     let result = deps
         .api
-        .secp256k1_verify(hash.as_ref(), &transaction.signature, &pubkey)?;
+        .secp256k1_verify(hash.as_ref(), &transaction.signature, pubkey)?;
     Ok(result)
 }
 

@@ -7,18 +7,18 @@ use osmosis_test_tube::OsmosisTestApp;
 use serde::Serialize;
 use test_tube::{RunnerExecuteResult, SigningAccount};
 
-pub fn execute<'a, T>(
+pub fn execute<T>(
     app: &OsmosisTestApp,
     deployer_addr: String,
     targe_contract: String,
     exec_msg: &T,
-    funds: &'a [Coin],
+    funds: &[Coin],
     signer: &SigningAccount,
 ) -> RunnerExecuteResult<MsgExecuteContractResponse>
 where
     T: Serialize + ?Sized,
 {
-    let deployer = Contract::from_addr(&app, deployer_addr.clone());
+    let deployer = Contract::from_addr(app, deployer_addr.clone());
 
     deployer
         .execute(&execute_msg(targe_contract, exec_msg, funds), funds, signer)
@@ -36,10 +36,10 @@ where
     deployer.execute(&cw3flexExecMsg::Execute { proposal_id: id }, &[], signer)
 }
 
-fn execute_msg<'a, T>(
+fn execute_msg<T>(
     target_contract: String,
     exec_msg: &T,
-    exec_msg_fund: &'a [Coin],
+    exec_msg_fund: &[Coin],
 ) -> cw3flexExecMsg
 where
     T: Serialize + ?Sized,

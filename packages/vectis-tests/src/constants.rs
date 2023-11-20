@@ -62,23 +62,24 @@ pub const HEX_CANONICAL_VALID_OSMO_ADDR: &str = "0d93a9f00775dd45f6948fb11e00790
 
 fn code_path(name: &str) -> String {
     if env::var("UNAME").unwrap_or_default() == "arm" {
-        return format!("{}{}{}", ARTIFACTS, name, "-aarch64.wasm")
+        format!("{}{}{}", ARTIFACTS, name, "-aarch64.wasm")
     } else {
-        return format!("{}{}{}", ARTIFACTS, name, ".wasm")
+        format!("{}{}{}", ARTIFACTS, name, ".wasm")
     }
 }
 
-
-fn code_hash(contract: &str) -> String{
-
-    for line in read_to_string(format!("{}{}", ARTIFACTS, "checksums.txt")).unwrap().lines() {
+fn code_hash(contract: &str) -> String {
+    for line in read_to_string(format!("{}{}", ARTIFACTS, "checksums.txt"))
+        .unwrap()
+        .lines()
+    {
         let c: Vec<&str> = line.split("  ").collect();
 
         if c[1].contains(contract) {
             if env::var("UNAME").unwrap_or_default() == "arm" && c[1].contains("aarch64") {
-                return c[0].to_string()
+                return c[0].to_string();
             } else if env::var("UNAME").unwrap_or_default() != "arm" && !c[1].contains("aarch64") {
-                return c[0].to_string()
+                return c[0].to_string();
             }
         }
     }
@@ -102,7 +103,6 @@ lazy_static! {
     pub static ref POST_TX_CODE_PATH: String = code_path("test_vectis_post_tx_exec");
     pub static ref PLUGIN_EXEC_CODE_PATH: String = code_path("test_vectis_plugin_exec");
 }
-
 
 /// Version of vectis
 pub const VECTIS_VERSION: &str = "1.0.0-rc1";

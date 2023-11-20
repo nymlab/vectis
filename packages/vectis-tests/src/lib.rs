@@ -1,5 +1,6 @@
 #![allow(deprecated)]
 
+#[allow(unused_imports)]
 #[macro_use]
 extern crate lazy_static;
 

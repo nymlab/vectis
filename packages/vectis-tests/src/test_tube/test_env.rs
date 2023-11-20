@@ -84,7 +84,8 @@ impl<'a> HubChainSuite<'a> {
         .unwrap();
 
         // Store code for proxy and authenticator
-        let test_pre_tx_code_id = Contract::store_code(app, &PRE_TX_CODE_PATH, &accounts[IDEPLOYER]);
+        let test_pre_tx_code_id =
+            Contract::store_code(app, &PRE_TX_CODE_PATH, &accounts[IDEPLOYER]);
         let test_post_tx_code_id =
             Contract::store_code(app, &POST_TX_CODE_PATH, &accounts[IDEPLOYER]);
         let test_plugin_exec_code_id =

@@ -13,5 +13,5 @@ pub fn calc_instantiate2_addr_from_contract(
 
     Ok(deps
         .api
-        .addr_humanize(&instantiate2_address(&checksum, &creator, &salt)?)?)
+        .addr_humanize(&instantiate2_address(&checksum, &creator, salt)?)?)
 }

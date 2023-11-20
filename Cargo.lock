@@ -2563,6 +2563,7 @@ dependencies = [
 [[package]]
 name = "sylvia"
 version = "0.9.1"
+source = "git+https://github.com/nymlab/sylvia?rev=6877a6b#6877a6b48eedd500726521042a0910d7c14c605d"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -2580,6 +2581,7 @@ dependencies = [
 [[package]]
 name = "sylvia-derive"
 version = "0.9.1"
+source = "git+https://github.com/nymlab/sylvia?rev=6877a6b#6877a6b48eedd500726521042a0910d7c14c605d"
 dependencies = [
  "convert_case",
  "proc-macro-crate",
