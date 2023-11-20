@@ -28,4 +28,3 @@ serde-json-wasm = {workspace = true}
 cw2 = { workspace = true }
 cw-utils= { workspace = true }
 vectis-wallet = { path = "../../../packages/vectis" }
-

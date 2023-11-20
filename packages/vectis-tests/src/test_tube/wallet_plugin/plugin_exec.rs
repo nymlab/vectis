@@ -13,7 +13,7 @@ use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;
 use osmosis_test_tube::{Bank, OsmosisTestApp};
 use serial_test::serial;
 use test_tube::module::Module;
-use test_vectis_plugin_exec::contract::ExecMsg;
+use test_vectis_plugin_exec::contract::sv::ExecMsg;
 use vectis_wallet::{interface::wallet_plugin_trait, types::plugin::PluginListResponse};
 
 // This uses the code from contracts/test-contracts/
@@ -46,7 +46,7 @@ fn plugin_exec_works() {
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let plugins: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::QueryMsg::Plugins {})
+        .query(&wallet_plugin_trait::sv::QueryMsg::Plugins {})
         .unwrap();
 
     let exec_addr = plugins.exec[0].clone().0;

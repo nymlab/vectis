@@ -2,7 +2,10 @@ use osmosis_test_tube::OsmosisTestApp;
 use serial_test::serial;
 
 use vectis_wallet::{
-    interface::{registry_management_trait, wallet_plugin_trait},
+    interface::{
+        registry_management_trait::sv as registry_management_trait,
+        wallet_plugin_trait::sv as wallet_plugin_trait,
+    },
     types::plugin::{PluginListResponse, PluginWithVersionResponse},
 };
 

@@ -5,7 +5,7 @@ use serial_test::serial;
 use test_tube::module::Module;
 
 use vectis_wallet::{
-    interface::wallet_trait::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
+    interface::wallet_trait::sv::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
     types::wallet::{Nonce, WalletInfo},
 };
 

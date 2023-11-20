@@ -4,9 +4,10 @@ use serial_test::serial;
 
 use vectis_wallet::{
     interface::{
-        registry_management_trait, registry_service_trait,
-        wallet_plugin_trait::ExecMsg as WalletPluginExecMsg,
-        wallet_trait::ExecMsg as WalletExecMsg,
+        registry_management_trait::sv as registry_management_trait,
+        registry_service_trait::sv as registry_service_trait,
+        wallet_plugin_trait::sv::ExecMsg as WalletPluginExecMsg,
+        wallet_trait::sv::ExecMsg as WalletExecMsg,
     },
     types::{
         authenticator::EmptyInstantiateMsg,

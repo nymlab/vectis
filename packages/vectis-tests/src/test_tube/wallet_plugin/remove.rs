@@ -5,7 +5,9 @@ use serial_test::serial;
 use vectis_wallet::{
     interface::{
         registry_service_trait,
-        wallet_plugin_trait::{self, ExecMsg as WalletPluginExecMsg},
+        wallet_plugin_trait::sv::{
+            ExecMsg as WalletPluginExecMsg, QueryMsg as WalletPluginQueryMsg,
+        },
     },
     types::{
         authenticator::EmptyInstantiateMsg,
@@ -46,7 +48,7 @@ fn remove_installed_plugin_successfully() {
 
     // Account not subscribed in the registry before installing a pluging
     let sub_result: Option<Subscriber> = registry
-        .query(&registry_service_trait::QueryMsg::SubsciptionDetails {
+        .query(&registry_service_trait::sv::QueryMsg::SubsciptionDetails {
             addr: wallet_addr.to_string(),
         })
         .unwrap();
@@ -77,7 +79,7 @@ fn remove_installed_plugin_successfully() {
 
     // Account has now got one plugin
     let sub_result: Option<Subscriber> = registry
-        .query(&registry_service_trait::QueryMsg::SubsciptionDetails {
+        .query(&registry_service_trait::sv::QueryMsg::SubsciptionDetails {
             addr: wallet_addr.to_string(),
         })
         .unwrap();
@@ -85,9 +87,7 @@ fn remove_installed_plugin_successfully() {
     assert_eq!(sub.plugin_installed.len(), 1);
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
-    let info: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::QueryMsg::Plugins {})
-        .unwrap();
+    let info: PluginListResponse = wallet.query(&WalletPluginQueryMsg::Plugins {}).unwrap();
     assert_eq!(info.pre_tx.len(), 1);
 
     // Remove plugin
@@ -113,13 +113,11 @@ fn remove_installed_plugin_successfully() {
     .unwrap();
 
     // Check wallet and registry that this was removed
-    let info: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::QueryMsg::Plugins {})
-        .unwrap();
+    let info: PluginListResponse = wallet.query(&WalletPluginQueryMsg::Plugins {}).unwrap();
     assert_eq!(info.pre_tx.len(), 0);
 
     let sub_result: Option<Subscriber> = registry
-        .query(&registry_service_trait::QueryMsg::SubsciptionDetails {
+        .query(&registry_service_trait::sv::QueryMsg::SubsciptionDetails {
             addr: wallet_addr.to_string(),
         })
         .unwrap();

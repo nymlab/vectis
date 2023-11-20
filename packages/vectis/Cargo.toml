@@ -4,7 +4,7 @@ authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheio
 version = "1.0.0-rc1"
 edition = "2021"
 license-file = "LICENSE"
-keywords = ["cosmwasm", "account-abstraction", "smart-contracts", "vectis", "cosmos"] 
+keywords = ["cosmwasm", "account-abstraction", "smart-contracts", "vectis", "cosmos"]
 repository = "https://github.com/nymlab/vectis"
 description = "Vectis library for common messages, states and functions"
 
@@ -22,9 +22,7 @@ thiserror = { workspace = true }
 derivative = "2"
 sylvia = {workspace = true}
 sylvia-derive = {workspace = true}
-sha2 = {workspace = true} 
-ripemd160 = {workspace = true} 
+sha2 = {workspace = true}
 hex = { version = "0.4", default-features = false }
 bech32 = "0.8.1"
 primitive-types = {version = "0.10.1", default-features = false, features = ["byteorder"]}
-

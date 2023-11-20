@@ -1,6 +1,5 @@
 use cosmwasm_std::{from_binary, Addr, CosmosMsg, Deps, StdResult};
-use ripemd160::Digest as Ripemd160Digest;
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 
 use crate::{
     interface::authenticator_trait,
@@ -8,11 +7,10 @@ use crate::{
         authenticator::AuthenticatorType,
         entity::Entity,
         error::RelayTxError,
-        wallet::{
-            CosmosRelayedTxMsg, Nonce, RelayTransaction, VectisRelayedTx, WebauthnRelayedTxMsg,
-        },
+        wallet::{Nonce, RelayTransaction, VectisRelayedTx, WebauthnRelayedTxMsg},
     },
 };
+
 pub fn verify_cosmos_sign(
     deps: Deps,
     transaction: &RelayTransaction,
@@ -24,8 +22,6 @@ pub fn verify_cosmos_sign(
         .secp256k1_verify(hash.as_ref(), &transaction.signature, &pubkey)?;
     Ok(result)
 }
-
-//// TODO: check interface of the non-vectis authenticator
 
 pub(crate) fn check_cosmos_relayed_tx(
     msg: &VectisRelayedTx,
@@ -39,6 +35,7 @@ pub(crate) fn check_cosmos_relayed_tx(
         Ok(())
     }
 }
+
 pub fn relay_tx_auth_check(
     deps: Deps,
     controller: Entity,
@@ -46,21 +43,10 @@ pub fn relay_tx_auth_check(
     auth_addr: Option<Addr>,
 ) -> Result<Vec<CosmosMsg>, RelayTxError> {
     let msgs = match controller.auth.ty() {
-        AuthenticatorType::CosmosEOA => {
-            // Checks signature, which includes a message including the nonce signed by the controller
-            if verify_cosmos_sign(deps, &transaction, &controller.data)? {
-                let cosmos_tx_msg: CosmosRelayedTxMsg = from_binary(&transaction.message)?;
-
-                check_cosmos_relayed_tx(&cosmos_tx_msg.signed_data, controller.nonce)?;
-                cosmos_tx_msg.signed_data.messages
-            } else {
-                return Err(RelayTxError::SignatureVerificationError);
-            }
-        }
         AuthenticatorType::Webauthn => {
             let webauthn_tx_msg: WebauthnRelayedTxMsg = from_binary(&transaction.message)?;
 
-            let msg = authenticator_trait::QueryMsg::Authenticate {
+            let msg = authenticator_trait::sv::QueryMsg::Authenticate {
                 // this is the JSON string of the VectisRelayTx, containing the Vec<CosmosMsg>
                 signed_data: webauthn_tx_msg.signed_data.as_bytes().to_vec(),
                 controller_data: controller.data.0,

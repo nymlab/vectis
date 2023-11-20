@@ -8,7 +8,7 @@ use crate::{
 use cosmwasm_std::coin;
 use osmosis_test_tube::OsmosisTestApp;
 use vectis_wallet::{
-    interface::registry_management_trait,
+    interface::registry_management_trait::sv as registry_management_trait,
     types::plugin_registry::RegistryConfigResponse,
     types::plugin_registry::{SubscriptionTier, TierDetails},
 };

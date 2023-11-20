@@ -32,7 +32,7 @@ fn controller_can_migrate_wallet() {
     );
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
-    let info: WalletInfo = wallet.query(&wallet_trait::QueryMsg::Info {}).unwrap();
+    let info: WalletInfo = wallet.query(&wallet_trait::sv::QueryMsg::Info {}).unwrap();
 
     let initial_nonce = info.controller.nonce;
     assert_eq!(info.version.version, VECTIS_VERSION);
@@ -43,7 +43,7 @@ fn controller_can_migrate_wallet() {
         vec![CosmosMsg::Wasm(WasmMsg::Migrate {
             contract_addr: wallet_addr.to_string(),
             new_code_id: suite.test_contracts.proxy_migrate.0,
-            msg: to_binary(&vectis_proxy::contract::MigrateMsg {
+            msg: to_binary(&vectis_proxy::contract::sv::MigrateMsg {
                 msg: TestMigrateMsg {
                     name: "TESTNAME".into(),
                     version: PROXY_MIGRATE_VERSION.into(),
@@ -59,7 +59,7 @@ fn controller_can_migrate_wallet() {
     .unwrap();
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
-    let info: WalletInfo = wallet.query(&wallet_trait::QueryMsg::Info {}).unwrap();
+    let info: WalletInfo = wallet.query(&wallet_trait::sv::QueryMsg::Info {}).unwrap();
 
     assert_eq!(info.version.version, PROXY_MIGRATE_VERSION);
     assert_eq!(info.version.contract, "TESTNAME");
@@ -94,7 +94,7 @@ fn not_controller_cannot_migrate_wallet() {
         vec![CosmosMsg::Wasm(WasmMsg::Migrate {
             contract_addr: wallet_addr.to_string(),
             new_code_id: suite.test_contracts.proxy_migrate.0,
-            msg: to_binary(&vectis_proxy::contract::MigrateMsg {
+            msg: to_binary(&vectis_proxy::contract::sv::MigrateMsg {
                 msg: TestMigrateMsg {
                     name: "TESTNAME".into(),
                     version: PROXY_MIGRATE_VERSION.into(),
@@ -132,7 +132,7 @@ fn cannot_migrate_to_unsupported_proxies() {
         vec![CosmosMsg::Wasm(WasmMsg::Migrate {
             contract_addr: wallet_addr.to_string(),
             new_code_id: suite.test_contracts.exec.0,
-            msg: to_binary(&vectis_proxy::contract::MigrateMsg {
+            msg: to_binary(&vectis_proxy::contract::sv::MigrateMsg {
                 msg: TestMigrateMsg {
                     name: "TESTNAME".into(),
                     version: PROXY_MIGRATE_VERSION.into(),

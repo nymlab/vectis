@@ -18,31 +18,39 @@ pub struct PostTxHook<'a> {
     counter: Item<'a, u64>,
 }
 
-#[contract]
-#[messages(post_tx_hook_trait as PostTxHookTrait)]
-#[error(StdError)]
-impl<'a> PostTxHookTrait for PostTxHook<'a> {
-    type Error = StdError;
+mod posttxhooktrait {
+    use super::*;
 
-    #[msg(exec)]
-    fn post_tx_hook(&self, ctx: ExecCtx, _msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error> {
-        let owner = self.owner.load(ctx.deps.storage)?;
-        if ctx.info.sender.as_str() != owner {
-            return Err(StdError::GenericErr {
-                msg: "error".into(),
-            });
+    #[contract(module=crate::contract)]
+    #[messages(post_tx_hook_trait as PostTxHookTrait)]
+    #[error(StdError)]
+    impl<'a> PostTxHookTrait for PostTxHook<'a> {
+        type Error = StdError;
+
+        #[msg(exec)]
+        fn post_tx_hook(
+            &self,
+            ctx: ExecCtx,
+            _msgs: Vec<CosmosMsg>,
+        ) -> Result<Response, Self::Error> {
+            let owner = self.owner.load(ctx.deps.storage)?;
+            if ctx.info.sender.as_str() != owner {
+                return Err(StdError::GenericErr {
+                    msg: "error".into(),
+                });
+            }
+
+            self.counter.update(ctx.deps.storage, |c| -> StdResult<_> {
+                Ok(c.checked_add(1).expect("overflow"))
+            })?;
+
+            Ok(Response::new())
         }
 
-        self.counter.update(ctx.deps.storage, |c| -> StdResult<_> {
-            Ok(c.checked_add(1).expect("overflow"))
-        })?;
-
-        Ok(Response::new())
-    }
-
-    #[msg(query)]
-    fn contract_version(&self, ctx: QueryCtx) -> Result<ContractVersion, StdError> {
-        get_contract_version(ctx.deps.storage)
+        #[msg(query)]
+        fn contract_version(&self, ctx: QueryCtx) -> Result<ContractVersion, StdError> {
+            get_contract_version(ctx.deps.storage)
+        }
     }
 }
 

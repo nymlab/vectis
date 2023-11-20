@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 pub mod interface;
 pub mod types;
 pub mod util;

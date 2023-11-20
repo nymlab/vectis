@@ -1,11 +1,11 @@
 use cosmwasm_std::{coin, to_binary, Coin, CosmosMsg, Uint128, WasmMsg};
 use osmosis_test_tube::{Account, OsmosisTestApp, SigningAccount};
 
-use vectis_factory::contract::InstantiateMsg as FactoryInstMsg;
-use vectis_plugin_registry::contract::InstantiateMsg as PluginRegInstMsg;
+use vectis_factory::contract::sv::InstantiateMsg as FactoryInstMsg;
+use vectis_plugin_registry::contract::sv::InstantiateMsg as PluginRegInstMsg;
 
 use vectis_wallet::{
-    interface::registry_management_trait,
+    interface::registry_management_trait::sv as registry_management_trait,
     types::{
         authenticator::{AuthenticatorType, EmptyInstantiateMsg},
         factory::{AuthenticatorInstInfo, ChainConnection, WalletFactoryInstantiateMsg},
@@ -84,17 +84,17 @@ impl<'a> HubChainSuite<'a> {
         .unwrap();
 
         // Store code for proxy and authenticator
-        let test_pre_tx_code_id = Contract::store_code(app, PRE_TX_CODE_PATH, &accounts[IDEPLOYER]);
+        let test_pre_tx_code_id = Contract::store_code(app, &PRE_TX_CODE_PATH, &accounts[IDEPLOYER]);
         let test_post_tx_code_id =
-            Contract::store_code(app, POST_TX_CODE_PATH, &accounts[IDEPLOYER]);
+            Contract::store_code(app, &POST_TX_CODE_PATH, &accounts[IDEPLOYER]);
         let test_plugin_exec_code_id =
-            Contract::store_code(app, PLUGIN_EXEC_CODE_PATH, &accounts[IDEPLOYER]);
+            Contract::store_code(app, &PLUGIN_EXEC_CODE_PATH, &accounts[IDEPLOYER]);
 
-        let proxy_code_id = Contract::store_code(app, PROXY_CODE_PATH, &accounts[IDEPLOYER]);
-        let auth_code_id = Contract::store_code(app, AUTH_CODE_PATH, &accounts[IDEPLOYER]);
-        let factory_code_id = Contract::store_code(app, FACTORY_CODE_PATH, &accounts[IDEPLOYER]);
+        let proxy_code_id = Contract::store_code(app, &PROXY_CODE_PATH, &accounts[IDEPLOYER]);
+        let auth_code_id = Contract::store_code(app, &AUTH_CODE_PATH, &accounts[IDEPLOYER]);
+        let factory_code_id = Contract::store_code(app, &FACTORY_CODE_PATH, &accounts[IDEPLOYER]);
         let plugin_reg_code_id =
-            Contract::store_code(app, REGISTRY_CODE_PATH, &accounts[IDEPLOYER]);
+            Contract::store_code(app, &REGISTRY_CODE_PATH, &accounts[IDEPLOYER]);
         let proxy_migration_code_id =
             Contract::store_code(app, PROXY_MIGRATION_CODE_PATH, &accounts[IDEPLOYER]);
 
@@ -274,9 +274,9 @@ impl<'a> HubChainSuite<'a> {
             plugin_registry,
             accounts,
             test_contracts: TestContracts {
-                pre_tx: (test_pre_tx_code_id, PRE_TX_HASH, 0),
-                post_tx: (test_post_tx_code_id, POST_TX_HASH, 0),
-                exec: (test_plugin_exec_code_id, PLUGIN_EXEC_HASH, 0),
+                pre_tx: (test_pre_tx_code_id, &PRE_TX_HASH, 0),
+                post_tx: (test_post_tx_code_id, &POST_TX_HASH, 0),
+                exec: (test_plugin_exec_code_id, &PLUGIN_EXEC_HASH, 0),
                 proxy_migrate: (proxy_migration_code_id, PROXY_MIGRATION_HASH),
             },
         }

@@ -1,8 +1,12 @@
 use cosmwasm_std::{coin, Binary, CanonicalAddr};
+
 use vectis_wallet::types::{
     plugin::{PluginCodeData, PluginMetadataData},
     plugin_registry::TierDetails,
 };
+
+use std::env;
+use std::fs::read_to_string;
 
 // Plugins for testing
 // (code_id, hash, registry_id)
@@ -56,13 +60,54 @@ pub fn canonical_valid_osmo() -> CanonicalAddr {
 pub const VALID_OSMO_ADDR: &str = "osmo1pkf6nuq8whw5ta5537c3uqrep0yzcwkrw82n95";
 pub const HEX_CANONICAL_VALID_OSMO_ADDR: &str = "0d93a9f00775dd45f6948fb11e00790bc82c3ac3";
 
+fn code_path(name: &str) -> String {
+    if env::var("UNAME").unwrap_or_default() == "arm" {
+        return format!("{}{}{}", ARTIFACTS, name, "-aarch64.wasm")
+    } else {
+        return format!("{}{}{}", ARTIFACTS, name, ".wasm")
+    }
+}
+
+
+fn code_hash(contract: &str) -> String{
+
+    for line in read_to_string(format!("{}{}", ARTIFACTS, "checksums.txt")).unwrap().lines() {
+        let c: Vec<&str> = line.split("  ").collect();
+
+        if c[1].contains(contract) {
+            if env::var("UNAME").unwrap_or_default() == "arm" && c[1].contains("aarch64") {
+                return c[0].to_string()
+            } else if env::var("UNAME").unwrap_or_default() != "arm" && !c[1].contains("aarch64") {
+                return c[0].to_string()
+            }
+        }
+    }
+
+    panic!("cannot find codehash")
+}
+
+lazy_static! {
+    pub static ref PLUGIN_EXEC_HASH: String = code_hash("test_vectis_plugin_exec");
+    pub static ref POST_TX_HASH: String = code_hash("test_vectis_post_tx_exec");
+    pub static ref PRE_TX_HASH: String = code_hash("test_vectis_pre_tx");
+
+    // Vectis contracts
+    pub static ref FACTORY_CODE_PATH: String = code_path("vectis_factory");
+    pub static ref PROXY_CODE_PATH: String = code_path("vectis_proxy");
+    pub static ref REGISTRY_CODE_PATH: String =  code_path("vectis_plugin_registry");
+    pub static ref AUTH_CODE_PATH: String = code_path("vectis_webauthn_authenticator");
+
+    // Vectis test plugin contracts
+    pub static ref PRE_TX_CODE_PATH: String = code_path("test_vectis_pre_tx");
+    pub static ref POST_TX_CODE_PATH: String = code_path("test_vectis_post_tx_exec");
+    pub static ref PLUGIN_EXEC_CODE_PATH: String = code_path("test_vectis_plugin_exec");
+}
+
+
 /// Version of vectis
 pub const VECTIS_VERSION: &str = "1.0.0-rc1";
 /// the proxy code_hash for this vectis version
-pub const PLUGIN_EXEC_HASH: &str =
-    "f6ca658680716854067c020d1dfafafaaec4762054b63077489ac114dad957b7";
-pub const POST_TX_HASH: &str = "8f2c5cac9ac94088345fe27973aef45ba84794225ea977a963d50dbf0edb4279";
-pub const PRE_TX_HASH: &str = "3f1277bb69fd386b8a6bacc504775d3594b0e911824d25838a90c5579e3e3d90";
+
 pub const PROXY_MIGRATION_HASH: &str =
     "5daf0ae9632f388efa7350d1e9cba7736f59dccf6bcafb08d5ef719b077359c3";
 
@@ -74,16 +119,8 @@ pub const CW3FLEX_CODE_PATH: &str = "./artifacts/cw3_flex_multisig.wasm";
 pub const PROXY_MIGRATION_CODE_PATH: &str = "./artifacts/vectis_proxy_migration.wasm";
 pub const PROXY_MIGRATE_VERSION: &str = "2.0.0-rc1";
 
-// Vectis contracts
-pub const FACTORY_CODE_PATH: &str = "./../../artifacts/vectis_factory.wasm";
-pub const PROXY_CODE_PATH: &str = "../../artifacts/vectis_proxy.wasm";
-pub const REGISTRY_CODE_PATH: &str = "./../../artifacts/vectis_plugin_registry.wasm";
-pub const AUTH_CODE_PATH: &str = "./../../artifacts/vectis_webauthn_authenticator.wasm";
-
-// Vectis test plugin contracts
-pub const PRE_TX_CODE_PATH: &str = "./../../artifacts/test_vectis_pre_tx.wasm";
-pub const POST_TX_CODE_PATH: &str = "./../../artifacts/test_vectis_post_tx_exec.wasm";
-pub const PLUGIN_EXEC_CODE_PATH: &str = "./../../artifacts/test_vectis_plugin_exec.wasm";
+// relative module_path
+pub const ARTIFACTS: &str = "./../../artifacts/";
 
 pub const DENOM: &str = "uosmo";
 pub const WALLET_FEE: u128 = 10u128;

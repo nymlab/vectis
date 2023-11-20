@@ -1,19 +1,11 @@
-use cosmwasm_std::{Coin, Uint128};
-use sylvia::multitest::App;
-
-use vectis_factory::management::contract::test_utils::FactoryManagementTrait;
-use vectis_wallet::types::factory::{
-    ChainConnection, CodeIdType, FeeType, FeesResponse, WalletFactoryInstantiateMsg,
-};
-
-use crate::constants::VECTIS_VERSION;
+use crate::unit_tests::utils::*;
 
 #[test]
 fn factory_instantiates_correctly_without_authenticators() {
     let app = App::default();
-    let deployer = "deployer";
-    let factory_code_id = vectis_factory::contract::multitest_utils::CodeId::store_code(&app);
-    let proxy_code_id = vectis_proxy::contract::multitest_utils::CodeId::store_code(&app);
+    let deployer = VALID_OSMO_ADDR;
+    let factory_code_id = vectis_factory::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let proxy_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
     let wallet_fee = Coin {
         denom: "uvectis".into(),
         amount: Uint128::one(),
@@ -65,12 +57,96 @@ fn factory_instantiates_correctly_without_authenticators() {
 }
 
 #[test]
+fn factory_instantiates_correctly_with_authenticators_and_update() {
+    let mtapp = AppBuilder::default()
+        .with_api(MockApiBech32::new("osmo"))
+        .with_wasm(WasmKeeper::default().with_address_generator(MockAddressGenerator))
+        .build(|_, _, _| {});
+
+    let app = App::new(mtapp);
+    let deployer = VALID_OSMO_ADDR;
+    let factory_code_id = vectis_factory::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let proxy_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let auth_code_id =
+        vectis_webauthn_authenticator::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let wallet_fee = Coin {
+        denom: "uvectis".into(),
+        amount: Uint128::one(),
+    };
+    let remote_chain_id = "remote_chain_id";
+    let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());
+
+    let factory = factory_code_id
+        .instantiate(WalletFactoryInstantiateMsg {
+            default_proxy_code_id: proxy_code_id.code_id(),
+            supported_proxies: vec![(proxy_code_id.code_id(), VECTIS_VERSION.into())],
+            wallet_fee: wallet_fee.clone(),
+            // authenticators: None,
+            authenticators: Some(vec![AuthenticatorInstInfo {
+                ty: AuthenticatorType::Webauthn,
+                code_id: auth_code_id.code_id(),
+                inst_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
+            }]),
+            supported_chains: Some(vec![(
+                remote_chain_id.into(),
+                remote_chain_connection.clone(),
+            )]),
+        })
+        .with_label("Vectis Factory")
+        .call(deployer)
+        .unwrap();
+
+    let auth_provider_addr_1 = factory
+        .factory_management_trait_proxy()
+        .auth_provider_addr(AuthenticatorType::Webauthn)
+        .unwrap()
+        .unwrap();
+
+    factory
+        .factory_management_trait_proxy()
+        .update_auth_provider(AuthenticatorType::Webauthn, None, None)
+        .call(deployer)
+        .unwrap();
+
+    let auth_provider_addr_2 = factory
+        .factory_management_trait_proxy()
+        .auth_provider_addr(AuthenticatorType::Webauthn)
+        .unwrap();
+
+    assert!(auth_provider_addr_2.is_none());
+
+    app.set_block(BlockInfo {
+        height: 2,
+        time: Timestamp::from_seconds(201),
+        chain_id: "Vectis".into(),
+    });
+
+    factory
+        .factory_management_trait_proxy()
+        .update_auth_provider(
+            AuthenticatorType::Webauthn,
+            Some(auth_code_id.code_id()),
+            Some(to_binary(&EmptyInstantiateMsg {}).unwrap()),
+        )
+        .call(deployer)
+        .unwrap();
+
+    let auth_provider_addr_3 = factory
+        .factory_management_trait_proxy()
+        .auth_provider_addr(AuthenticatorType::Webauthn)
+        .unwrap()
+        .unwrap();
+
+    assert_ne!(auth_provider_addr_1, auth_provider_addr_3);
+}
+
+#[test]
 fn factory_can_update_configs() {
     let app = App::default();
 
     let deployer = "deployer";
-    let factory_code_id = vectis_factory::contract::multitest_utils::CodeId::store_code(&app);
-    let proxy_code_id = vectis_proxy::contract::multitest_utils::CodeId::store_code(&app);
+    let factory_code_id = vectis_factory::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let proxy_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
     let wallet_fee = Coin {
         denom: "uvectis".into(),
         amount: Uint128::one(),
@@ -112,6 +188,30 @@ fn factory_can_update_configs() {
     assert_ne!(fees.wallet_fee, wallet_fee);
     assert_eq!(fees.wallet_fee, new_wallet_fee);
 
+    // Supported Chains
+    let new_chain_id = "new_chain_id";
+    let new_connection = ChainConnection::Other("Some-other-connection".into());
+
+    // add new supported chain
+    factory
+        .factory_management_trait_proxy()
+        .update_supported_interchain(new_chain_id.into(), Some(new_connection))
+        .call(deployer)
+        .unwrap();
+
+    let supported_chains = factory
+        .factory_management_trait_proxy()
+        .supported_chains(None, None)
+        .unwrap();
+    assert_eq!(supported_chains.len(), 2);
+
+    // remove existing supported chain
+    factory
+        .factory_management_trait_proxy()
+        .update_supported_interchain(new_chain_id.into(), None)
+        .call(deployer)
+        .unwrap();
+
     // Deployer
     let new_deployer = String::from("test-new-deployer");
     factory
@@ -130,9 +230,6 @@ fn factory_can_update_configs() {
     let actual_deployer = factory.factory_management_trait_proxy().deployer().unwrap();
     assert_ne!(actual_deployer.as_str(), deployer);
     assert_eq!(actual_deployer.as_str(), new_deployer);
-
-    // Supported Chains
-    // TODO:
 }
 
 #[test]
@@ -140,8 +237,8 @@ fn update_proxy_code_id_as_expected() {
     let app = App::default();
 
     let deployer = "deployer";
-    let factory_code_id = vectis_factory::contract::multitest_utils::CodeId::store_code(&app);
-    let proxy_code_id = vectis_proxy::contract::multitest_utils::CodeId::store_code(&app);
+    let factory_code_id = vectis_factory::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let proxy_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
     let wallet_fee = Coin {
         denom: "uvectis".into(),
         amount: Uint128::one(),

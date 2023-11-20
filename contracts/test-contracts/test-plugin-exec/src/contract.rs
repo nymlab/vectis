@@ -7,7 +7,7 @@ use sylvia::{
 };
 
 // Vectis lib
-use vectis_wallet::interface::wallet_plugin_trait::ExecMsg as VectisWalletExecMsg;
+use vectis_wallet::interface::wallet_plugin_trait::sv::ExecMsg as VectisWalletExecMsg;
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;

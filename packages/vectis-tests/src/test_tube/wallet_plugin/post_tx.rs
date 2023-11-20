@@ -2,7 +2,7 @@ use cosmwasm_std::{coin, BankMsg, CosmosMsg, Empty};
 use osmosis_test_tube::OsmosisTestApp;
 use serial_test::serial;
 
-use test_vectis_post_tx_exec::contract::QueryMsg as PostTxQueryMsg;
+use test_vectis_post_tx_exec::contract::sv::QueryMsg as PostTxQueryMsg;
 use vectis_wallet::{interface::wallet_plugin_trait, types::plugin::PluginListResponse};
 
 use crate::{
@@ -47,7 +47,7 @@ fn post_tx_executes() {
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let plugins: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::QueryMsg::Plugins {})
+        .query(&wallet_plugin_trait::sv::QueryMsg::Plugins {})
         .unwrap();
 
     let post_tx_addr = plugins.post_tx_hooks[0].clone().0;

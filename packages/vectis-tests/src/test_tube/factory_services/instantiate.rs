@@ -2,7 +2,7 @@ use cosmwasm_std::Addr;
 use osmosis_test_tube::OsmosisTestApp;
 
 use vectis_wallet::{
-    interface::factory_management_trait::QueryMsg as FactoryMgmtQueryMsg,
+    interface::factory_management_trait::sv::QueryMsg as FactoryMgmtQueryMsg,
     types::authenticator::AuthenticatorType,
 };
 

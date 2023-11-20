@@ -11,11 +11,11 @@ use osmosis_test_tube::{Bank, OsmosisTestApp};
 use test_tube::module::Module;
 use vectis_wallet::{
     interface::{
-        factory_management_trait::QueryMsg as FactoryMgmtQueryMsg,
-        factory_service_trait::{
+        factory_management_trait::sv::QueryMsg as FactoryMgmtQueryMsg,
+        factory_service_trait::sv::{
             ExecMsg as FactoryServiceExecMsg, QueryMsg as FactoryServiceQueryMsg,
         },
-        wallet_trait::QueryMsg as WalletQueryMsg,
+        wallet_trait::sv::QueryMsg as WalletQueryMsg,
     },
     types::{
         factory::CreateWalletMsg,
