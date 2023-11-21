@@ -1,8 +1,8 @@
 [alias]
-wasm-auth = "build --release --target wasm32-unknown-unknown --package vectis-webauthn-authenticator"
-wasm-factory = "build --release --target wasm32-unknown-unknown --package vectis-factory"
-wasm-proxy = "build --release --target wasm32-unknown-unknown --package vectis-proxy"
-wasm-plugin-registry = "build --release --target wasm32-unknown-unknown --package vectis-plugin-registry"
+wasm-auth = "build --release --lib --target=wasm32-unknown-unknown --package vectis-webauthn-authenticator"
+wasm-factory = "build --release --lib --target=wasm32-unknown-unknown --package vectis-factory"
+wasm-proxy = "build --release --lib --target=wasm32-unknown-unknown --package vectis-proxy"
+wasm-plugin-registry = "build --lib --release --target=wasm32-unknown-unknown --package vectis-plugin-registry"
 
 [net]
 git-fetch-with-cli = true   # use the `git` executable for git operations
