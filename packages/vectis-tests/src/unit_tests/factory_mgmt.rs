@@ -4,11 +4,11 @@ use crate::unit_tests::utils::*;
 fn factory_instantiates_correctly_without_authenticators() {
     let app = App::default();
     let deployer = VALID_OSMO_ADDR;
-    let factory_code_id = vectis_factory::contract::sv::multitest_utils::CodeId::store_code(&app);
-    let proxy_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let factory_code_id = FactoryCodeId::store_code(&app);
+    let proxy_code_id = ProxyCodeId::store_code(&app);
     let wallet_fee = Coin {
-        denom: "uvectis".into(),
-        amount: Uint128::one(),
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
     };
     let remote_chain_id = "remote_chain_id";
     let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());
@@ -57,7 +57,7 @@ fn factory_instantiates_correctly_without_authenticators() {
 }
 
 #[test]
-fn factory_instantiates_correctly_with_authenticators_and_update() {
+fn factory_instantiates_correctly_with_authenticators_and_updates() {
     let mtapp = AppBuilder::default()
         .with_api(MockApiBech32::new("osmo"))
         .with_wasm(WasmKeeper::default().with_address_generator(MockAddressGenerator))
@@ -65,16 +65,22 @@ fn factory_instantiates_correctly_with_authenticators_and_update() {
 
     let app = App::new(mtapp);
     let deployer = VALID_OSMO_ADDR;
-    let factory_code_id = vectis_factory::contract::sv::multitest_utils::CodeId::store_code(&app);
-    let proxy_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
-    let auth_code_id =
-        vectis_webauthn_authenticator::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let factory_code_id = FactoryCodeId::store_code(&app);
+    let proxy_code_id = ProxyCodeId::store_code(&app);
+    let auth_code_id = AuthCodeId::store_code(&app);
+
     let wallet_fee = Coin {
-        denom: "uvectis".into(),
-        amount: Uint128::one(),
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
     };
     let remote_chain_id = "remote_chain_id";
+    let remote_chain_id = "remote_chain_id";
     let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());
+    let authenticator = AuthenticatorInstInfo {
+        ty: AuthenticatorType::Webauthn,
+        code_id: auth_code_id.code_id(),
+        inst_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
+    };
 
     let factory = factory_code_id
         .instantiate(WalletFactoryInstantiateMsg {
@@ -82,11 +88,7 @@ fn factory_instantiates_correctly_with_authenticators_and_update() {
             supported_proxies: vec![(proxy_code_id.code_id(), VECTIS_VERSION.into())],
             wallet_fee: wallet_fee.clone(),
             // authenticators: None,
-            authenticators: Some(vec![AuthenticatorInstInfo {
-                ty: AuthenticatorType::Webauthn,
-                code_id: auth_code_id.code_id(),
-                inst_msg: to_binary(&EmptyInstantiateMsg {}).unwrap(),
-            }]),
+            authenticators: Some(vec![authenticator]),
             supported_chains: Some(vec![(
                 remote_chain_id.into(),
                 remote_chain_connection.clone(),
@@ -240,8 +242,8 @@ fn update_proxy_code_id_as_expected() {
     let factory_code_id = vectis_factory::contract::sv::multitest_utils::CodeId::store_code(&app);
     let proxy_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
     let wallet_fee = Coin {
-        denom: "uvectis".into(),
-        amount: Uint128::one(),
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
     };
     let remote_chain_id = "remote_chain_id";
     let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());

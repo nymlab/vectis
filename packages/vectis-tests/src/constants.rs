@@ -58,6 +58,7 @@ pub fn canonical_valid_osmo() -> CanonicalAddr {
 }
 
 pub const VALID_OSMO_ADDR: &str = "osmo1pkf6nuq8whw5ta5537c3uqrep0yzcwkrw82n95";
+pub const INVALID_OSMO_ADDR: &str = "osmo1pkf6nuq8whw5ta5537c3uqrep0yzcwkrw82n";
 pub const HEX_CANONICAL_VALID_OSMO_ADDR: &str = "0d93a9f00775dd45f6948fb11e00790bc82c3ac3";
 
 fn code_path(name: &str) -> String {
