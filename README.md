@@ -20,12 +20,10 @@ _Details on Vectis user features can be found in our [introductory article]._
 
 Vectis accounts come with base features:
 
-- Guardianship - Social Recovery: in case of lost of private keys / device.
-- Guardianship - Account Freezing: for temporary disabling account (such as travel).
-- Extensible plugin features: supercharge and customise your Vectis Account with automated transactions and pre-transaction workflow / guards. See [plugin section].
-- Gasless transactions: Sign transaction offline and have approved service to transact onchain.
-- Cross chain transactions: Authorise transaction on IBC / other chains with our threshold signing infrastructure (next version).
-- Integration with Self Sovereign Identity (SSI) protocols: Vectis mobile wallet combines blockchain wallet with identity wallet, an important integration to allow onchain transactions to embed ZK-proofs for identity, an important feature for mainstream adoption, especially for onchain financial applications.
+- Seedless accounts: Accounts are by default controlled by an `Entity` using Passkey creation and tx signing
+- Extensible plugin features: supercharge and customise your Vectis Account with automated transactions and pre-transaction workflow / guards. See [plugin section]
+- (Soon) Account controller rotation: Accounts can rotate their own `Entity` in the case of updates, this can be extended in the future for guardianships
+- ICA: the creation of ICA is baked into the Vectis Accounts
 
 [introductory article]: https://nymlab.notion.site/Introducing-Vectis-3578c478316b40d098dcc5832e3a267b
 [plugin section]: #plugins
@@ -33,7 +31,7 @@ Vectis accounts come with base features:
 With the above features, Vectis provides functionality for both retail users and businesses to satisfy regulatory requirements:
 
 - consumer protection: guardianship features can help recovery user funds and manage fraud risk
-- Pre-Transaction check plugins: a multisig plugin tailored to business workflow provides separation of control and verifiability
+- Pre-Transaction checks: Vectis is a compliant solution and satisfies crypto AML / travel checks
 - Transparency: Users can at all time check any status on their wallet, enhanced with Vectis clients push notifications
 
 ### Plugins
@@ -47,77 +45,33 @@ Vectis provides test suite to allow developers to easily test plugins in the Vec
 
 Plugins can choose to apply to the Vectis Plugin Registry (VPR) to give users a certain level of assurance.
 Vectis and partnership teams is responsible for the soundness of the plugins in the registry.
-For more information on plugins, please see our [plugins repository].
+For more information on plugins.
 
-## Progresive Decentralisation
-
-VectisDAO aims to be the organisation that provides governance to the this infrastructure. This will be introduced in the next phase of Vectis.
-
-At this phase of development, all of the Vectis codebase is open source and can be found in the [Nymlab github account].
 
 [nymlab github account]: https://github.com/nymlab?q=vectis&type=all&language=&sort=
-[wiki]: https://github.com/nymlab/vectis/wiki
-[plugins repository]: https://github.com/nymlab/vectis-plugins/
 
 ---
 
-## Contribute
 
-We welcome PRs and issues 🤝
+### Contract building
+
+```sh
+# Builds wasm files
+make build
+
+# Builds schemas
+make schemas && cd ts && npm run generate
+```
 
 ### Contract Testing
 
 ```sh
-# For individual contract tests
-cd contracts/contract-you-want-to-test
+# For all contracts using test-tube
+cargo test -- test-tube
+
+# For all cw-multi-tests
+cargo test -- unit_tests
+
+# For all tests
 cargo test
-
-# For all contract unit tests
-cargo test-unit
-
-# For all multi-test
-cargo test-multi
 ```
-
-### Integration Tests with Docker
-
-This spins up two docker containers,
-one per chain, to test IBC interactions.
-
-##### 1. Set Environment
-
-First we set up the two networks (one node each) locally.
-Please ensure you have set up the `.env` file according to the `example.env`.
-
-You should check supported chains in `cli/config/chains` directory.
-
-```sh
-make nodes-setup
-```
-
-##### 2. Compile Contracts
-
-```sh
-make build
-```
-
-##### 3. Upload and instantiate contracts
-
-```sh
-make deploy
-```
-
-The contracts are deployed as such:
-
-- Remote network: all networks without DAO
-- DAO network: where the VectisDAO will live has:
-  - Vectis Plugin Registry
-  - Vectis Factory
-  - Instances of the Proxy contract
-  - Where natively the VEC tokens are minted
-
-After upload and deploy contracts it will check the contract have the right checksum and admin.
-
-### Interacting with the blockchain
-
-We are using [CosmJS](https://github.com/cosmos/cosmjs) to interact with the smart contracts and [Jest](https://jestjs.io/) as testing framework for client-side tests.
