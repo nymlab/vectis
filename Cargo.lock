@@ -599,21 +599,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw1"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cd87b521055960569f562a143078c93031d5e8780d9520936cc97f8aa2f1101"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "schemars",
- "serde",
-]
-
-[[package]]
 name = "cw2"
 version = "1.0.1"
-source = "git+https://github.com/nymlab/cw-plus?rev=9d6fae5#9d6fae5e62d5f7fd249e2056c5cd09903d3c0ef3"
+source = "git+https://github.com/nymlab/cw-plus?rev=8879b96#8879b9676e28d4a4e0a8428122f722ed3ab78ee9"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -639,7 +627,7 @@ dependencies = [
 [[package]]
 name = "cw20"
 version = "1.0.1"
-source = "git+https://github.com/nymlab/cw-plus?rev=9d6fae5#9d6fae5e62d5f7fd249e2056c5cd09903d3c0ef3"
+source = "git+https://github.com/nymlab/cw-plus?rev=8879b96#8879b9676e28d4a4e0a8428122f722ed3ab78ee9"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -664,7 +652,7 @@ dependencies = [
 [[package]]
 name = "cw3"
 version = "1.0.1"
-source = "git+https://github.com/nymlab/cw-plus?rev=9d6fae5#9d6fae5e62d5f7fd249e2056c5cd09903d3c0ef3"
+source = "git+https://github.com/nymlab/cw-plus?rev=8879b96#8879b9676e28d4a4e0a8428122f722ed3ab78ee9"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -693,7 +681,7 @@ dependencies = [
 [[package]]
 name = "cw3-fixed-multisig"
 version = "1.0.1"
-source = "git+https://github.com/nymlab/cw-plus?rev=9d6fae5#9d6fae5e62d5f7fd249e2056c5cd09903d3c0ef3"
+source = "git+https://github.com/nymlab/cw-plus?rev=8879b96#8879b9676e28d4a4e0a8428122f722ed3ab78ee9"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -709,7 +697,7 @@ dependencies = [
 [[package]]
 name = "cw3-flex-multisig"
 version = "1.0.1"
-source = "git+https://github.com/nymlab/cw-plus?rev=9d6fae5#9d6fae5e62d5f7fd249e2056c5cd09903d3c0ef3"
+source = "git+https://github.com/nymlab/cw-plus?rev=8879b96#8879b9676e28d4a4e0a8428122f722ed3ab78ee9"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -723,13 +711,13 @@ dependencies = [
  "schemars",
  "serde",
  "thiserror",
- "vectis-wallet 0.1.0",
+ "vectis-wallet 1.0.0-rc1 (git+https://github.com/nymlab/vectis?rev=ed93cc7)",
 ]
 
 [[package]]
 name = "cw4"
 version = "1.0.1"
-source = "git+https://github.com/nymlab/cw-plus?rev=9d6fae5#9d6fae5e62d5f7fd249e2056c5cd09903d3c0ef3"
+source = "git+https://github.com/nymlab/cw-plus?rev=8879b96#8879b9676e28d4a4e0a8428122f722ed3ab78ee9"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -3140,28 +3128,30 @@ dependencies = [
 
 [[package]]
 name = "vectis-wallet"
-version = "0.1.0"
-source = "git+https://github.com/nymlab/vectis?rev=e350ef0#e350ef017bb515fe3824e4992a82f3cfc4e8f625"
+version = "1.0.0-rc1"
 dependencies = [
  "bech32 0.8.1",
+ "cosmos-sdk-proto 0.19.0",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
  "cw-utils",
- "cw1",
  "cw2 1.1.1",
- "cw20 1.1.0",
  "derivative",
  "hex",
  "primitive-types",
- "ripemd160",
- "sha2 0.9.9",
+ "serde",
+ "serde-json-wasm 0.5.1",
+ "sha2 0.10.8",
+ "sylvia",
+ "sylvia-derive",
  "thiserror",
 ]
 
 [[package]]
 name = "vectis-wallet"
 version = "1.0.0-rc1"
+source = "git+https://github.com/nymlab/vectis?rev=ed93cc7#ed93cc78d7577df828c91dc06377bea806b9f8b9"
 dependencies = [
  "bech32 0.8.1",
  "cosmos-sdk-proto 0.19.0",
