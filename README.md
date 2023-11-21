@@ -67,6 +67,7 @@ make schemas && cd ts && npm run generate
 
 ```sh
 # For all contracts using test-tube
+# This requires wasm contracts from previous step
 cargo test -- test-tube
 
 # For all cw-multi-tests
