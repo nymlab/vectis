@@ -16,7 +16,7 @@ jobs:
       LLVM_PROFILE_FILE: "vectis-%p-%m.profraw"
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.GH_TOKEN }}
@@ -33,6 +33,13 @@ jobs:
         run: |
           cargo install grcov
           rustup component add llvm-tools-preview
+
+      - name: Add ssh key to update cw-plus/cw3-flex-multisig
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.GIT_SSH }}" > ~/.ssh/id_rsa
+          eval `ssh-agent -s`
+          ssh-add ~/.ssh/id_rsa
 
       - name: Run cw-multi-test contract tests
         run: cargo test -p vectis-contract-tests -- unit_tests
@@ -54,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.GH_TOKEN }}
@@ -66,6 +73,13 @@ jobs:
           toolchain: stable
           target: wasm32-unknown-unknown
           override: true
+
+      - name: Add ssh key to update cw-plus/cw3-flex-multisig
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.GIT_SSH }}" > ~/.ssh/id_rsa
+          eval `ssh-agent -s`
+          ssh-add ~/.ssh/id_rsa
 
       - name: Compile WASM contract plugin registry
         run: cargo wasm-plugin-registry --locked
@@ -82,12 +96,17 @@ jobs:
         env:
           RUSTFLAGS: "-C link-arg=-s"
 
+      - name: Compile WASM contract authenticator
+        run: cargo wasm-auth --locked
+        env:
+          RUSTFLAGS: "-C link-arg=-s"
+
   lints:
     name: Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.GH_TOKEN }}
@@ -99,6 +118,13 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
+
+      - name: Add ssh key to update cw-plus/cw3-flex-multisig
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.GIT_SSH }}" > ~/.ssh/id_rsa
+          eval `ssh-agent -s`
+          ssh-add ~/.ssh/id_rsa
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
