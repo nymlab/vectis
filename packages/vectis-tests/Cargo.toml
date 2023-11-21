@@ -9,7 +9,6 @@ repository = "https://github.com/nymlab/vectis"
 description = "Vectis test package for multitest, useful for plugins"
 
 
-
 [dependencies]
 vectis-factory = { path = "../../contracts/core/factory", features = ["mt"]}
 vectis-proxy = { path = "../../contracts/core/proxy", features = ["mt"]}
@@ -35,7 +34,7 @@ thiserror = { workspace = true }
 osmosis-std = "=0.19.1"
 test-tube = { git = "https://github.com/osmosis-labs/test-tube",  rev = "78f99ff"}
 osmosis-test-tube =  { git = "https://github.com/osmosis-labs/test-tube", rev = "78f99ff"}
-cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "9d6fae5" }
+cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "8879b96" }
 cw4-group= { version = "1.0.1", features = ["library"] }
 cw3 = "1.0.1"
 cw4 = "1.0.1"
