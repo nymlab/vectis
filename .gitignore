@@ -1,6 +1,6 @@
 # Build results
 **/target
-artifacts
+/*artifacts
 
 # Coverage results
 **/coverage
@@ -19,7 +19,7 @@ artifacts
 .idea
 
 # local chain data
-.wasmd*/	
+.wasmd*/
 
 # testnet
 **.testnet
