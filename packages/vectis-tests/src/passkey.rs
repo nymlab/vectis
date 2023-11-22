@@ -45,12 +45,12 @@ pub fn must_get_credential(vid: &str, challenge: String) -> AuthenticatorAsserti
     response
 }
 
-pub(crate) fn hash_to_hex_string<'a>(data: &[u8]) -> String {
+pub(crate) fn hash_to_hex_string(data: &[u8]) -> String {
     let s = HexBinary::from(Sha256::digest(data).to_vec());
     s.to_hex()
 }
 
-pub(crate) fn hash_to_base64url_string<'a>(data: &[u8]) -> String {
+pub(crate) fn hash_to_base64url_string(data: &[u8]) -> String {
     base64ct::Base64UrlUnpadded::encode_string(Sha256::digest(data).as_slice())
 }
 
