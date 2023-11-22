@@ -20,6 +20,7 @@ pub mod wallet_trait {
         #[msg(query)]
         fn data(&self, ctx: QueryCtx, key: Binary) -> Result<Option<Binary>, StdError>;
 
+        /// Permission: contract self (controller / plugins)
         #[msg(exec)]
         fn controller_rotation(
             &self,
@@ -27,6 +28,8 @@ pub mod wallet_trait {
             new_controller: Controller,
         ) -> Result<Response, Self::Error>;
 
+        /// Permission: Open
+        /// Main exec function and checks for auth from controller
         #[msg(exec)]
         fn auth_exec(
             &self,
@@ -34,9 +37,13 @@ pub mod wallet_trait {
             transaction: RelayTransaction,
         ) -> Result<Response, Self::Error>;
 
+        /// Permission: factory
+        /// This is used by the factory in the case the wallet migrates
         #[msg(exec)]
         fn controller_nonce_update(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
+        /// Permission: Controller
+        /// Updates the data stored (auto replace existing)
         #[msg(exec)]
         fn update_data(
             &self,
