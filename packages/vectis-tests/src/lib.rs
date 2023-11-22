@@ -9,3 +9,5 @@ mod unit_tests;
 
 #[cfg(test)]
 mod constants;
+pub mod helpers;
+pub mod passkey;

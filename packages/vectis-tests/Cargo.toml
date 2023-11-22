@@ -8,6 +8,9 @@ keywords = ["cosmwasm", "account-abstraction", "smart-contract-wallet", "vectis"
 repository = "https://github.com/nymlab/vectis"
 description = "Vectis test package for multitest, useful for plugins"
 
+[lib]
+doctest = false
+
 
 [dependencies]
 vectis-factory = { path = "../../contracts/core/factory", features = ["mt"]}

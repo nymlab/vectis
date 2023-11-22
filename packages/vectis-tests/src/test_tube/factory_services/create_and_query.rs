@@ -1,9 +1,7 @@
 use crate::{
     constants::*,
-    test_tube::{
-        test_env::HubChainSuite,
-        util::{contract::Contract, wallet::default_entity},
-    },
+    helpers::default_entity,
+    test_tube::{test_env::HubChainSuite, util::contract::Contract},
 };
 use cosmwasm_std::{coin, to_binary, Addr, Binary};
 use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;

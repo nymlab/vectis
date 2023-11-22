@@ -11,13 +11,10 @@ use vectis_wallet::{
 
 use crate::{
     constants::*,
+    helpers::sign_and_create_relay_tx,
     test_tube::{
         test_env::HubChainSuite,
-        util::{
-            contract::Contract,
-            msgs::simple_bank_send,
-            wallet::{create_webauthn_wallet, sign_and_create_relay_tx},
-        },
+        util::{contract::Contract, msgs::simple_bank_send, wallet::create_webauthn_wallet},
     },
 };
 

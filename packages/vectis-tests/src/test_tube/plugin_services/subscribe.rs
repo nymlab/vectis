@@ -1,11 +1,9 @@
 use crate::{
     constants::*,
+    helpers::sign_and_create_relay_tx,
     test_tube::{
         test_env::HubChainSuite,
-        util::{
-            contract::Contract,
-            wallet::{create_webauthn_wallet, sign_and_create_relay_tx},
-        },
+        util::{contract::Contract, wallet::create_webauthn_wallet},
     },
 };
 use cosmwasm_std::{coin, to_binary, CosmosMsg, WasmMsg};

@@ -1,14 +1,10 @@
 use crate::{
     constants::*,
-    test_tube::util::{
-        contract::Contract,
-        passkey::{
-            de_client_data, hash_to_base64url_string, hash_to_hex_string, must_create_credential,
-            must_get_credential,
-        },
-    },
+    helpers::{sign_and_create_relay_tx, webauthn_entity},
+    passkey::*,
+    test_tube::util::contract::Contract,
 };
-use cosmwasm_std::{coin, to_binary, Addr, Binary, CosmosMsg};
+use cosmwasm_std::{coin, to_binary, Addr, CosmosMsg};
 use osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse;
 use osmosis_test_tube::OsmosisTestApp;
 use test_tube::{RunnerExecuteResult, SigningAccount};
@@ -21,37 +17,12 @@ use vectis_wallet::{
         wallet_trait::sv::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
     },
     types::{
-        authenticator::{
-            Authenticator, AuthenticatorProvider, AuthenticatorType, EmptyInstantiateMsg,
-        },
-        entity::Entity,
+        authenticator::EmptyInstantiateMsg,
         factory::{CreateWalletMsg, MigrateWalletMsg},
         plugin::{PluginInstallParams, PluginPermission, PluginSource},
-        wallet::{Nonce, RelayTransaction, VectisRelayedTx, WalletInfo, WebauthnRelayedTxMsg},
+        wallet::WalletInfo,
     },
 };
-
-pub fn default_entity() -> Entity {
-    Entity {
-        auth: Authenticator {
-            ty: AuthenticatorType::Webauthn,
-            provider: AuthenticatorProvider::Vectis,
-        },
-        data: to_binary(&"data").unwrap(),
-        nonce: 0,
-    }
-}
-
-pub fn webauthn_entity(data: &[u8]) -> Entity {
-    Entity {
-        auth: Authenticator {
-            ty: AuthenticatorType::Webauthn,
-            provider: AuthenticatorProvider::Vectis,
-        },
-        data: Binary::from(data),
-        nonce: 0,
-    }
-}
 
 pub fn create_webauthn_wallet<'a>(
     app: &'a OsmosisTestApp,
@@ -138,38 +109,6 @@ pub fn sign_migration_msg(
         &[],
         relayer,
     )
-}
-
-pub fn sign_and_create_relay_tx(
-    messages: Vec<CosmosMsg>,
-    nonce: Nonce,
-    vid: &str,
-) -> RelayTransaction {
-    let signed_msg = VectisRelayedTx {
-        messages,
-        nonce,
-        sponsor_fee: None,
-    };
-    let signed_msg_str = serde_json_wasm::to_string(&signed_msg).unwrap();
-
-    // We encode the hash vec into hex to pass to the cli
-    let challenge = hash_to_hex_string(signed_msg_str.as_bytes());
-    let response = must_get_credential(vid, challenge.clone());
-
-    // Compare the expeted challenge value to the one returned from passkey
-    let expect_challenge = hash_to_base64url_string(signed_msg_str.as_bytes());
-    let challenge_in_client_data = de_client_data(&response.client_data_json);
-    assert_eq!(expect_challenge, challenge_in_client_data.challenge);
-
-    RelayTransaction {
-        message: to_binary(&WebauthnRelayedTxMsg {
-            signed_data: signed_msg_str,
-            auth_data: Binary::from(response.authenticator_data),
-            client_data: Binary::from(response.client_data_json),
-        })
-        .unwrap(),
-        signature: Binary::from(response.signature),
-    }
 }
 
 pub fn add_test_plugin(

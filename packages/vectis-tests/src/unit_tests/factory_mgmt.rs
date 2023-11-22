@@ -74,7 +74,6 @@ fn factory_instantiates_correctly_with_authenticators_and_updates() {
         amount: WALLET_FEE.into(),
     };
     let remote_chain_id = "remote_chain_id";
-    let remote_chain_id = "remote_chain_id";
     let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());
     let authenticator = AuthenticatorInstInfo {
         ty: AuthenticatorType::Webauthn,

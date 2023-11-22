@@ -6,12 +6,13 @@ use vectis_wallet::{interface::wallet_trait, types::wallet::WalletInfo};
 
 use crate::{
     constants::*,
+    helpers::webauthn_entity,
     test_tube::{
         test_env::HubChainSuite,
         util::{
             contract::Contract,
             passkey::must_create_credential,
-            wallet::{create_webauthn_wallet, sign_and_submit, webauthn_entity},
+            wallet::{create_webauthn_wallet, sign_and_submit},
         },
     },
 };
