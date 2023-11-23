@@ -23,6 +23,7 @@ fn factory_instantiates_correctly_without_authenticators() {
                 remote_chain_id.into(),
                 remote_chain_connection.clone(),
             )]),
+            wallet_creator: deployer.into(),
         })
         .with_label("Vectis Factory")
         .call(deployer)
@@ -92,6 +93,7 @@ fn factory_instantiates_correctly_with_authenticators_and_updates() {
                 remote_chain_id.into(),
                 remote_chain_connection.clone(),
             )]),
+            wallet_creator: deployer.into(),
         })
         .with_label("Vectis Factory")
         .call(deployer)
@@ -162,6 +164,7 @@ fn factory_can_update_configs() {
             wallet_fee: wallet_fee.clone(),
             authenticators: None,
             supported_chains: Some(vec![(remote_chain_id.into(), remote_chain_connection)]),
+            wallet_creator: deployer.into(),
         })
         .with_label("Vectis Factory")
         .call(deployer)
@@ -254,6 +257,7 @@ fn update_proxy_code_id_as_expected() {
             wallet_fee: wallet_fee.clone(),
             authenticators: None,
             supported_chains: Some(vec![(remote_chain_id.into(), remote_chain_connection)]),
+            wallet_creator: deployer.into(),
         })
         .with_label("Vectis Factory")
         .call(deployer)

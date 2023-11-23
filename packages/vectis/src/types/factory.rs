@@ -24,7 +24,7 @@ pub struct CreateWalletMsg {
     /// Vectis ID of the wallet which must be unique
     pub vid: String,
     /// Initial data to be set in the proxy
-    /// Record is a kv pair  
+    /// Record is a kv pair
     pub initial_data: Vec<(Binary, Binary)>,
     /// Initial plugins to be instantiated
     pub plugins: Vec<PluginInstallParams>,
@@ -94,6 +94,8 @@ pub struct WalletFactoryInstantiateMsg {
     pub authenticators: Option<Vec<AuthenticatorInstInfo>>,
     /// Supported Chains
     pub supported_chains: Option<Vec<(String, ChainConnection)>>,
+    /// Authorised wallet creator
+    pub wallet_creator: String,
 }
 
 #[cw_serde]

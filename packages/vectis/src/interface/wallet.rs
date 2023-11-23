@@ -89,6 +89,8 @@ pub mod wallet_plugin_trait {
             migrate: Vec<PluginMigrateParams>,
         ) -> Result<Response, Self::Error>;
 
+        /// Removing plugin: called by registry contract
+        /// This is done so that it must be removed in both the registry and proxy states
         #[msg(exec)]
         fn remove_plugins(
             &self,

@@ -20,12 +20,21 @@ pub mod registry_service_trait {
         /// Called by proxy contract to record increase in plugins
         /// Codehash of the caller is checked
         #[msg(exec)]
-        fn proxy_install_plugin(&self, ctx: ExecCtx, id: u64) -> Result<Response, Self::Error>;
+        fn proxy_install_plugin(
+            &self,
+            ctx: ExecCtx,
+            id: u64,
+            addr: String,
+        ) -> Result<Response, Self::Error>;
 
-        /// Called by proxy contract to record reduction in plugins
+        /// Called by proxy contract to remove the plugin in this state and in the proxy state
         /// Codehash of the caller is checked
         #[msg(exec)]
-        fn proxy_remove_plugin(&self, ctx: ExecCtx, id: u64) -> Result<Response, Self::Error>;
+        fn proxy_remove_plugins(
+            &self,
+            ctx: ExecCtx,
+            addr: Vec<String>,
+        ) -> Result<Response, Self::Error>;
 
         #[msg(exec)]
         fn subscribe(&self, ctx: ExecCtx, tier: SubscriptionTier) -> Result<Response, Self::Error>;

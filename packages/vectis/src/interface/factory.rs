@@ -92,6 +92,14 @@ pub mod factory_management_trait {
         #[msg(exec)]
         fn update_deployer(&self, ctx: ExecCtx, addr: String) -> Result<Response, Self::Error>;
 
+        /// Deployer only: update address associated by the wallet creator role
+        #[msg(exec)]
+        fn update_wallet_creator(
+            &self,
+            ctx: ExecCtx,
+            addr: String,
+        ) -> Result<Response, Self::Error>;
+
         /// Updates the authenticator provider
         /// if `new_code_id` and `new_inst_msg` is `None`,
         /// the `ty` assumes to exist and will be removed.
@@ -116,6 +124,10 @@ pub mod factory_management_trait {
         /// Returns address of the deployer
         #[msg(query)]
         fn deployer(&self, ctx: QueryCtx) -> Result<Addr, StdError>;
+
+        /// Returns address of the wallet creator
+        #[msg(query)]
+        fn wallet_creator(&self, ctx: QueryCtx) -> Result<Addr, StdError>;
 
         /// Returns supported chains
         #[msg(query)]

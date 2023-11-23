@@ -24,8 +24,8 @@ pub struct Subscriber {
     pub tier: SubscriptionTier,
     /// Expiration of the subscription
     pub expiration: Expiration,
-    /// Registry plugin ids installed
-    pub plugin_installed: Vec<u64>,
+    /// Registry plugin (id, contract_addr) installed
+    pub plugin_installed: Vec<(u64, String)>,
 }
 
 impl Default for Subscriber {

@@ -55,24 +55,36 @@ For more information on plugins.
 
 ### Contract building
 
+For WASM build locally you may need to first:
+
+- remove [net] config in .cargo
+- make sure `rust-optimizer` does not include `vectis-contract-tests` by `"packages/*",` -> `"packages/vectis",`
+  in the root `Cargo.toml` member section.
+- run `cargo build` to update the cargo.lock to exclude the `packages/vectis-tests` package
+
 ```sh
-# Builds wasm files
+
+# Builds wasm files:
+# (Depending on your arch, it will be either *.wasm or *-aarch64.wasm output)
 make build
 
 # Builds schemas
 make schemas && cd ts && npm run generate
+
 ```
+
 
 ### Contract Testing
 
 ```sh
 # For all contracts using test-tube
 # This requires wasm contracts from previous step
-cargo test -- test-tube
+
+UNAME=$(uname -p) cargo test -- test_tube
 
 # For all cw-multi-tests
 cargo test -- unit_tests
 
 # For all tests
-cargo test
+UNAME=$(uname -p) cargo test
 ```

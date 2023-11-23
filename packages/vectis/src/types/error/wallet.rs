@@ -43,10 +43,6 @@ pub enum WalletError {
     IsNotContractSelf {},
     #[error("IsNotController")]
     IsNotController {},
-    #[error("PubKeyIsNotValid")]
-    PubKeyIsNotValid {},
-    #[error("PubKeyLengthIsNotValid")]
-    PubKeyLengthIsNotValid {},
     #[error("SameControllerData")]
     SameControllerData,
     #[error("Feature is not yet supported")]
@@ -63,6 +59,8 @@ pub enum WalletError {
     PreTxCheckFailed(String),
     #[error("Not Factory")]
     NotFactory,
+    #[error("Not Registry")]
+    NotRegistry,
 }
 
 #[derive(Error, Debug, PartialEq)]

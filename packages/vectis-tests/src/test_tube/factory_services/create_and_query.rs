@@ -33,9 +33,10 @@ fn create_wallet_successfully_without_relayer() {
     let entity = default_entity();
     let vid = String::from("user-name@vectis");
 
+    let chains = (NON_IBC_CHAIN_NAME.into(), NON_IBC_CHAIN_ADDR.into());
     let initial_data = (
-        to_binary(NON_IBC_CHAIN_NAME).unwrap(),
-        to_binary(NON_IBC_CHAIN_ADDR).unwrap(),
+        to_binary("some-key").unwrap(),
+        to_binary("some-value").unwrap(),
     );
 
     let create_msg = FactoryServiceExecMsg::CreateWallet {
@@ -47,7 +48,7 @@ fn create_wallet_successfully_without_relayer() {
             initial_data: vec![initial_data.clone()],
             plugins: vec![],
             code_id: None,
-            chains: None,
+            chains: Some(vec![chains]),
         },
     };
 
@@ -56,7 +57,7 @@ fn create_wallet_successfully_without_relayer() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE, "uosmo")],
-            &suite.accounts[IDEPLOYER],
+            &suite.accounts[IRELAYER],
         )
         .unwrap();
 
@@ -131,7 +132,7 @@ fn create_with_inital_balance() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE + INIT_BALANCE, DENOM)],
-            &suite.accounts[IDEPLOYER],
+            &suite.accounts[IRELAYER],
         )
         .unwrap();
 
@@ -237,7 +238,7 @@ fn cannot_create_with_incorrect_total_fee() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE, DENOM)],
-            &suite.accounts[IDEPLOYER],
+            &suite.accounts[IRELAYER],
         )
         .unwrap_err();
 }
@@ -269,7 +270,7 @@ fn cannot_create_using_same_vid() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE, DENOM)],
-            &suite.accounts[IDEPLOYER],
+            &suite.accounts[IRELAYER],
         )
         .unwrap();
 
@@ -278,7 +279,7 @@ fn cannot_create_using_same_vid() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE, DENOM)],
-            &suite.accounts[IDEPLOYER],
+            &suite.accounts[IRELAYER],
         )
         .unwrap_err();
 }
@@ -310,7 +311,7 @@ fn cannot_create_with_incorrect_fee() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE - 3u128, DENOM)],
-            &suite.accounts[IDEPLOYER],
+            &suite.accounts[IRELAYER],
         )
         .unwrap_err();
 }
@@ -323,11 +324,7 @@ fn create_wallet_with_addrs_can_be_queired() {
     let entity = default_entity();
     let vid = String::from("user-name@vectis");
 
-    let remote_chain_addr_in_base_64 = to_binary(NON_IBC_CHAIN_ADDR).unwrap();
-    let initial_data = (
-        to_binary(NON_IBC_CHAIN_NAME).unwrap(),
-        remote_chain_addr_in_base_64.clone(),
-    );
+    let chains = (NON_IBC_CHAIN_NAME.into(), NON_IBC_CHAIN_ADDR.into());
 
     let create_msg = FactoryServiceExecMsg::CreateWallet {
         create_wallet_msg: CreateWalletMsg {
@@ -335,10 +332,10 @@ fn create_wallet_with_addrs_can_be_queired() {
             relayers: vec![],
             proxy_initial_funds: vec![],
             vid: vid.clone(),
-            initial_data: vec![initial_data.clone()],
+            initial_data: vec![],
             plugins: vec![],
             code_id: None,
-            chains: None,
+            chains: Some(vec![chains]),
         },
     };
 
@@ -347,7 +344,7 @@ fn create_wallet_with_addrs_can_be_queired() {
         .execute(
             &create_msg,
             &[coin(WALLET_FEE, "uosmo")],
-            &suite.accounts[IDEPLOYER],
+            &suite.accounts[IRELAYER],
         )
         .unwrap();
 

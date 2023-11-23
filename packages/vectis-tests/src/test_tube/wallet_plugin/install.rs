@@ -84,12 +84,16 @@ fn install_plugin_shows_in_proxy_and_registry() {
             addr: wallet_addr.to_string(),
         })
         .unwrap();
+
     assert!(sub_result.is_some());
     let subscriber = sub_result.unwrap();
 
     assert_eq!(subscriber.tier, SubscriptionTier::Free);
     assert_eq!(subscriber.plugin_installed.len(), 1);
-    assert!(subscriber.plugin_installed.contains(&first_plugin.id));
+    assert_eq!(
+        subscriber.plugin_installed.first().unwrap().0,
+        first_plugin.id
+    );
 }
 
 #[test]

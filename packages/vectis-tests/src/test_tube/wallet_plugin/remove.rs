@@ -4,7 +4,7 @@ use serial_test::serial;
 
 use vectis_wallet::{
     interface::{
-        registry_service_trait,
+        registry_service_trait::{self, sv::RegistryServiceTraitExecMsg},
         wallet_plugin_trait::sv::{
             ExecMsg as WalletPluginExecMsg, QueryMsg as WalletPluginQueryMsg,
         },
@@ -36,7 +36,7 @@ fn remove_installed_plugin_successfully() {
     suite.register_plugins();
 
     let vid = "test-user";
-    let registry = Contract::from_addr(&app, suite.plugin_registry);
+    let registry = Contract::from_addr(&app, suite.plugin_registry.clone());
 
     let (wallet_addr, _) = create_webauthn_wallet(
         &app,
@@ -83,6 +83,7 @@ fn remove_installed_plugin_successfully() {
             addr: wallet_addr.to_string(),
         })
         .unwrap();
+
     let sub = sub_result.unwrap();
     assert_eq!(sub.plugin_installed.len(), 1);
 
@@ -91,8 +92,8 @@ fn remove_installed_plugin_successfully() {
     assert_eq!(info.pre_tx.len(), 1);
 
     // Remove plugin
-    let remove_plugin_msg = WalletPluginExecMsg::RemovePlugins {
-        plugin_addrs: info
+    let remove_plugin_msg = RegistryServiceTraitExecMsg::ProxyRemovePlugins {
+        addr: info
             .pre_tx
             .iter()
             .map(|(addr, _)| addr.to_string())
@@ -102,7 +103,7 @@ fn remove_installed_plugin_successfully() {
     sign_and_submit(
         &app,
         vec![CosmosMsg::<Empty>::Wasm(cosmwasm_std::WasmMsg::Execute {
-            contract_addr: wallet_addr.to_string(),
+            contract_addr: suite.plugin_registry.to_string(),
             msg: to_binary(&remove_plugin_msg).unwrap(),
             funds: vec![],
         })],

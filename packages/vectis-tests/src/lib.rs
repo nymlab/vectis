@@ -1,4 +1,5 @@
 #![allow(deprecated)]
+#![cfg(test)]
 
 #[allow(unused_imports)]
 #[macro_use]

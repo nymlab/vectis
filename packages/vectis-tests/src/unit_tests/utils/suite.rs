@@ -87,6 +87,7 @@ impl VectisTestSuite {
                     //       ChainConnection::IBC(REMOTE_IBC_CHAIN_CONNECTION.into()),
                     //   ),
                 ]),
+                wallet_creator: deployer.to_string(),
             },
         };
 
@@ -155,13 +156,18 @@ impl VectisTestSuite {
         }
     }
 
-    pub fn create_default_wallet(&self, entity: Entity, vid: String) -> Addr {
+    pub fn create_default_wallet(
+        &self,
+        entity: Entity,
+        vid: String,
+        initial_data: Vec<(Binary, Binary)>,
+    ) -> Addr {
         let msg = CreateWalletMsg {
             controller: entity,
             relayers: vec![],
             proxy_initial_funds: vec![],
             vid,
-            initial_data: vec![],
+            initial_data,
             plugins: vec![],
             chains: None,
             code_id: None,

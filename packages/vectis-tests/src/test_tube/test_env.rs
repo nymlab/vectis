@@ -100,6 +100,7 @@ impl<'a> HubChainSuite<'a> {
             Contract::store_code(app, PROXY_MIGRATION_CODE_PATH, &accounts[IDEPLOYER]);
 
         let factory_inst_msg = WalletFactoryInstantiateMsg {
+            wallet_creator: accounts[IRELAYER].address(),
             default_proxy_code_id: proxy_code_id,
             supported_proxies: vec![
                 (proxy_code_id, VECTIS_VERSION.into()),
