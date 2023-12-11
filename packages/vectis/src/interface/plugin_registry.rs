@@ -29,6 +29,7 @@ pub mod registry_service_trait {
 
         /// Called by proxy contract to remove the plugin in this state and in the proxy state
         /// Codehash of the caller is checked
+        /// This is called with `auth_remove_plugin`
         #[msg(exec)]
         fn proxy_remove_plugins(
             &self,

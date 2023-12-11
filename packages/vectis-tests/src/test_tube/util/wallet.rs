@@ -84,6 +84,27 @@ pub fn sign_and_submit(
     )
 }
 
+pub fn sign_and_submit_auth_tx_without_plugins(
+    app: &OsmosisTestApp,
+    messages: Vec<CosmosMsg>,
+    vid: &str,
+    wallet_addr: &str,
+    relayer: &SigningAccount,
+) -> RunnerExecuteResult<MsgExecuteContractResponse> {
+    let wallet = Contract::from_addr(app, wallet_addr.into());
+    let info: WalletInfo = wallet.query(&WalletQueryMsg::Info {}).unwrap();
+
+    let relay_tx = sign_and_create_relay_tx(messages, info.controller.nonce, vid);
+
+    wallet.execute(
+        &WalletExecMsg::AuthExecWithoutPlugins {
+            transaction: relay_tx,
+        },
+        &[],
+        relayer,
+    )
+}
+
 pub fn sign_migration_msg(
     app: &OsmosisTestApp,
     messages: Vec<CosmosMsg>,

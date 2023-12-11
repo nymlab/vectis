@@ -37,6 +37,16 @@ pub mod wallet_trait {
             transaction: RelayTransaction,
         ) -> Result<Response, Self::Error>;
 
+        /// Permission: Open
+        /// This allows for exec of tx without called any plugins.
+        /// Allowing for the removal of faulty plugins on the proxy wallet
+        #[msg(exec)]
+        fn auth_exec_without_plugins(
+            &self,
+            ctx: ExecCtx,
+            transaction: RelayTransaction,
+        ) -> Result<Response, Self::Error>;
+
         /// Permission: factory
         /// This is used by the factory in the case the wallet migrates
         #[msg(exec)]
