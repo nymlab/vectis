@@ -37,6 +37,7 @@ pub mod registry_service_trait {
             addr: Vec<String>,
         ) -> Result<Response, Self::Error>;
 
+        /// Called by users to subscribe to a different tier for both upgrade & downgrades
         #[msg(exec)]
         fn subscribe(&self, ctx: ExecCtx, tier: SubscriptionTier) -> Result<Response, Self::Error>;
 
