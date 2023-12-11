@@ -31,11 +31,19 @@ fn must_create_with_correct_fees() {
 
     assert!(addr.is_some());
 
-    // wrong fees does not create
+    // wrong fees and same as fee denom  does not create
+    factory
+        .factory_service_trait_proxy()
+        .create_wallet(msg.clone())
+        .with_funds(&[coin(WALLET_FEE + WALLET_FEE, DENOM)])
+        .call(suite.deployer.as_str())
+        .unwrap_err();
+
+    // wrong fees and different to fee denom does not create
     factory
         .factory_service_trait_proxy()
         .create_wallet(msg)
-        .with_funds(&[coin(WALLET_FEE + WALLET_FEE, DENOM)])
+        .with_funds(&[coin(WALLET_FEE, DENOM1)])
         .call(suite.deployer.as_str())
         .unwrap_err();
 
@@ -45,6 +53,87 @@ fn must_create_with_correct_fees() {
         .unwrap();
 
     assert_eq!(total, 1)
+}
+
+#[test]
+fn init_proxy_funds_is_correct() {
+    let suite = VectisTestSuite::new();
+
+    let denom_balance = 111;
+    let denom1_balance = 222;
+    let denom2_balance = 333;
+
+    let msg = CreateWalletMsg {
+        controller: default_entity(),
+        relayers: vec![],
+        proxy_initial_funds: vec![
+            coin(denom2_balance, DENOM2.to_string()),
+            coin(denom1_balance, DENOM1.to_string()),
+            coin(denom_balance, DENOM.to_string()),
+        ],
+        vid: String::from("vectis-wallet"),
+        initial_data: vec![],
+        plugins: vec![],
+        chains: None,
+        code_id: None,
+    };
+
+    let factory = VectisFactoryProxy::new(suite.factory.clone(), &suite.app);
+
+    factory
+        .factory_service_trait_proxy()
+        .create_wallet(msg.clone())
+        .with_funds(&[
+            coin(denom2_balance, DENOM2),
+            coin(denom1_balance, DENOM1),
+            coin(denom_balance + WALLET_FEE, DENOM),
+        ])
+        .call(suite.deployer.as_str())
+        .unwrap();
+
+    let addr = factory
+        .factory_service_trait_proxy()
+        .wallet_by_vid("vectis-wallet".into())
+        .unwrap()
+        .unwrap();
+
+    let balance_denom = suite.query_balance(&addr, DENOM).unwrap();
+    let balance_denom1 = suite.query_balance(&addr, DENOM1).unwrap();
+    let balance_denom2 = suite.query_balance(&addr, DENOM2).unwrap();
+    assert_eq!(denom_balance, balance_denom.amount.into());
+    assert_eq!(denom1_balance, balance_denom1.amount.into());
+    assert_eq!(denom2_balance, balance_denom2.amount.into());
+}
+
+#[test]
+fn ensure_enough_fund_check_cannot_bypass_fee() {
+    let suite = VectisTestSuite::new();
+
+    let denom1_balance = 222;
+    let denom2_balance = 333;
+
+    let msg = CreateWalletMsg {
+        controller: default_entity(),
+        relayers: vec![],
+        proxy_initial_funds: vec![
+            coin(denom2_balance, DENOM2.to_string()),
+            coin(denom1_balance, DENOM1.to_string()),
+        ],
+        vid: String::from("vectis-wallet"),
+        initial_data: vec![],
+        plugins: vec![],
+        chains: None,
+        code_id: None,
+    };
+
+    let factory = VectisFactoryProxy::new(suite.factory.clone(), &suite.app);
+
+    factory
+        .factory_service_trait_proxy()
+        .create_wallet(msg.clone())
+        .with_funds(&[coin(denom2_balance, DENOM2), coin(denom1_balance, DENOM1)])
+        .call(suite.deployer.as_str())
+        .unwrap_err();
 }
 
 #[test]

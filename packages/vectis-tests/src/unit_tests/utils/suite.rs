@@ -141,7 +141,11 @@ impl VectisTestSuite {
             .send_tokens(
                 Addr::unchecked(VALID_OSMO_ADDR),
                 deployer.clone(),
-                &[coin(100000, DENOM)],
+                &[
+                    coin(100000, DENOM),
+                    coin(100000, DENOM1),
+                    coin(100000, DENOM2),
+                ],
             )
             .unwrap();
 
@@ -188,6 +192,10 @@ impl VectisTestSuite {
             .unwrap()
             .unwrap()
     }
+
+    pub fn query_balance(&self, addr: &Addr, denom: &str) -> Result<Coin, StdError> {
+        Ok(self.app.app().wrap().query_balance(addr.as_str(), denom)?)
+    }
 }
 
 pub fn new_mtapp() -> cw_multi_test::App<BankKeeper, MockApiBech32> {
@@ -200,7 +208,11 @@ pub fn new_mtapp() -> cw_multi_test::App<BankKeeper, MockApiBech32> {
                 .init_balance(
                     storage,
                     &Addr::unchecked(VALID_OSMO_ADDR),
-                    vec![coin(1000000000, DENOM)],
+                    vec![
+                        coin(1000000000, DENOM),
+                        coin(1000000000, DENOM1),
+                        coin(1000000000, DENOM2),
+                    ],
                 )
                 .unwrap();
         });

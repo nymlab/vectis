@@ -123,6 +123,8 @@ pub const PROXY_MIGRATE_VERSION: &str = "2.0.0-rc1";
 pub const ARTIFACTS: &str = "./../../artifacts/";
 
 pub const DENOM: &str = "uosmo";
+pub const DENOM1: &str = "udenom1";
+pub const DENOM2: &str = "udenom2";
 pub const WALLET_FEE: u128 = 10u128;
 pub const REGISTRY_FEE: u128 = 11u128;
 pub const INIT_BALANCE: u128 = 12u128;
