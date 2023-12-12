@@ -61,6 +61,8 @@ pub enum WalletError {
     NotFactory,
     #[error("Not Registry")]
     NotRegistry,
+    #[error("Duplication {0}")]
+    Duplication(String),
 }
 
 #[derive(Error, Debug, PartialEq)]

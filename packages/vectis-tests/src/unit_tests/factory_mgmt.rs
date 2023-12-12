@@ -351,3 +351,117 @@ fn update_proxy_code_id_as_expected() {
 
     assert_eq!(err, FactoryError::Unauthorized)
 }
+
+#[test]
+fn factory_instantiates_error_on_duplicated_supported_chains() {
+    let app = App::default();
+    let deployer = VALID_OSMO_ADDR;
+    let factory_code_id = FactoryCodeId::store_code(&app);
+    let proxy_code_id = ProxyCodeId::store_code(&app);
+    let wallet_fee = Coin {
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
+    };
+    let remote_chain_id = "remote_chain_id";
+    let remote_chain_connection = ChainConnection::IBC("connection-id-1".into());
+
+    let err = factory_code_id
+        .instantiate(WalletFactoryInstantiateMsg {
+            default_proxy_code_id: proxy_code_id.code_id(),
+            supported_proxies: vec![(proxy_code_id.code_id(), VECTIS_VERSION.into())],
+            wallet_fee: wallet_fee.clone(),
+            authenticators: None,
+            supported_chains: Some(vec![
+                (remote_chain_id.into(), remote_chain_connection.clone()),
+                (remote_chain_id.into(), remote_chain_connection.clone()),
+            ]),
+            wallet_creator: deployer.into(),
+        })
+        .with_label("Vectis Factory")
+        .call(deployer)
+        .unwrap_err();
+
+    assert_eq!(err, FactoryError::Duplication("supported_chains".into()))
+}
+
+#[test]
+fn factory_instantiates_error_on_zero_supported_proxies() {
+    let app = App::default();
+    let factory_code_id = FactoryCodeId::store_code(&app);
+    let proxy_code_id = ProxyCodeId::store_code(&app);
+    let wallet_fee = Coin {
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
+    };
+
+    let err = factory_code_id
+        .instantiate(WalletFactoryInstantiateMsg {
+            default_proxy_code_id: proxy_code_id.code_id(),
+            supported_proxies: vec![],
+            wallet_fee: wallet_fee.clone(),
+            authenticators: None,
+            supported_chains: None,
+            wallet_creator: VALID_OSMO_ADDR.into(),
+        })
+        .with_label("Vectis Factory")
+        .call(VALID_OSMO_ADDR)
+        .unwrap_err();
+
+    assert_eq!(err, FactoryError::InstantiationWithoutProxy)
+}
+
+#[test]
+fn factory_instantiates_error_on_no_default_id_in_supported_proxies() {
+    let app = App::default();
+    let factory_code_id = FactoryCodeId::store_code(&app);
+    let proxy_code_id = ProxyCodeId::store_code(&app);
+    let wallet_fee = Coin {
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
+    };
+
+    let err = factory_code_id
+        .instantiate(WalletFactoryInstantiateMsg {
+            default_proxy_code_id: proxy_code_id.code_id(),
+            // Does not include the default proxy id
+            supported_proxies: vec![(1837, VECTIS_VERSION.into())],
+            wallet_fee: wallet_fee.clone(),
+            authenticators: None,
+            supported_chains: None,
+            wallet_creator: VALID_OSMO_ADDR.into(),
+        })
+        .with_label("Vectis Factory")
+        .call(VALID_OSMO_ADDR)
+        .unwrap_err();
+
+    assert_eq!(err, FactoryError::IncorrectDefaultProxy)
+}
+
+#[test]
+fn factory_instantiates_error_on_duplicated_proxies() {
+    let app = App::default();
+    let factory_code_id = FactoryCodeId::store_code(&app);
+    let proxy_code_id = ProxyCodeId::store_code(&app);
+    let wallet_fee = Coin {
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
+    };
+
+    let err = factory_code_id
+        .instantiate(WalletFactoryInstantiateMsg {
+            default_proxy_code_id: proxy_code_id.code_id(),
+            supported_proxies: vec![
+                (proxy_code_id.code_id(), VECTIS_VERSION.into()),
+                (proxy_code_id.code_id(), VECTIS_VERSION.into()),
+            ],
+            wallet_fee: wallet_fee.clone(),
+            authenticators: None,
+            supported_chains: None,
+            wallet_creator: VALID_OSMO_ADDR.into(),
+        })
+        .with_label("Vectis Factory")
+        .call(VALID_OSMO_ADDR)
+        .unwrap_err();
+
+    assert_eq!(err, FactoryError::Duplication("supported_proxies".into()))
+}

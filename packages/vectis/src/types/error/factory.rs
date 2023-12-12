@@ -47,6 +47,10 @@ pub enum FactoryError {
     AlreadyExist { addr: Addr },
     #[error("InstantiationWithoutProxy")]
     InstantiationWithoutProxy,
+    #[error("IncorrectDefaultProxy")]
+    IncorrectDefaultProxy,
+    #[error("Deplicate {0}")]
+    Duplication(String),
 }
 
 impl From<MigrationMsgError> for FactoryError {
