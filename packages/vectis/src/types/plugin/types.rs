@@ -137,9 +137,12 @@ impl Plugin {
             },
         );
 
+        // validate creator
+        let validated_addr = deps.api.addr_validate(&creator)?;
+
         Ok(Plugin {
             id,
-            creator: deps.api.addr_canonicalize(&creator)?,
+            creator: deps.api.addr_canonicalize(validated_addr.as_str())?,
             display_name,
             latest_contract_version,
             versions: record,
