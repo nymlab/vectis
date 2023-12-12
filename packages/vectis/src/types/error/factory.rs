@@ -23,6 +23,8 @@ pub enum FactoryError {
     NotFound { addr: Addr },
     #[error("OverFlow")]
     OverFlow {},
+    #[error("NotSupportedProxyCodeId")]
+    NotSupportedProxyCodeId,
     #[error("ExistingProxyCodeId")]
     ExistingProxyCodeId,
     #[error("ProxyCodeIdNotOnChain")]

@@ -106,3 +106,32 @@ fn cannot_create_with_duplicated_proxy_init_fund() {
 
     assert_eq!(err, FactoryError::Duplication("proxy_init_funds".into()));
 }
+
+#[test]
+fn cannot_create_with_unsupported_code_id() {
+    let suite = VectisTestSuite::new();
+    let factory = VectisFactoryProxy::new(suite.factory.clone(), &suite.app);
+
+    let unsupported_code_id = ProxyCodeId::store_code(&suite.app);
+
+    let msg = CreateWalletMsg {
+        controller: default_entity(),
+        relayers: vec![],
+        proxy_initial_funds: vec![],
+        vid: String::from("vectis-wallet"),
+        initial_data: vec![],
+        plugins: vec![],
+        chains: Some(vec![]),
+        // Unsupported_code_id
+        code_id: Some(unsupported_code_id.code_id()),
+    };
+
+    let err = factory
+        .factory_service_trait_proxy()
+        .create_wallet(msg)
+        .with_funds(&[coin(WALLET_FEE, DENOM)])
+        .call(suite.deployer.as_str())
+        .unwrap_err();
+
+    assert_eq!(err, FactoryError::NotSupportedProxyCodeId)
+}
