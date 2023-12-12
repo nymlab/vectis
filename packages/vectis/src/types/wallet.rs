@@ -67,6 +67,15 @@ impl Controller {
     pub fn authenticator(&self) -> &Authenticator {
         &self.auth
     }
+
+    /// Serialise into a unique slice to be stored as `previous_controller`
+    pub fn to_type_data_slice(&self) -> Vec<u8> {
+        let auth = match self.auth_type() {
+            AuthenticatorType::Webauthn => "Webauthn".as_bytes(),
+            AuthenticatorType::Other(x) => x.as_bytes(),
+        };
+        return [self.data.as_slice(), auth].concat();
+    }
 }
 
 /// Controller nonce
