@@ -465,3 +465,41 @@ fn factory_instantiates_error_on_duplicated_proxies() {
 
     assert_eq!(err, FactoryError::Duplication("supported_proxies".into()))
 }
+
+#[test]
+fn factory_instantiates_error_on_duplicated_auth_type() {
+    let app = App::default();
+    let factory_code_id = FactoryCodeId::store_code(&app);
+    let auth_code_id = AuthCodeId::store_code(&app);
+    let proxy_code_id = ProxyCodeId::store_code(&app);
+    let wallet_fee = Coin {
+        denom: DENOM.into(),
+        amount: WALLET_FEE.into(),
+    };
+
+    let err = factory_code_id
+        .instantiate(WalletFactoryInstantiateMsg {
+            default_proxy_code_id: proxy_code_id.code_id(),
+            supported_proxies: vec![(proxy_code_id.code_id(), VECTIS_VERSION.into())],
+            wallet_fee: wallet_fee.clone(),
+            authenticators: Some(vec![
+                AuthenticatorInstInfo {
+                    ty: AuthenticatorType::Webauthn,
+                    code_id: auth_code_id.code_id(),
+                    inst_msg: to_binary("init").unwrap(),
+                },
+                AuthenticatorInstInfo {
+                    ty: AuthenticatorType::Webauthn,
+                    code_id: auth_code_id.code_id(),
+                    inst_msg: to_binary("init").unwrap(),
+                },
+            ]),
+            supported_chains: None,
+            wallet_creator: VALID_OSMO_ADDR.into(),
+        })
+        .with_label("Vectis Factory")
+        .call(VALID_OSMO_ADDR)
+        .unwrap_err();
+
+    assert_eq!(err, FactoryError::Duplication("authenticator_type".into()))
+}
