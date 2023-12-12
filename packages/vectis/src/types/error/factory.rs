@@ -25,6 +25,8 @@ pub enum FactoryError {
     OverFlow {},
     #[error("ExistingProxyCodeId")]
     ExistingProxyCodeId,
+    #[error("ProxyCodeIdNotOnChain")]
+    ProxyCodeIdNotOnChain,
     #[error("ProxyVersionRequired")]
     ProxyVersionRequired,
     #[error("CannotRemoveDefaultProxyId")]

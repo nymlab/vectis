@@ -1,3 +1,5 @@
+use vectis_wallet::types::error::FactoryError;
+
 use crate::unit_tests::utils::*;
 
 #[test]
@@ -275,46 +277,37 @@ fn update_proxy_code_id_as_expected() {
         .call(deployer)
         .unwrap_err();
 
-    // Can Add new code id; Not default
-    let new_code_id = 99;
-    factory
+    // Cannot add new code id; Not onchain
+    let not_onchain_code_id = 99;
+    let err = factory
         .factory_management_trait_proxy()
         .update_code_id(
             CodeIdType::Proxy,
-            new_code_id,
-            Some("Updated-version".into()),
+            not_onchain_code_id,
+            Some("failed_version".into()),
             false,
         )
         .call(deployer)
-        .unwrap();
+        .unwrap_err();
 
-    let new_default_code_id = factory
-        .factory_management_trait_proxy()
-        .default_proxy_code_id()
-        .unwrap();
+    assert_eq!(err, FactoryError::ProxyCodeIdNotOnChain);
 
-    assert_eq!(new_default_code_id, old_default_code_id);
-
-    let code_ids = factory
-        .factory_management_trait_proxy()
-        .supported_proxies(None, None)
-        .unwrap();
-
-    assert!(code_ids.contains(&(new_code_id, "Updated-version".into())));
+    // add new code_id onchain
+    let new_default_code_id = vectis_proxy::contract::sv::multitest_utils::CodeId::store_code(&app);
+    let new_default_code_id = new_default_code_id.code_id();
 
     // Can Add new code id and set as default
-    let new_default_code_id = 100;
-
     factory
         .factory_management_trait_proxy()
         .update_code_id(
             CodeIdType::Proxy,
             new_default_code_id,
-            Some("Updated-version".into()),
+            Some("Updated-default-version".into()),
             true,
         )
         .call(deployer)
         .unwrap();
+
     let actual_default_code_id = factory
         .factory_management_trait_proxy()
         .default_proxy_code_id()
@@ -328,12 +321,12 @@ fn update_proxy_code_id_as_expected() {
         .supported_proxies(None, None)
         .unwrap();
 
-    assert!(code_ids.contains(&(new_default_code_id, "Updated-version".into())));
+    assert!(code_ids.contains(&(new_default_code_id, "Updated-default-version".into())));
 
     // Can remove not default
     factory
         .factory_management_trait_proxy()
-        .update_code_id(CodeIdType::Proxy, new_code_id, None, false)
+        .update_code_id(CodeIdType::Proxy, proxy_code_id.code_id(), None, false)
         .call(deployer)
         .unwrap();
 
@@ -342,17 +335,19 @@ fn update_proxy_code_id_as_expected() {
         .supported_proxies(None, None)
         .unwrap();
 
-    assert!(!code_ids.contains(&(new_code_id, "Updated-version".into())));
+    assert!(!code_ids.contains(&(proxy_code_id.code_id(), VECTIS_VERSION.into())));
 
     // Cannot add if not deployer
-    factory
+    let err = factory
         .factory_management_trait_proxy()
         .update_code_id(
             CodeIdType::Proxy,
-            new_code_id,
-            Some("Updated-version".into()),
+            proxy_code_id.code_id(),
+            Some(VECTIS_VERSION.into()),
             true,
         )
         .call("not-deployer")
         .unwrap_err();
+
+    assert_eq!(err, FactoryError::Unauthorized)
 }
