@@ -51,7 +51,7 @@ fn deployer_can_add_subscription_tier() {
 }
 
 #[test]
-fn existing_tier_cannot_be_added() {
+fn existing_tier_can_be_updated() {
     let app = OsmosisTestApp::new();
     let suite = HubChainSuite::init(&app);
     let registry = Contract::from_addr(&app, suite.plugin_registry.clone());
@@ -76,7 +76,7 @@ fn existing_tier_cannot_be_added() {
         &[],
         &suite.accounts[ICOMMITTEE],
     )
-    .unwrap_err();
+    .unwrap();
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, CosmosMsg, WasmMsg};
+use cosmwasm_std::{coin, to_binary, CosmosMsg, WasmMsg};
 use osmosis_test_tube::OsmosisTestApp;
 use serial_test::serial;
 
@@ -24,8 +24,22 @@ use crate::{
 #[serial]
 fn can_migrate_plugin() {
     let app = OsmosisTestApp::new();
-    let mut suite = HubChainSuite::init(&app);
-    suite.register_plugins();
+    let suite = HubChainSuite::init(&app);
+    vectis_committee::execute(
+        suite.app,
+        suite.deployer.clone(),
+        suite.plugin_registry.clone(),
+        &registry_management_trait::sv::ExecMsg::RegisterPlugin {
+            code_data: test_plugin_code_data(
+                suite.test_contracts.pre_tx.0,
+                suite.test_contracts.pre_tx.1,
+            ),
+            metadata_data: test_plugin_metadata(),
+        },
+        &[coin(REGISTRY_FEE, "uosmo")],
+        &suite.accounts[ICOMMITTEE],
+    )
+    .unwrap();
 
     let vid = "test-user";
     let (wallet_addr, _) = create_webauthn_wallet(
@@ -41,7 +55,7 @@ fn can_migrate_plugin() {
         vid,
         wallet_addr.as_str(),
         &suite.accounts[IRELAYER],
-        suite.test_contracts.pre_tx.2,
+        1,
     )
     .unwrap();
 
@@ -54,8 +68,10 @@ fn can_migrate_plugin() {
         })
         .unwrap();
 
-    let mut new_code_data =
-        test_plugin_code_data(suite.test_contracts.pre_tx.0, suite.test_contracts.pre_tx.1);
+    let mut new_code_data = test_plugin_code_data(
+        suite.test_contracts.post_tx.0,
+        suite.test_contracts.post_tx.1,
+    );
     new_code_data.latest_contract_version = "new-version".into();
 
     vectis_committee::execute(
@@ -63,7 +79,7 @@ fn can_migrate_plugin() {
         suite.deployer,
         suite.plugin_registry.clone(),
         &registry_management_trait::sv::ExecMsg::NewPluginVersion {
-            id: suite.test_contracts.pre_tx.2,
+            id: 1,
             code_update: Some(new_code_data.clone()),
             metadata_update: test_plugin_metadata(),
         },
@@ -80,10 +96,7 @@ fn can_migrate_plugin() {
                 PluginMigrateParams {
                     plugin_addr: plugins.plugins[0].clone().0,
                     plugin_permission: PluginPermission::PreTxCheck,
-                    target_src: PluginSource::VectisRegistry(
-                        suite.test_contracts.pre_tx.2,
-                        Some("new-version".into()),
-                    ),
+                    target_src: PluginSource::VectisRegistry(1, Some("new-version".into())),
                     migration_msg: to_binary(&test_vectis_pre_tx::contract::sv::MigrateMsg {
                         msg: TestMigrateMsg {
                             name: "NEW".into(),
