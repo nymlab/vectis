@@ -7,7 +7,7 @@ use vectis_wallet::{
         registry_service_trait::sv::RegistryServiceTraitExecMsg,
         wallet_plugin_trait::sv::QueryMsg as WalletPluginQueryMsg,
     },
-    types::plugin::PluginListResponse,
+    types::plugin::{PluginListResponse, PluginPermission},
 };
 
 use crate::{
@@ -69,10 +69,16 @@ fn auth_tx_without_plugin_can_bypass_and_remove_plugin() {
 
     // Can remove plugin
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
-    let info: PluginListResponse = wallet.query(&WalletPluginQueryMsg::Plugins {}).unwrap();
+    let info: PluginListResponse = wallet
+        .query(&WalletPluginQueryMsg::Plugins {
+            ty: PluginPermission::PreTxCheck,
+            start_after: None,
+            limit: None,
+        })
+        .unwrap();
     let remove_plugin_msg = RegistryServiceTraitExecMsg::ProxyRemovePlugins {
         addr: info
-            .pre_tx
+            .plugins
             .iter()
             .map(|(addr, _)| addr.to_string())
             .collect(),

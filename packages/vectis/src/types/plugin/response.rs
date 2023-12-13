@@ -4,9 +4,8 @@ use super::types::*;
 
 #[cw_serde]
 pub struct PluginListResponse {
-    pub exec: Vec<(String, PluginInfo)>,
-    pub pre_tx: Vec<(String, PluginInfo)>,
-    pub post_tx_hooks: Vec<(String, PluginInfo)>,
+    pub ty: PluginPermission,
+    pub plugins: Vec<(String, PluginInfo)>,
 }
 
 #[cw_serde]

@@ -14,7 +14,10 @@ use osmosis_test_tube::{Bank, OsmosisTestApp};
 use serial_test::serial;
 use test_tube::module::Module;
 use test_vectis_plugin_exec::contract::sv::ExecMsg;
-use vectis_wallet::{interface::wallet_plugin_trait, types::plugin::PluginListResponse};
+use vectis_wallet::{
+    interface::wallet_plugin_trait,
+    types::plugin::{PluginListResponse, PluginPermission},
+};
 
 // This uses the code from contracts/test-contracts/
 // It will return false if msg contains bankmsg
@@ -46,10 +49,14 @@ fn plugin_exec_works() {
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let plugins: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::sv::QueryMsg::Plugins {})
+        .query(&wallet_plugin_trait::sv::QueryMsg::Plugins {
+            ty: PluginPermission::Exec,
+            start_after: None,
+            limit: None,
+        })
         .unwrap();
 
-    let exec_addr = plugins.exec[0].clone().0;
+    let exec_addr = plugins.plugins[0].clone().0;
     let exec_contract = Contract::from_addr(&app, exec_addr);
 
     // check wallet balance before plugin exec

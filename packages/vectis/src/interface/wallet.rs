@@ -65,7 +65,9 @@ pub mod wallet_trait {
 }
 
 pub mod wallet_plugin_trait {
-    use crate::types::plugin::{PluginInstallParams, PluginListResponse, PluginMigrateParams};
+    use crate::types::plugin::{
+        PluginInstallParams, PluginListResponse, PluginMigrateParams, PluginPermission,
+    };
 
     use super::*;
 
@@ -76,7 +78,13 @@ pub mod wallet_plugin_trait {
 
         /// Returns all installed plugins by types
         #[msg(query)]
-        fn plugins(&self, ctx: QueryCtx) -> Result<PluginListResponse, StdError>;
+        fn plugins(
+            &self,
+            ctx: QueryCtx,
+            ty: PluginPermission,
+            start_after: Option<String>,
+            limit: Option<u32>,
+        ) -> Result<PluginListResponse, StdError>;
 
         #[msg(exec)]
         fn plugin_execute(

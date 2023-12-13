@@ -47,7 +47,11 @@ fn can_migrate_plugin() {
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let plugins: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::sv::QueryMsg::Plugins {})
+        .query(&wallet_plugin_trait::sv::QueryMsg::Plugins {
+            ty: PluginPermission::PreTxCheck,
+            start_after: None,
+            limit: None,
+        })
         .unwrap();
 
     let mut new_code_data =
@@ -74,7 +78,7 @@ fn can_migrate_plugin() {
             contract_addr: wallet_addr.to_string(),
             msg: to_binary(&wallet_plugin_trait::sv::ExecMsg::update_plugins(vec![
                 PluginMigrateParams {
-                    plugin_addr: plugins.pre_tx[0].clone().0,
+                    plugin_addr: plugins.plugins[0].clone().0,
                     plugin_permission: PluginPermission::PreTxCheck,
                     target_src: PluginSource::VectisRegistry(
                         suite.test_contracts.pre_tx.2,

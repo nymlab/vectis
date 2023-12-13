@@ -6,7 +6,7 @@ use vectis_wallet::{
         registry_management_trait::sv as registry_management_trait,
         wallet_plugin_trait::sv as wallet_plugin_trait,
     },
-    types::plugin::{PluginListResponse, PluginWithVersionResponse},
+    types::plugin::{PluginListResponse, PluginPermission, PluginWithVersionResponse},
 };
 
 use crate::{
@@ -49,10 +49,14 @@ fn can_query_plugin_by_addr() {
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
     let plugins: PluginListResponse = wallet
-        .query(&wallet_plugin_trait::QueryMsg::Plugins {})
+        .query(&wallet_plugin_trait::QueryMsg::Plugins {
+            ty: PluginPermission::PostTxHook,
+            start_after: None,
+            limit: None,
+        })
         .unwrap();
 
-    let post_tx_addr = plugins.post_tx_hooks[0].clone().0;
+    let post_tx_addr = plugins.plugins[0].clone().0;
 
     let registry = Contract::from_addr(&app, suite.plugin_registry);
 

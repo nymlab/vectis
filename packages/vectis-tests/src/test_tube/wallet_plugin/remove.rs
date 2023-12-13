@@ -88,13 +88,19 @@ fn remove_installed_plugin_successfully() {
     assert_eq!(sub.plugin_installed.len(), 1);
 
     let wallet = Contract::from_addr(&app, wallet_addr.to_string());
-    let info: PluginListResponse = wallet.query(&WalletPluginQueryMsg::Plugins {}).unwrap();
-    assert_eq!(info.pre_tx.len(), 1);
+    let info: PluginListResponse = wallet
+        .query(&WalletPluginQueryMsg::Plugins {
+            ty: PluginPermission::PreTxCheck,
+            start_after: None,
+            limit: None,
+        })
+        .unwrap();
+    assert_eq!(info.plugins.len(), 1);
 
     // Remove plugin
     let remove_plugin_msg = RegistryServiceTraitExecMsg::ProxyRemovePlugins {
         addr: info
-            .pre_tx
+            .plugins
             .iter()
             .map(|(addr, _)| addr.to_string())
             .collect(),
@@ -114,8 +120,14 @@ fn remove_installed_plugin_successfully() {
     .unwrap();
 
     // Check wallet and registry that this was removed
-    let info: PluginListResponse = wallet.query(&WalletPluginQueryMsg::Plugins {}).unwrap();
-    assert_eq!(info.pre_tx.len(), 0);
+    let info: PluginListResponse = wallet
+        .query(&WalletPluginQueryMsg::Plugins {
+            ty: PluginPermission::PreTxCheck,
+            start_after: None,
+            limit: None,
+        })
+        .unwrap();
+    assert_eq!(info.plugins.len(), 0);
 
     let sub_result: Option<Subscriber> = registry
         .query(&registry_service_trait::sv::QueryMsg::SubsciptionDetails {
