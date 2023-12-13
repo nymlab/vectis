@@ -1,6 +1,6 @@
 [package]
 name = "test-vectis-plugin-exec"
-version = "1.0.0-rc1"
+version = "1.0.0-rc2"
 authors = ["bwty <whalelephant@users.noreply.github.com>"]
 edition = "2021"
 
@@ -19,7 +19,6 @@ library = []
 mt = ["sylvia/mt"]
 
 [dependencies]
-cosmos-sdk-proto = { workspace = true }
 cosmwasm-std = { workspace = true }
 cw-storage-plus = { workspace = true }
 cosmwasm-schema = { workspace = true }

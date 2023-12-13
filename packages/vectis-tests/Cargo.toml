@@ -1,6 +1,6 @@
 [package]
 name = "vectis-contract-tests"
-version = "1.0.0-rc1"
+version = "1.0.0-rc2"
 authors = ["bwty <whalelephant@users.noreply.github.com>", "iorveth <aenseidheiorweth@gmail.com>", "j0nl1 <j0nl1@gmail.com>"]
 edition = "2021"
 license-file = "LICENSE"
@@ -40,7 +40,7 @@ cw3-flex-multisig = {  git = "https://github.com/nymlab/cw-plus", rev = "8879b96
 cw4-group= { version = "1.0.1", features = ["library"] }
 cw3 = "1.0.1"
 cw4 = "1.0.1"
-cw-multi-test = "0.18.0"
+cw-multi-test = "0.19.0"
 sha2  = { workspace = true }
 p256 = {version = "0.13.2", default-features = false, features = ["alloc", "ecdsa"]}
 base64ct = {version = "1.6.0", default-features = false, features = ["alloc"] }
