@@ -23,6 +23,7 @@ pub use cw4_group::{
     msg::{ExecuteMsg as cw4ExecMsg, InstantiateMsg as cw4InstMsg},
 };
 
+pub use test_vectis_pre_tx::contract::sv::multitest_utils::CodeId as TestPreTxPluginCodeId;
 pub use vectis_factory::{
     contract::sv::multitest_utils::{CodeId as FactoryCodeId, VectisFactoryProxy},
     management::contract::sv::test_utils::*,
@@ -36,8 +37,6 @@ pub use vectis_proxy::{
     contract::sv::multitest_utils::{CodeId as ProxyCodeId, VectisProxyProxy},
     wallet::contract::sv::test_utils::WalletTrait,
 };
-pub use vectis_webauthn_authenticator::contract::sv::multitest_utils::CodeId as AuthCodeId;
-
 pub use vectis_wallet::{
     interface::wallet_trait::sv::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
     types::{
@@ -54,6 +53,7 @@ pub use vectis_wallet::{
         wallet::{Nonce, WalletInfo},
     },
 };
+pub use vectis_webauthn_authenticator::contract::sv::multitest_utils::CodeId as AuthCodeId;
 
 pub use bech32::{decode, encode, FromBase32, ToBase32, Variant};
 pub use sha2::{digest::Update, Digest, Sha256};

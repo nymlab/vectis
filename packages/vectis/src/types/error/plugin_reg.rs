@@ -8,10 +8,6 @@ pub enum PluginRegError {
     DeployerItemsQueryError(#[from] DeployerItemsQueryError),
     #[error("Unauthorized")]
     Unauthorized,
-    #[error("Plugin Approval Committee Not Found")]
-    PluginCommitteeNotFound,
-    #[error("Checksum Verification Failed")]
-    ChecksumVerificationFailed,
     #[error("Insufficient Fee Amount: Expected: {0}, Got: {1}")]
     InsufficientFee(Uint128, Uint128),
     #[error("Plugin Version Not Found for {0}")]
@@ -38,4 +34,6 @@ pub enum PluginRegError {
     InvalidChecksum,
     #[error("Tier Exists")]
     TierExists,
+    #[error("CodeIdAlreadyRegistered")]
+    CodeIdAlreadyRegistered,
 }
