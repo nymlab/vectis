@@ -142,3 +142,36 @@ fn new_plugin_version_with_same_code_id_fails() {
 
     assert_eq!(err, PluginRegError::CodeIdAlreadyRegistered)
 }
+
+#[test]
+fn can_update_subscription_tier() {
+    let suite = VectisTestSuite::new();
+    let registry = VectisPluginRegistryProxy::new(suite.plugin_registry, &suite.app);
+    let existing_tier = registry
+        .registry_management_trait_proxy()
+        .get_config()
+        .unwrap()
+        .subscription_tiers
+        .pop()
+        .unwrap();
+
+    let mut new_tier_details = existing_tier.1.clone();
+    new_tier_details.fee = coin(REGISTRY_FEE, DENOM);
+
+    registry
+        .registry_management_trait_proxy()
+        .add_or_update_subscription_tiers(existing_tier.0, new_tier_details)
+        .call(suite.deployer.as_str())
+        .unwrap();
+
+    let new_tier = registry
+        .registry_management_trait_proxy()
+        .get_config()
+        .unwrap()
+        .subscription_tiers
+        .pop()
+        .unwrap();
+
+    assert_eq!(existing_tier.0, new_tier.0);
+    assert_ne!(existing_tier.1, new_tier.1)
+}

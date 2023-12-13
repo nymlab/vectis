@@ -89,7 +89,7 @@ pub mod registry_management_trait {
         /// To remove tier there may already be subscribers and so it will require a migration
         /// function
         #[msg(exec)]
-        fn add_subscription_tiers(
+        fn add_or_update_subscription_tiers(
             &self,
             ctx: ExecCtx,
             tier: u8,

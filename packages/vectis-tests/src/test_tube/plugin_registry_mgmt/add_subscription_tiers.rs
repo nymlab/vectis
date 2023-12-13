@@ -30,7 +30,7 @@ fn deployer_can_add_subscription_tier() {
         &app,
         suite.deployer.clone(),
         suite.plugin_registry.clone(),
-        &registry_management_trait::ExecMsg::AddSubscriptionTiers {
+        &registry_management_trait::ExecMsg::AddOrUpdateSubscriptionTiers {
             tier: SubscriptionTier::Other as u8,
             details: TierDetails {
                 max_plugins: 3,
@@ -65,7 +65,7 @@ fn existing_tier_cannot_be_added() {
         &app,
         suite.deployer.clone(),
         suite.plugin_registry.clone(),
-        &registry_management_trait::ExecMsg::AddSubscriptionTiers {
+        &registry_management_trait::ExecMsg::AddOrUpdateSubscriptionTiers {
             tier: current_tier,
             details: TierDetails {
                 max_plugins: 3,
@@ -88,7 +88,7 @@ fn not_deployer_cannot_add_subscription_tier() {
     // Sent from another signer
     registry
         .execute(
-            &registry_management_trait::ExecMsg::AddSubscriptionTiers {
+            &registry_management_trait::ExecMsg::AddOrUpdateSubscriptionTiers {
                 tier: SubscriptionTier::L1 as u8,
                 details: TierDetails {
                     max_plugins: 3,
