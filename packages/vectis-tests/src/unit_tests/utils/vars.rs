@@ -32,13 +32,19 @@ pub use vectis_factory::{
 pub use vectis_plugin_registry::{
     contract::sv::multitest_utils::{CodeId as RegistryCodeId, VectisPluginRegistryProxy},
     management::contract::sv::test_utils::RegistryManagementTrait,
+    service::sv::test_utils::RegistryServiceTrait,
 };
 pub use vectis_proxy::{
     contract::sv::multitest_utils::{CodeId as ProxyCodeId, VectisProxyProxy},
     wallet::contract::sv::test_utils::WalletTrait,
 };
 pub use vectis_wallet::{
-    interface::wallet_trait::sv::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
+    interface::{
+        registry_service_trait::sv::{
+            ExecMsg as RegistryServiceExecMsg, QueryMsg as RegistryServiceQueryMsg,
+        },
+        wallet_trait::sv::{ExecMsg as WalletExecMsg, QueryMsg as WalletQueryMsg},
+    },
     types::{
         authenticator::{
             Authenticator, AuthenticatorProvider, AuthenticatorType, EmptyInstantiateMsg,
