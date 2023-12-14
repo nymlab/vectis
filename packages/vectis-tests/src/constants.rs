@@ -105,7 +105,7 @@ lazy_static! {
 }
 
 /// Version of vectis
-pub const VECTIS_VERSION: &str = "1.0.0-rc1";
+pub const VECTIS_VERSION: &str = "1.0.0-rc2";
 /// the proxy code_hash for this vectis version
 
 pub const PROXY_MIGRATION_HASH: &str =

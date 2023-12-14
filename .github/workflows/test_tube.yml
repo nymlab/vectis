@@ -4,7 +4,8 @@ on:
   pull_request:
   push:
     branches:
-      - test-tube
+      - main
+      - berlin
 
 jobs:
   test-tube-tests:
@@ -17,7 +18,7 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Install latest nightly toolchain
+      - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -41,19 +42,27 @@ jobs:
       - name: Install libwasmv
         run: cd ./wasmvm && make build-rust && cd ../
 
-      - name: Rust Dependencies Cache
-        uses: actions/cache@v3
+      - name: Download passkey-cli repo
+        uses: actions/checkout@v4
         with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-            artifacts/
-          key: ${{ runner.os }}-cargo-with-artifacts-${{ hashFiles('**/Cargo.lock') }}
+          repository: nymlab/passkey-cli
+          path: ./passkey-cli
+          ref: main
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Install passkey-cli
+        run: |
+          cd ./passkey-cli
+          cargo build --release
+          cp target/release/passkey-cli ../packages/vectis-tests
+          cd ../
 
       - name: Run build-contracts
         run: make build-contracts
 
-      - name: Run Test Tube Integration Tests
-        run: cargo test -- test-tube
+      - name: Run All Integration Tests
+        run: |
+          rm -rf target
+          cargo test -- test_tube
+        env:
+          RUST_BACKTRACE: 1

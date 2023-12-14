@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - berlin
-      - test-tube
   pull_request:
 
 jobs:
@@ -48,6 +47,7 @@ jobs:
           cd ./passkey-cli
           cargo build --release
           cp target/release/passkey-cli ../packages/vectis-tests
+          cd ../
 
       - name: Run cw-multi-test contract tests
         run: cargo test -p vectis-contract-tests -- unit_tests
