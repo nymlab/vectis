@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - berlin
+      - test-tube
   pull_request:
 
 jobs:

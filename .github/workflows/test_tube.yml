@@ -10,9 +10,6 @@ jobs:
   test-tube-tests:
     name: Integration tests
     runs-on: ubuntu-latest
-    env:
-      GAS_OUT_DIR: gas_reports
-      GAS_LIMIT: 100000000
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -24,7 +21,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2023-02-02
+          toolchain: stable
           target: wasm32-unknown-unknown
           override: true
 
@@ -59,4 +56,4 @@ jobs:
         run: make build-contracts
 
       - name: Run Test Tube Integration Tests
-        run: UNAME=$(uname -p) cargo test -- test-tube
+        run: cargo test -- test-tube

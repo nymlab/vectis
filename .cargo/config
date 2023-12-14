@@ -4,5 +4,8 @@ wasm-factory = "build --release --lib --target=wasm32-unknown-unknown --package 
 wasm-proxy = "build --release --lib --target=wasm32-unknown-unknown --package vectis-proxy"
 wasm-plugin-registry = "build --lib --release --target=wasm32-unknown-unknown --package vectis-plugin-registry"
 
-[net]
-git-fetch-with-cli = true   # use the `git` executable for git operations
+[env]
+RUSTFLAGS = "-C link-arg=-s"
+
+[target.x86_64-unknown-linux-gnu]
+runner = 'sudo -E' # gha
