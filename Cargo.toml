@@ -1,4 +1,5 @@
 [workspace]
+exclude = ["wasmvm/libwasmvm"]
 members = ["packages/*", "contracts/core/*", "contracts/authenticators/*", "contracts/test-contracts/*" ]
 resolver = "2"
 

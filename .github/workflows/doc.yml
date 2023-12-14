@@ -24,13 +24,6 @@ jobs:
           override: true
           components: rust-docs
 
-      - name: Add ssh key to update cw-plus/cw3-flex-multisig
-        run: |
-          install -m 600 -D /dev/null ~/.ssh/id_rsa
-          echo "${{ secrets.GIT_SSH }}" > ~/.ssh/id_rsa
-          eval `ssh-agent -s`
-          ssh-add ~/.ssh/id_rsa
-
       - name: Building Documentation
         run: cargo doc --no-deps
 
