@@ -9,8 +9,8 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: Test Suite
+  contract-multi-test:
+    name: Contract Multitests
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: "-Cinstrument-coverage"
@@ -34,6 +34,20 @@ jobs:
         run: |
           cargo install grcov
           rustup component add llvm-tools-preview
+
+      - name: Download passkey-cli repo
+        uses: actions/checkout@v4
+        with:
+          repository: nymlab/passkey-cli
+          path: ./passkey-cli
+          ref: main
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Install passkey-cli
+        run: |
+          cd ./passkey-cli
+          cargo build --release
+          cp target/release/passkey-cli ../packages/vectis-tests
 
       - name: Run cw-multi-test contract tests
         run: cargo test -p vectis-contract-tests -- unit_tests

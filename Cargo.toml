@@ -1,5 +1,5 @@
 [workspace]
-exclude = ["wasmvm/libwasmvm"]
+exclude = ["wasmvm/libwasmvm", "passkey-cli"]
 members = ["packages/*", "contracts/core/*", "contracts/authenticators/*", "contracts/test-contracts/*" ]
 resolver = "2"
 
