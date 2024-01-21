@@ -61,7 +61,7 @@ export async function test_query(network: Chains) {
 
 export async function test(network: Chains, opts: OptionValues) {
     const logger = new Logger();
-    const client = await CWClient.connectHostWithAccount("admin", network);
+    const client = await CWClient.connectHostWithAccount("walletCreator", network);
 
     const uploadedContracts: VectisContractsAddrs = await import(getDeployPath(network));
     const factoryClient = new FactoryClient(client, client.sender, uploadedContracts.Factory);
