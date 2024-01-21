@@ -1,6 +1,6 @@
 import CWClient from "./cosmwasm";
 import { Cw3FlexClient as Cw3FlexC, Cw3FlexT } from "../interfaces";
-import { FactoryT } from "../interfaces";
+import { FactoryTypes as FactoryT } from "./contracts";
 import { toCosmosMsg } from "../utils/enconding";
 import { maxVotingPeriod, vectisCommitteeThreshold } from "../config/vectis";
 

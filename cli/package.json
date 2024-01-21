@@ -12,7 +12,7 @@
     },
     "description": "CLI tool for Vectis smart contract wallet",
     "scripts": {
-        "build": "rm -rf ./build && tsc",
+        "build": "rm -rf ./build && cp -r ../ts/contracts ./src/clients && tsc",
         "postinstall": "vectisCLI generateAccounts"
     },
     "keywords": [
@@ -20,16 +20,16 @@
         "smart contract wallet"
     ],
     "dependencies": {
+        "@cosmwasm/ts-codegen": "0.35.0",
         "@injectivelabs/sdk-ts": "^1.11.0",
         "commander": "^11.0.0",
         "figlet": "^1.6.0",
         "lodash": "^4.17.21",
         "osmojs": "^15.5.0",
         "tslog": "^4.8.2",
-        "@cosmwasm/ts-codegen": "0.35.0"
+        "type-fest": "^4.9.0"
     },
     "devDependencies": {
-        "ts-node": "^10.8.0",
         "@archwayhq/arch3.js": "^0.4.0",
         "@cosmjs/amino": "^0.31.0",
         "@cosmjs/cosmwasm-stargate": "^0.31.0",
@@ -47,6 +47,7 @@
         "husky": ">=6",
         "lint-staged": ">=10",
         "prettier": "^2.6.2",
+        "ts-node": "^10.8.0",
         "typescript": "^5.1.3"
     }
 }

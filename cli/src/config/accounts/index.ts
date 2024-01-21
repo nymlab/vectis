@@ -7,6 +7,7 @@ export enum TestAccountNames {
     "relayer_2",
     "committee1",
     "committee2",
+    "walletCreator"
 }
 
 export type Accounts = keyof typeof TestAccountNames;

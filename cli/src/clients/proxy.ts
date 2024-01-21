@@ -1,6 +1,6 @@
 import CWClient from "./cosmwasm";
-import { ProxyClient as ProxyC, WebauthnRelayedTxMsg } from "../interfaces";
-import { ProxyT } from "../interfaces";
+import { ProxyTypes as ProxyT , ProxyClient as ProxyC} from "./contracts";
+import { WebauthnRelayedTxMsg } from "../interfaces";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { longToByteArray, toCosmosMsg } from "../utils/enconding";
 import { Secp256k1, sha256 } from "@cosmjs/crypto";

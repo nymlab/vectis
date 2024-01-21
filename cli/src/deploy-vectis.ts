@@ -72,6 +72,7 @@ export async function deploy(network: Chains) {
     // Vectis Committee execute deploy factory
     const factoryInstMsg = FactoryClient.createFactoryInstMsg(
         chain,
+        hostAccounts["walletCreator"] as Account,
         uploadedContracts.vectis_proxy.codeId,
         uploadedContracts.vectis_webauthn_authenticator.codeId
     );

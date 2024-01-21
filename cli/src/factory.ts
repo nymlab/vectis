@@ -4,7 +4,8 @@ import { getDeployPath, getAccountsPath } from "./utils/fs";
 import { Chains } from "./config/chains";
 import { Account } from "./config/accounts";
 import { OptionValues } from "commander";
-import { VectisContractsAddrs, FactoryT } from "./interfaces";
+import { VectisContractsAddrs} from "./interfaces";
+import { FactoryTypes as FactoryT } from "./clients/contracts";
 import { FactoryAction } from "./config/actions/factory";
 
 export async function factory(network: Chains, opts: OptionValues) {

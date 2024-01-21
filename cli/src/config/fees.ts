@@ -1,5 +1,5 @@
 import { coin, calculateFee, GasPrice } from "@cosmjs/stargate";
-import { FactoryT, PluginRegT } from "../interfaces";
+import { FactoryTypes as FactoryT, PluginregistryTypes as PluginRegT } from "../clients/contracts";
 import type { Chain } from "./chains";
 
 export const getDefaultGasPrice = (chain: Chain) => GasPrice.fromString(chain.gasPrice + chain.feeToken);

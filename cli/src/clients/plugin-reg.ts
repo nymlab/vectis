@@ -1,4 +1,4 @@
-import { PluginRegT, PluginRegistryQueryClient as PluginRegC } from "../interfaces";
+import { PluginregistryTypes, PluginRegistryQueryClient as PluginRegC } from "./contracts";
 import CWClient from "./cosmwasm";
 import type { Chain } from "../config/chains";
 import { pluginRegSubscriptionFee, pluginRegRegistryFee, pluginFreeTierFee } from "../config/fees";
@@ -9,7 +9,7 @@ class PluginRegClient extends PluginRegC {
         super(cw.client, contractAddress);
     }
 
-    static createInstMsg(chain: Chain, proxy_code_hash: string, version: string): PluginRegT.InstantiateMsg {
+    static createInstMsg(chain: Chain, proxy_code_hash: string, version: string): PluginregistryTypes.InstantiateMsg {
         return {
             registry_fee: pluginRegRegistryFee(chain),
             subscription_tiers: [["free", { fee: pluginFreeTierFee(chain), max_plugins: 3 }]],
@@ -17,7 +17,7 @@ class PluginRegClient extends PluginRegC {
         };
     }
 
-    static async instantiate(cw: CWClient, codeId: number, msg: PluginRegT.InstantiateMsg) {
+    static async instantiate(cw: CWClient, codeId: number, msg: PluginregistryTypes.InstantiateMsg) {
         const { contractAddress } = await cw.client.instantiate(
             cw.sender,
             codeId,

@@ -1,8 +1,9 @@
-import { FactoryClient as FactoryC } from "../interfaces";
+import { FactoryClient as FactoryC } from "./contracts/";
 import CWClient from "./cosmwasm";
 import type { Chain } from "../config/chains";
-import type { FactoryT } from "../interfaces";
+import { FactoryTypes as FactoryT } from "./contracts/";
 import { walletCreationFee } from "../config/fees";
+import { Account } from "../config/accounts";
 import { toBase64, toUtf8 } from "@cosmjs/encoding";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 
@@ -11,13 +12,14 @@ class FactoryClient extends FactoryC {
         super(cw.client, sender, contractAddress);
     }
 
-    static createFactoryInstMsg(chain: Chain, proxyCodeId: number, webauthnCodeId: number): FactoryT.InstantiateMsg {
+    static createFactoryInstMsg(chain: Chain, walletCreator: Account, proxyCodeId: number, webauthnCodeId: number): FactoryT.InstantiateMsg {
         const wallet_fee = walletCreationFee(chain);
         const webauthn_inst_msg = {};
         return {
             msg: {
+                wallet_creator: walletCreator.address,
                 default_proxy_code_id: proxyCodeId,
-                supported_proxies: [[proxyCodeId, "v1.0.0-rc1"]],
+                supported_proxies: [[proxyCodeId, "v1.0.0-rc2"]],
                 wallet_fee: wallet_fee as FactoryT.Coin,
                 authenticators: [
                     {

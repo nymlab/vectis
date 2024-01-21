@@ -124,6 +124,10 @@ export const juno_testnet = {
         mnemonic: process.env.TESTNET_COMMITTEE2_MNEMONIC,
         address: process.env.TESTNET_JUNO_COMMITTEE2_ADDRESS,
     },
+    walletCreator: {
+        mnemonic: process.env.TESTNET_WALLET_CREATOR_MNEMONIC,
+        address: process.env.TESTNET_JUNO_WALLET_CREATOR_ADDRESS,
+    },
 };
 
 export const osmosis_testnet = {
