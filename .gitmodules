@@ -7,3 +7,6 @@
 [submodule "ts"]
 	path = ts
 	url = git@github.com:nymlab/vectis-types.git
+[submodule "packages/vectis"]
+	path = packages/vectis
+	url = git@github.com:nymlab/protocol-smartaccount-types.git
