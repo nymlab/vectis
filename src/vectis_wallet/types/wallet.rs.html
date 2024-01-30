@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis/src/types/wallet.rs`."><title>wallet.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_wallet" data-themes="" data-resource-suffix="" data-rustdoc-version="1.70.0 (90c541806 2023-05-31)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-f61008743c98d196.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../vectis_wallet/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis/src/types/wallet.rs`."><title>wallet.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_wallet" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -111,26 +111,102 @@
 <a href="#111" id="111">111</a>
 <a href="#112" id="112">112</a>
 <a href="#113" id="113">113</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{ProxyAddrErr, RelayTxError};
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::types::{
+    authenticator::{Authenticator, AuthenticatorType},
+    entity::Entity,
+    error::RelayTxError,
+    factory::CreateWalletMsg,
+};
 <span class="kw">use </span>cosmwasm_schema::cw_serde;
-<span class="kw">use </span>cosmwasm_std::{Addr, Binary, CanonicalAddr};
-<span class="kw">use </span>cw_utils::Threshold;
+<span class="kw">use </span>cosmwasm_std::{Addr, Binary, CanonicalAddr, Coin, CosmosMsg, Deps, StdError};
 
-<span class="attr">#[cw_serde]
-</span><span class="kw">pub struct </span>Controller {
+<span class="doccomment">/// The message sent for instantiation
+/// In this case, it is the same field as what user has input.
+</span><span class="comment">// We are keeping this struct for now because it used to contain other default info from the
+// factory, like the guardian multisig code id etc.
+</span><span class="attr">#[cw_serde]
+</span><span class="kw">pub struct </span>ProxyCreateMsg {
+    <span class="kw">pub </span>create_wallet_msg: CreateWalletMsg,
+}
+
+<span class="doccomment">/// Sylvia creates the instantiate message in this format - same as instantiate function signature
+</span><span class="attr">#[cw_serde]
+</span><span class="kw">pub struct </span>ProxyInstantiateMsg {
+    <span class="kw">pub </span>msg: ProxyCreateMsg,
+}
+
+<span class="doccomment">/// The main controller of the account
+</span><span class="kw">pub type </span>Controller = Entity;
+
+<span class="doccomment">/// Struct for representing a CosmosEOA as an authenticator
+</span><span class="attr">#[cw_serde]
+</span><span class="kw">pub struct </span>CosmosEOA {
     <span class="kw">pub </span>addr: CanonicalAddr,
-    <span class="kw">pub </span>nonce: Nonce,
+}
+
+<span class="kw">impl </span>CosmosEOA {
+    <span class="doccomment">/// Set new controller address
+    </span><span class="kw">pub fn </span>set_address(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: CanonicalAddr) {
+        <span class="self">self</span>.addr = address;
+    }
+
+    <span class="doccomment">/// Get human addr
+    </span><span class="kw">pub fn </span>to_human(<span class="kw-2">&amp;</span><span class="self">self</span>, deps: Deps) -&gt; <span class="prelude-ty">Result</span>&lt;Addr, StdError&gt; {
+        deps.api.addr_humanize(<span class="kw-2">&amp;</span><span class="self">self</span>.addr)
+    }
 }
 
 <span class="kw">impl </span>Controller {
     <span class="doccomment">/// Increase nonce by 1
     </span><span class="kw">pub fn </span>increment_nonce(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="self">self</span>.nonce += <span class="number">1</span>;
-    }
-
-    <span class="doccomment">/// Set new controller address
-    </span><span class="kw">pub fn </span>set_address(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: CanonicalAddr) {
-        <span class="self">self</span>.addr = address;
     }
 
     <span class="doccomment">/// Ensure nonces are equal
@@ -142,16 +218,23 @@
         }
     }
 
-    <span class="doccomment">/// Ensure provided address is different from current.
-    </span><span class="kw">pub fn </span>ensure_addresses_are_not_equal(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        address: <span class="kw-2">&amp;</span>CanonicalAddr,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), ProxyAddrErr&gt; {
-        <span class="kw">if </span><span class="self">self</span>.addr.ne(address) {
-            <span class="prelude-val">Ok</span>(())
-        } <span class="kw">else </span>{
-            <span class="prelude-val">Err</span>(ProxyAddrErr::AddressesAreEqual {})
-        }
+    <span class="doccomment">/// Returns the AuthenicatorType
+    </span><span class="kw">pub fn </span>auth_type(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>AuthenticatorType {
+        <span class="self">self</span>.auth.ty()
+    }
+
+    <span class="doccomment">/// Returns the Authenicator
+    </span><span class="kw">pub fn </span>authenticator(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Authenticator {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.auth
+    }
+
+    <span class="doccomment">/// Serialise into a unique slice to be stored as `previous_controller`
+    </span><span class="kw">pub fn </span>to_type_data_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
+        <span class="kw">let </span>auth = <span class="kw">match </span><span class="self">self</span>.auth_type() {
+            AuthenticatorType::Webauthn =&gt; <span class="string">&quot;Webauthn&quot;</span>.as_bytes(),
+            AuthenticatorType::Other(x) =&gt; x.as_bytes(),
+        };
+        <span class="kw">return </span>[<span class="self">self</span>.data.as_slice(), auth].concat();
     }
 }
 
@@ -160,68 +243,79 @@
 
 <span class="doccomment">/// Representation of the wallet address in both form used in migration
 </span><span class="attr">#[cw_serde]
-</span><span class="kw">pub enum </span>WalletAddr {
-    <span class="doccomment">/// CanonicalAddr
-    </span>Canonical(CanonicalAddr),
-    <span class="doccomment">/// Addr
-    </span>Addr(Addr),
+</span><span class="kw">pub struct </span>WalletAddrs {
+    <span class="doccomment">/// The chain id / name of the remote chain
+    </span><span class="kw">pub </span>chain_id: String,
+    <span class="doccomment">/// The address associated on the remote chain
+    </span><span class="kw">pub </span>addr: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="attr">#[cw_serde]
 </span><span class="kw">pub struct </span>WalletInfo {
-    <span class="kw">pub </span>controller_addr: Addr,
-    <span class="kw">pub </span>deployer: Addr,
-    <span class="kw">pub </span>version: cw2::ContractVersion,
-    <span class="kw">pub </span>code_id: u64,
-    <span class="kw">pub </span>guardians: Vec&lt;Addr&gt;,
-    <span class="kw">pub </span>relayers: Vec&lt;Addr&gt;,
-    <span class="kw">pub </span>is_frozen: bool,
-    <span class="kw">pub </span>created_at: u64,
-    <span class="kw">pub </span>nonce: Nonce,
-    <span class="kw">pub </span>multisig_address: <span class="prelude-ty">Option</span>&lt;Addr&gt;,
-    <span class="kw">pub </span>multisig_threshold: <span class="prelude-ty">Option</span>&lt;Threshold&gt;,
-    <span class="kw">pub </span>label: String,
+    <span class="doccomment">/// The controlling entity for this wallet
+    </span><span class="kw">pub </span>controller: Controller,
+    <span class="doccomment">/// The deployer of Vectis
+    </span><span class="kw">pub </span>deployer: Addr,
+    <span class="doccomment">/// The version of this wallet
+    </span><span class="kw">pub </span>version: cw2::ContractVersion,
+    <span class="doccomment">/// The code-id of this wallet,
+    /// MUST always be returned for frontend
+    </span><span class="kw">pub </span>code_id: u64,
+    <span class="doccomment">/// The relayers for wallet tx
+    </span><span class="kw">pub </span>relayers: Vec&lt;Addr&gt;,
+    <span class="doccomment">/// Time of creation
+    </span><span class="kw">pub </span>created_at: u64,
+    <span class="doccomment">/// Vectis Id
+    </span><span class="kw">pub </span>vid: String,
+    <span class="doccomment">/// Addresses on other chains
+    </span><span class="kw">pub </span>addresses: Vec&lt;WalletAddrs&gt;,
+    <span class="doccomment">/// The wallet policy
+    </span><span class="kw">pub </span>policy: <span class="prelude-ty">Option</span>&lt;Binary&gt;,
 }
 
 <span class="attr">#[cw_serde]
 </span><span class="kw">pub struct </span>RelayTransaction {
-    <span class="doccomment">/// Controller pubkey
-    </span><span class="kw">pub </span>controller_pubkey: Binary,
-    <span class="doccomment">/// Message to verify
+    <span class="doccomment">/// Message to verify,
+    /// Encoding depends on the authenticator,
+    /// but must contain the actual `Vec&lt;CosmosMsg&gt;` to execute
+    /// e.g. the structure of `WebauthnRelayedTxMsg`
     </span><span class="kw">pub </span>message: Binary,
-    <span class="doccomment">/// Nonce
-    </span><span class="kw">pub </span>nonce: Nonce,
-    <span class="doccomment">/// Serialized signature (message + nonce). Cosmos format (64 bytes).
-    /// Cosmos format (secp256k1 verification scheme).
+    <span class="doccomment">/// Serialized signature (message + nonce).
+    /// If authenticator is CosmosEOA: 64 bytes - secp256k1 verification scheme
+    /// See `AuthenticatorType` for more info
     </span><span class="kw">pub </span>signature: Binary,
 }
 
-<span class="attr">#[cw_serde]
-</span><span class="kw">pub struct </span>PluginListResponse {
-    <span class="kw">pub </span>exec_plugins: Vec&lt;Addr&gt;,
-    <span class="kw">pub </span>query_plugins: Vec&lt;Addr&gt;,
-    <span class="kw">pub </span>pre_tx_plugins: Vec&lt;Addr&gt;,
-    <span class="kw">pub </span>multisig_override: <span class="prelude-ty">Option</span>&lt;Addr&gt;,
-}
-
-<span class="attr">#[cw_serde]
-</span><span class="kw">pub struct </span>WalletCreateReply {
-    <span class="kw">pub </span>controller: Addr,
-    <span class="kw">pub </span>proxy_addr: Addr,
-    <span class="kw">pub </span>multisig_addr: <span class="prelude-ty">Option</span>&lt;Addr&gt;,
-    <span class="kw">pub </span>guardians: Vec&lt;Addr&gt;,
-}
-
-<span class="doccomment">/// Permission of the plugin on the proxy
+<span class="doccomment">/// Data to be signed by the controlling entity
 </span><span class="attr">#[cw_serde]
-</span><span class="kw">pub enum </span>PluginPermissions {
-    <span class="doccomment">/// Can Exec through Proxy
-    </span>Exec,
-    <span class="doccomment">/// Addr can be queried through proxy
-    </span>Query(String),
-    <span class="doccomment">/// Is used to check tx before execution
-    </span>PreTxCheck,
-    <span class="doccomment">/// Is a multisig contract, ignore controller
-    </span>MultiSigOverride,
+</span><span class="kw">pub struct </span>VectisRelayedTx {
+    <span class="doccomment">/// messages to be executed on the entity&#39;s behalf
+    </span><span class="kw">pub </span>messages: Vec&lt;CosmosMsg&gt;,
+    <span class="doccomment">/// nonce of the entity for relayed tx
+    </span><span class="kw">pub </span>nonce: Nonce,
+    <span class="doccomment">/// fee for the relaying party
+    /// We skip serializing on none because this is turned into json string to be hashed / signed
+    /// must align between rust and ts tests
+    </span><span class="attr">#[serde(default, skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+    </span><span class="kw">pub </span>sponsor_fee: <span class="prelude-ty">Option</span>&lt;Coin&gt;,
+}
+
+<span class="doccomment">/// The struct that RelayTransaction.message should decode to
+/// for Webauthn
+</span><span class="attr">#[cw_serde]
+</span><span class="kw">pub struct </span>WebauthnRelayedTxMsg {
+    <span class="doccomment">/// This is the JSON string of the `VectisRelayTx`
+    /// We parse this string in the contract for the correct type
+    /// This is because we need this string to ensure fields are in the
+    /// same order when hashing
+    </span><span class="kw">pub </span>signed_data: String,
+    <span class="kw">pub </span>auth_data: Binary,
+    <span class="kw">pub </span>client_data: Binary,
+}
+
+<span class="attr">#[cw_serde]
+</span><span class="kw">pub struct </span>TestMigrateMsg {
+    <span class="kw">pub </span>name: String,
+    <span class="kw">pub </span>version: String,
 }
 </code></pre></div></section></main></body></html>

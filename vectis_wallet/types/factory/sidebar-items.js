@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ChainConnection","CodeIdType","FeeType"],"struct":["AuthenticatorInstInfo","CreateWalletMsg","FeesResponse","MigrateWalletMsg","WalletFactoryInstantiateMsg"],"type":["ThresholdAbsoluteCount"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_ica","get_items_from_deployer"]};

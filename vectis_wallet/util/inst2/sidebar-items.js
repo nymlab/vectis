@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["calc_instantiate2_addr_from_contract"]};

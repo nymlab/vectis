@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ContractExecMsg","ContractQueryMsg","ExecMsg","QueryMsg"],"fn":["execute_messages","query_messages"],"struct":["BoundQuerier","InstantiateMsg","Remote"],"trait":["Querier"]};

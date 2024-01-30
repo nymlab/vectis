@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["authenticator","entity","error","factory","plugin","plugin_registry","state","wallet"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["AUTHENTICATORS","CONTROLLER","DEPLOYER","ITEMS","PLUGINS","PROXY_DATA","SUBSCRIBERS","SUPPORTEDCHAINS","SUPPORTEDPROXIES"],"enum":["VectisActors"],"type":["Authenticators","ControllerState","Deployer","Plugins","ProxyData","Subscribers","SupportedChains","SupportedProxies"]};

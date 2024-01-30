@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["execute","instantiate","query","reply"]};
+window.SIDEBAR_ITEMS = {"mod":["entry_points","sv"],"struct":["VectisFactory"]};

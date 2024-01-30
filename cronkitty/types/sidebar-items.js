@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["RefillLimit"],"struct":["ActionRef","AutoRefill","CronKittyActionResp","RefillAccounting"]};

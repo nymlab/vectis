@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"vectis_proxy":[["impl&lt;'a&gt; <a class=\"trait\" href=\"vectis_wallet/interface/wallet/wallet_trait/trait.WalletTrait.html\" title=\"trait vectis_wallet::interface::wallet::wallet_trait::WalletTrait\">WalletTrait</a> for <a class=\"struct\" href=\"vectis_proxy/contract/struct.VectisProxy.html\" title=\"struct vectis_proxy::contract::VectisProxy\">VectisProxy</a>&lt;'a&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

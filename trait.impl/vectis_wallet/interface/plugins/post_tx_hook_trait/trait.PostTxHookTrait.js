@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"test_vectis_post_tx_exec":[["impl&lt;'a&gt; <a class=\"trait\" href=\"vectis_wallet/interface/plugins/post_tx_hook_trait/trait.PostTxHookTrait.html\" title=\"trait vectis_wallet::interface::plugins::post_tx_hook_trait::PostTxHookTrait\">PostTxHookTrait</a> for <a class=\"struct\" href=\"test_vectis_post_tx_exec/contract/struct.PostTxHook.html\" title=\"struct test_vectis_post_tx_exec::contract::PostTxHook\">PostTxHook</a>&lt;'a&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

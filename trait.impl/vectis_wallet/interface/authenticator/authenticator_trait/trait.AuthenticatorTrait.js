@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"vectis_webauthn_authenticator":[["impl <a class=\"trait\" href=\"vectis_wallet/interface/authenticator/authenticator_trait/trait.AuthenticatorTrait.html\" title=\"trait vectis_wallet::interface::authenticator::authenticator_trait::AuthenticatorTrait\">AuthenticatorTrait</a> for <a class=\"struct\" href=\"vectis_webauthn_authenticator/contract/struct.Webauthn.html\" title=\"struct vectis_webauthn_authenticator::contract::Webauthn\">Webauthn</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

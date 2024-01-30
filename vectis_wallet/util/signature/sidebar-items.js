@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["relay_tx_auth_check","verify_cosmos_sign"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ContractExecMsg","ContractQueryMsg","ExecMsg","QueryMsg"],"fn":["reply_execute"],"struct":["InstantiateMsg","MigrateMsg","PluginRegistry","VersionDetails"]};
+window.SIDEBAR_ITEMS = {"mod":["entry_points","sv"],"struct":["VectisPluginRegistry"]};

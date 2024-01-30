@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"vectis_plugin_registry":[["impl&lt;'a&gt; <a class=\"trait\" href=\"vectis_wallet/interface/plugin_registry/registry_management_trait/trait.RegistryManagementTrait.html\" title=\"trait vectis_wallet::interface::plugin_registry::registry_management_trait::RegistryManagementTrait\">RegistryManagementTrait</a> for <a class=\"struct\" href=\"vectis_plugin_registry/contract/struct.VectisPluginRegistry.html\" title=\"struct vectis_plugin_registry::contract::VectisPluginRegistry\">VectisPluginRegistry</a>&lt;'a&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
