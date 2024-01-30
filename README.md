@@ -6,7 +6,7 @@
 [![Cosmowasm 0.28.0](https://img.shields.io/badge/CosmWasm-0.28.0-green)](https://github.com/CosmWasm/wasmd/releases)
 [![codecov_img](https://img.shields.io/codecov/c/github/nymlab/vectis)](https://img.shields.io/codecov/c/github/nymlab/vectis)
 
-![Twitter](https://img.shields.io/twitter/follow/VectisDAO?style=social)
+![Twitter](https://img.shields.io/twitter/follow/0xVectis?style=social)
 
 ## Overview
 
