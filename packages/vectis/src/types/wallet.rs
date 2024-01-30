@@ -117,8 +117,8 @@ pub struct WalletInfo {
 pub struct RelayTransaction {
     /// Message to verify,
     /// Encoding depends on the authenticator,
-    /// but must contain the actual Vec<CosmosMsg> to execute
-    /// e.g. the structure of WebauthnRelayedTxMsg
+    /// but must contain the actual `Vec<CosmosMsg>` to execute
+    /// e.g. the structure of `WebauthnRelayedTxMsg`
     pub message: Binary,
     /// Serialized signature (message + nonce).
     /// If authenticator is CosmosEOA: 64 bytes - secp256k1 verification scheme
