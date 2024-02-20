@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis/src/types/state.rs`."><title>state.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_wallet" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `packages/vectis/src/types/state.rs`."><title>state.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="vectis_wallet" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -70,7 +71,7 @@
 <span class="comment">// Stored on the Multisig / DAO contract
 </span><span class="doccomment">/// Maps `VectisActors` variant to addresses:
 /// using `String` as key to keep inline with the dao-core contract
-</span><span class="kw">pub const </span>ITEMS: Map&lt;String, String&gt; = Map::new(<span class="string">&quot;items&quot;</span>);
+</span><span class="kw">pub const </span>ITEMS: Map&lt;String, String&gt; = Map::new(<span class="string">"items"</span>);
 <span class="attr">#[cw_serde]
 </span><span class="kw">pub enum </span>VectisActors {
     Factory,
@@ -79,47 +80,47 @@
 
 <span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>VectisActors {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
-        <span class="macro">write!</span>(f, <span class="string">&quot;{self:?}&quot;</span>)
+        <span class="macro">write!</span>(f, <span class="string">"{self:?}"</span>)
     }
 }
 
 <span class="comment">// Stores the controller of the wallet
-</span><span class="kw">pub type </span>ControllerState&lt;<span class="lifetime">&#39;a</span>&gt; = Item&lt;<span class="lifetime">&#39;a</span>, Controller&gt;;
-<span class="kw">pub const </span>CONTROLLER: ControllerState = Item::new(<span class="string">&quot;controller&quot;</span>);
+</span><span class="kw">pub type </span>ControllerState&lt;<span class="lifetime">'a</span>&gt; = Item&lt;<span class="lifetime">'a</span>, Controller&gt;;
+<span class="kw">pub const </span>CONTROLLER: ControllerState = Item::new(<span class="string">"controller"</span>);
 
 <span class="comment">// Stored on all Vectis contract help find other VectisActors
 </span><span class="doccomment">/// In v1.0.0 this is a multisig
 /// In progressive decentralisation this will be a DAAO
-</span><span class="kw">pub type </span>Deployer&lt;<span class="lifetime">&#39;a</span>&gt; = Item&lt;<span class="lifetime">&#39;a</span>, CanonicalAddr&gt;;
-<span class="kw">pub const </span>DEPLOYER: Deployer = Item::new(<span class="string">&quot;deployer&quot;</span>);
+</span><span class="kw">pub type </span>Deployer&lt;<span class="lifetime">'a</span>&gt; = Item&lt;<span class="lifetime">'a</span>, CanonicalAddr&gt;;
+<span class="kw">pub const </span>DEPLOYER: Deployer = Item::new(<span class="string">"deployer"</span>);
 
 <span class="comment">// Stored on Factory
 </span><span class="doccomment">/// These are the authenticators types stored on the factory
-</span><span class="kw">pub type </span>Authenticators&lt;<span class="lifetime">&#39;a</span>&gt; = Map&lt;<span class="lifetime">&#39;a</span>, String, Addr&gt;;
-<span class="kw">pub const </span>AUTHENTICATORS: Authenticators = Map::new(<span class="string">&quot;authenticators&quot;</span>);
+</span><span class="kw">pub type </span>Authenticators&lt;<span class="lifetime">'a</span>&gt; = Map&lt;<span class="lifetime">'a</span>, String, Addr&gt;;
+<span class="kw">pub const </span>AUTHENTICATORS: Authenticators = Map::new(<span class="string">"authenticators"</span>);
 
 <span class="comment">// Stored on Plugin registry
 </span><span class="doccomment">/// Types that allow other contracts to query the plugins from the registry
-</span><span class="kw">pub type </span>Plugins&lt;<span class="lifetime">&#39;a</span>&gt; = Map&lt;<span class="lifetime">&#39;a</span>, u64, Plugin&gt;;
-<span class="kw">pub const </span>PLUGINS: Plugins = Map::new(<span class="string">&quot;registry_plugins&quot;</span>);
+</span><span class="kw">pub type </span>Plugins&lt;<span class="lifetime">'a</span>&gt; = Map&lt;<span class="lifetime">'a</span>, u64, Plugin&gt;;
+<span class="kw">pub const </span>PLUGINS: Plugins = Map::new(<span class="string">"registry_plugins"</span>);
 
 <span class="comment">// Stored on Plugin registry, queried externally by proxy
 </span><span class="doccomment">/// Types that allow other contracts to query the subscriber status from the registry
-</span><span class="kw">pub type </span>Subscribers&lt;<span class="lifetime">&#39;a</span>&gt; = Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, Subscriber&gt;;
-<span class="kw">pub const </span>SUBSCRIBERS: Subscribers = Map::new(<span class="string">&quot;subscribers&quot;</span>);
+</span><span class="kw">pub type </span>Subscribers&lt;<span class="lifetime">'a</span>&gt; = Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, Subscriber&gt;;
+<span class="kw">pub const </span>SUBSCRIBERS: Subscribers = Map::new(<span class="string">"subscribers"</span>);
 
 <span class="comment">// Stored on Factory and queried by others
 // It is assumed that proxy have the `ChainName` in the data
 </span><span class="doccomment">/// The supported chains Map&lt;ChainName, ChainConnection&gt;
-</span><span class="kw">pub type </span>SupportedChains&lt;<span class="lifetime">&#39;a</span>&gt; = Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, ChainConnection&gt;;
-<span class="kw">pub const </span>SUPPORTEDCHAINS: SupportedChains = Map::new(<span class="string">&quot;supported_chains&quot;</span>);
+</span><span class="kw">pub type </span>SupportedChains&lt;<span class="lifetime">'a</span>&gt; = Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, ChainConnection&gt;;
+<span class="kw">pub const </span>SUPPORTEDCHAINS: SupportedChains = Map::new(<span class="string">"supported_chains"</span>);
 
 <span class="comment">// Stored on Proxy and Queried by other contracts
 </span><span class="doccomment">/// The data blob store in Proxy
-</span><span class="kw">pub type </span>ProxyData&lt;<span class="lifetime">&#39;a</span>&gt; = Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], Binary&gt;;
-<span class="kw">pub const </span>PROXY_DATA: ProxyData = Map::new(<span class="string">&quot;proxy_data&quot;</span>);
+</span><span class="kw">pub type </span>ProxyData&lt;<span class="lifetime">'a</span>&gt; = Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8], Binary&gt;;
+<span class="kw">pub const </span>PROXY_DATA: ProxyData = Map::new(<span class="string">"proxy_data"</span>);
 
 <span class="doccomment">/// The bytes of the code_id that are supported to the version
-</span><span class="kw">pub type </span>SupportedProxies&lt;<span class="lifetime">&#39;a</span>&gt; = Map&lt;<span class="lifetime">&#39;a</span>, u64, String&gt;;
-<span class="kw">pub const </span>SUPPORTEDPROXIES: SupportedProxies = Map::new(<span class="string">&quot;supported_proxies&quot;</span>);
+</span><span class="kw">pub type </span>SupportedProxies&lt;<span class="lifetime">'a</span>&gt; = Map&lt;<span class="lifetime">'a</span>, u64, String&gt;;
+<span class="kw">pub const </span>SUPPORTEDPROXIES: SupportedProxies = Map::new(<span class="string">"supported_proxies"</span>);
 </code></pre></div></section></main></body></html>

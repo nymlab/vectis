@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/core/proxy/src/contract.rs`."><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_proxy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `contracts/core/proxy/src/contract.rs`."><title>contract.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="vectis_proxy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -345,23 +346,23 @@
 
 <span class="kw">use </span>vectis_wallet::types::wallet::TestMigrateMsg;
 
-<span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>);
-<span class="kw">const </span>CONTRACT_VERSION: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>);
+<span class="kw">const </span>CONTRACT_NAME: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">"CARGO_PKG_NAME"</span>);
+<span class="kw">const </span>CONTRACT_VERSION: <span class="kw-2">&amp;</span>str = <span class="macro">env!</span>(<span class="string">"CARGO_PKG_VERSION"</span>);
 
-<span class="kw">pub struct </span>VectisProxy&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub </span>created_at: Item&lt;<span class="lifetime">&#39;a</span>, u64&gt;,
+<span class="kw">pub struct </span>VectisProxy&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>created_at: Item&lt;<span class="lifetime">'a</span>, u64&gt;,
     <span class="doccomment">/// The deployer of the Vectis infra
-    </span><span class="kw">pub </span>deployer: Deployer&lt;<span class="lifetime">&#39;a</span>&gt;,
+    </span><span class="kw">pub </span>deployer: Deployer&lt;<span class="lifetime">'a</span>&gt;,
     <span class="doccomment">/// The Controller of this wallet
-    </span><span class="kw">pub </span>controller: ControllerState&lt;<span class="lifetime">&#39;a</span>&gt;,
+    </span><span class="kw">pub </span>controller: ControllerState&lt;<span class="lifetime">'a</span>&gt;,
     <span class="doccomment">/// Vectis ID of the wallet tied to username hashed
-    </span><span class="kw">pub </span>vid: Item&lt;<span class="lifetime">&#39;a</span>, String&gt;,
+    </span><span class="kw">pub </span>vid: Item&lt;<span class="lifetime">'a</span>, String&gt;,
     <span class="doccomment">/// Arbitrary KV store for data
     /// written to on instantiation and updatable by users
     </span><span class="comment">// TODO: sized - check gas per byte / gas limit
-    </span><span class="kw">pub </span>data: ProxyData&lt;<span class="lifetime">&#39;a</span>&gt;,
+    </span><span class="kw">pub </span>data: ProxyData&lt;<span class="lifetime">'a</span>&gt;,
     <span class="doccomment">/// This records the current relayers that has feegrants
-    </span><span class="kw">pub </span>relayers: Map&lt;<span class="lifetime">&#39;a</span>, Addr, ()&gt;,
+    </span><span class="kw">pub </span>relayers: Map&lt;<span class="lifetime">'a</span>, Addr, ()&gt;,
 
     <span class="doccomment">/// Plugins that can exec through this contract unconditionally.
     /// The plugin should be from a trusted source managing all permissions
@@ -369,35 +370,35 @@
     /// Example of this: automation, allowance, session keys
     /// (assuming each plugin can only have 1 permission)
     /// We separate these so that we can only loop through the required ones at pre / post hooks
-    </span><span class="kw">pub </span>exec_plugins: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, PluginInfo&gt;,
-    <span class="kw">pub </span>pre_tx_plugins: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, PluginInfo&gt;,
-    <span class="kw">pub </span>post_tx_hooks_plugins: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, PluginInfo&gt;,
+    </span><span class="kw">pub </span>exec_plugins: Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, PluginInfo&gt;,
+    <span class="kw">pub </span>pre_tx_plugins: Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, PluginInfo&gt;,
+    <span class="kw">pub </span>post_tx_hooks_plugins: Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, PluginInfo&gt;,
     <span class="doccomment">/// allow to check if a plugin has been installed quickly
     /// This is the plugin id from vectis registry
-    </span><span class="kw">pub </span>installed_plugins: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>u64, ()&gt;,
+    </span><span class="kw">pub </span>installed_plugins: Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>u64, ()&gt;,
     <span class="doccomment">/// The history of the Controllers
-    </span><span class="kw">pub </span>previous_controllers: Map&lt;<span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], ()&gt;,
+    </span><span class="kw">pub </span>previous_controllers: Map&lt;<span class="lifetime">'a</span>, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8], ()&gt;,
 }
 
-<span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;library&quot;</span>), entry_points)]
+<span class="attr">#[cfg_attr(not(feature = <span class="string">"library"</span>), entry_points)]
 #[contract]
 #[error(WalletError)]
 #[messages(wallet_trait <span class="kw">as </span>WalletTrait)]
 #[messages(wallet_plugin_trait <span class="kw">as </span>WalletPluginTrait)]
-</span><span class="kw">impl </span>VectisProxy&lt;<span class="lifetime">&#39;_</span>&gt; {
+</span><span class="kw">impl </span>VectisProxy&lt;<span class="lifetime">'_</span>&gt; {
     <span class="kw">pub const fn </span>new() -&gt; <span class="self">Self </span>{
         <span class="kw">return </span><span class="self">Self </span>{
             controller: CONTROLLER,
-            created_at: Item::new(<span class="string">&quot;created_at&quot;</span>),
-            vid: Item::new(<span class="string">&quot;label&quot;</span>),
+            created_at: Item::new(<span class="string">"created_at"</span>),
+            vid: Item::new(<span class="string">"label"</span>),
             data: PROXY_DATA,
-            relayers: Map::new(<span class="string">&quot;relayers&quot;</span>),
+            relayers: Map::new(<span class="string">"relayers"</span>),
             deployer: DEPLOYER,
-            exec_plugins: Map::new(<span class="string">&quot;exec_plugins&quot;</span>),
-            pre_tx_plugins: Map::new(<span class="string">&quot;pre_tx_plugins&quot;</span>),
-            post_tx_hooks_plugins: Map::new(<span class="string">&quot;hooks_plugins&quot;</span>),
-            installed_plugins: Map::new(<span class="string">&quot;installed&quot;</span>),
-            previous_controllers: Map::new(<span class="string">&quot;previous_controllers&quot;</span>),
+            exec_plugins: Map::new(<span class="string">"exec_plugins"</span>),
+            pre_tx_plugins: Map::new(<span class="string">"pre_tx_plugins"</span>),
+            post_tx_hooks_plugins: Map::new(<span class="string">"hooks_plugins"</span>),
+            installed_plugins: Map::new(<span class="string">"installed"</span>),
+            previous_controllers: Map::new(<span class="string">"previous_controllers"</span>),
         };
     }
 
@@ -446,7 +447,7 @@
         <span class="self">self</span>.created_at
             .save(deps.storage, <span class="kw-2">&amp;</span>env.block.time.seconds())<span class="question-mark">?</span>;
 
-        <span class="kw">let </span><span class="kw-2">mut </span>res = Response::new().add_event(<span class="self">self</span>.get_event(<span class="string">&quot;instantiate&quot;</span>));
+        <span class="kw">let </span><span class="kw-2">mut </span>res = Response::new().add_event(<span class="self">self</span>.get_event(<span class="string">"instantiate"</span>));
 
         <span class="comment">// feegrant relayers
         </span><span class="kw">if </span>!relayers.is_empty() {
@@ -454,7 +455,7 @@
             relayers.sort();
             relayers.dedup();
             <span class="kw">if </span>init_relayers_len != relayers.len() {
-                <span class="kw">return </span><span class="prelude-val">Err</span>(WalletError::Duplication(<span class="string">&quot;relayers&quot;</span>.into()));
+                <span class="kw">return </span><span class="prelude-val">Err</span>(WalletError::Duplication(<span class="string">"relayers"</span>.into()));
             }
 
             <span class="kw">let </span><span class="kw-2">mut </span>feegrant_msgs = <span class="macro">vec!</span>[];
@@ -484,13 +485,13 @@
             res = res.add_messages(feegrant_msgs);
         }
 
-        <span class="comment">// Let&#39;s see if we need to create ICAs
+        <span class="comment">// Let's see if we need to create ICAs
         </span><span class="kw">if let </span><span class="prelude-val">Some</span>(required_chains) = chains {
             <span class="kw">let </span><span class="kw-2">mut </span>seen = BTreeSet::new();
             <span class="kw">let </span><span class="kw-2">mut </span>msgs = <span class="macro">vec!</span>[];
             <span class="kw">for </span>c <span class="kw">in </span>required_chains {
                 <span class="kw">if </span>!seen.insert(c.<span class="number">0</span>.clone()) {
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(WalletError::Duplication(<span class="string">&quot;required_chains&quot;</span>.into()));
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(WalletError::Duplication(<span class="string">"required_chains"</span>.into()));
                 }
                 <span class="kw">let </span>connection = SUPPORTEDCHAINS
                     .query(<span class="kw-2">&amp;</span>deps.querier, info.sender.clone(), <span class="kw-2">&amp;</span>c.<span class="number">0</span>)<span class="question-mark">?
@@ -600,13 +601,13 @@
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_event(<span class="kw-2">&amp;</span><span class="self">self</span>, action: <span class="kw">impl </span>Into&lt;String&gt;) -&gt; Event {
-        Event::new(<span class="string">&quot;vectis.proxy.v1&quot;</span>).add_attribute(<span class="string">&quot;action&quot;</span>, action)
+        Event::new(<span class="string">"vectis.proxy.v1"</span>).add_attribute(<span class="string">"action"</span>, action)
     }
 
     <span class="attr">#[msg(migrate)]
     </span><span class="kw">fn </span>migrate(<span class="kw-2">&amp;</span><span class="self">self</span>, ctx: MigrateCtx, msg: TestMigrateMsg) -&gt; <span class="prelude-ty">Result</span>&lt;Response, WalletError&gt; {
         set_contract_version(ctx.deps.storage, msg.name, msg.version)<span class="question-mark">?</span>;
-        <span class="kw">let </span>event = <span class="self">self</span>.get_event(<span class="string">&quot;migrated&quot;</span>);
+        <span class="kw">let </span>event = <span class="self">self</span>.get_event(<span class="string">"migrated"</span>);
         <span class="prelude-val">Ok</span>(Response::new().add_event(event))
     }
 }
