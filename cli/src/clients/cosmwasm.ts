@@ -1,6 +1,5 @@
 import path from "path";
 import { Secp256k1, Secp256k1Keypair, EnglishMnemonic, Slip10, Slip10Curve, Bip39 } from "@cosmjs/crypto";
-import { SigningArchwayClient } from "@archwayhq/arch3.js";
 import { SigningCosmWasmClient, UploadResult, Code, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet, GeneratedType } from "@cosmjs/proto-signing";
 import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
@@ -26,9 +25,9 @@ import type { Chain } from "../config/chains";
 import { accountsPath } from "../config/fs";
 
 class CWClient {
-    client: SigningArchwayClient | SigningCosmWasmClient;
+    client: SigningCosmWasmClient;
     readonly sender: string;
-    constructor(client: SigningArchwayClient | SigningCosmWasmClient, sender: string) {
+    constructor(client: SigningCosmWasmClient, sender: string) {
         this.client = client;
         this.sender = sender;
     }
@@ -111,18 +110,12 @@ class CWClient {
 
         const extraOptions = chainId.includes("osmo") ? { protoRegistry, aminoConverters } : {};
 
-        if (addressPrefix == "archway") {
-            console.log("archway client");
-            const client = await SigningArchwayClient.createWithSigner(tmClient, signer);
-            return new CWClient(client, address);
-        } else {
-            const client = await SigningCosmWasmClient.createWithSigner(tmClient, signer, {
-                broadcastPollIntervalMs: 500,
-                gasPrice: GasPrice.fromString(gasPrice + feeToken),
-                ...extraOptions,
-            });
-            return new CWClient(client, address);
-        }
+        const client = await SigningCosmWasmClient.createWithSigner(tmClient, signer, {
+            broadcastPollIntervalMs: 500,
+            gasPrice: GasPrice.fromString(gasPrice + feeToken),
+            ...extraOptions,
+        });
+        return new CWClient(client, address);
     }
 }
 

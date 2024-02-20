@@ -2,7 +2,6 @@ export enum SupportChains {
     "juno_testnet",
     "neutron_testnet",
     "injective_testnet",
-    "archway_testnet",
     "stargaze_testnet",
     "juno_localnet",
     "osmosis_testnet",
@@ -29,7 +28,6 @@ export interface Chain {
 }
 
 export * from "./juno";
-export * from "./archway";
 export * from "./neutron";
 export * from "./injective";
 export * from "./stargaze";
